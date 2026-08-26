@@ -1,0 +1,118 @@
+# Suivi de musculation
+
+Application web installable pour suivre les séances en salle sur Android :
+écran plein d'un exercice à la fois, saisie charge/répétitions/RIR, rappel de
+la dernière fois pour juger la surcharge progressive, minuterie de
+récupération. Les séances sont écrites dans le classeur Google Sheets qui sert
+de programme.
+
+Porteur du projet : le même qu'sur l'agenda culturel géolocalisé, projet
+voisin sans rapport de contenu. Phase de démarrage.
+
+## Décision de départ
+
+**Web installable, pas d'application native.** Kotlin ou React Native
+imposeraient un projet Google Cloud et un parcours OAuth rien que pour parler
+au classeur, et une chaîne de compilation avant le premier essai en salle. Une
+PWA s'installe sur l'écran d'accueil Android depuis Chrome (icône comprise) et
+tient dans le même savoir-faire que l'agenda culturel : HTML/CSS/JS sans
+framework. Si l'usage confirme le besoin, `Capacitor` permettrait d'emballer
+ce même code en APK sans le réécrire.
+
+**Hors ligne d'abord.** Le réseau est mauvais dans la plupart des salles : une
+séance s'enregistre entièrement dans `localStorage` du téléphone, saisie après
+saisie, et ne parle au classeur qu'à la fin, via un bouton explicite. Un envoi
+qui échoue laisse la séance en attente ; elle repart au prochain lancement en
+ligne ou au prochain essai manuel. Rien ne dépend du réseau pendant l'effort.
+
+## Architecture
+
+- `index.html`, `css/style.css`, `js/app.js` : l'application elle-même, un
+  fichier JavaScript unique, pas de build.
+- `data/programme.json` : sortie de l'import du classeur, lue par
+  l'application au démarrage. Régénérée par `outils/importer_classeur.py`,
+  jamais éditée à la main.
+- `outils/importer_classeur.py` : lit l'onglet du programme en cours (export
+  CSV public du classeur), reconnaît la grille et les quatre informations
+  logées en colonne B de chaque exercice (prescription de séries, RIR cible,
+  consigne technique, muscle et temps de repos), écrit `data/programme.json`.
+- `appsscript/Code.gs` : le pont vers le classeur, à coller dans
+  Extensions > Apps Script **depuis le classeur lui-même** puis à déployer en
+  application web. Écrit une ligne par série validée dans un onglet dédié
+  `Séances (app)`, jamais dans la grille manuelle du programme dont la mise en
+  page ne supporte pas un flux automatique.
+- `sw.js`, `manifest.webmanifest`, `icones/` : rendent l'application
+  installable et utilisable hors ligne.
+
+## Le classeur
+
+<https://docs.google.com/spreadsheets/d/1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE>
+
+Un seul onglet fait autorité, celui du programme en cours (gid
+`1138168114`) : six jours, J1 Push, J2 footing, J3 Pull, J4 Bas du corps, J5
+Haut prioritaire, J6/J7 repos ou footing. Deux anciens onglets ont existé
+pendant la conception (un programme antérieur en superset, un onglet vide) et
+ont été supprimés par l'utilisateur le 26 août 2026 : **ne jamais s'y fier
+s'ils réapparaissent**, seul l'onglet du programme courant compte.
+
+Chaque jour de musculation loge sept groupes de cinq colonnes
+(`Exo, Charge, Reps, RIR, Total`), un par séance à venir, le septième portant
+la mention `DELOAD`. La colonne B, sous le nom de l'exercice, porte dans un
+ordre non garanti la prescription de séries, le RIR cible, une consigne
+technique, et le muscle travaillé avec son temps de repos : l'import les
+reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
+`RIR`), pas par leur position.
+
+## Pièges déjà rencontrés côté import
+
+- **RIR et temps de repos peuvent partager la même ligne** : `FACE PULL` porte
+  `3 X 15-20 RIR 1'00`. La prescription de séries l'emporte toujours ; le
+  temps qui l'accompagne ne sert que si aucune autre ligne du bloc n'en donne.
+- **Le classeur mélange les libellés de repos** : `REPOS` et sa coquille
+  `REOIS` cohabitent, parfois accolés au muscle sans espace (`1'15BICEPS`).
+- **Les footings (J2, J6) n'ont ni exercice numéroté ni charge** : l'import
+  les marque `type: "footing"` plutôt que de produire une liste vide qui
+  laisserait croire à un jour sans contenu.
+- **Le deload ne doit jamais nourrir la comparaison de progression.**
+  `derniereFois()` dans `js/app.js` écarte les séances marquées `deload` en
+  cherchant la dernière séance normale, sans quoi une charge allégée
+  semblerait une régression.
+
+## Comportements côté application, à ne pas défaire sans y repenser
+
+- **L'échauffement ne compte jamais dans le tonnage ni dans la comparaison.**
+  Une série se bascule en échauffement d'un appui sur son numéro ; l'import du
+  classeur reconnaît déjà les notes `ECH 1`, `ECH 2` de la même façon.
+- **Valider une série sans chiffres saisis reprend ceux de la dernière fois**
+  plutôt que d'enregistrer un vide : l'utilisateur peut confirmer d'un geste
+  qu'il a reproduit sa performance précédente sans retaper les nombres.
+- **La minuterie se lance après chaque série validée**, échauffement compris
+  dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
+- **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
+  plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
+  qui arrive constamment en salle (verrouillage du téléphone, changement
+  d'application pour la calculatrice de plaques).
+- **Le pont Apps Script reçoit son corps en `text/plain`**, pas en
+  `application/json` : Apps Script ne répond pas à la requête préalable CORS
+  qu'un en-tête JSON déclenche, et l'appel échouerait silencieusement en
+  production tout en fonctionnant dans les outils de développement.
+
+## Vérifications
+
+Pas encore de suite automatisée. À faire avant d'ajouter des fonctionnalités
+qui touchent l'import ou le calcul de tonnage : un test sur un extrait figé du
+classeur (le piège `FACE PULL` en particulier), sur le modèle de
+`tests/test_classify.py` de l'agenda culturel.
+
+## Chantiers ouverts
+
+1. **Déployer `appsscript/Code.gs`** et coller l'adresse obtenue, ainsi que le
+   secret choisi, dans les réglages de l'application. Rien ne part vers le
+   classeur tant que ce n'est pas fait ; l'application reste utilisable en
+   local sans cette étape.
+2. **Graphiques de progression** par exercice, une fois plusieurs semaines de
+   séances accumulées dans le classeur.
+3. **Mensurations et poids de corps**, non retenus au démarrage.
+4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
+   basculer vers un autre bloc d'entraînement demandera de relancer l'import
+   sur un autre onglet, geste manuel pour l'instant.

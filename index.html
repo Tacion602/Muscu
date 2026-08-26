@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Séance</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icones/icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Accueil : choix du jour -->
+<section id="ecran-accueil" class="ecran actif">
+  <header class="entete-accueil">
+    <h1>Séance</h1>
+    <button id="bouton-reglages" class="icone" aria-label="Réglages">&#9881;</button>
+  </header>
+
+  <div id="reprise" class="reprise" hidden>
+    <p class="reprise-texte">Séance <strong id="reprise-jour"></strong> commencée <span id="reprise-quand"></span></p>
+    <div class="reprise-actions">
+      <button id="bouton-reprendre" class="principal">Reprendre</button>
+      <button id="bouton-abandonner" class="discret">Abandonner</button>
+    </div>
+  </div>
+
+  <ul id="liste-jours" class="liste-jours"></ul>
+
+  <div class="pied-accueil">
+    <p id="etat-sync" class="etat-sync"></p>
+    <button id="bouton-historique" class="discret">Séances enregistrées</button>
+  </div>
+</section>
+
+<!-- Séance : un exercice, plein écran -->
+<section id="ecran-seance" class="ecran">
+  <header class="barre">
+    <button id="bouton-quitter" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre">
+      <span id="seance-jour"></span>
+      <span id="seance-progression" class="compteur"></span>
+    </div>
+    <button id="bouton-terminer" class="icone" aria-label="Terminer">&#10003;</button>
+  </header>
+
+  <div id="jauge" class="jauge"><div id="jauge-remplie"></div></div>
+
+  <main class="corps">
+    <h2 id="exo-nom"></h2>
+    <div class="etiquettes">
+      <span id="exo-muscle" class="etiquette"></span>
+      <span id="exo-prescription" class="etiquette"></span>
+      <span id="exo-rir" class="etiquette"></span>
+    </div>
+
+    <details id="exo-consigne-bloc" class="consigne">
+      <summary>Consigne technique</summary>
+      <p id="exo-consigne"></p>
+    </details>
+
+    <div class="tableau-titres">
+      <span class="col-num">Série</span>
+      <span class="col-avant">La dernière fois</span>
+      <span class="col-saisie">Charge</span>
+      <span class="col-saisie">Reps</span>
+      <span class="col-rir">RIR</span>
+      <span class="col-valide"></span>
+    </div>
+    <ol id="series" class="series"></ol>
+
+    <button id="bouton-serie" class="ajouter">+ Ajouter une série</button>
+
+    <div class="tonnage">
+      <span>Tonnage <strong id="tonnage-actuel">0</strong></span>
+      <span id="tonnage-compare" class="compare"></span>
+    </div>
+  </main>
+
+  <nav class="navigation">
+    <button id="bouton-precedent" class="nav">&#8592; Exercice</button>
+    <button id="bouton-suivant" class="nav">Exercice &#8594;</button>
+  </nav>
+</section>
+
+<!-- Minuterie de récupération -->
+<div id="minuterie" class="minuterie" hidden>
+  <div class="minuterie-fond">
+    <p class="minuterie-libelle">Récupération</p>
+    <p id="minuterie-chiffres" class="minuterie-chiffres">0:00</p>
+    <p id="minuterie-suite" class="minuterie-suite"></p>
+    <div class="minuterie-boutons">
+      <button id="minuterie-moins" class="rond">&#8722;15</button>
+      <button id="minuterie-plus" class="rond">+15</button>
+    </div>
+    <button id="minuterie-passer" class="principal">Passer</button>
+  </div>
+</div>
+
+<!-- Fin de séance -->
+<section id="ecran-fin" class="ecran">
+  <header class="barre">
+    <button id="bouton-fin-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Séance terminée</span></div>
+    <span class="icone"></span>
+  </header>
+  <main class="corps">
+    <div id="fin-resume" class="resume"></div>
+    <button id="bouton-enregistrer" class="principal grand">Enregistrer et synchroniser</button>
+    <p id="fin-message" class="message"></p>
+  </main>
+</section>
+
+<!-- Réglages -->
+<section id="ecran-reglages" class="ecran">
+  <header class="barre">
+    <button id="bouton-reglages-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Réglages</span></div>
+    <span class="icone"></span>
+  </header>
+  <main class="corps">
+    <label class="champ-large">
+      <span>Adresse du pont vers le classeur</span>
+      <input id="reglage-pont" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec">
+      <small>Déployez <code>appsscript/Code.gs</code> depuis le classeur, puis collez ici l'adresse du déploiement.</small>
+    </label>
+    <label class="champ-large">
+      <span>Mot de passe du pont</span>
+      <input id="reglage-secret" type="text" autocomplete="off" placeholder="celui inscrit dans le script">
+    </label>
+    <label class="bascule">
+      <input id="reglage-son" type="checkbox" checked>
+      <span>Signal sonore en fin de récupération</span>
+    </label>
+    <label class="bascule">
+      <input id="reglage-vibration" type="checkbox" checked>
+      <span>Vibration en fin de récupération</span>
+    </label>
+    <label class="bascule">
+      <input id="reglage-veille" type="checkbox" checked>
+      <span>Garder l'écran allumé pendant la séance</span>
+    </label>
+    <button id="bouton-tester-pont" class="discret">Tester le pont</button>
+    <p id="reglages-message" class="message"></p>
+    <hr>
+    <button id="bouton-exporter" class="discret">Exporter les séances (JSON)</button>
+    <p class="note" id="note-programme"></p>
+  </main>
+</section>
+
+<!-- Historique -->
+<section id="ecran-historique" class="ecran">
+  <header class="barre">
+    <button id="bouton-historique-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Séances enregistrées</span></div>
+    <span class="icone"></span>
+  </header>
+  <main class="corps">
+    <div id="liste-historique"></div>
+  </main>
+</section>
+
+<script src="js/app.js"></script>
+</body>
+</html>

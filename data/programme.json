@@ -1,0 +1,1085 @@
+{
+ "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
+ "importe_le": "2026-08-26T13:41:09+00:00",
+ "jours": [
+  {
+   "code": "J1",
+   "titre": "J1 PUSH - Pectoraux, deltoide anterieur et lateral, triceps",
+   "type": "muscu",
+   "dates": [
+    "16/08/2026",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "DELOAD"
+   ],
+   "exercices": [
+    {
+     "numero": 1,
+     "nom": "Developpe incline machine",
+     "prescription": "4x 6-8",
+     "series": 4,
+     "reps_min": 6,
+     "reps_max": 8,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Inclinaison 30 Amplitude complete, etirement controle en bas.",
+     "muscle": "Pectoraux",
+     "repos_s": 150,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "16/08/2026",
+       "deload": false,
+       "total": 1090,
+       "series": [
+        {
+         "note": "ECH 1",
+         "charge": 10,
+         "reps": null,
+         "rir": null,
+         "echauffement": true
+        },
+        {
+         "note": "ECH 2",
+         "charge": 20,
+         "reps": null,
+         "rir": null,
+         "echauffement": true
+        },
+        {
+         "note": "",
+         "charge": 40,
+         "reps": 8,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 40,
+         "reps": 8,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 45,
+         "reps": 6,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 45,
+         "reps": 4,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 2,
+     "nom": "Dips buste penche",
+     "prescription": "3X8-10 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Coudes fixes en legere flexion. Ne pas transformer en presse.",
+     "muscle": "Pectoraux",
+     "repos_s": 120,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "16/08/2026",
+       "deload": false,
+       "total": 1703,
+       "series": [
+        {
+         "note": "",
+         "charge": 50,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 57,
+         "reps": 11,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 64,
+         "reps": 9,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 3,
+     "nom": "Ecarte poulie horizontale hauteur poitrine",
+     "prescription": "3X12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Poulie basse, buste legerement incline. Tension continue en bas d'amplitude.",
+     "muscle": "Pectoraux",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "16/08/2026",
+       "deload": false,
+       "total": 512,
+       "series": [
+        {
+         "note": "position 21",
+         "charge": 10,
+         "reps": 15,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 12,
+         "reps": 15,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 14,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 4,
+     "nom": "Elevation laterale poulie unilaterale",
+     "prescription": "4X12-15 - RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "",
+     "muscle": "Deltoide lateral",
+     "repos_s": 75,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "16/08/2026",
+       "deload": false,
+       "total": 205,
+       "series": [
+        {
+         "note": "",
+         "charge": 2,
+         "reps": 20,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 5,
+         "reps": 12,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 5,
+         "reps": 12,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "explosif + lent",
+         "charge": 3,
+         "reps": 15,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 5,
+     "nom": "Extension triceps overhead corde",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Bras au dessus de la tete pour etirer la longue portion.",
+     "muscle": "Triceps",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "16/08/2026",
+       "deload": false,
+       "total": 551,
+       "series": [
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 17,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 15,
+         "reps": 15,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 12,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 6,
+     "nom": "Extension triceps poulie barre",
+     "prescription": "3X12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Coudes colles au buste. Verrouillage complet en fin de mouvement.",
+     "muscle": "Triceps",
+     "repos_s": 75,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "16/08/2026",
+       "deload": false,
+       "total": 567,
+       "series": [
+        {
+         "note": "",
+         "charge": 12,
+         "reps": 15,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 12,
+         "reps": 16,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 15,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "code": "J2",
+   "titre": "J2 FOOTING",
+   "type": "footing",
+   "exercices": []
+  },
+  {
+   "code": "J3",
+   "titre": "J3 PULL - Grand dorsal en priorite, biceps",
+   "type": "muscu",
+   "dates": [
+    "24/08/2026",
+    "12/05/2026",
+    "13/05/2026",
+    "14/05/2026",
+    "15/05/2026",
+    "16/05/2026",
+    "DELOAD"
+   ],
+   "exercices": [
+    {
+     "numero": 1,
+     "nom": "Tirage vertical prise large",
+     "prescription": "4 X 8-10 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Amener la barre a la clavicule. Ne pas cambrer excessivement.",
+     "muscle": "Grand dorsal",
+     "repos_s": 150,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "24/08/2026",
+       "deload": false,
+       "total": 1960,
+       "series": [
+        {
+         "note": "",
+         "charge": 40,
+         "reps": 13,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 50,
+         "reps": 9,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 55,
+         "reps": 9,
+         "rir": 2,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 55,
+         "reps": 9,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 2,
+     "nom": "Rowing unilateral machine ou haltere",
+     "prescription": "4 X 8-10 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",
+     "muscle": "Grand dorsal",
+     "repos_s": 120,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "24/08/2026",
+       "deload": false,
+       "total": 1530,
+       "series": [
+        {
+         "note": "pos.6",
+         "charge": 40,
+         "reps": 9,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "prise serée verticale/neutre",
+         "charge": 40,
+         "reps": 9,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "pause 3sec en rep 6 et 7",
+         "charge": 45,
+         "reps": 9,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "pause 3sec en rep 6 et 7",
+         "charge": 45,
+         "reps": 9,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 3,
+     "nom": "Oiseau inverse machine",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Bras quasi tendus, pas d'elan du buste.",
+     "muscle": "Deltoide posterieur",
+     "repos_s": 75,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "24/08/2026",
+       "deload": false,
+       "total": 1155,
+       "series": [
+        {
+         "note": "pos 7;4",
+         "charge": 25,
+         "reps": 15,
+         "rir": 4,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 30,
+         "reps": 13,
+         "rir": 2,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 30,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 4,
+     "nom": "Elevation laterale halteres",
+     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 15,
+     "reps_max": 20,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Charge legere, tempo controle. Pas de balancier.",
+     "muscle": "Deltoide lateral",
+     "repos_s": 60,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "24/08/2026",
+       "deload": false,
+       "total": 368,
+       "series": [
+        {
+         "note": "",
+         "charge": 6,
+         "reps": 20,
+         "rir": 4,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 8,
+         "reps": 16,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 6,
+         "reps": 20,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 5,
+     "nom": "Curl incline halteres",
+     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 10,
+     "reps_max": 12,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",
+     "muscle": "Biceps",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "24/08/2026",
+       "deload": false,
+       "total": 240,
+       "series": [
+        {
+         "note": "",
+         "charge": 8,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 8,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 8,
+         "reps": 7,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 6,
+     "nom": "Curl marteau",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Prise neutre. Cible le brachial/brachio-radial",
+     "muscle": "Biceps",
+     "repos_s": 75,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "24/08/2026",
+       "deload": false,
+       "total": 320,
+       "series": [
+        {
+         "note": "",
+         "charge": 6,
+         "reps": 16,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 6,
+         "reps": 20,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 8,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "code": "J4",
+   "titre": "J4 BAS DU CORPS - Membres inferieurs, abdominale, coiffe des rotateurs",
+   "type": "muscu",
+   "dates": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "DELOAD"
+   ],
+   "exercices": [
+    {
+     "numero": 1,
+     "nom": "PRESSE A CUISSE / HACK SQUAT",
+     "prescription": "4 X 8-12 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 8,
+     "reps_max": 12,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Hack squat prioritaire s'il est disponible. Descente jusqu'a 90 degres minimum.",
+     "muscle": "Quadriceps",
+     "repos_s": 150,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 5700,
+       "series": [
+        {
+         "note": "presse à cuisse",
+         "charge": 80,
+         "reps": 18,
+         "rir": 4,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 100,
+         "reps": 13,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 120,
+         "reps": 13,
+         "rir": 2,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 140,
+         "reps": 10,
+         "rir": 2,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 2,
+     "nom": "SOULEVE DE TERRE ROUMAIN",
+     "prescription": "3 X 8-10 RIR 2 / 2 / 1",
+     "series": 3,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1
+     ],
+     "consigne": "Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",
+     "muscle": "Ischio-jambiers et fessiers",
+     "repos_s": 120,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 1660,
+       "series": [
+        {
+         "note": "barre position 0 = + 40cm",
+         "charge": 40,
+         "reps": 10,
+         "rir": 4,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 60,
+         "reps": 10,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 60,
+         "reps": 11,
+         "rir": 2,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 3,
+     "nom": "Leg curl allongé",
+     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 10,
+     "reps_max": 12,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Position assise, hanche flechie, + efficace que le leg curl couche.",
+     "muscle": "Ischio-jambiers et fessiers",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 620,
+       "series": [
+        {
+         "note": "",
+         "charge": 20,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 20,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 20,
+         "reps": 11,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 4,
+     "nom": "Extension jambes unilatéral",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Amplitude complete. Pause courte en contraction haute.",
+     "muscle": "Quadriceps",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 885,
+       "series": [
+        {
+         "note": "pos :3 / 1 / 5",
+         "charge": 20,
+         "reps": 12,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 20,
+         "reps": 16,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 25,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 5,
+     "nom": "Mollets debout unilatéral",
+     "prescription": "4 X 12-15 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Pause 2 secondes en position basse etiree.",
+     "muscle": "Mollets",
+     "repos_s": 75,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 3205,
+       "series": [
+        {
+         "note": "",
+         "charge": 77,
+         "reps": 15,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 82,
+         "reps": 13,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 82,
+         "reps": 12,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 6,
+     "nom": "Rotation externe poulie",
+     "prescription": "2 X 15-20 RIR 3/3",
+     "series": 2,
+     "reps_min": 15,
+     "reps_max": 20,
+     "rir": [
+      3,
+      3
+     ],
+     "consigne": "Charge tres legere. Preventif, ne pas chercher l'echec.",
+     "muscle": "Coiffe des rotateurs",
+     "repos_s": 60,
+     "historique": []
+    },
+    {
+     "numero": 7,
+     "nom": "Gainage anti-extension et anti-rotation",
+     "prescription": "3-4 X 30-45sec",
+     "series": 4,
+     "reps_min": 30,
+     "reps_max": 45,
+     "rir": [],
+     "consigne": "Alterner planche et pallof press. Duree plutot que repetitions.",
+     "muscle": "Sangle abdominale",
+     "repos_s": 60,
+     "historique": []
+    }
+   ]
+  },
+  {
+   "code": "J5",
+   "titre": "J5 HAUT MAX - Grand dorsal, pectoraux, deltoide lateral, bras",
+   "type": "muscu",
+   "dates": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "DELOAD"
+   ],
+   "exercices": [
+    {
+     "numero": 1,
+     "nom": "Traction prise neutre machine assistee",
+     "prescription": "4 X 8-10 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "pas ajout de repetitions au dela de 10.",
+     "muscle": "Grand dorsal",
+     "repos_s": 150,
+     "historique": []
+    },
+    {
+     "numero": 2,
+     "nom": "Developpe machine unilateral",
+     "prescription": "4 X 8-10 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Un bras a la fois, buste stabilise. Amplitude complete.",
+     "muscle": "Pectoraux",
+     "repos_s": 120,
+     "historique": []
+    },
+    {
+     "numero": 3,
+     "nom": "Lat pull-in unilateral poulie a genoux",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Bras quasi tendu, adduction pure vers la hanche. Exercice cle largeur",
+     "muscle": "Grand dorsal",
+     "repos_s": 90,
+     "historique": []
+    },
+    {
+     "numero": 4,
+     "nom": "Elevation laterale halteres",
+     "prescription": "4 x 15-20 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 15,
+     "reps_max": 20,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "Troisieme exo du deltoide lateral, charge legere.",
+     "muscle": "Deltoïde latéral",
+     "repos_s": 75,
+     "historique": []
+    },
+    {
+     "numero": 5,
+     "nom": "FACE PULL",
+     "prescription": "3 X 15-20 RIR 1'00",
+     "series": 3,
+     "reps_min": 15,
+     "reps_max": 20,
+     "rir": [
+      1
+     ],
+     "consigne": "Poulie hauteur visage, rotation externe en fin de mouvement.",
+     "muscle": "Deltoide posterieur",
+     "repos_s": 60,
+     "historique": []
+    },
+    {
+     "numero": 6,
+     "nom": "Curl pupitre",
+     "prescription": "3 X 8-12 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 8,
+     "reps_max": 12,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Bras cales,X triche possible. Ne pas verrouiller les coudes en bas.",
+     "muscle": "Biceps",
+     "repos_s": 90,
+     "historique": []
+    },
+    {
+     "numero": 7,
+     "nom": "Extension triceps unilaterale poulie",
+     "prescription": "3 X 12-15 RIR 2/ 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Prise inversee ou neutre selon confort du coude.",
+     "muscle": "Triceps",
+     "repos_s": 75,
+     "historique": []
+    }
+   ]
+  },
+  {
+   "code": "J6",
+   "titre": "J6 FOOTING",
+   "type": "footing",
+   "exercices": []
+  }
+ ]
+}

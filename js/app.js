@@ -1,0 +1,902 @@
+/* Suivi de séance. Tout se joue hors ligne : le téléphone est la mémoire de
+   référence pendant l'entraînement, le classeur n'est prévenu qu'à la fin.
+   Aucune saisie ne dépend du réseau, qui est mauvais dans la plupart des salles. */
+
+'use strict';
+
+const CLES = {
+  seance: 'muscu.seance',
+  historique: 'muscu.historique',
+  reglages: 'muscu.reglages',
+};
+
+const REGLAGES_PAR_DEFAUT = {
+  pont: '',
+  secret: '',
+  son: true,
+  vibration: true,
+  veille: true,
+};
+
+let programme = null;
+let seance = null;       // séance en cours, ou null
+let reglages = lire(CLES.reglages, REGLAGES_PAR_DEFAUT);
+let indexExo = 0;
+let minuterie = null;    // { fin: ms, duree: s, libelle: string }
+let tictac = null;
+let verrouVeille = null;
+let audio = null;
+
+/* ---------------------------------------------------------------- stockage */
+
+function lire(cle, defaut) {
+  try {
+    const brut = localStorage.getItem(cle);
+    return brut ? Object.assign({}, defaut, JSON.parse(brut)) : defaut;
+  } catch (e) {
+    return defaut;
+  }
+}
+
+function lireTableau(cle) {
+  try {
+    const brut = localStorage.getItem(cle);
+    const valeur = brut ? JSON.parse(brut) : [];
+    return Array.isArray(valeur) ? valeur : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function ecrire(cle, valeur) {
+  try {
+    localStorage.setItem(cle, JSON.stringify(valeur));
+  } catch (e) {
+    console.warn('Enregistrement impossible', e);
+  }
+}
+
+function enregistrerSeance() {
+  if (seance) ecrire(CLES.seance, seance);
+  else localStorage.removeItem(CLES.seance);
+}
+
+/* ------------------------------------------------------------------ écrans */
+
+const $ = (id) => document.getElementById(id);
+
+function afficher(nom) {
+  document.querySelectorAll('.ecran').forEach((e) => e.classList.remove('actif'));
+  $('ecran-' + nom).classList.add('actif');
+  window.scrollTo(0, 0);
+  const corps = $('ecran-' + nom).querySelector('.corps');
+  if (corps) corps.scrollTop = 0;
+}
+
+/* ------------------------------------------------------------- utilitaires */
+
+function jourDe(code) {
+  return programme.jours.find((j) => j.code === code) || null;
+}
+
+function nombreOuNull(valeur) {
+  if (valeur === '' || valeur === null || valeur === undefined) return null;
+  const n = Number(String(valeur).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function texteDuree(secondes) {
+  const s = Math.max(0, Math.round(secondes));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function dateCourte(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function ilYA(iso) {
+  const jours = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (jours <= 0) return "aujourd'hui";
+  if (jours === 1) return 'hier';
+  if (jours < 7) return 'il y a ' + jours + ' jours';
+  const semaines = Math.round(jours / 7);
+  return 'il y a ' + semaines + (semaines === 1 ? ' semaine' : ' semaines');
+}
+
+/* Le tonnage ignore l'échauffement : c'est le travail réel qu'on veut comparer. */
+function tonnageDesSeries(series) {
+  return series.reduce((somme, s) => {
+    if (s.echauffement || !s.faite) return somme;
+    return somme + (s.charge || 0) * (s.reps || 0);
+  }, 0);
+}
+
+/* ------------------------------------------- ce qui a été fait la dernière fois */
+
+/* Cherche d'abord dans les séances enregistrées sur le téléphone, puis dans
+   l'historique repris du classeur. Le deload est écarté : comparer une séance
+   normale à une semaine de décharge fausserait la lecture de la progression. */
+function derniereFois(codeJour, nomExo) {
+  const passees = lireTableau(CLES.historique)
+    .filter((s) => s.jour === codeJour && s.fin)
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin));
+
+  for (const s of passees) {
+    if (seance && s.id === seance.id) continue;
+    const exo = (s.exercices || []).find((e) => e.nom === nomExo);
+    if (exo && exo.series.some((x) => x.faite)) {
+      return {
+        quand: s.fin,
+        series: exo.series.filter((x) => x.faite && !x.echauffement),
+        tonnage: tonnageDesSeries(exo.series),
+      };
+    }
+  }
+
+  const jour = jourDe(codeJour);
+  const fiche = jour && jour.exercices.find((e) => e.nom === nomExo);
+  if (!fiche || !fiche.historique.length) return null;
+  const ancien = fiche.historique.filter((h) => !h.deload).pop();
+  if (!ancien) return null;
+  return {
+    quand: null,
+    dateTexte: ancien.date,
+    series: ancien.series.filter((s) => !s.echauffement),
+    tonnage: ancien.total,
+  };
+}
+
+/* ---------------------------------------------------------------- accueil */
+
+function rendreAccueil() {
+  const liste = $('liste-jours');
+  liste.innerHTML = '';
+
+  programme.jours.forEach((jour) => {
+    const item = document.createElement('li');
+    const bouton = document.createElement('button');
+    bouton.className = 'carte-jour';
+
+    const titre = jour.titre.replace(/^J\d\s*/, '').replace(/^-\s*/, '');
+    const [nom, ...reste] = titre.split(/\s+-\s+/);
+
+    if (jour.type === 'footing') {
+      bouton.disabled = true;
+      bouton.innerHTML =
+        '<div class="carte-code">' + jour.code + '</div>' +
+        '<div class="carte-nom">' + echapper(nom || 'Footing') + '</div>' +
+        '<div class="carte-detail">Pas de suivi de charges</div>';
+    } else {
+      const derniere = derniereSeanceDuJour(jour.code);
+      bouton.innerHTML =
+        '<div class="carte-code">' + jour.code + '</div>' +
+        '<div class="carte-nom">' + echapper(nom) + '</div>' +
+        '<div class="carte-detail">' +
+        jour.exercices.length + ' exercices' +
+        (reste.length ? ' &middot; ' + echapper(reste.join(' ')) : '') +
+        (derniere ? '<br>Dernière : ' + ilYA(derniere.fin) : '') +
+        '</div>';
+      bouton.addEventListener('click', () => commencer(jour.code));
+    }
+
+    item.appendChild(bouton);
+    liste.appendChild(item);
+  });
+
+  const enCours = lire(CLES.seance, null);
+  if (enCours && enCours.jour && !enCours.fin) {
+    $('reprise').hidden = false;
+    $('reprise-jour').textContent = enCours.jour;
+    $('reprise-quand').textContent = ilYA(enCours.debut);
+  } else {
+    $('reprise').hidden = true;
+  }
+
+  rendreEtatSync();
+}
+
+function derniereSeanceDuJour(code) {
+  return lireTableau(CLES.historique)
+    .filter((s) => s.jour === code && s.fin)
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin))[0] || null;
+}
+
+function echapper(texte) {
+  const d = document.createElement('div');
+  d.textContent = texte == null ? '' : String(texte);
+  return d.innerHTML;
+}
+
+function rendreEtatSync() {
+  const attente = lireTableau(CLES.historique).filter((s) => s.fin && !s.envoye);
+  const cible = $('etat-sync');
+  if (!attente.length) {
+    cible.textContent = reglages.pont ? 'Classeur à jour.' : 'Pont vers le classeur non configuré.';
+    return;
+  }
+  cible.textContent = attente.length + ' séance' + (attente.length > 1 ? 's' : '') +
+    ' en attente d\'envoi vers le classeur.';
+}
+
+/* -------------------------------------------------------- démarrer / reprendre */
+
+function commencer(code) {
+  const jour = jourDe(code);
+  if (!jour) return;
+
+  seance = {
+    id: 'S' + Date.now(),
+    jour: code,
+    titre: jour.titre,
+    debut: new Date().toISOString(),
+    fin: null,
+    envoye: false,
+    exercices: jour.exercices.map((exo) => ({
+      numero: exo.numero,
+      nom: exo.nom,
+      muscle: exo.muscle,
+      repos_s: exo.repos_s,
+      series: nouvellesSeries(exo),
+    })),
+  };
+  indexExo = 0;
+  enregistrerSeance();
+  demanderVeille();
+  afficher('seance');
+  rendreExercice();
+}
+
+function nouvellesSeries(exo) {
+  const combien = exo.series || 3;
+  const series = [];
+  for (let i = 0; i < combien; i++) {
+    series.push({
+      charge: null,
+      reps: null,
+      rir: exo.rir && exo.rir[i] !== undefined ? exo.rir[i] : null,
+      faite: false,
+      echauffement: false,
+    });
+  }
+  return series;
+}
+
+function reprendre() {
+  seance = lire(CLES.seance, null);
+  if (!seance) return;
+  indexExo = seance.exercices.findIndex((e) => e.series.some((s) => !s.faite));
+  if (indexExo < 0) indexExo = seance.exercices.length - 1;
+  demanderVeille();
+  afficher('seance');
+  rendreExercice();
+}
+
+/* ---------------------------------------------------------------- exercice */
+
+function ficheExercice() {
+  const jour = jourDe(seance.jour);
+  const courant = seance.exercices[indexExo];
+  return jour.exercices.find((e) => e.nom === courant.nom) || {};
+}
+
+function rendreExercice() {
+  const jour = jourDe(seance.jour);
+  const courant = seance.exercices[indexExo];
+  const fiche = ficheExercice();
+
+  $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
+  $('seance-progression').textContent = (indexExo + 1) + '/' + seance.exercices.length;
+  $('jauge-remplie').style.width = (100 * proportionFaite()) + '%';
+
+  $('exo-nom').textContent = courant.nom;
+  $('exo-muscle').textContent = fiche.muscle || '';
+  $('exo-prescription').textContent = fiche.series
+    ? fiche.series + ' × ' + (fiche.reps_min === fiche.reps_max
+        ? fiche.reps_min
+        : fiche.reps_min + '-' + fiche.reps_max)
+    : '';
+  $('exo-rir').textContent = fiche.rir && fiche.rir.length ? 'RIR ' + fiche.rir.join(' / ') : '';
+
+  const bloc = $('exo-consigne-bloc');
+  if (fiche.consigne) {
+    bloc.hidden = false;
+    $('exo-consigne').textContent = fiche.consigne;
+  } else {
+    bloc.hidden = true;
+  }
+
+  rendreSeries();
+
+  $('bouton-precedent').disabled = indexExo === 0;
+  $('bouton-suivant').disabled = indexExo === seance.exercices.length - 1;
+}
+
+function proportionFaite() {
+  let total = 0;
+  let faites = 0;
+  seance.exercices.forEach((e) => {
+    e.series.forEach((s) => {
+      total++;
+      if (s.faite) faites++;
+    });
+  });
+  return total ? faites / total : 0;
+}
+
+function rendreSeries() {
+  const courant = seance.exercices[indexExo];
+  const avant = derniereFois(seance.jour, courant.nom);
+  const liste = $('series');
+  liste.innerHTML = '';
+
+  const travail = courant.series.filter((s) => !s.echauffement);
+  let rangTravail = 0;
+
+  courant.series.forEach((serie, index) => {
+    const ligne = document.createElement('li');
+    ligne.className = 'ligne-serie';
+    if (serie.faite) ligne.classList.add('faite');
+    if (serie.echauffement) ligne.classList.add('echauffement');
+    if (index === prochaineSerie(courant)) ligne.classList.add('courante');
+
+    const rang = serie.echauffement ? null : rangTravail++;
+    const reference = (avant && rang !== null) ? avant.series[rang] : null;
+
+    // Numéro : un appui bascule la série en échauffement, qui ne compte pas
+    // dans le tonnage ni dans la comparaison avec la dernière fois.
+    const numero = document.createElement('button');
+    numero.className = 'num-serie';
+    numero.type = 'button';
+    numero.textContent = serie.echauffement ? 'ÉCH' : String(rang + 1);
+    numero.title = 'Basculer en échauffement';
+    numero.addEventListener('click', () => {
+      serie.echauffement = !serie.echauffement;
+      enregistrerSeance();
+      rendreSeries();
+    });
+
+    const cellAvant = document.createElement('div');
+    cellAvant.className = 'avant';
+    cellAvant.innerHTML = texteComparaison(reference, serie);
+
+    const champCharge = champ(serie.charge, reference ? reference.charge : null, 'kg', (v) => {
+      serie.charge = v;
+      enregistrerSeance();
+      majTonnage();
+      cellAvant.innerHTML = texteComparaison(reference, serie);
+    });
+
+    const champReps = champ(serie.reps, reference ? reference.reps : null, 'reps', (v) => {
+      serie.reps = v;
+      enregistrerSeance();
+      majTonnage();
+      cellAvant.innerHTML = texteComparaison(reference, serie);
+    });
+
+    const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
+      serie.rir = v;
+      enregistrerSeance();
+    });
+
+    const valider = document.createElement('button');
+    valider.className = 'valider';
+    valider.type = 'button';
+    valider.innerHTML = serie.faite ? '&#10003;' : '&#9675;';
+    valider.setAttribute('aria-label', serie.faite ? 'Annuler la série' : 'Valider la série');
+    valider.addEventListener('click', () => basculerSerie(courant, serie, index));
+
+    ligne.append(numero, cellAvant, champCharge, champReps, champRir, valider);
+    liste.appendChild(ligne);
+  });
+
+  majTonnage(avant);
+}
+
+function prochaineSerie(exercice) {
+  const index = exercice.series.findIndex((s) => !s.faite);
+  return index < 0 ? -1 : index;
+}
+
+function champ(valeur, suggestion, etiquette, aChange) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'decimal';
+  input.value = valeur === null || valeur === undefined ? '' : String(valeur);
+  input.placeholder = suggestion === null || suggestion === undefined ? '' : String(suggestion);
+  input.setAttribute('aria-label', etiquette);
+  input.addEventListener('input', () => aChange(nombreOuNull(input.value)));
+  input.addEventListener('focus', () => input.select());
+  return input;
+}
+
+/* Chiffres de la dernière fois, plus une flèche dès que la saisie du jour
+   les dépasse ou reste en dessous : c'est la surcharge progressive, lue d'un
+   coup d'oeil entre deux séries. */
+function texteComparaison(reference, serie) {
+  if (!reference) return '<span style="opacity:.45">&mdash;</span>';
+
+  const base = (reference.charge != null ? reference.charge : '?') +
+    '&times;' + (reference.reps != null ? reference.reps : '?') +
+    (reference.rir != null ? ' <span style="opacity:.6">@' + reference.rir + '</span>' : '');
+
+  if (serie.charge == null && serie.reps == null) return base;
+
+  const avant = (reference.charge || 0) * (reference.reps || 0);
+  const apres = (serie.charge || 0) * (serie.reps || 0);
+  if (!avant || !apres) return base;
+
+  if (apres > avant) return base + ' <span class="fleche hausse">&#9650;</span>';
+  if (apres < avant) return base + ' <span class="fleche baisse">&#9660;</span>';
+  return base + ' <span class="fleche">=</span>';
+}
+
+/* Compare deux cumuls comparables, jamais un cumul en cours au total fini de
+   la dernière fois : sans quoi la première série de la séance afficherait
+   presque toujours un grand écart négatif, y compris quand elle est
+   meilleure que son équivalent précédent, puisqu'elle serait comparée à
+   quatre séries contre une seule. La comparaison porte donc sur autant de
+   séries de travail que ce qui a déjà été validé aujourd'hui. */
+function majTonnage(avantConnu) {
+  const courant = seance.exercices[indexExo];
+  const avant = avantConnu !== undefined ? avantConnu : derniereFois(seance.jour, courant.nom);
+  const actuel = tonnageDesSeries(courant.series);
+
+  $('tonnage-actuel').textContent = actuel;
+
+  const cible = $('tonnage-compare');
+  cible.className = 'compare';
+  if (!avant || !avant.series.length) {
+    cible.textContent = '';
+    return;
+  }
+
+  const faites = courant.series.filter((s) => !s.echauffement && s.faite).length;
+  const complet = faites >= avant.series.length;
+  const reference = complet
+    ? avant.tonnage
+    : avant.series.slice(0, faites).reduce((s, x) => s + (x.charge || 0) * (x.reps || 0), 0);
+
+  if (!faites) {
+    cible.textContent = 'dernière fois au total ' + avant.tonnage;
+    return;
+  }
+
+  const ecart = actuel - reference;
+  const signe = ecart > 0 ? '+' : '';
+  const etiquette = complet ? 'dernière fois' : 'dernière fois à ce stade';
+  cible.textContent = etiquette + ' ' + reference + ' (' + signe + ecart + ')';
+  if (ecart > 0) cible.classList.add('hausse');
+  else if (ecart < 0) cible.classList.add('baisse');
+}
+
+function basculerSerie(exercice, serie, index) {
+  if (serie.faite) {
+    serie.faite = false;
+    enregistrerSeance();
+    rendreSeries();
+    rendreJauge();
+    return;
+  }
+
+  // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
+  // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
+  if (serie.charge == null || serie.reps == null) {
+    const avant = derniereFois(seance.jour, exercice.nom);
+    const rang = exercice.series.slice(0, index).filter((s) => !s.echauffement).length;
+    const reference = avant && !serie.echauffement ? avant.series[rang] : null;
+    if (reference) {
+      if (serie.charge == null) serie.charge = reference.charge;
+      if (serie.reps == null) serie.reps = reference.reps;
+    }
+  }
+
+  serie.faite = true;
+  serie.heure = new Date().toISOString();
+  enregistrerSeance();
+  rendreSeries();
+  rendreJauge();
+
+  const fiche = ficheExercice();
+  if (!serie.echauffement || fiche.repos_s) {
+    lancerMinuterie(fiche.repos_s || 90, exercice, index);
+  }
+}
+
+function rendreJauge() {
+  $('jauge-remplie').style.width = (100 * proportionFaite()) + '%';
+}
+
+/* --------------------------------------------------------------- minuterie */
+
+function lancerMinuterie(secondes, exercice, indexSerie) {
+  const restantes = exercice.series.length - (indexSerie + 1);
+  minuterie = {
+    fin: Date.now() + secondes * 1000,
+    duree: secondes,
+    libelle: restantes > 0
+      ? 'Ensuite : série ' + (indexSerie + 2) + ' sur ' + exercice.series.length
+      : 'Dernière série de ' + exercice.nom,
+    sonne: false,
+  };
+  $('minuterie').hidden = false;
+  battre();
+  if (tictac) clearInterval(tictac);
+  tictac = setInterval(battre, 250);
+}
+
+function battre() {
+  if (!minuterie) return;
+  const restant = (minuterie.fin - Date.now()) / 1000;
+  const chiffres = $('minuterie-chiffres');
+
+  if (restant <= 0) {
+    chiffres.textContent = '+' + texteDuree(-restant);
+    chiffres.classList.add('ecoule');
+    $('minuterie-suite').textContent = minuterie.libelle + ' &middot; prêt';
+    if (!minuterie.sonne) {
+      minuterie.sonne = true;
+      signaler();
+    }
+  } else {
+    chiffres.textContent = texteDuree(restant);
+    chiffres.classList.remove('ecoule');
+    $('minuterie-suite').textContent = minuterie.libelle;
+  }
+}
+
+function arreterMinuterie() {
+  minuterie = null;
+  if (tictac) clearInterval(tictac);
+  tictac = null;
+  $('minuterie').hidden = true;
+  $('minuterie-chiffres').classList.remove('ecoule');
+}
+
+function signaler() {
+  if (reglages.vibration && navigator.vibrate) navigator.vibrate([180, 90, 180]);
+  if (!reglages.son) return;
+  try {
+    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    [0, 0.22, 0.44].forEach((decalage) => {
+      const oscillateur = audio.createOscillator();
+      const volume = audio.createGain();
+      oscillateur.frequency.value = 880;
+      oscillateur.connect(volume);
+      volume.connect(audio.destination);
+      const debut = audio.currentTime + decalage;
+      volume.gain.setValueAtTime(0.0001, debut);
+      volume.gain.exponentialRampToValueAtTime(0.3, debut + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.0001, debut + 0.18);
+      oscillateur.start(debut);
+      oscillateur.stop(debut + 0.2);
+    });
+  } catch (e) {
+    console.warn('Signal sonore indisponible', e);
+  }
+}
+
+/* ------------------------------------------------------------------ veille */
+
+/* Un téléphone qui s'éteint entre deux séries oblige à le déverrouiller les
+   mains pleines. Le verrou est relâché par le système à chaque masquage de
+   l'onglet : on le redemande au retour. */
+function demanderVeille() {
+  if (!reglages.veille || !('wakeLock' in navigator)) return;
+  navigator.wakeLock.request('screen').then((verrou) => {
+    verrouVeille = verrou;
+  }).catch(() => {});
+}
+
+function relacherVeille() {
+  if (verrouVeille) {
+    verrouVeille.release().catch(() => {});
+    verrouVeille = null;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (seance && !seance.fin) demanderVeille();
+    if (minuterie) battre();
+  }
+});
+
+/* ------------------------------------------------------------ fin de séance */
+
+function terminer() {
+  arreterMinuterie();
+  const resume = $('fin-resume');
+  const exercicesFaits = seance.exercices.filter((e) => e.series.some((s) => s.faite));
+  const tonnage = seance.exercices.reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
+  const seriesFaites = seance.exercices.reduce(
+    (somme, e) => somme + e.series.filter((s) => s.faite && !s.echauffement).length, 0);
+  const duree = Math.round((Date.now() - new Date(seance.debut).getTime()) / 60000);
+
+  const precedente = derniereSeanceDuJour(seance.jour);
+  let comparaison = '';
+  if (precedente) {
+    const avant = (precedente.exercices || []).reduce(
+      (somme, e) => somme + tonnageDesSeries(e.series), 0);
+    if (avant) {
+      const ecart = tonnage - avant;
+      comparaison = '<p class="carte-detail">Dernière séance ' + avant + ' kg, soit ' +
+        (ecart >= 0 ? '+' : '') + ecart + '.</p>';
+    }
+  }
+
+  resume.innerHTML =
+    '<h3>' + echapper(seance.titre.split(/\s+-\s+/)[0]) + '</h3>' +
+    '<div class="chiffres">' +
+      '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
+      '<div class="chiffre"><b>' + seriesFaites + '</b><span>séries</span></div>' +
+      '<div class="chiffre"><b>' + tonnage + '</b><span>kg soulevés</span></div>' +
+    '</div>' + comparaison +
+    exercicesFaits.map((e) =>
+      '<div class="resume-exo">' +
+        '<div class="resume-exo-nom">' + echapper(e.nom) + '</div>' +
+        '<div class="resume-exo-series">' +
+          e.series.filter((s) => s.faite)
+            .map((s) => (s.echauffement ? 'éch ' : '') +
+              (s.charge != null ? s.charge : '?') + '×' + (s.reps != null ? s.reps : '?') +
+              (s.rir != null ? ' @' + s.rir : ''))
+            .join('  ·  ') +
+        '</div>' +
+      '</div>').join('');
+
+  if (!exercicesFaits.length) {
+    resume.innerHTML += '<p class="vide">Aucune série validée.</p>';
+  }
+
+  $('fin-message').textContent = '';
+  $('fin-message').className = 'message';
+  $('bouton-enregistrer').disabled = false;
+  afficher('fin');
+}
+
+function enregistrerEtSynchroniser() {
+  seance.fin = new Date().toISOString();
+  const historique = lireTableau(CLES.historique).filter((s) => s.id !== seance.id);
+  historique.push(seance);
+  ecrire(CLES.historique, historique);
+
+  localStorage.removeItem(CLES.seance);
+  relacherVeille();
+
+  const message = $('fin-message');
+  $('bouton-enregistrer').disabled = true;
+
+  if (!reglages.pont) {
+    message.className = 'message';
+    message.textContent = 'Séance enregistrée sur le téléphone. Le pont vers le classeur ' +
+      "n'est pas configuré : rendez-vous dans les réglages.";
+    seance = null;
+    rendreAccueil();
+    setTimeout(() => afficher('accueil'), 2200);
+    return;
+  }
+
+  message.className = 'message';
+  message.textContent = 'Envoi vers le classeur...';
+  synchroniser().then((compte) => {
+    message.className = 'message ok';
+    message.textContent = compte
+      ? 'Classeur mis à jour.'
+      : 'Séance gardée sur le téléphone, envoi à réessayer.';
+    seance = null;
+    rendreAccueil();
+    setTimeout(() => afficher('accueil'), 1600);
+  }).catch((erreur) => {
+    message.className = 'message erreur';
+    message.textContent = "Envoi impossible : " + erreur.message +
+      ' La séance reste enregistrée sur le téléphone et repartira plus tard.';
+    seance = null;
+    rendreAccueil();
+  });
+}
+
+/* ------------------------------------------------- pont vers le classeur */
+
+/* Le pont est un script Apps Script publié depuis le classeur lui-même : pas
+   de projet Google Cloud, pas de parcours OAuth dans l'application, et rien à
+   renouveler. Le corps part en text/plain pour éviter la requête préalable
+   CORS, qu'Apps Script ne sait pas honorer. */
+async function envoyer(charge) {
+  const reponse = await fetch(reglages.pont, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ secret: reglages.secret }, charge)),
+    redirect: 'follow',
+  });
+  if (!reponse.ok) throw new Error('le pont a répondu ' + reponse.status + '.');
+  const resultat = await reponse.json();
+  if (!resultat.ok) throw new Error(resultat.erreur || 'réponse inattendue du pont.');
+  return resultat;
+}
+
+async function synchroniser() {
+  if (!reglages.pont) return 0;
+  const historique = lireTableau(CLES.historique);
+  const attente = historique.filter((s) => s.fin && !s.envoye);
+  let envoyees = 0;
+
+  for (const s of attente) {
+    await envoyer({ action: 'seance', seance: s });
+    s.envoye = true;
+    s.envoye_le = new Date().toISOString();
+    envoyees++;
+  }
+
+  ecrire(CLES.historique, historique);
+  rendreEtatSync();
+  return envoyees;
+}
+
+/* --------------------------------------------------------------- réglages */
+
+function rendreReglages() {
+  $('reglage-pont').value = reglages.pont;
+  $('reglage-secret').value = reglages.secret;
+  $('reglage-son').checked = reglages.son;
+  $('reglage-vibration').checked = reglages.vibration;
+  $('reglage-veille').checked = reglages.veille;
+  $('reglages-message').textContent = '';
+  $('reglages-message').className = 'message';
+  $('note-programme').textContent = programme
+    ? 'Programme importé le ' + dateCourte(programme.importe_le) + '.'
+    : '';
+}
+
+function sauverReglages() {
+  reglages = {
+    pont: $('reglage-pont').value.trim(),
+    secret: $('reglage-secret').value.trim(),
+    son: $('reglage-son').checked,
+    vibration: $('reglage-vibration').checked,
+    veille: $('reglage-veille').checked,
+  };
+  ecrire(CLES.reglages, reglages);
+}
+
+function rendreHistorique() {
+  const cible = $('liste-historique');
+  const seances = lireTableau(CLES.historique)
+    .filter((s) => s.fin)
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin));
+
+  if (!seances.length) {
+    cible.innerHTML = '<p class="vide">Aucune séance enregistrée pour le moment.</p>';
+    return;
+  }
+
+  cible.innerHTML = seances.map((s) => {
+    const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
+    const series = (s.exercices || []).reduce(
+      (somme, e) => somme + e.series.filter((x) => x.faite && !x.echauffement).length, 0);
+    return '<div class="entree-historique">' +
+      '<div class="titre"><span>' + echapper(s.jour) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
+      '<span class="badge ' + (s.envoye ? 'envoye">classeur' : 'attente">en attente') + '</span></div>' +
+      '<div class="details">' + series + ' séries, ' + tonnage + ' kg</div>' +
+      '</div>';
+  }).join('');
+}
+
+/* --------------------------------------------------------------- démarrage */
+
+function brancher() {
+  $('bouton-reprendre').addEventListener('click', reprendre);
+  $('bouton-abandonner').addEventListener('click', () => {
+    if (!confirm('Abandonner la séance en cours ? Les séries saisies seront perdues.')) return;
+    localStorage.removeItem(CLES.seance);
+    seance = null;
+    rendreAccueil();
+  });
+
+  $('bouton-quitter').addEventListener('click', () => {
+    arreterMinuterie();
+    relacherVeille();
+    rendreAccueil();
+    afficher('accueil');
+  });
+
+  $('bouton-terminer').addEventListener('click', terminer);
+  $('bouton-precedent').addEventListener('click', () => {
+    if (indexExo > 0) { indexExo--; arreterMinuterie(); rendreExercice(); }
+  });
+  $('bouton-suivant').addEventListener('click', () => {
+    if (indexExo < seance.exercices.length - 1) { indexExo++; arreterMinuterie(); rendreExercice(); }
+  });
+
+  $('bouton-serie').addEventListener('click', () => {
+    const courant = seance.exercices[indexExo];
+    const modele = courant.series[courant.series.length - 1] || {};
+    courant.series.push({
+      charge: modele.charge != null ? modele.charge : null,
+      reps: null,
+      rir: null,
+      faite: false,
+      echauffement: false,
+    });
+    enregistrerSeance();
+    rendreSeries();
+  });
+
+  $('minuterie-passer').addEventListener('click', arreterMinuterie);
+  $('minuterie-plus').addEventListener('click', () => {
+    if (minuterie) { minuterie.fin += 15000; minuterie.sonne = false; battre(); }
+  });
+  $('minuterie-moins').addEventListener('click', () => {
+    if (minuterie) { minuterie.fin -= 15000; battre(); }
+  });
+
+  $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);
+  $('bouton-fin-retour').addEventListener('click', () => { afficher('seance'); rendreExercice(); });
+
+  $('bouton-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });
+  $('bouton-reglages-retour').addEventListener('click', () => {
+    sauverReglages();
+    rendreAccueil();
+    afficher('accueil');
+  });
+  ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille']
+    .forEach((id) => $(id).addEventListener('change', sauverReglages));
+
+  $('bouton-tester-pont').addEventListener('click', async () => {
+    sauverReglages();
+    const message = $('reglages-message');
+    if (!reglages.pont) {
+      message.className = 'message erreur';
+      message.textContent = "Renseignez d'abord l'adresse du pont.";
+      return;
+    }
+    message.className = 'message';
+    message.textContent = 'Test en cours...';
+    try {
+      const resultat = await envoyer({ action: 'ping' });
+      message.className = 'message ok';
+      message.textContent = 'Pont joignable. Classeur : ' + (resultat.classeur || 'sans nom') + '.';
+    } catch (erreur) {
+      message.className = 'message erreur';
+      message.textContent = 'Échec : ' + erreur.message;
+    }
+  });
+
+  $('bouton-exporter').addEventListener('click', () => {
+    const contenu = JSON.stringify(lireTableau(CLES.historique), null, 1);
+    const lien = document.createElement('a');
+    lien.href = URL.createObjectURL(new Blob([contenu], { type: 'application/json' }));
+    lien.download = 'seances.json';
+    lien.click();
+    setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+  });
+
+  $('bouton-historique').addEventListener('click', () => { rendreHistorique(); afficher('historique'); });
+  $('bouton-historique-retour').addEventListener('click', () => afficher('accueil'));
+
+  window.addEventListener('online', () => {
+    synchroniser().catch(() => {});
+  });
+}
+
+async function demarrer() {
+  try {
+    const reponse = await fetch('data/programme.json', { cache: 'no-cache' });
+    programme = await reponse.json();
+  } catch (e) {
+    document.body.innerHTML =
+      '<p class="vide">Programme introuvable. Lancez <code>python outils/importer_classeur.py</code>.</p>';
+    return;
+  }
+
+  brancher();
+  rendreAccueil();
+  afficher('accueil');
+
+  if (navigator.onLine) synchroniser().catch(() => {});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+demarrer();

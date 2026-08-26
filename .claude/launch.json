@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "muscu",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["dev_server.py"],
+      "port": 5600
+    }
+  ]
+}
