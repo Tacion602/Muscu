@@ -63,6 +63,7 @@ let indexExo = 0;
 let minuterie = null;    // { fin: ms, duree: s, libelle: string }
 let tictac = null;
 let tictacChrono = null;  // rafraîchit le chronomètre des jours de footing
+let tictacSeance = null;  // rafraîchit le chronomètre de la séance de musculation
 let verrouVeille = null;
 let audio = null;
 
@@ -470,6 +471,65 @@ function basculerChrono() {
   enregistrerSeance();
 }
 
+/* ------------------------------------------- chronomètre de la séance entière */
+
+/* Compté depuis l'horodatage de départ plutôt que par incréments : le
+   téléphone verrouillé ou l'application en arrière-plan, ce qui arrive à
+   chaque série, ne fait donc rien perdre. La durée obtenue part dans le
+   classeur et sert de repère de densité d'entraînement. */
+function chronoSeance() {
+  if (!seance.chrono) seance.chrono = { demarre: null, cumul: 0, arrete: false };
+  return seance.chrono;
+}
+
+function dureeSeanceMs() {
+  const chrono = chronoSeance();
+  return (chrono.cumul || 0) + (chrono.demarre ? Date.now() - chrono.demarre : 0);
+}
+
+function majChronoSeance() {
+  const chrono = chronoSeance();
+  const demarrer = $('chrono-seance-demarrer');
+  const arreter = $('chrono-seance-arreter');
+  const ecoule = dureeSeanceMs();
+
+  demarrer.classList.toggle('tourne', !!chrono.demarre);
+  $('chrono-seance-temps').textContent = ecoule ? texteDuree(ecoule / 1000) : '';
+  demarrer.querySelector('.chrono-seance-icone').innerHTML = chrono.demarre ? '&#10073;&#10073;' : '&#9654;';
+
+  // Le bouton rouge n'apparaît que sur le dernier exercice, là où l'on est
+  // censé conclure : ailleurs, l'arrêt serait presque toujours une erreur.
+  const dernier = indexExo === seance.exercices.length - 1;
+  arreter.hidden = !(dernier && (chrono.demarre || chrono.cumul));
+}
+
+function basculerChronoSeance() {
+  const chrono = chronoSeance();
+  if (chrono.demarre) {
+    chrono.cumul = (chrono.cumul || 0) + (Date.now() - chrono.demarre);
+    chrono.demarre = null;
+    if (tictacSeance) { clearInterval(tictacSeance); tictacSeance = null; }
+  } else {
+    chrono.demarre = Date.now();
+    chrono.arrete = false;
+    if (!tictacSeance) tictacSeance = setInterval(majChronoSeance, 1000);
+  }
+  enregistrerSeance();
+  majChronoSeance();
+}
+
+function arreterChronoSeance() {
+  const chrono = chronoSeance();
+  if (chrono.demarre) {
+    chrono.cumul = (chrono.cumul || 0) + (Date.now() - chrono.demarre);
+    chrono.demarre = null;
+  }
+  chrono.arrete = true;
+  if (tictacSeance) { clearInterval(tictacSeance); tictacSeance = null; }
+  enregistrerSeance();
+  majChronoSeance();
+}
+
 function rendreExercice() {
   const jour = jourDe(seance.jour);
   const courant = seance.exercices[indexExo];
@@ -483,6 +543,11 @@ function rendreExercice() {
   $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
   $('seance-progression').textContent = (indexExo + 1) + '/' + seance.exercices.length;
   $('jauge-remplie').style.width = (100 * proportionFaite()) + '%';
+
+  majChronoSeance();
+  if (chronoSeance().demarre && !tictacSeance) {
+    tictacSeance = setInterval(majChronoSeance, 1000);
+  }
 
   $('exo-nom').textContent = courant.nom;
   $('exo-muscle').textContent = fiche.muscle || '';
@@ -864,11 +929,20 @@ function terminer() {
     return;
   }
 
+  // Le chrono encore en marche est arrêté ici : c'est bien la fin de séance.
+  if (chronoSeance().demarre) arreterChronoSeance();
+
   const exercicesFaits = seance.exercices.filter((e) => e.series.some((s) => s.faite));
   const tonnage = seance.exercices.reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
   const seriesFaites = seance.exercices.reduce(
     (somme, e) => somme + e.series.filter((s) => s.faite && !s.echauffement).length, 0);
-  const duree = Math.round((Date.now() - new Date(seance.debut).getTime()) / 60000);
+  // Le chronomètre fait foi s'il a servi : il mesure le temps réellement passé
+  // à s'entraîner, là où l'écart début/fin compte aussi les interruptions.
+  const mesure = dureeSeanceMs();
+  const duree = mesure
+    ? Math.round(mesure / 60000)
+    : Math.round((Date.now() - new Date(seance.debut).getTime()) / 60000);
+  seance.duree_min = duree;
 
   const precedente = derniereSeanceDuJour(seance.jour);
   let comparaison = '';
@@ -1098,6 +1172,8 @@ function brancher() {
   });
 
   $('bouton-terminer').addEventListener('click', terminer);
+  $('chrono-seance-demarrer').addEventListener('click', basculerChronoSeance);
+  $('chrono-seance-arreter').addEventListener('click', arreterChronoSeance);
   $('chrono-demarrer').addEventListener('click', basculerChrono);
   $('chrono-remettre').addEventListener('click', () => {
     if (!confirm('Remettre le chronomètre à zéro ?')) return;

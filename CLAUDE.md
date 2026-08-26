@@ -121,10 +121,34 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   - **il n'écrase pas une durée saisie à la main s'il a tourné moins d'une
     minute** : un démarrage accidentel suivi d'un arrêt effaçait sinon une
     durée déjà notée, défaut trouvé en testant le 26 août 2026.
-- **Un footing s'écrit sur une seule ligne dans le classeur**, distance en
-  colonne Charge et durée en colonne Reps (`ecrireSeance` dans
-  `appsscript/Code.gs`), plutôt que d'ajouter des colonnes qui resteraient
-  vides pour toutes les séances de musculation.
+- **Le classeur reçoit trois onglets, un par granularité d'analyse**
+  (`ecrireSeance` dans `appsscript/Code.gs`), refondus le 26 août 2026 pour
+  se prêter directement aux graphiques :
+  - `Séries (app)` : une ligne par série, avec son tonnage. Le détail.
+  - `Exercices (app)` : une ligne par exercice et par séance, avec séries,
+    répétitions totales, charge maximale, tonnage et RIR moyen. C'est la
+    source des courbes de progression par mouvement, la vue la plus utile.
+  - `Séances (app)` : une ligne par séance, avec durée, séries et tonnage
+    total ; distance et allure pour les footings.
+
+  Deux partis pris à conserver :
+  - **chaque onglet porte une colonne `Semaine`** au format ISO
+    (`2026-S35`) : un programme est hebdomadaire, et sans elle chaque
+    graphique devrait recalculer le regroupement par formule ;
+  - **l'échauffement figure dans `Séries` mais ne compte dans aucun tonnage
+    agrégé** : une montée en charge gonflerait le volume sans correspondre à
+    du travail effectif.
+
+  Les colonnes `Debut seance` et `Fin seance` ont été retirées, redondantes
+  avec `Date` et `Duree (min)`.
+- **Un chronomètre mesure la séance entière** : bouton vert à droite du titre
+  de l'exercice pour le lancer ou le mettre en pause, bouton rouge d'arrêt
+  qui n'apparaît que sur la fiche du dernier exercice, là où l'on est censé
+  conclure. Comme celui du footing, il compte depuis son horodatage de départ
+  et survit donc au verrouillage du téléphone. **La durée qu'il mesure fait
+  foi** dans le classeur si le chronomètre a servi : elle reflète le temps
+  réellement passé à s'entraîner, là où l'écart début/fin compterait aussi
+  les interruptions.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement

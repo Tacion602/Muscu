@@ -52,7 +52,16 @@
 
   <main class="corps">
     <div id="bloc-muscu">
-      <h2 id="exo-nom"></h2>
+      <div class="ligne-titre">
+        <h2 id="exo-nom"></h2>
+        <button id="chrono-seance-demarrer" class="chrono-seance vert" type="button" aria-label="Démarrer le chronomètre de séance">
+          <span class="chrono-seance-icone">&#9654;</span>
+          <span id="chrono-seance-temps" class="chrono-seance-temps"></span>
+        </button>
+        <button id="chrono-seance-arreter" class="chrono-seance rouge" type="button" hidden aria-label="Arrêter le chronomètre de séance">
+          <span class="chrono-seance-icone">&#9632;</span>
+        </button>
+      </div>
       <div class="etiquettes">
         <span id="exo-muscle" class="etiquette"></span>
         <span id="exo-prescription" class="etiquette"></span>

@@ -141,7 +141,34 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Fiche d'exercice ---------- */
 
+.ligne-titre { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.ligne-titre h2 { flex: 1; min-width: 0; margin: 0; }
+
 #exo-nom { font-size: 22px; line-height: 1.25; margin: 0 0 10px; }
+
+.chrono-seance {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--rayon);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.chrono-seance[hidden] { display: none; }
+.chrono-seance.vert { background: #2e7d4f; }
+.chrono-seance.vert.tourne { background: #256c43; }
+.chrono-seance.rouge { background: #a33a33; }
+.chrono-seance-icone { font-size: 12px; line-height: 1; }
+.chrono-seance-temps:empty { display: none; }
 
 .etiquettes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .etiquette {
