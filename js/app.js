@@ -503,7 +503,9 @@ function champ(valeur, suggestion, etiquette, aChange) {
    quatre séries contre une seule. La comparaison porte donc sur autant de
    séries de travail que ce qui a déjà été validé aujourd'hui. Le repère
    intermédiaire ("à ce stade") a été retiré le 26 août 2026 : jugé sans
-   intérêt une fois la coloration par série en place (voir rendreSeries). */
+   intérêt une fois la coloration par série en place (voir rendreSeries). Le
+   total de la semaine passée, lui, reste affiché en permanence dès le début
+   de l'exercice, pour servir de repère avant même la première série. */
 function majTonnage(avantConnu) {
   const courant = seance.exercices[indexExo];
   const avant = avantConnu !== undefined ? avantConnu : derniereFois(seance.jour, courant.nom);
@@ -520,13 +522,13 @@ function majTonnage(avantConnu) {
 
   const faites = courant.series.filter((s) => !s.echauffement && s.faite).length;
   if (faites < avant.series.length) {
-    cible.textContent = '';
+    cible.textContent = 'semaine dernière ' + avant.tonnage;
     return;
   }
 
   const ecart = actuel - avant.tonnage;
   const signe = ecart > 0 ? '+' : '';
-  cible.textContent = 'dernière fois ' + avant.tonnage + ' (' + signe + ecart + ')';
+  cible.textContent = 'semaine dernière ' + avant.tonnage + ' (' + signe + ecart + ')';
   if (ecart > 0) cible.classList.add('hausse');
   else if (ecart < 0) cible.classList.add('baisse');
 }

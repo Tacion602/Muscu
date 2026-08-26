@@ -33,8 +33,12 @@ self.addEventListener('fetch', (evenement) => {
   if (requete.method !== 'GET') return;         // POST vers le pont : jamais intercepté
   if (!requete.url.startsWith(self.location.origin)) return;
 
+  // GitHub Pages sert ces fichiers avec Cache-Control: max-age=600 : sans
+  // "no-store", fetch() peut renvoyer une reponse deja en cache navigateur
+  // sans jamais recontacter le serveur, et ce "reseau d'abord" resservirait
+  // alors une vieille version pendant dix minutes malgre une mise en ligne.
   evenement.respondWith(
-    fetch(requete).then((reponse) => {
+    fetch(requete, { cache: 'no-store' }).then((reponse) => {
       const copie = reponse.clone();
       caches.open(VERSION).then((cache) => cache.put(requete, copie));
       return reponse;
