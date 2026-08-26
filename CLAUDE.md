@@ -97,6 +97,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   reps → RIR → bouton de validation, puis la ligne suivante), construit dans
   `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
   ne pas oublier de le repeupler si la structure de la ligne change.
+- **Une série validée se colore selon son tonnage face à la même série la
+  semaine passée** (`appliquerCouleurTonnage` dans `js/app.js`) : rouge
+  désaturé à -5 % ou moins, vert désaturé à +6 % ou plus, neutre entre les
+  deux. **Limité au jour J1**, décision de l'utilisateur le 26 août 2026 pour
+  juger le principe avant de l'étendre aux autres jours ; ne pas retirer cette
+  restriction sans qu'il le demande.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement

@@ -13,6 +13,13 @@
   --hausse: #56d364;
   --baisse: #f0883e;
   --danger: #f85149;
+  /* Fond des champs d'une série, selon son tonnage face à la même série la
+     semaine passée (prototype J1, voir appliquerCouleurTonnage). Le vert
+     reprend --hausse désaturé ; le rouge est propre à cet usage. */
+  --tonnage-hausse-fond: rgba(107, 173, 114, .3);
+  --tonnage-hausse-bord: rgba(107, 173, 114, .65);
+  --tonnage-baisse-fond: rgba(181, 107, 100, .32);
+  --tonnage-baisse-bord: rgba(181, 107, 100, .68);
   --marge: 16px;
   --rayon: 12px;
 }
@@ -197,15 +204,17 @@ body { display: flex; flex-direction: column; }
 }
 .ligne-serie.faite { background: rgba(47, 126, 122, .12); }
 .ligne-serie.courante { box-shadow: inset 3px 0 0 var(--accent-clair); }
+.ligne-serie.tonnage-hausse input { background: var(--tonnage-hausse-fond); border-color: var(--tonnage-hausse-bord); }
+.ligne-serie.tonnage-baisse input { background: var(--tonnage-baisse-fond); border-color: var(--tonnage-baisse-bord); }
 
 .ligne-serie input {
   width: 100%;
-  height: 50px;
+  height: 60px;
   border: 1px solid var(--trait);
   border-radius: 9px;
   background: var(--fond-champ);
   color: var(--texte);
-  font-size: 20px;
+  font-size: 40px;
   font-weight: 600;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -218,7 +227,7 @@ body { display: flex; flex-direction: column; }
 
 .valider {
   width: 100%;
-  height: 50px;
+  height: 60px;
   border: 1px solid var(--trait);
   border-radius: 9px;
   background: var(--fond-champ);

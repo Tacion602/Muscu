@@ -358,6 +358,24 @@ function enregistrerEditionConsigne() {
   quitterEditionConsigne();
 }
 
+/* Colore les champs d'une série validée selon son écart de tonnage avec la
+   même série la semaine passée : en dessous de -5 %, au-dessus de +6 %, sinon
+   neutre. Prototype limité à J1 le 26 août 2026, avant de juger s'il vaut la
+   peine de l'étendre aux autres jours. */
+function appliquerCouleurTonnage(ligne, serie, reference) {
+  ligne.classList.remove('tonnage-hausse', 'tonnage-baisse');
+  if (seance.jour !== 'J1') return;
+  if (!serie.faite || serie.echauffement || !reference) return;
+
+  const tonnageAvant = (reference.charge || 0) * (reference.reps || 0);
+  if (!tonnageAvant) return;
+  const tonnageMaintenant = (serie.charge || 0) * (serie.reps || 0);
+  const ecart = ((tonnageMaintenant - tonnageAvant) / tonnageAvant) * 100;
+
+  if (ecart <= -5) ligne.classList.add('tonnage-baisse');
+  else if (ecart >= 6) ligne.classList.add('tonnage-hausse');
+}
+
 function proportionFaite() {
   let total = 0;
   let faites = 0;
@@ -391,17 +409,20 @@ function rendreSeries() {
 
     const rang = serie.echauffement ? null : rangTravail++;
     const reference = (avant && rang !== null) ? avant.series[rang] : null;
+    appliquerCouleurTonnage(ligne, serie, reference);
 
     const champCharge = champ(serie.charge, reference ? reference.charge : null, 'kg', (v) => {
       serie.charge = v;
       enregistrerSeance();
       majTonnage();
+      appliquerCouleurTonnage(ligne, serie, reference);
     });
 
     const champReps = champ(serie.reps, reference ? reference.reps : null, 'reps', (v) => {
       serie.reps = v;
       enregistrerSeance();
       majTonnage();
+      appliquerCouleurTonnage(ligne, serie, reference);
     });
 
     const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
@@ -480,7 +501,9 @@ function champ(valeur, suggestion, etiquette, aChange) {
    presque toujours un grand écart négatif, y compris quand elle est
    meilleure que son équivalent précédent, puisqu'elle serait comparée à
    quatre séries contre une seule. La comparaison porte donc sur autant de
-   séries de travail que ce qui a déjà été validé aujourd'hui. */
+   séries de travail que ce qui a déjà été validé aujourd'hui. Le repère
+   intermédiaire ("à ce stade") a été retiré le 26 août 2026 : jugé sans
+   intérêt une fois la coloration par série en place (voir rendreSeries). */
 function majTonnage(avantConnu) {
   const courant = seance.exercices[indexExo];
   const avant = avantConnu !== undefined ? avantConnu : derniereFois(seance.jour, courant.nom);
@@ -496,20 +519,14 @@ function majTonnage(avantConnu) {
   }
 
   const faites = courant.series.filter((s) => !s.echauffement && s.faite).length;
-  const complet = faites >= avant.series.length;
-  const reference = complet
-    ? avant.tonnage
-    : avant.series.slice(0, faites).reduce((s, x) => s + (x.charge || 0) * (x.reps || 0), 0);
-
-  if (!faites) {
-    cible.textContent = 'dernière fois au total ' + avant.tonnage;
+  if (faites < avant.series.length) {
+    cible.textContent = '';
     return;
   }
 
-  const ecart = actuel - reference;
+  const ecart = actuel - avant.tonnage;
   const signe = ecart > 0 ? '+' : '';
-  const etiquette = complet ? 'dernière fois' : 'dernière fois à ce stade';
-  cible.textContent = etiquette + ' ' + reference + ' (' + signe + ecart + ')';
+  cible.textContent = 'dernière fois ' + avant.tonnage + ' (' + signe + ecart + ')';
   if (ecart > 0) cible.classList.add('hausse');
   else if (ecart < 0) cible.classList.add('baisse');
 }
