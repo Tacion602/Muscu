@@ -96,6 +96,18 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   `application/json` : Apps Script ne répond pas à la requête préalable CORS
   qu'un en-tête JSON déclenche, et l'appel échouerait silencieusement en
   production tout en fonctionnant dans les outils de développement.
+- **Une séance sans série validée se synchronise quand même, sans rien écrire**
+  dans le classeur : `ecrireSeance` (`appsscript/Code.gs`) ignore silencieusement
+  les séries dont `faite` est faux, et renvoie `ok:true` même quand elle n'a
+  rien à écrire. L'application affiche alors « Classeur mis à jour », ce qui
+  peut induire en erreur si l'utilisateur a saisi des chiffres sans appuyer sur
+  le rond de validation à droite de la ligne : la saisie seule ne suffit pas.
+- **Les consignes techniques modifiées depuis l'application restent sur le
+  téléphone**, décision de l'utilisateur le 26 août 2026 : la cellule d'origine
+  dans le classeur mélange plusieurs informations (prescription, RIR, muscle,
+  repos), et y écrire automatiquement risquerait de la casser. Stockées dans
+  `localStorage` sous `muscu.consignes`, une clé par `jour|nom d'exercice`
+  (`cleConsigne` dans `js/app.js`), elles ne repartent jamais vers le classeur.
 
 ## Vérifications
 

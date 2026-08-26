@@ -58,9 +58,15 @@
       <span id="exo-rir" class="etiquette"></span>
     </div>
 
-    <details id="exo-consigne-bloc" class="consigne">
+    <details id="exo-consigne-bloc" class="consigne" open>
       <summary>Consigne technique</summary>
       <p id="exo-consigne"></p>
+      <textarea id="exo-consigne-champ" class="consigne-champ" rows="3" hidden></textarea>
+      <div class="consigne-boutons">
+        <button id="bouton-consigne-modifier" class="discret" type="button">Modifier</button>
+        <button id="bouton-consigne-enregistrer" class="discret" type="button" hidden>Enregistrer</button>
+        <button id="bouton-consigne-annuler" class="discret" type="button" hidden>Annuler</button>
+      </div>
     </details>
 
     <div class="tableau-titres">

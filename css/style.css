@@ -150,8 +150,26 @@ body { display: flex; flex-direction: column; }
 
 .consigne { margin-bottom: 14px; }
 .consigne summary { font-size: 13px; color: var(--texte-faible); cursor: pointer; padding: 4px 0; }
-.consigne p { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: var(--texte-faible); }
+.consigne p { margin: 6px 0 8px; font-size: 14px; line-height: 1.5; color: var(--texte-faible); }
+.consigne p.vide-consigne { font-style: italic; opacity: .6; }
 .consigne[hidden] { display: none; }
+
+.consigne-champ {
+  width: 100%;
+  margin: 6px 0 8px;
+  padding: 10px;
+  border: 1px solid var(--trait);
+  border-radius: 9px;
+  background: var(--fond-champ);
+  color: var(--texte);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.consigne-boutons { display: flex; gap: 8px; }
+.consigne-boutons button { width: auto; flex: none; padding: 8px 14px; font-size: 13px; }
+.consigne-boutons [hidden] { display: none; }
 
 /* ---------- Tableau des séries ---------- */
 

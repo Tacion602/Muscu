@@ -8,6 +8,7 @@ const CLES = {
   seance: 'muscu.seance',
   historique: 'muscu.historique',
   reglages: 'muscu.reglages',
+  consignes: 'muscu.consignes',
 };
 
 const REGLAGES_PAR_DEFAUT = {
@@ -46,6 +47,26 @@ function lireTableau(cle) {
   } catch (e) {
     return [];
   }
+}
+
+function cleConsigne(codeJour, nomExo) {
+  return codeJour + '|' + nomExo;
+}
+
+/* Une consigne modifiée depuis le téléphone écrase celle du classeur pour cet
+   exercice, mais uniquement en local : la cellule d'origine mélange plusieurs
+   informations (prescription, RIR, muscle, repos) et n'est pas sûre à
+   réécrire automatiquement. Voir CLAUDE.md, section "Le classeur". */
+function consigneAffichee(codeJour, nomExo, consigneImportee) {
+  const overrides = lire(CLES.consignes, {});
+  const valeur = overrides[cleConsigne(codeJour, nomExo)];
+  return valeur !== undefined ? valeur : (consigneImportee || '');
+}
+
+function enregistrerConsigne(codeJour, nomExo, texte) {
+  const overrides = lire(CLES.consignes, {});
+  overrides[cleConsigne(codeJour, nomExo)] = texte;
+  ecrire(CLES.consignes, overrides);
 }
 
 function ecrire(cle, valeur) {
@@ -298,18 +319,43 @@ function rendreExercice() {
     : '';
   $('exo-rir').textContent = fiche.rir && fiche.rir.length ? 'RIR ' + fiche.rir.join(' / ') : '';
 
-  const bloc = $('exo-consigne-bloc');
-  if (fiche.consigne) {
-    bloc.hidden = false;
-    $('exo-consigne').textContent = fiche.consigne;
-  } else {
-    bloc.hidden = true;
-  }
+  quitterEditionConsigne();
+  const texte = consigneAffichee(seance.jour, courant.nom, fiche.consigne);
+  $('exo-consigne').textContent = texte || 'Aucune consigne pour cet exercice.';
+  $('exo-consigne').classList.toggle('vide-consigne', !texte);
 
   rendreSeries();
 
   $('bouton-precedent').disabled = indexExo === 0;
   $('bouton-suivant').disabled = indexExo === seance.exercices.length - 1;
+}
+
+function quitterEditionConsigne() {
+  $('exo-consigne').hidden = false;
+  $('exo-consigne-champ').hidden = true;
+  $('bouton-consigne-modifier').hidden = false;
+  $('bouton-consigne-enregistrer').hidden = true;
+  $('bouton-consigne-annuler').hidden = true;
+}
+
+function modifierConsigne() {
+  const champ = $('exo-consigne-champ');
+  champ.value = $('exo-consigne').classList.contains('vide-consigne') ? '' : $('exo-consigne').textContent;
+  champ.hidden = false;
+  $('exo-consigne').hidden = true;
+  $('bouton-consigne-modifier').hidden = true;
+  $('bouton-consigne-enregistrer').hidden = false;
+  $('bouton-consigne-annuler').hidden = false;
+  champ.focus();
+}
+
+function enregistrerEditionConsigne() {
+  const texte = $('exo-consigne-champ').value.trim();
+  const courant = seance.exercices[indexExo];
+  enregistrerConsigne(seance.jour, courant.nom, texte);
+  $('exo-consigne').textContent = texte || 'Aucune consigne pour cet exercice.';
+  $('exo-consigne').classList.toggle('vide-consigne', !texte);
+  quitterEditionConsigne();
 }
 
 function proportionFaite() {
@@ -801,6 +847,9 @@ function brancher() {
   });
 
   $('bouton-terminer').addEventListener('click', terminer);
+  $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
+  $('bouton-consigne-annuler').addEventListener('click', quitterEditionConsigne);
+  $('bouton-consigne-enregistrer').addEventListener('click', enregistrerEditionConsigne);
   $('bouton-precedent').addEventListener('click', () => {
     if (indexExo > 0) { indexExo--; arreterMinuterie(); rendreExercice(); }
   });
