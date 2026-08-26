@@ -51,42 +51,70 @@
   <div id="jauge" class="jauge"><div id="jauge-remplie"></div></div>
 
   <main class="corps">
-    <h2 id="exo-nom"></h2>
-    <div class="etiquettes">
-      <span id="exo-muscle" class="etiquette"></span>
-      <span id="exo-prescription" class="etiquette"></span>
-      <span id="exo-rir" class="etiquette"></span>
-    </div>
-
-    <div id="echauffement-jour" class="echauffement-jour" hidden>
-      <p class="echauffement-titre">Échauffement, environ 5 min</p>
-      <ol id="echauffement-liste"></ol>
-    </div>
-
-    <details id="exo-consigne-bloc" class="consigne" open>
-      <summary>Consigne technique</summary>
-      <p id="exo-consigne"></p>
-      <textarea id="exo-consigne-champ" class="consigne-champ" rows="3" hidden></textarea>
-      <div class="consigne-boutons">
-        <button id="bouton-consigne-modifier" class="discret" type="button">Modifier</button>
-        <button id="bouton-consigne-enregistrer" class="discret" type="button" hidden>Enregistrer</button>
-        <button id="bouton-consigne-annuler" class="discret" type="button" hidden>Annuler</button>
+    <div id="bloc-muscu">
+      <h2 id="exo-nom"></h2>
+      <div class="etiquettes">
+        <span id="exo-muscle" class="etiquette"></span>
+        <span id="exo-prescription" class="etiquette"></span>
+        <span id="exo-rir" class="etiquette"></span>
       </div>
-    </details>
 
-    <div class="tableau-titres">
-      <span class="col-saisie">Charge</span>
-      <span class="col-saisie">Reps</span>
-      <span class="col-rir">RIR</span>
-      <span class="col-valide"></span>
+      <div id="echauffement-jour" class="echauffement-jour" hidden>
+        <p class="echauffement-titre">Échauffement, environ 5 min</p>
+        <ol id="echauffement-liste"></ol>
+      </div>
+
+      <details id="exo-consigne-bloc" class="consigne" open>
+        <summary>Consigne technique</summary>
+        <p id="exo-consigne"></p>
+        <textarea id="exo-consigne-champ" class="consigne-champ" rows="3" hidden></textarea>
+        <div class="consigne-boutons">
+          <button id="bouton-consigne-modifier" class="discret" type="button">Modifier</button>
+          <button id="bouton-consigne-enregistrer" class="discret" type="button" hidden>Enregistrer</button>
+          <button id="bouton-consigne-annuler" class="discret" type="button" hidden>Annuler</button>
+        </div>
+      </details>
+
+      <div class="tableau-titres">
+        <span class="col-saisie">Charge</span>
+        <span class="col-saisie">Reps</span>
+        <span class="col-rir">RIR</span>
+        <span class="col-valide"></span>
+      </div>
+      <ol id="series" class="series"></ol>
+
+      <button id="bouton-serie" class="ajouter">+ Ajouter une série</button>
+
+      <div class="tonnage">
+        <span>Tonnage <strong id="tonnage-actuel">0</strong></span>
+        <span id="tonnage-compare" class="compare"></span>
+      </div>
     </div>
-    <ol id="series" class="series"></ol>
 
-    <button id="bouton-serie" class="ajouter">+ Ajouter une série</button>
+    <div id="bloc-footing" hidden>
+      <h2 id="footing-nom">Footing</h2>
 
-    <div class="tonnage">
-      <span>Tonnage <strong id="tonnage-actuel">0</strong></span>
-      <span id="tonnage-compare" class="compare"></span>
+      <div id="echauffement-footing" class="echauffement-jour">
+        <p class="echauffement-titre">Avant de partir</p>
+        <ol>
+          <li>Marche rapide, 2 min</li>
+          <li>Montées de genoux et talons-fesses en marchant, 1 min</li>
+          <li>Premier kilomètre en allure très facile, le corps monte en température seul</li>
+        </ol>
+      </div>
+
+      <div class="chrono-footing">
+        <p id="chrono-affichage" class="chrono-affichage">0:00</p>
+        <div class="chrono-boutons">
+          <button id="chrono-demarrer" class="principal" type="button">Démarrer</button>
+          <button id="chrono-remettre" class="discret" type="button">Remettre à zéro</button>
+        </div>
+      </div>
+
+      <div id="footing-champs" class="footing-champs"></div>
+
+      <p id="footing-allure" class="footing-allure"></p>
+      <p id="footing-compare" class="compare"></p>
     </div>
   </main>
 

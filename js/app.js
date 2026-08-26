@@ -20,15 +20,41 @@ const REGLAGES_PAR_DEFAUT = {
 };
 
 /* Échauffement de début de séance, optimisé aux zones travaillées ce jour-là,
-   affiché une seule fois avant le premier exercice. Prototype limité à J1 le
-   26 août 2026, comme la coloration par tonnage (voir CLAUDE.md). */
+   affiché une seule fois avant le premier exercice. Environ 5 min chacun,
+   construit sur le même principe : mobilité de l'articulation la plus
+   sollicitée, activation des muscles stabilisateurs, puis montée en charge
+   progressive sur le geste du premier exercice. Étendu à tous les jours le
+   26 août 2026 (voir CLAUDE.md). */
 const ECHAUFFEMENT_PAR_JOUR = {
   J1: [
-    "Cercles de bras et rotations d'épaules, environ 1 min",
-    'Pompes lentes, genoux au sol si besoin, 2 séries de 10, environ 2 min',
-    'Élévations latérales légères à vide puis extensions triceps légères, 15 répétitions chacune, environ 2 min',
+    "Cercles de bras avant et arrière, puis rotations d'épaules, 1 min",
+    'Rotations externes à la poulie ou avec élastique, charge très légère, 2 séries de 15, 2 min',
+    'Pompes lentes, genoux au sol si besoin, 2 séries de 10, 2 min',
+  ],
+  J3: [
+    'Cercles de bras et décollements de scapulas suspendu à la barre, 1 min',
+    'Face pull ou tirage élastique horizontal, charge très légère, 2 séries de 15, 2 min',
+    'Tirage vertical à vide puis à 50 % de la charge de travail, 2 séries de 10, 2 min',
+  ],
+  J4: [
+    'Vélo ou rameur à allure facile, 2 min',
+    'Fentes marchées et rotations de hanches sans charge, 10 par jambe, 1 min 30',
+    'Presse ou squat à vide puis à 50 % de la charge de travail, 2 séries de 10, 1 min 30',
+  ],
+  J5: [
+    "Cercles de bras et rotations d'épaules dans les deux sens, 1 min",
+    'Face pull et rotations externes légères, 2 séries de 15, 2 min',
+    'Traction assistée à charge maximale d\'assistance, 2 séries de 8, 2 min',
   ],
 };
+
+/* Repères de saisie des jours de footing. Le classeur ne retient que le temps
+   et la distance : on s'en tient là plutôt que d'inventer des champs (allure,
+   fréquence cardiaque) qu'il n'attend pas et que le pont ne saurait ranger. */
+const CHAMPS_FOOTING = [
+  { cle: 'duree_min', libelle: 'Durée (min)', unite: 'min' },
+  { cle: 'distance_km', libelle: 'Distance (km)', unite: 'km' },
+];
 
 let programme = null;
 let seance = null;       // séance en cours, ou null
@@ -36,6 +62,7 @@ let reglages = lire(CLES.reglages, REGLAGES_PAR_DEFAUT);
 let indexExo = 0;
 let minuterie = null;    // { fin: ms, duree: s, libelle: string }
 let tictac = null;
+let tictacChrono = null;  // rafraîchit le chronomètre des jours de footing
 let verrouVeille = null;
 let audio = null;
 
@@ -194,11 +221,14 @@ function rendreAccueil() {
     const [nom, ...reste] = titre.split(/\s+-\s+/);
 
     if (jour.type === 'footing') {
-      bouton.disabled = true;
+      const derniere = derniereSeanceDuJour(jour.code);
       bouton.innerHTML =
         '<div class="carte-code">' + jour.code + '</div>' +
         '<div class="carte-nom">' + echapper(nom || 'Footing') + '</div>' +
-        '<div class="carte-detail">Pas de suivi de charges</div>';
+        '<div class="carte-detail">Durée et distance' +
+        (derniere ? '<br>Dernière : ' + ilYA(derniere.fin) : '') +
+        '</div>';
+      bouton.addEventListener('click', () => commencer(jour.code));
     } else {
       const derniere = derniereSeanceDuJour(jour.code);
       bouton.innerHTML =
@@ -261,6 +291,7 @@ function commencer(code) {
     id: 'S' + Date.now(),
     jour: code,
     titre: jour.titre,
+    type: jour.type,
     debut: new Date().toISOString(),
     fin: null,
     envoye: false,
@@ -272,11 +303,13 @@ function commencer(code) {
       series: nouvellesSeries(exo),
     })),
   };
+  if (jour.type === 'footing') seance.footing = { duree_min: null, distance_km: null };
   indexExo = 0;
   enregistrerSeance();
   demanderVeille();
   afficher('seance');
-  rendreExercice();
+  if (jour.type === 'footing') rendreFooting();
+  else rendreExercice();
 }
 
 function nouvellesSeries(exo) {
@@ -297,10 +330,21 @@ function nouvellesSeries(exo) {
 function reprendre() {
   seance = lire(CLES.seance, null);
   if (!seance) return;
-  indexExo = seance.exercices.findIndex((e) => e.series.some((s) => !s.faite));
-  if (indexExo < 0) indexExo = seance.exercices.length - 1;
   demanderVeille();
   afficher('seance');
+
+  if (estFooting()) {
+    // Un chrono laissé en marche continue de courir : il compte depuis son
+    // horodatage de départ, l'application fermée entre-temps n'y change rien.
+    if (seance.footing.chrono && seance.footing.chrono.demarre && !tictacChrono) {
+      tictacChrono = setInterval(majChrono, 500);
+    }
+    rendreFooting();
+    return;
+  }
+
+  indexExo = seance.exercices.findIndex((e) => e.series.some((s) => !s.faite));
+  if (indexExo < 0) indexExo = seance.exercices.length - 1;
   rendreExercice();
 }
 
@@ -312,10 +356,129 @@ function ficheExercice() {
   return jour.exercices.find((e) => e.nom === courant.nom) || {};
 }
 
+/* --------------------------------------------------------------- footing */
+
+function estFooting() {
+  return seance && seance.type === 'footing';
+}
+
+function rendreFooting() {
+  const jour = jourDe(seance.jour);
+  $('bloc-muscu').hidden = true;
+  $('bloc-footing').hidden = false;
+  $('bouton-precedent').hidden = true;
+  $('bouton-suivant').hidden = true;
+
+  $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
+  $('seance-progression').textContent = '';
+  $('footing-nom').textContent = jour.titre.replace(/^J\d\s*/, '');
+
+  const champs = $('footing-champs');
+  champs.innerHTML = '';
+  CHAMPS_FOOTING.forEach((definition) => {
+    const etiquette = document.createElement('label');
+    const titre = document.createElement('span');
+    titre.textContent = definition.libelle;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'decimal';
+    const valeur = seance.footing[definition.cle];
+    input.value = valeur === null || valeur === undefined ? '' : String(valeur);
+    input.addEventListener('focus', () => input.select());
+    input.addEventListener('input', () => {
+      seance.footing[definition.cle] = nombreOuNull(input.value);
+      enregistrerSeance();
+      majAllure();
+    });
+
+    etiquette.append(titre, input);
+    champs.appendChild(etiquette);
+  });
+
+  majChrono();
+  majAllure();
+}
+
+/* L'allure au kilomètre est le repère habituel du coureur, plus parlant que
+   la vitesse en km/h : on la calcule dès que durée et distance sont saisies. */
+function majAllure() {
+  const { duree_min: duree, distance_km: distance } = seance.footing;
+  const cible = $('footing-allure');
+
+  if (!duree || !distance) {
+    cible.textContent = '';
+    $('footing-compare').textContent = '';
+    return;
+  }
+
+  const allure = duree / distance;
+  const minutes = Math.floor(allure);
+  const secondes = Math.round((allure - minutes) * 60);
+  cible.textContent = 'Allure ' + minutes + ':' + String(secondes).padStart(2, '0') + ' / km';
+
+  const precedente = derniereSeanceDuJour(seance.jour);
+  const compare = $('footing-compare');
+  compare.className = 'compare';
+  if (!precedente || !precedente.footing || !precedente.footing.duree_min || !precedente.footing.distance_km) {
+    compare.textContent = '';
+    return;
+  }
+  const allureAvant = precedente.footing.duree_min / precedente.footing.distance_km;
+  const ecart = allure - allureAvant;
+  const ecartSecondes = Math.round(Math.abs(ecart) * 60);
+  if (ecartSecondes < 3) {
+    compare.textContent = 'Même allure que la dernière fois.';
+    return;
+  }
+  // Une allure plus basse est plus rapide : le sens de la couleur s'inverse.
+  compare.textContent = ecartSecondes + ' s/km ' + (ecart < 0 ? 'plus rapide' : 'plus lent') + " qu'à la dernière sortie.";
+  compare.classList.add(ecart < 0 ? 'hausse' : 'baisse');
+}
+
+function majChrono() {
+  const affichage = $('chrono-affichage');
+  const chrono = seance.footing.chrono;
+  const enCours = chrono && chrono.demarre;
+  const ecoule = chrono
+    ? (chrono.cumul || 0) + (enCours ? Date.now() - chrono.demarre : 0)
+    : 0;
+
+  affichage.textContent = texteDuree(ecoule / 1000);
+  affichage.classList.toggle('en-cours', !!enCours);
+  $('chrono-demarrer').textContent = enCours ? 'Arrêter' : (ecoule ? 'Reprendre' : 'Démarrer');
+}
+
+function basculerChrono() {
+  if (!seance.footing.chrono) seance.footing.chrono = { cumul: 0, demarre: null };
+  const chrono = seance.footing.chrono;
+
+  if (chrono.demarre) {
+    chrono.cumul = (chrono.cumul || 0) + (Date.now() - chrono.demarre);
+    chrono.demarre = null;
+    // Le chrono renseigne la durée, mais n'écrase jamais une saisie manuelle
+    // par une poignée de secondes : sans ce garde-fou, un démarrage
+    // accidentel suivi d'un arrêt effacerait une durée déjà notée à la main.
+    const minutes = Math.round((chrono.cumul / 60000) * 10) / 10;
+    if (minutes >= 1 || !seance.footing.duree_min) seance.footing.duree_min = minutes;
+    rendreFooting();
+  } else {
+    chrono.demarre = Date.now();
+    if (!tictacChrono) tictacChrono = setInterval(majChrono, 500);
+    majChrono();
+  }
+  enregistrerSeance();
+}
+
 function rendreExercice() {
   const jour = jourDe(seance.jour);
   const courant = seance.exercices[indexExo];
   const fiche = ficheExercice();
+
+  $('bloc-muscu').hidden = false;
+  $('bloc-footing').hidden = true;
+  $('bouton-precedent').hidden = false;
+  $('bouton-suivant').hidden = false;
 
   $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
   $('seance-progression').textContent = (indexExo + 1) + '/' + seance.exercices.length;
@@ -378,11 +541,9 @@ function enregistrerEditionConsigne() {
 
 /* Colore les champs d'une série validée selon son écart de tonnage avec la
    même série la semaine passée : en dessous de -5 %, au-dessus de +6 %, sinon
-   neutre. Prototype limité à J1 le 26 août 2026, avant de juger s'il vaut la
-   peine de l'étendre aux autres jours. */
+   neutre. Éprouvé sur J1 puis étendu à tous les jours le 26 août 2026. */
 function appliquerCouleurTonnage(ligne, serie, reference) {
   ligne.classList.remove('tonnage-hausse', 'tonnage-baisse');
-  if (seance.jour !== 'J1') return;
   if (!serie.faite || serie.echauffement || !reference) return;
 
   const tonnageAvant = (reference.charge || 0) * (reference.reps || 0);
@@ -697,6 +858,12 @@ document.addEventListener('visibilitychange', () => {
 function terminer() {
   arreterMinuterie();
   const resume = $('fin-resume');
+
+  if (estFooting()) {
+    terminerFooting(resume);
+    return;
+  }
+
   const exercicesFaits = seance.exercices.filter((e) => e.series.some((s) => s.faite));
   const tonnage = seance.exercices.reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
   const seriesFaites = seance.exercices.reduce(
@@ -736,6 +903,38 @@ function terminer() {
 
   if (!exercicesFaits.length) {
     resume.innerHTML += '<p class="vide">Aucune série validée.</p>';
+  }
+
+  $('fin-message').textContent = '';
+  $('fin-message').className = 'message';
+  $('bouton-enregistrer').disabled = false;
+  afficher('fin');
+}
+
+function terminerFooting(resume) {
+  // Un chrono encore en marche est arrêté ici, sinon la durée resterait celle
+  // du dernier arrêt volontaire et perdrait toute la fin de la sortie.
+  const chrono = seance.footing.chrono;
+  if (chrono && chrono.demarre) basculerChrono();
+  if (tictacChrono) { clearInterval(tictacChrono); tictacChrono = null; }
+
+  const { duree_min: duree, distance_km: distance } = seance.footing;
+  let allureTexte = '&mdash;';
+  if (duree && distance) {
+    const allure = duree / distance;
+    allureTexte = Math.floor(allure) + ':' + String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0');
+  }
+
+  resume.innerHTML =
+    '<h3>' + echapper(seance.titre.split(/\s+-\s+/)[0]) + '</h3>' +
+    '<div class="chiffres">' +
+      '<div class="chiffre"><b>' + (duree || 0) + '</b><span>minutes</span></div>' +
+      '<div class="chiffre"><b>' + (distance || 0) + '</b><span>km</span></div>' +
+      '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
+    '</div>';
+
+  if (!duree && !distance) {
+    resume.innerHTML += '<p class="vide">Ni durée ni distance saisies.</p>';
   }
 
   $('fin-message').textContent = '';
@@ -860,13 +1059,22 @@ function rendreHistorique() {
   }
 
   cible.innerHTML = seances.map((s) => {
-    const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
-    const series = (s.exercices || []).reduce(
-      (somme, e) => somme + e.series.filter((x) => x.faite && !x.echauffement).length, 0);
+    let details;
+    if (s.type === 'footing' && s.footing) {
+      const morceaux = [];
+      if (s.footing.duree_min) morceaux.push(s.footing.duree_min + ' min');
+      if (s.footing.distance_km) morceaux.push(s.footing.distance_km + ' km');
+      details = morceaux.length ? morceaux.join(', ') : 'Sortie sans chiffres';
+    } else {
+      const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
+      const series = (s.exercices || []).reduce(
+        (somme, e) => somme + e.series.filter((x) => x.faite && !x.echauffement).length, 0);
+      details = series + ' séries, ' + tonnage + ' kg';
+    }
     return '<div class="entree-historique">' +
       '<div class="titre"><span>' + echapper(s.jour) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
       '<span class="badge ' + (s.envoye ? 'envoye">classeur' : 'attente">en attente') + '</span></div>' +
-      '<div class="details">' + series + ' séries, ' + tonnage + ' kg</div>' +
+      '<div class="details">' + details + '</div>' +
       '</div>';
   }).join('');
 }
@@ -890,6 +1098,15 @@ function brancher() {
   });
 
   $('bouton-terminer').addEventListener('click', terminer);
+  $('chrono-demarrer').addEventListener('click', basculerChrono);
+  $('chrono-remettre').addEventListener('click', () => {
+    if (!confirm('Remettre le chronomètre à zéro ?')) return;
+    seance.footing.chrono = { cumul: 0, demarre: null };
+    seance.footing.duree_min = null;
+    if (tictacChrono) { clearInterval(tictacChrono); tictacChrono = null; }
+    enregistrerSeance();
+    rendreFooting();
+  });
   $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
   $('bouton-consigne-annuler').addEventListener('click', quitterEditionConsigne);
   $('bouton-consigne-enregistrer').addEventListener('click', enregistrerEditionConsigne);

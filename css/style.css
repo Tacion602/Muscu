@@ -175,6 +175,64 @@ body { display: flex; flex-direction: column; }
 .echauffement-jour li { margin-bottom: 4px; }
 .echauffement-jour li:last-child { margin-bottom: 0; }
 
+/* ---------- Footing ---------- */
+
+#bloc-footing[hidden], #bloc-muscu[hidden] { display: none; }
+#footing-nom { font-size: 22px; margin: 0 0 12px; }
+
+.chrono-footing {
+  margin: 16px 0;
+  padding: 18px 12px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+  text-align: center;
+}
+.chrono-affichage {
+  margin: 0 0 14px;
+  font-size: 64px;
+  font-weight: 200;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+}
+.chrono-affichage.en-cours { color: var(--accent-clair); }
+.chrono-boutons { display: flex; gap: 10px; }
+.chrono-boutons button { flex: 1; width: auto; }
+
+.footing-champs { display: flex; gap: 10px; }
+.footing-champs label { flex: 1; }
+.footing-champs span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--texte-faible);
+  margin-bottom: 5px;
+  text-align: center;
+}
+.footing-champs input {
+  width: 100%;
+  height: 60px;
+  border: 1px solid var(--trait);
+  border-radius: 9px;
+  background: var(--fond-champ);
+  color: var(--texte);
+  font-size: 34px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.footing-champs input:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
+
+.footing-allure {
+  margin: 16px 0 4px;
+  font-size: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#footing-compare { display: block; text-align: center; font-size: 14px; margin: 0; }
+
 .consigne { margin-bottom: 14px; }
 .consigne summary { font-size: 13px; color: var(--texte-faible); cursor: pointer; padding: 4px 0; }
 .consigne p { margin: 6px 0 8px; font-size: 14px; line-height: 1.5; color: var(--texte-faible); }

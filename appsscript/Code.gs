@@ -72,6 +72,28 @@ function ecrireSeance(seance) {
   }
 
   const lignes = [];
+
+  // Un footing n'a ni serie ni charge : on le range sur une seule ligne, la
+  // duree en minutes dans la colonne Reps et la distance en km dans Charge,
+  // plutot que d'ajouter des colonnes qui resteraient vides pour la muscu.
+  if (seance.type === 'footing' && seance.footing) {
+    const f = seance.footing;
+    if (f.duree_min || f.distance_km) {
+      lignes.push([
+        seance.fin ? new Date(seance.fin) : new Date(),
+        seance.jour || '',
+        'Footing',
+        1,
+        'non',
+        f.distance_km != null ? f.distance_km : '',
+        f.duree_min != null ? f.duree_min : '',
+        '',
+        seance.debut ? new Date(seance.debut) : '',
+        seance.fin ? new Date(seance.fin) : '',
+      ]);
+    }
+  }
+
   (seance.exercices || []).forEach((exo) => {
     let rang = 0;
     (exo.series || []).forEach((s) => {
