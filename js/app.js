@@ -838,6 +838,9 @@ function brancher() {
     sauverReglages();
     rendreAccueil();
     afficher('accueil');
+    // Quitter les réglages après y avoir renseigné le pont doit suffire à
+    // vider ce qui attendait, sans obliger à passer par "Tester le pont".
+    if (reglages.pont) synchroniser().then(rendreEtatSync).catch(() => {});
   });
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));
@@ -854,8 +857,13 @@ function brancher() {
     message.textContent = 'Test en cours...';
     try {
       const resultat = await envoyer({ action: 'ping' });
+      // Un pont qui répond est le signal naturel pour vider ce qui attendait
+      // depuis avant sa configuration : sans quoi une séance déjà enregistrée
+      // resterait bloquée jusqu'au prochain lancement de l'application.
+      const envoyees = await synchroniser();
       message.className = 'message ok';
-      message.textContent = 'Pont joignable. Classeur : ' + (resultat.classeur || 'sans nom') + '.';
+      message.textContent = 'Pont joignable. Classeur : ' + (resultat.classeur || 'sans nom') + '.' +
+        (envoyees ? ' ' + envoyees + ' séance' + (envoyees > 1 ? 's' : '') + ' en attente envoyée' + (envoyees > 1 ? 's' : '') + '.' : '');
     } catch (erreur) {
       message.className = 'message erreur';
       message.textContent = 'Échec : ' + erreur.message;
