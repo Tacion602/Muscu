@@ -19,6 +19,17 @@ const REGLAGES_PAR_DEFAUT = {
   veille: true,
 };
 
+/* Échauffement de début de séance, optimisé aux zones travaillées ce jour-là,
+   affiché une seule fois avant le premier exercice. Prototype limité à J1 le
+   26 août 2026, comme la coloration par tonnage (voir CLAUDE.md). */
+const ECHAUFFEMENT_PAR_JOUR = {
+  J1: [
+    "Cercles de bras et rotations d'épaules, environ 1 min",
+    'Pompes lentes, genoux au sol si besoin, 2 séries de 10, environ 2 min',
+    'Élévations latérales légères à vide puis extensions triceps légères, 15 répétitions chacune, environ 2 min',
+  ],
+};
+
 let programme = null;
 let seance = null;       // séance en cours, ou null
 let reglages = lire(CLES.reglages, REGLAGES_PAR_DEFAUT);
@@ -319,6 +330,13 @@ function rendreExercice() {
     : '';
   $('exo-rir').textContent = fiche.rir && fiche.rir.length ? 'RIR ' + fiche.rir.join(' / ') : '';
 
+  const blocEchauffement = $('echauffement-jour');
+  const listeEchauffement = indexExo === 0 ? ECHAUFFEMENT_PAR_JOUR[seance.jour] : null;
+  blocEchauffement.hidden = !listeEchauffement;
+  if (listeEchauffement) {
+    $('echauffement-liste').innerHTML = listeEchauffement.map((item) => '<li>' + echapper(item) + '</li>').join('');
+  }
+
   quitterEditionConsigne();
   const texte = consigneAffichee(seance.jour, courant.nom, fiche.consigne);
   $('exo-consigne').textContent = texte || 'Aucune consigne pour cet exercice.';
@@ -470,8 +488,16 @@ function rendreSeries() {
       evenement.preventDefault();
       const suivant = enchainement[position + 1];
       if (!suivant) return;
-      suivant.focus();
-      if (suivant.tagName === 'INPUT') suivant.select();
+      if (suivant.tagName === 'INPUT') {
+        suivant.focus();
+        suivant.select();
+      } else {
+        // Après le RIR, le "suivant" est le bouton de validation : le
+        // clavier virtuel ne réappuie pas tout seul sur Entrée une fois le
+        // focus déplacé, donc valider directement plutôt que de se
+        // contenter du focus, sans quoi la récupération ne démarre jamais.
+        suivant.click();
+      }
     });
   });
 

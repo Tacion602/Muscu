@@ -103,6 +103,17 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   deux. **Limité au jour J1**, décision de l'utilisateur le 26 août 2026 pour
   juger le principe avant de l'étendre aux autres jours ; ne pas retirer cette
   restriction sans qu'il le demande.
+- **Un échauffement de 5 minutes s'affiche une seule fois**, au-dessus de la
+  consigne technique du premier exercice de la séance (`ECHAUFFEMENT_PAR_JOUR`
+  dans `js/app.js`). Rédigé pour les zones travaillées ce jour-là, pas généré
+  automatiquement à partir du champ `muscle`. **Limité à J1** pour la même
+  raison de prototypage que la coloration par tonnage : à rédiger pour les
+  autres jours si le principe convient.
+- **La touche Entrée sur le RIR valide directement la série** (appelle
+  `.click()` sur le bouton plutôt que de se contenter du focus) : un clavier
+  virtuel ne renvoie pas de second appui sur Entrée une fois le focus déplacé
+  vers un bouton, la récupération ne démarrait donc jamais sans cette
+  invocation explicite.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement

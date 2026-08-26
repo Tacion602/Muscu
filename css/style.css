@@ -155,6 +155,26 @@ body { display: flex; flex-direction: column; }
 .etiquette:empty { display: none; }
 #exo-muscle { background: rgba(47, 126, 122, .3); color: var(--accent-clair); }
 
+.echauffement-jour {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--rayon);
+  background: rgba(47, 126, 122, .1);
+}
+.echauffement-jour[hidden] { display: none; }
+.echauffement-titre {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--accent-clair);
+}
+.echauffement-jour ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; color: var(--texte-faible); }
+.echauffement-jour li { margin-bottom: 4px; }
+.echauffement-jour li:last-child { margin-bottom: 0; }
+
 .consigne { margin-bottom: 14px; }
 .consigne summary { font-size: 13px; color: var(--texte-faible); cursor: pointer; padding: 4px 0; }
 .consigne p { margin: 6px 0 8px; font-size: 14px; line-height: 1.5; color: var(--texte-faible); }
