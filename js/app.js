@@ -376,8 +376,11 @@ function rendreSeries() {
   const liste = $('series');
   liste.innerHTML = '';
 
-  const travail = courant.series.filter((s) => !s.echauffement);
   let rangTravail = 0;
+  // Ordre réel de navigation au clavier (touche Entrée du pavé numérique) :
+  // les trois champs de chaque ligne puis son bouton de validation, ligne
+  // après ligne. Un bouton, une fois focus, répond nativement à Entrée.
+  const enchainement = [];
 
   courant.series.forEach((serie, index) => {
     const ligne = document.createElement('li');
@@ -389,35 +392,16 @@ function rendreSeries() {
     const rang = serie.echauffement ? null : rangTravail++;
     const reference = (avant && rang !== null) ? avant.series[rang] : null;
 
-    // Numéro : un appui bascule la série en échauffement, qui ne compte pas
-    // dans le tonnage ni dans la comparaison avec la dernière fois.
-    const numero = document.createElement('button');
-    numero.className = 'num-serie';
-    numero.type = 'button';
-    numero.textContent = serie.echauffement ? 'ÉCH' : String(rang + 1);
-    numero.title = 'Basculer en échauffement';
-    numero.addEventListener('click', () => {
-      serie.echauffement = !serie.echauffement;
-      enregistrerSeance();
-      rendreSeries();
-    });
-
-    const cellAvant = document.createElement('div');
-    cellAvant.className = 'avant';
-    cellAvant.innerHTML = texteComparaison(reference, serie);
-
     const champCharge = champ(serie.charge, reference ? reference.charge : null, 'kg', (v) => {
       serie.charge = v;
       enregistrerSeance();
       majTonnage();
-      cellAvant.innerHTML = texteComparaison(reference, serie);
     });
 
     const champReps = champ(serie.reps, reference ? reference.reps : null, 'reps', (v) => {
       serie.reps = v;
       enregistrerSeance();
       majTonnage();
-      cellAvant.innerHTML = texteComparaison(reference, serie);
     });
 
     const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
@@ -425,15 +409,49 @@ function rendreSeries() {
       enregistrerSeance();
     });
 
+    // Un appui bref valide la série ; un appui long la bascule en
+    // échauffement, ce qui l'exclut du tonnage et de la comparaison. Sans
+    // colonne dédiée pour le numéro, c'est le seul geste qui reste pour ça.
     const valider = document.createElement('button');
     valider.className = 'valider';
     valider.type = 'button';
-    valider.innerHTML = serie.faite ? '&#10003;' : '&#9675;';
-    valider.setAttribute('aria-label', serie.faite ? 'Annuler la série' : 'Valider la série');
-    valider.addEventListener('click', () => basculerSerie(courant, serie, index));
+    valider.innerHTML = serie.echauffement ? 'ÉCH' : (serie.faite ? '&#10003;' : '&#9675;');
+    valider.setAttribute('aria-label', serie.faite ? 'Annuler la série' : 'Valider la série (appui long : échauffement)');
 
-    ligne.append(numero, cellAvant, champCharge, champReps, champRir, valider);
+    let minuterieAppuiLong = null;
+    let appuiLongDeclenche = false;
+    const annulerAppuiLong = () => clearTimeout(minuterieAppuiLong);
+    valider.addEventListener('pointerdown', () => {
+      appuiLongDeclenche = false;
+      minuterieAppuiLong = setTimeout(() => {
+        appuiLongDeclenche = true;
+        serie.echauffement = !serie.echauffement;
+        enregistrerSeance();
+        rendreSeries();
+      }, 500);
+    });
+    valider.addEventListener('pointerup', annulerAppuiLong);
+    valider.addEventListener('pointerleave', annulerAppuiLong);
+    valider.addEventListener('click', () => {
+      if (appuiLongDeclenche) return;
+      basculerSerie(courant, serie, index);
+    });
+
+    ligne.append(champCharge, champReps, champRir, valider);
     liste.appendChild(ligne);
+    enchainement.push(champCharge, champReps, champRir, valider);
+  });
+
+  enchainement.forEach((element, position) => {
+    if (element.tagName !== 'INPUT') return;
+    element.addEventListener('keydown', (evenement) => {
+      if (evenement.key !== 'Enter') return;
+      evenement.preventDefault();
+      const suivant = enchainement[position + 1];
+      if (!suivant) return;
+      suivant.focus();
+      if (suivant.tagName === 'INPUT') suivant.select();
+    });
   });
 
   majTonnage(avant);
@@ -448,33 +466,13 @@ function champ(valeur, suggestion, etiquette, aChange) {
   const input = document.createElement('input');
   input.type = 'text';
   input.inputMode = 'decimal';
+  input.enterKeyHint = 'next';
   input.value = valeur === null || valeur === undefined ? '' : String(valeur);
   input.placeholder = suggestion === null || suggestion === undefined ? '' : String(suggestion);
   input.setAttribute('aria-label', etiquette);
   input.addEventListener('input', () => aChange(nombreOuNull(input.value)));
   input.addEventListener('focus', () => input.select());
   return input;
-}
-
-/* Chiffres de la dernière fois, plus une flèche dès que la saisie du jour
-   les dépasse ou reste en dessous : c'est la surcharge progressive, lue d'un
-   coup d'oeil entre deux séries. */
-function texteComparaison(reference, serie) {
-  if (!reference) return '<span style="opacity:.45">&mdash;</span>';
-
-  const base = (reference.charge != null ? reference.charge : '?') +
-    '&times;' + (reference.reps != null ? reference.reps : '?') +
-    (reference.rir != null ? ' <span style="opacity:.6">@' + reference.rir + '</span>' : '');
-
-  if (serie.charge == null && serie.reps == null) return base;
-
-  const avant = (reference.charge || 0) * (reference.reps || 0);
-  const apres = (serie.charge || 0) * (serie.reps || 0);
-  if (!avant || !apres) return base;
-
-  if (apres > avant) return base + ' <span class="fleche hausse">&#9650;</span>';
-  if (apres < avant) return base + ' <span class="fleche baisse">&#9660;</span>';
-  return base + ' <span class="fleche">=</span>';
 }
 
 /* Compare deux cumuls comparables, jamais un cumul en cours au total fini de

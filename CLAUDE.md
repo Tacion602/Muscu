@@ -81,13 +81,22 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 ## Comportements côté application, à ne pas défaire sans y repenser
 
 - **L'échauffement ne compte jamais dans le tonnage ni dans la comparaison.**
-  Une série se bascule en échauffement d'un appui sur son numéro ; l'import du
-  classeur reconnaît déjà les notes `ECH 1`, `ECH 2` de la même façon.
+  Une série se bascule en échauffement par un **appui long (500 ms) sur son
+  bouton de validation** (un tap bref valide normalement) ; l'import du
+  classeur reconnaît déjà les notes `ECH 1`, `ECH 2` de la même façon. Décidé
+  le 26 août 2026 : la colonne numéro et la colonne « dernière fois » ont été
+  retirées de la ligne de série (jugées redondantes avec les placeholders des
+  champs de saisie, qui affichent déjà les valeurs précédentes), ce qui a
+  supprimé le seul geste qui permettait ce basculement.
 - **Valider une série sans chiffres saisis reprend ceux de la dernière fois**
   plutôt que d'enregistrer un vide : l'utilisateur peut confirmer d'un geste
   qu'il a reproduit sa performance précédente sans retaper les nombres.
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
+- **La touche Entrée du clavier numérique avance au champ suivant** (charge →
+  reps → RIR → bouton de validation, puis la ligne suivante), construit dans
+  `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
+  ne pas oublier de le repeupler si la structure de la ligne change.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
