@@ -112,15 +112,24 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   virtuel ne renvoie pas de second appui sur Entrée une fois le focus déplacé
   vers un bouton, la récupération ne démarrait donc jamais sans cette
   invocation explicite.
-- **Les jours de footing (J2, J6) ont leur propre écran**, activé le 26 août
-  2026 : chronomètre, durée et distance, allure au kilomètre calculée, et
-  comparaison à la dernière sortie. Deux points à ne pas défaire :
-  - **le chronomètre compte depuis son horodatage de départ**, jamais par
-    incréments : l'application mise en arrière-plan ou fermée pendant la
-    sortie ne perd donc rien ;
-  - **il n'écrase pas une durée saisie à la main s'il a tourné moins d'une
-    minute** : un démarrage accidentel suivi d'un arrêt effaçait sinon une
-    durée déjà notée, défaut trouvé en testant le 26 août 2026.
+- **Les jours de course (J2, J6) ont leur propre écran**, activé le 26 août
+  2026 : durée et distance, allure au kilomètre calculée, comparaison à la
+  dernière sortie. **Il n'y a volontairement pas de chronomètre** : présent
+  au départ, retiré le jour même à la demande de l'utilisateur, qui saisit
+  ses chiffres après coup plutôt que de laisser l'application tourner.
+- **Quatre types de séance de course** (`TYPES_COURSE` dans `js/app.js`),
+  décidés le 26 août 2026 : endurance fondamentale, fractionné, incliné avec
+  option lesté ou farmer walk, et séance au seuil. Trois points structurants :
+  - **chaque type a son échauffement**, parce que l'exigence diffère : une
+    endurance fondamentale se lance presque à froid, un fractionné demande un
+    corps déjà chaud sous peine de blessure ;
+  - **changer de type efface les champs propres à l'ancien** : une pente
+    héritée d'une séance inclinée n'a aucun sens sur un fractionné ;
+  - **le type précis part dans le classeur**, jamais un `footing` uniforme :
+    comparer l'allure d'une endurance et celle d'un fractionné n'aurait pas
+    de sens, et les colonnes dédiées (répétitions, récup, pente, charge
+    portée, durée au seuil) restent traçables en graphique là où un champ
+    texte libre ne le serait pas.
 - **Le classeur reçoit trois onglets, un par granularité d'analyse**
   (`ecrireSeance` dans `appsscript/Code.gs`), refondus le 26 août 2026 pour
   se prêter directement aux graphiques :

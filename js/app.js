@@ -48,13 +48,77 @@ const ECHAUFFEMENT_PAR_JOUR = {
   ],
 };
 
-/* Repères de saisie des jours de footing. Le classeur ne retient que le temps
-   et la distance : on s'en tient là plutôt que d'inventer des champs (allure,
-   fréquence cardiaque) qu'il n'attend pas et que le pont ne saurait ranger. */
+/* Durée et distance sont communes aux quatre types de course : ce sont elles
+   qui donnent l'allure, seul repère comparable d'une sortie à l'autre. */
 const CHAMPS_FOOTING = [
-  { cle: 'duree_min', libelle: 'Durée (min)', unite: 'min' },
-  { cle: 'distance_km', libelle: 'Distance (km)', unite: 'km' },
+  { cle: 'duree_min', libelle: 'Durée (min)' },
+  { cle: 'distance_km', libelle: 'Distance (km)' },
 ];
+
+/* Quatre séances de course distinctes, décidées le 26 août 2026. Chacune a
+   son échauffement, parce que l'exigence n'est pas la même : une endurance
+   fondamentale se lance presque à froid, un fractionné demande un corps déjà
+   chaud sous peine de blessure. Les champs propres à chaque type restent
+   volontairement peu nombreux, et chacun alimente une colonne du classeur
+   plutôt qu'un champ texte libre, pour rester exploitable en graphique. */
+const TYPES_COURSE = [
+  {
+    cle: 'ef',
+    nom: 'Endurance',
+    complet: 'Endurance fondamentale',
+    champs: [],
+    echauffement: [
+      'Marche rapide, 2 min',
+      'Montées de genoux et talons-fesses en marchant, 1 min',
+      'Premier kilomètre en allure très facile, le corps monte en température seul',
+    ],
+  },
+  {
+    cle: 'fractionne',
+    nom: 'Fractionné',
+    complet: 'Fractionné',
+    champs: [
+      { cle: 'repetitions', libelle: 'Répétitions' },
+      { cle: 'recup_s', libelle: 'Récup (s)' },
+    ],
+    echauffement: [
+      '15 min en endurance fondamentale, sans forcer',
+      'Montées de genoux, talons-fesses et pas chassés, 5 min',
+      '3 accélérations progressives de 20 secondes, récupération complète entre chaque',
+    ],
+  },
+  {
+    cle: 'incline',
+    nom: 'Incliné',
+    complet: 'Incliné, option lesté ou farmer walk',
+    champs: [
+      { cle: 'pente_pct', libelle: 'Pente (%)' },
+      { cle: 'charge_kg', libelle: 'Charge (kg)' },
+    ],
+    echauffement: [
+      '10 min à plat en endurance fondamentale',
+      'Montées de mollets et fentes marchées, 2 min',
+      "Première montée à pente réduite et sans charge, 3 min",
+    ],
+  },
+  {
+    cle: 'seuil',
+    nom: 'Seuil',
+    complet: 'Séance au seuil',
+    champs: [
+      { cle: 'duree_seuil_min', libelle: 'Durée au seuil (min)' },
+    ],
+    echauffement: [
+      '15 min en endurance fondamentale',
+      'Gammes athlétiques, montées de genoux et pas chassés, 4 min',
+      '2 accélérations de 30 secondes à allure seuil, récupération complète',
+    ],
+  },
+];
+
+function typeCourse(cle) {
+  return TYPES_COURSE.find((t) => t.cle === cle) || TYPES_COURSE[0];
+}
 
 let programme = null;
 let seance = null;       // séance en cours, ou null
@@ -62,7 +126,6 @@ let reglages = lire(CLES.reglages, REGLAGES_PAR_DEFAUT);
 let indexExo = 0;
 let minuterie = null;    // { fin: ms, duree: s, libelle: string }
 let tictac = null;
-let tictacChrono = null;  // rafraîchit le chronomètre des jours de footing
 let tictacSeance = null;  // rafraîchit le chronomètre de la séance de musculation
 let verrouVeille = null;
 let audio = null;
@@ -304,7 +367,9 @@ function commencer(code) {
       series: nouvellesSeries(exo),
     })),
   };
-  if (jour.type === 'footing') seance.footing = { duree_min: null, distance_km: null };
+  if (jour.type === 'footing') {
+    seance.footing = { type: 'ef', duree_min: null, distance_km: null };
+  }
   indexExo = 0;
   enregistrerSeance();
   demanderVeille();
@@ -335,11 +400,6 @@ function reprendre() {
   afficher('seance');
 
   if (estFooting()) {
-    // Un chrono laissé en marche continue de courir : il compte depuis son
-    // horodatage de départ, l'application fermée entre-temps n'y change rien.
-    if (seance.footing.chrono && seance.footing.chrono.demarre && !tictacChrono) {
-      tictacChrono = setInterval(majChrono, 500);
-    }
     rendreFooting();
     return;
   }
@@ -363,6 +423,27 @@ function estFooting() {
   return seance && seance.type === 'footing';
 }
 
+function champFooting(definition) {
+  const etiquette = document.createElement('label');
+  const titre = document.createElement('span');
+  titre.textContent = definition.libelle;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'decimal';
+  const valeur = seance.footing[definition.cle];
+  input.value = valeur === null || valeur === undefined ? '' : String(valeur);
+  input.addEventListener('focus', () => input.select());
+  input.addEventListener('input', () => {
+    seance.footing[definition.cle] = nombreOuNull(input.value);
+    enregistrerSeance();
+    majAllure();
+  });
+
+  etiquette.append(titre, input);
+  return etiquette;
+}
+
 function rendreFooting() {
   const jour = jourDe(seance.jour);
   $('bloc-muscu').hidden = true;
@@ -372,32 +453,40 @@ function rendreFooting() {
 
   $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
   $('seance-progression').textContent = '';
-  $('footing-nom').textContent = jour.titre.replace(/^J\d\s*/, '');
+
+  const type = typeCourse(seance.footing.type);
+  $('footing-nom').textContent = type.complet;
+
+  const boutons = $('footing-types');
+  boutons.innerHTML = '';
+  TYPES_COURSE.forEach((candidat) => {
+    const bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.className = 'type-course' + (candidat.cle === type.cle ? ' choisi' : '');
+    bouton.textContent = candidat.nom;
+    bouton.addEventListener('click', () => {
+      // Changer de type efface les champs propres à l'ancien : une pente
+      // héritée d'une séance inclinée n'a aucun sens sur un fractionné.
+      type.champs.forEach((c) => { delete seance.footing[c.cle]; });
+      seance.footing.type = candidat.cle;
+      enregistrerSeance();
+      rendreFooting();
+    });
+    boutons.appendChild(bouton);
+  });
+
+  $('echauffement-footing-liste').innerHTML =
+    type.echauffement.map((item) => '<li>' + echapper(item) + '</li>').join('');
 
   const champs = $('footing-champs');
   champs.innerHTML = '';
-  CHAMPS_FOOTING.forEach((definition) => {
-    const etiquette = document.createElement('label');
-    const titre = document.createElement('span');
-    titre.textContent = definition.libelle;
+  CHAMPS_FOOTING.forEach((definition) => champs.appendChild(champFooting(definition)));
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.inputMode = 'decimal';
-    const valeur = seance.footing[definition.cle];
-    input.value = valeur === null || valeur === undefined ? '' : String(valeur);
-    input.addEventListener('focus', () => input.select());
-    input.addEventListener('input', () => {
-      seance.footing[definition.cle] = nombreOuNull(input.value);
-      enregistrerSeance();
-      majAllure();
-    });
+  const champsType = $('footing-champs-type');
+  champsType.innerHTML = '';
+  champsType.hidden = !type.champs.length;
+  type.champs.forEach((definition) => champsType.appendChild(champFooting(definition)));
 
-    etiquette.append(titre, input);
-    champs.appendChild(etiquette);
-  });
-
-  majChrono();
   majAllure();
 }
 
@@ -435,40 +524,6 @@ function majAllure() {
   // Une allure plus basse est plus rapide : le sens de la couleur s'inverse.
   compare.textContent = ecartSecondes + ' s/km ' + (ecart < 0 ? 'plus rapide' : 'plus lent') + " qu'à la dernière sortie.";
   compare.classList.add(ecart < 0 ? 'hausse' : 'baisse');
-}
-
-function majChrono() {
-  const affichage = $('chrono-affichage');
-  const chrono = seance.footing.chrono;
-  const enCours = chrono && chrono.demarre;
-  const ecoule = chrono
-    ? (chrono.cumul || 0) + (enCours ? Date.now() - chrono.demarre : 0)
-    : 0;
-
-  affichage.textContent = texteDuree(ecoule / 1000);
-  affichage.classList.toggle('en-cours', !!enCours);
-  $('chrono-demarrer').textContent = enCours ? 'Arrêter' : (ecoule ? 'Reprendre' : 'Démarrer');
-}
-
-function basculerChrono() {
-  if (!seance.footing.chrono) seance.footing.chrono = { cumul: 0, demarre: null };
-  const chrono = seance.footing.chrono;
-
-  if (chrono.demarre) {
-    chrono.cumul = (chrono.cumul || 0) + (Date.now() - chrono.demarre);
-    chrono.demarre = null;
-    // Le chrono renseigne la durée, mais n'écrase jamais une saisie manuelle
-    // par une poignée de secondes : sans ce garde-fou, un démarrage
-    // accidentel suivi d'un arrêt effacerait une durée déjà notée à la main.
-    const minutes = Math.round((chrono.cumul / 60000) * 10) / 10;
-    if (minutes >= 1 || !seance.footing.duree_min) seance.footing.duree_min = minutes;
-    rendreFooting();
-  } else {
-    chrono.demarre = Date.now();
-    if (!tictacChrono) tictacChrono = setInterval(majChrono, 500);
-    majChrono();
-  }
-  enregistrerSeance();
 }
 
 /* ------------------------------------------- chronomètre de la séance entière */
@@ -986,12 +1041,6 @@ function terminer() {
 }
 
 function terminerFooting(resume) {
-  // Un chrono encore en marche est arrêté ici, sinon la durée resterait celle
-  // du dernier arrêt volontaire et perdrait toute la fin de la sortie.
-  const chrono = seance.footing.chrono;
-  if (chrono && chrono.demarre) basculerChrono();
-  if (tictacChrono) { clearInterval(tictacChrono); tictacChrono = null; }
-
   const { duree_min: duree, distance_km: distance } = seance.footing;
   let allureTexte = '&mdash;';
   if (duree && distance) {
@@ -1000,7 +1049,7 @@ function terminerFooting(resume) {
   }
 
   resume.innerHTML =
-    '<h3>' + echapper(seance.titre.split(/\s+-\s+/)[0]) + '</h3>' +
+    '<h3>' + echapper(typeCourse(seance.footing.type).complet) + '</h3>' +
     '<div class="chiffres">' +
       '<div class="chiffre"><b>' + (duree || 0) + '</b><span>minutes</span></div>' +
       '<div class="chiffre"><b>' + (distance || 0) + '</b><span>km</span></div>' +
@@ -1174,15 +1223,6 @@ function brancher() {
   $('bouton-terminer').addEventListener('click', terminer);
   $('chrono-seance-demarrer').addEventListener('click', basculerChronoSeance);
   $('chrono-seance-arreter').addEventListener('click', arreterChronoSeance);
-  $('chrono-demarrer').addEventListener('click', basculerChrono);
-  $('chrono-remettre').addEventListener('click', () => {
-    if (!confirm('Remettre le chronomètre à zéro ?')) return;
-    seance.footing.chrono = { cumul: 0, demarre: null };
-    seance.footing.duree_min = null;
-    if (tictacChrono) { clearInterval(tictacChrono); tictacChrono = null; }
-    enregistrerSeance();
-    rendreFooting();
-  });
   $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
   $('bouton-consigne-annuler').addEventListener('click', quitterEditionConsigne);
   $('bouton-consigne-enregistrer').addEventListener('click', enregistrerEditionConsigne);

@@ -43,6 +43,9 @@ ENTETES[ONGLET_EXERCICES] = [
 ENTETES[ONGLET_SEANCES] = [
   'Date', 'Semaine', 'Jour', 'Type', 'Duree (min)',
   'Series', 'Tonnage', 'Distance (km)', 'Allure (min/km)',
+  // Propres aux quatre types de course. Des colonnes nommees plutot qu'un
+  // champ texte libre : creuses par nature, mais tracables en graphique.
+  'Repetitions', 'Recup (s)', 'Pente (%)', 'Charge portee (kg)', 'Duree seuil (min)',
 ];
 
 function doPost(requete) {
@@ -146,8 +149,14 @@ function ecrireSeance(seance) {
     const allure = (f.duree_min && f.distance_km)
       ? Math.round((f.duree_min / f.distance_km) * 100) / 100
       : '';
+    const vide = function (v) { return v != null ? v : ''; };
+    // Le type precis (ef, fractionne, incline, seuil) plutot qu'un "footing"
+    // uniforme : sans lui, comparer deux sorties reviendrait a melanger une
+    // endurance et un fractionne, dont les allures n'ont rien de comparable.
     ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), [[
-      date, semaine, jour, 'footing', duree, '', '', distance, allure,
+      date, semaine, jour, f.type || 'ef', duree, '', '', distance, allure,
+      vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
+      vide(f.charge_kg), vide(f.duree_seuil_min),
     ]]);
     return;
   }
@@ -204,5 +213,6 @@ function ecrireSeance(seance) {
   ajouterLignes(ongletPret(classeur, ONGLET_EXERCICES), lignesExercices);
   ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), [[
     date, semaine, jour, 'muscu', dureeMin, seriesSeance, tonnageSeance, '', '',
+    '', '', '', '', '',
   ]]);
 }
