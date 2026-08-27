@@ -131,6 +131,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     la couche de la minuterie sur `visualViewport` afin que le compte à
     rebours remonte juste au-dessus du clavier. Le réglage permet de revenir
     au comportement précédent.
+  - **Changer d'exercice (← / →) amorce aussi le clavier**, sur le même
+    principe : appelée dans les gestionnaires de `bouton-precedent` et
+    `bouton-suivant`, avant même `rendreExercice()`, pendant que le geste est
+    encore actif. Le focus se pose ensuite sur le champ charge de la première
+    série non validée du nouvel exercice (`focaliserProchaineSerie()`), pour
+    arriver prêt à saisir sans toucher l'écran.
 - **La touche Entrée du clavier numérique avance au champ suivant** (charge →
   reps → RIR → bouton de validation, puis la ligne suivante), construit dans
   `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :

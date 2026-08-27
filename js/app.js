@@ -1336,11 +1336,26 @@ function brancher() {
   $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
   $('bouton-consigne-annuler').addEventListener('click', quitterEditionConsigne);
   $('bouton-consigne-enregistrer').addEventListener('click', enregistrerEditionConsigne);
+  // Amorcer le clavier avant même de changer d'exercice : le geste (l'appui
+  // sur ← / →) est encore "chaud" à cet instant précis, il ne l'est déjà
+  // plus une fois rendreExercice() passé. Voir amorcerClavier() plus haut.
   $('bouton-precedent').addEventListener('click', () => {
-    if (indexExo > 0) { indexExo--; arreterMinuterie(); rendreExercice(); }
+    if (indexExo > 0) {
+      amorcerClavier();
+      indexExo--;
+      arreterMinuterie();
+      rendreExercice();
+      focaliserProchaineSerie();
+    }
   });
   $('bouton-suivant').addEventListener('click', () => {
-    if (indexExo < seance.exercices.length - 1) { indexExo++; arreterMinuterie(); rendreExercice(); }
+    if (indexExo < seance.exercices.length - 1) {
+      amorcerClavier();
+      indexExo++;
+      arreterMinuterie();
+      rendreExercice();
+      focaliserProchaineSerie();
+    }
   });
 
   $('bouton-serie').addEventListener('click', () => {
