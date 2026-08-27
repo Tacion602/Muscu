@@ -932,6 +932,22 @@ function minuterieTerminee() {
     indexExo++;
     rendreExercice();
   }
+  focaliserProchaineSerie();
+}
+
+/* Place le curseur sur le champ charge de la prochaine série non validée, où
+   qu'elle se trouve après la fermeture de la minuterie (même exercice ou
+   suivant) : reprendre la saisie sans devoir toucher l'écran au préalable.
+   Un appui sur "Passer" ouvre le clavier ; une fermeture automatique à zéro
+   pose le focus mais certains navigateurs mobiles n'ouvrent pas le clavier
+   sans geste direct de l'utilisateur, c'est une limite de la plateforme. */
+function focaliserProchaineSerie() {
+  const courant = seance.exercices[indexExo];
+  const index = prochaineSerie(courant);
+  if (index < 0) return;
+  const ligne = document.querySelectorAll('.ligne-serie')[index];
+  const champCharge = ligne && ligne.querySelector('input');
+  if (champCharge) { champCharge.focus(); champCharge.select(); }
 }
 
 function signaler() {

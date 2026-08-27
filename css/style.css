@@ -143,7 +143,7 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Fiche d'exercice ---------- */
 
-.ligne-titre { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.ligne-titre { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 .ligne-titre h2 { flex: 1; min-width: 0; margin: 0; }
 
 #exo-nom { font-size: 22px; line-height: 1.25; margin: 0 0 10px; }
@@ -170,6 +170,18 @@ body { display: flex; flex-direction: column; }
    le 26 août 2026 : les deux chronomètres doivent se lire comme une famille. */
 .chrono-seance.vert { background: var(--accent); }
 .chrono-seance.vert.tourne { background: var(--accent-clair); color: var(--fond); }
+
+/* Bouton de démarrage agrandi ×3 (bouton et icône), décision de
+   l'utilisateur le 26 août 2026 : sur sa propre ligne, pleine largeur,
+   plutôt que coincé à côté du titre. */
+#chrono-seance-demarrer {
+  flex: 1 1 100%;
+  min-height: 120px;
+  padding: 0 30px;
+  gap: 18px;
+  font-size: 42px;
+}
+#chrono-seance-demarrer .chrono-seance-icone { font-size: 36px; }
 .chrono-seance.rouge { background: #a33a33; }
 .chrono-seance-icone { font-size: 12px; line-height: 1; }
 .chrono-seance-temps:empty { display: none; }

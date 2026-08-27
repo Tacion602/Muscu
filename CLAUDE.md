@@ -98,7 +98,13 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   naturelle et bouton "Passer" partagent `minuterieTerminee()` : si la série
   qui vient de récupérer était la dernière de l'exercice, l'exercice suivant
   s'affiche automatiquement, plutôt que de laisser l'utilisateur sur une
-  fiche entièrement complétée sans rien à y faire.
+  fiche entièrement complétée sans rien à y faire. **Le focus se pose sur le
+  champ charge de la prochaine série non validée** (`focaliserProchaineSerie`)
+  à chaque fermeture, pour reprendre la saisie sans toucher l'écran. Un appui
+  sur "Passer" ouvre le clavier virtuel ; une fermeture automatique à zéro
+  pose le focus mais certains navigateurs mobiles n'ouvrent pas le clavier
+  sans geste direct de l'utilisateur, limite de la plateforme et non un défaut
+  de l'application.
 - **La touche Entrée du clavier numérique avance au champ suivant** (charge →
   reps → RIR → bouton de validation, puis la ligne suivante), construit dans
   `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
