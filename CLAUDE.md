@@ -146,26 +146,44 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     de sens, et les colonnes dédiées (répétitions, récup, pente, charge
     portée, durée au seuil) restent traçables en graphique là où un champ
     texte libre ne le serait pas.
-- **Le classeur reçoit trois onglets, un par granularité d'analyse**
-  (`ecrireSeance` dans `appsscript/Code.gs`), refondus le 26 août 2026 pour
-  se prêter directement aux graphiques :
-  - `Séries (app)` : une ligne par série, avec son tonnage. Le détail.
-  - `Exercices (app)` : une ligne par exercice et par séance, avec séries,
-    répétitions totales, charge maximale, tonnage et RIR moyen. C'est la
-    source des courbes de progression par mouvement, la vue la plus utile.
-  - `Séances (app)` : une ligne par séance, avec durée, séries et tonnage
-    total ; distance et allure pour les footings.
+- **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
+  `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
+  onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain
+  malgré leur intérêt pour les graphiques ; puis refaites le 27 août 2026 en
+  ajoutant les pages de lecture humaine ci-dessous, **sans supprimer les
+  premières** :
+  - `Exercices (app)`, `Séances (app)` : une ligne par observation, sans mise
+    en forme. Ce sont elles qu'on utilise pour un graphique Sheets classique
+    (sélectionner deux colonnes, Insérer > Graphique).
+  - **`J1`, `J3`, `J4`, `J5`, `Course`** : une page par jour d'entraînement,
+    dans le format de la grille manuelle d'origine de l'utilisateur — celui
+    qu'il a lui-même reconstitué à la main dans l'ancien onglet `Séries (app)`
+    pour me montrer ce qu'il voulait. Un bloc par exercice (nom en colonne A,
+    fusionné sur `RANGEES_PAR_EXERCICE` = 6 lignes), un groupe de quatre
+    colonnes (Charge, Reps, RIR, Total) par date de séance, le total posé sur
+    la première ligne du bloc. La page `Course` reprend le même principe,
+    mais avec un bloc par **type** de sortie plutôt que par exercice, chaque
+    type ayant ses propres colonnes (répétitions, pente...).
 
-  Deux partis pris à conserver :
-  - **chaque onglet porte une colonne `Semaine`** au format ISO
+  Points structurants à ne pas défaire :
+  - **chaque page plate porte une colonne `Semaine`** au format ISO
     (`2026-S35`) : un programme est hebdomadaire, et sans elle chaque
     graphique devrait recalculer le regroupement par formule ;
-  - **l'échauffement figure dans `Séries` mais ne compte dans aucun tonnage
-    agrégé** : une montée en charge gonflerait le volume sans correspondre à
-    du travail effectif.
+  - **l'échauffement ne figure nulle part dans les pages agrégées** (ni les
+    plates, ni les grilles par jour) : une montée en charge gonflerait le
+    volume sans correspondre à du travail effectif ;
+  - **un bloc de la page `Course` s'étend par insertion de ligne**
+    (`insertRowBefore`), jamais en écrivant sur la ligne trouvée : la première
+    version écrivait directement sur la ligne vide de séparation entre deux
+    blocs, qui finissait par disparaître si des types de course différents
+    s'entremêlaient dans le temps. Défaut trouvé à la relecture, avant tout
+    test, le 27 août 2026 ;
+  - **un exercice qui dépasserait un jour les 6 lignes réservées** écrit dans
+    les lignes du bloc suivant : limite connue, à corriger à la main si ça
+    arrive, pas encore un vrai bug rencontré.
 
-  Les colonnes `Debut seance` et `Fin seance` ont été retirées, redondantes
-  avec `Date` et `Duree (min)`.
+  Les colonnes `Debut seance` et `Fin seance` de l'ancien onglet unique ont
+  été retirées, redondantes avec `Date` et `Duree (min)`.
 - **Un chronomètre mesure la séance entière** : bouton vert à droite du titre
   de l'exercice pour le lancer ou le mettre en pause, bouton rouge d'arrêt
   qui n'apparaît que sur la fiche du dernier exercice, là où l'on est censé

@@ -15,27 +15,25 @@
 const SECRET = 'a-changer';
 
 /**
- * Trois onglets plutot qu'un seul, parce qu'un graphique se construit sur une
- * granularite donnee : melanger series, exercices et seances dans le meme
- * tableau obligerait a filtrer avant chaque courbe.
+ * Deux familles de pages, pour deux usages distincts :
  *
- *   Series    : le detail, une ligne par serie. Source des analyses fines.
- *   Exercices : une ligne par exercice et par seance. Source des courbes de
- *               progression par mouvement, la vue la plus utile au quotidien.
- *   Seances   : une ligne par seance. Source des volumes hebdomadaires.
+ *   Exercices (app), Seances (app) : une ligne par observation, sans mise en
+ *     forme. Source pretes-a-graphiquer : selectionner deux colonnes,
+ *     inserer un graphique Sheets, rien d'autre a faire.
  *
- * Chaque onglet porte Date et Semaine : un tableau croise dynamique ou un
- * graphique se regroupe alors sans formule intermediaire.
+ *   J1, J3, J4, J5, Course : une page par jour d'entrainement, dans le
+ *     format de la grille manuelle d'origine choisi par l'utilisateur le
+ *     27 aout 2026 apres qu'un premier essai (tout en lignes plates) s'est
+ *     revele illisible a l'usage. Un bloc par exercice, un groupe de quatre
+ *     colonnes (Charge, Reps, RIR, Total) par seance : la lecture directe
+ *     de la progression, sans detour par un tableau croise dynamique.
+ *
+ * Les deux coexistent : celles-la pour l'oeil, celles-ci pour les graphiques.
  */
-const ONGLET_SERIES = 'Séries (app)';
 const ONGLET_EXERCICES = 'Exercices (app)';
 const ONGLET_SEANCES = 'Séances (app)';
 
 const ENTETES = {};
-ENTETES[ONGLET_SERIES] = [
-  'Date', 'Semaine', 'Jour', 'Exercice', 'Muscle',
-  'Serie', 'Echauffement', 'Charge', 'Reps', 'RIR', 'Tonnage',
-];
 ENTETES[ONGLET_EXERCICES] = [
   'Date', 'Semaine', 'Jour', 'Exercice', 'Muscle',
   'Series', 'Reps totales', 'Charge max', 'Tonnage', 'RIR moyen',
@@ -122,17 +120,224 @@ function moyenne(valeurs) {
   return Math.round((somme / valeurs.length) * 10) / 10;
 }
 
+function formatDateCourte(date) {
+  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  return Utilities.formatDate(date, tz, 'dd/MM/yyyy');
+}
+
+/* ---------------------------------------------------------------------
+ * Grille de musculation, une page par jour (J1, J3, J4, J5).
+ * ------------------------------------------------------------------- */
+
+const COULEUR_TITRE_JOUR = '#8e7cc3';
+const COULEUR_BLOC_EXERCICE = '#c9daf8';
+const COULEUR_ENTETE_DATE = '#efefef';
+const LARGEUR_GROUPE_DATE = 4;       // Charge, Reps, RIR, Total
+const PREMIERE_COLONNE_DATE = 3;     // A = exercice, B = espace, C = premiere date
+const RANGEES_PAR_EXERCICE = 6;      // marge au dela des series prescrites
+
+function feuilleJour(classeur, jour, titre) {
+  let feuille = classeur.getSheetByName(jour);
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet(jour);
+  feuille.getRange(1, 1, 1, PREMIERE_COLONNE_DATE - 1 + LARGEUR_GROUPE_DATE)
+    .merge()
+    .setValue(titre)
+    .setBackground(COULEUR_TITRE_JOUR)
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setFontSize(13);
+  feuille.setColumnWidth(1, 190);
+  feuille.setColumnWidth(2, 16);
+  feuille.setFrozenRows(3);
+  feuille.setFrozenColumns(1);
+  return feuille;
+}
+
+/* Cherche le groupe de colonnes d'une date donnee en ligne 2 ; le cree a la
+ * suite des groupes existants si absent. Deux seances le meme jour
+ * partagent le meme groupe plutot que d'en ouvrir un second. */
+function colonneGroupeDate(feuille, texteDate) {
+  const derniereColonne = Math.max(feuille.getLastColumn(), PREMIERE_COLONNE_DATE - 1);
+  for (let col = PREMIERE_COLONNE_DATE; col <= derniereColonne; col += LARGEUR_GROUPE_DATE) {
+    const valeur = feuille.getRange(2, col).getValue();
+    if (valeur === texteDate) return col;
+    if (valeur === '') {
+      ecrireEnteteGroupeDate(feuille, col, texteDate);
+      return col;
+    }
+  }
+  const col = derniereColonne + 1;
+  ecrireEnteteGroupeDate(feuille, col, texteDate);
+  return col;
+}
+
+function ecrireEnteteGroupeDate(feuille, col, texteDate) {
+  feuille.getRange(2, col, 1, LARGEUR_GROUPE_DATE)
+    .merge()
+    .setValue(texteDate)
+    .setBackground(COULEUR_ENTETE_DATE)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+  feuille.getRange(3, col, 1, LARGEUR_GROUPE_DATE)
+    .setValues([['Charge', 'Reps', 'RIR', 'Total']])
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+  feuille.setColumnWidths(col, LARGEUR_GROUPE_DATE, 55);
+}
+
+/* Cherche le bloc d'un exercice en colonne A ; le cree a la suite des blocs
+ * existants si absent, avec RANGEES_PAR_EXERCICE lignes reservees. Un
+ * exercice qui deborderait un jour de ce nombre de series ecrit dans les
+ * lignes du bloc suivant : limite connue, a corriger a la main si ca arrive. */
+function ligneBlocExercice(feuille, nomExercice) {
+  const derniereLigne = Math.max(feuille.getLastRow(), 3);
+  for (let ligne = 4; ligne <= derniereLigne; ligne += RANGEES_PAR_EXERCICE) {
+    const valeur = feuille.getRange(ligne, 1).getValue();
+    if (valeur === nomExercice) return ligne;
+    if (valeur === '') {
+      ecrireEnteteBlocExercice(feuille, ligne, nomExercice);
+      return ligne;
+    }
+  }
+  const ligne = derniereLigne + 1;
+  ecrireEnteteBlocExercice(feuille, ligne, nomExercice);
+  return ligne;
+}
+
+function ecrireEnteteBlocExercice(feuille, ligne, nomExercice) {
+  feuille.getRange(ligne, 1, RANGEES_PAR_EXERCICE, 1)
+    .merge()
+    .setValue(nomExercice)
+    .setBackground(COULEUR_BLOC_EXERCICE)
+    .setFontWeight('bold')
+    .setVerticalAlignment('middle')
+    .setWrap(true);
+}
+
+/* Ecrit une seance de musculation dans la grille de son jour : un bloc par
+ * exercice deja pratique, un groupe de colonnes par date de seance. Le total
+ * (tonnage hors echauffement) se pose sur la premiere ligne du bloc, comme
+ * dans la grille d'origine. */
+function ecrireSeanceGrille(classeur, seance, date) {
+  const feuille = feuilleJour(classeur, seance.jour, seance.titre.split(/\s+-\s+/)[0]);
+  const col = colonneGroupeDate(feuille, formatDateCourte(date));
+
+  (seance.exercices || []).forEach(function (exo) {
+    const seriesFaites = (exo.series || []).filter(function (s) { return s.faite && !s.echauffement; });
+    if (!seriesFaites.length) return;
+
+    const ligne = ligneBlocExercice(feuille, exo.nom || '');
+    const tonnage = seriesFaites.reduce(function (t, s) { return t + (s.charge || 0) * (s.reps || 0); }, 0);
+    const donnees = seriesFaites.map(function (s) {
+      return [s.charge != null ? s.charge : '', s.reps != null ? s.reps : '', s.rir != null ? s.rir : ''];
+    });
+    feuille.getRange(ligne, col, donnees.length, 3).setValues(donnees);
+    feuille.getRange(ligne, col + 3).setValue(tonnage);
+  });
+}
+
+/* ---------------------------------------------------------------------
+ * Grille de course, une page unique avec un bloc par type de sortie.
+ * ------------------------------------------------------------------- */
+
+const COULEUR_TITRE_COURSE = '#76a5af';
+const COULEUR_ENTETE_TYPE_COURSE = '#d9ead3';
+
+const NOMS_TYPE_COURSE = {
+  ef: 'Endurance fondamentale',
+  fractionne: 'Fractionné',
+  incline: 'Incliné',
+  seuil: 'Séance au seuil',
+};
+const ENTETES_TYPE_COURSE = {
+  ef: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)'],
+  fractionne: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Repetitions', 'Recup (s)'],
+  incline: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Pente (%)', 'Charge portee (kg)'],
+  seuil: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Duree au seuil (min)'],
+};
+
+function feuilleCourse(classeur) {
+  let feuille = classeur.getSheetByName('Course');
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet('Course');
+  feuille.getRange(1, 1, 1, 6)
+    .merge()
+    .setValue('Course')
+    .setBackground(COULEUR_TITRE_COURSE)
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setFontSize(13);
+  return feuille;
+}
+
+/* Cherche le bloc d'un type de course par son titre en colonne A ; le cree a
+ * la suite des blocs existants si absent. Chaque type a ses propres colonnes
+ * (repetitions, pente...), donc son propre bloc plutot qu'un tableau commun
+ * troue de cases sans objet pour les trois autres types. */
+function blocTypeCourse(feuille, type) {
+  const titre = NOMS_TYPE_COURSE[type] || NOMS_TYPE_COURSE.ef;
+  const entetes = ENTETES_TYPE_COURSE[type] || ENTETES_TYPE_COURSE.ef;
+  const titresConnus = Object.keys(NOMS_TYPE_COURSE).map(function (k) { return NOMS_TYPE_COURSE[k]; });
+  const derniereLigne = Math.max(feuille.getLastRow(), 1);
+
+  for (let ligne = 2; ligne <= derniereLigne; ligne++) {
+    if (feuille.getRange(ligne, 1).getValue() !== titre) continue;
+    let curseur = ligne + 2;
+    while (curseur <= derniereLigne) {
+      const valeur = feuille.getRange(curseur, 1).getValue();
+      if (valeur === '' || titresConnus.indexOf(valeur) !== -1) break;
+      curseur++;
+    }
+    // Insere une ligne plutot que d'ecrire sur celle trouvee, qui est soit
+    // vide (fin de feuille), soit deja le titre du bloc suivant : ecrire
+    // dessus grignoterait la separation entre deux blocs au fil de seances
+    // de types differents entrelacees dans le temps.
+    feuille.insertRowBefore(curseur);
+    return { ligne: curseur, colonnes: entetes.length };
+  }
+
+  const ligneTitre = derniereLigne > 1 ? derniereLigne + 2 : 1;
+  feuille.getRange(ligneTitre, 1).setValue(titre).setFontWeight('bold').setFontSize(12);
+  feuille.getRange(ligneTitre + 1, 1, 1, entetes.length)
+    .setValues([entetes])
+    .setBackground(COULEUR_ENTETE_TYPE_COURSE)
+    .setFontWeight('bold');
+  return { ligne: ligneTitre + 2, colonnes: entetes.length };
+}
+
+function ecrireCourseGrille(classeur, seance, date) {
+  const f = seance.footing || {};
+  if (!f.duree_min && !f.distance_km) return;
+
+  const type = f.type || 'ef';
+  const feuille = feuilleCourse(classeur);
+  const bloc = blocTypeCourse(feuille, type);
+  const allure = (f.duree_min && f.distance_km)
+    ? Math.round((f.duree_min / f.distance_km) * 100) / 100
+    : '';
+  const vide = function (v) { return v != null ? v : ''; };
+  const base = [formatDateCourte(date), vide(f.duree_min), vide(f.distance_km), allure];
+  const extra = {
+    fractionne: [vide(f.repetitions), vide(f.recup_s)],
+    incline: [vide(f.pente_pct), vide(f.charge_kg)],
+    seuil: [vide(f.duree_seuil_min)],
+  }[type] || [];
+
+  feuille.getRange(bloc.ligne, 1, 1, bloc.colonnes).setValues([base.concat(extra)]);
+}
+
 /**
- * Repartit une seance sur les trois onglets, du detail au resume.
+ * Ecrit une seance a la fois dans les pages pretes-a-graphiquer (Exercices,
+ * Seances) et dans la page de lecture humaine de son jour (grille par
+ * exercice, ou bloc de course par type).
  *
- * Rien n'est ecrit dans la grille du programme : celle-ci est dessinee pour
- * la saisie manuelle (groupes de colonnes par seance), pas pour un flux
- * automatique, et la modifier depuis le script romprait sa mise en page au
- * premier ecart de format.
+ * Rien n'est ecrit dans la grille du programme d'origine : celle-ci reste la
+ * source de la prescription, pas une cible d'ecriture automatique.
  *
- * L'echauffement compte dans l'onglet Series, pour garder la trace de ce qui
- * a ete fait, mais jamais dans les tonnages agreges : une montee en charge
- * gonflerait le volume sans correspondre a du travail effectif.
+ * L'echauffement n'entre dans aucun tonnage agrege, ni dans la page du jour :
+ * une montee en charge gonflerait le volume sans correspondre a du travail
+ * effectif.
  */
 function ecrireSeance(seance) {
   const classeur = SpreadsheetApp.getActiveSpreadsheet();
@@ -158,16 +363,15 @@ function ecrireSeance(seance) {
       vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
       vide(f.charge_kg), vide(f.duree_seuil_min),
     ]]);
+    ecrireCourseGrille(classeur, seance, date);
     return;
   }
 
-  const lignesSeries = [];
   const lignesExercices = [];
   let tonnageSeance = 0;
   let seriesSeance = 0;
 
   (seance.exercices || []).forEach(function (exo) {
-    let rang = 0;
     let tonnageExo = 0;
     let repsExo = 0;
     let chargeMax = 0;
@@ -175,22 +379,8 @@ function ecrireSeance(seance) {
     const rirs = [];
 
     (exo.series || []).forEach(function (s) {
-      if (!s.faite) return;
-      const charge = s.charge != null ? s.charge : '';
-      const reps = s.reps != null ? s.reps : '';
+      if (!s.faite || s.echauffement) return;
       const tonnage = (s.charge || 0) * (s.reps || 0);
-      if (!s.echauffement) rang++;
-
-      lignesSeries.push([
-        date, semaine, jour, exo.nom || '', exo.muscle || '',
-        s.echauffement ? 'ech' : rang,
-        s.echauffement ? 'oui' : 'non',
-        charge, reps,
-        s.rir != null ? s.rir : '',
-        s.echauffement ? '' : tonnage,
-      ]);
-
-      if (s.echauffement) return;
       seriesExo++;
       tonnageExo += tonnage;
       repsExo += s.reps || 0;
@@ -207,12 +397,12 @@ function ecrireSeance(seance) {
     seriesSeance += seriesExo;
   });
 
-  if (!lignesSeries.length) return;
+  if (!lignesExercices.length) return;
 
-  ajouterLignes(ongletPret(classeur, ONGLET_SERIES), lignesSeries);
   ajouterLignes(ongletPret(classeur, ONGLET_EXERCICES), lignesExercices);
   ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), [[
     date, semaine, jour, 'muscu', dureeMin, seriesSeance, tonnageSeance, '', '',
     '', '', '', '', '',
   ]]);
+  ecrireSeanceGrille(classeur, seance, date);
 }
