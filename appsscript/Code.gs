@@ -154,7 +154,13 @@ function moyenne(valeurs) {
 }
 
 function formatDateCourte(date) {
-  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  // Session.getScriptTimeZone() plutot que
+  // SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone() : la
+  // seconde a fait echouer Utilities.formatDate en production le 27 aout
+  // 2026 ("argument incorrect : timeZone, doit etre de type String"), sans
+  // qu'on puisse verifier pourquoi hors de l'editeur Apps Script. La
+  // premiere est la source recommandee pour ce cas et n'a pas ce probleme.
+  const tz = Session.getScriptTimeZone();
   return Utilities.formatDate(date, tz, 'dd/MM/yyyy');
 }
 
