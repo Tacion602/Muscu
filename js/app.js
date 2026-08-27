@@ -375,8 +375,14 @@ function commencer(code) {
   enregistrerSeance();
   demanderVeille();
   afficher('seance');
-  if (jour.type === 'footing') rendreFooting();
-  else rendreExercice();
+  if (jour.type === 'footing') {
+    rendreFooting();
+  } else {
+    // Ouvrir un jour de musculation démarre le chronomètre de séance : sans
+    // ce geste dédié, il fallait y penser soi-même en plein échauffement.
+    demarrerChronoSeance();
+    rendreExercice();
+  }
 }
 
 function nouvellesSeries(exo) {
@@ -551,6 +557,20 @@ function majChronoSeance() {
   demarrer.classList.toggle('tourne', !!chrono.demarre);
   $('chrono-seance-temps').textContent = ecoule ? texteDuree(ecoule / 1000) : '';
   demarrer.querySelector('.chrono-seance-icone').innerHTML = chrono.demarre ? '&#10073;&#10073;' : '&#9654;';
+}
+
+/* Démarre le chronomètre s'il ne tourne pas déjà, sans jamais le mettre en
+   pause : contrairement à basculerChronoSeance(), ce n'est pas un bouton
+   actionné volontairement, donc pas un bascule. Appelé à l'ouverture d'un
+   jour de musculation, neuf ou repris. */
+function demarrerChronoSeance() {
+  const chrono = chronoSeance();
+  if (chrono.demarre) return;
+  chrono.demarre = Date.now();
+  chrono.arrete = false;
+  if (!tictacSeance) tictacSeance = setInterval(majChronoSeance, 1000);
+  enregistrerSeance();
+  majChronoSeance();
 }
 
 function basculerChronoSeance() {

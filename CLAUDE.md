@@ -247,6 +247,16 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   2. l'enregistrement de la séance (`terminer()`) ;
   3. la fermeture de la minuterie de récupération de la dernière série du
      dernier exercice — le seul des trois qui ne dépend d'aucun geste dédié.
+
+  **Il démarre de lui-même à l'ouverture d'un jour de musculation**
+  (`demarrerChronoSeance()`, appelée dans `commencer()`) : décidé le 27 août
+  2026, pour ne pas avoir à y penser en plein échauffement. Volontairement
+  pas un bascule comme `basculerChronoSeance()` : appelée alors qu'il tourne
+  déjà, elle ne fait rien, plutôt que de le mettre en pause par accident. Ne
+  concerne que les jours de musculation, `bloc-footing` n'ayant pas ce
+  bouton. Ne joue pas à la reprise d'une séance déjà en cours (`reprendre()`)
+  : un chronomètre qu'on a arrêté volontairement ne doit pas repartir tout
+  seul.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
