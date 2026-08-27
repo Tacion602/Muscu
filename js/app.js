@@ -17,6 +17,7 @@ const REGLAGES_PAR_DEFAUT = {
   son: true,
   vibration: true,
   veille: true,
+  clavierPendantRecup: true,
 };
 
 /* Échauffement de début de séance, optimisé aux zones travaillées ce jour-là,
@@ -893,6 +894,47 @@ function lancerMinuterie(secondes, exercice, indexSerie) {
   battre();
   if (tictac) clearInterval(tictac);
   tictac = setInterval(battre, 250);
+
+  // Le clavier reste ouvert pendant toute la récupération, pour qu'il le soit
+  // encore à zéro : c'est la seule façon d'y être prêt sans geste, aucun
+  // navigateur mobile n'ouvrant le clavier de lui-même. Le focus est posé sur
+  // l'amorce, jamais sur un champ de saisie réel, pour qu'une frappe
+  // accidentelle pendant le repos n'écrive dans aucune série.
+  if (reglages.clavierPendantRecup) {
+    amorcerClavier();
+    suivreClavier();
+  }
+}
+
+/* Le clavier ouvert masque le bas de l'écran, donc le compte à rebours. On
+   redimensionne la couche de la minuterie sur la zone réellement visible
+   (visualViewport), ce qui la fait remonter juste au-dessus du clavier. */
+function suivreClavier() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  ajusterMinuterieAuClavier();
+  vv.addEventListener('resize', ajusterMinuterieAuClavier);
+  vv.addEventListener('scroll', ajusterMinuterieAuClavier);
+}
+
+function cesserDeSuivreClavier() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  vv.removeEventListener('resize', ajusterMinuterieAuClavier);
+  vv.removeEventListener('scroll', ajusterMinuterieAuClavier);
+  const couche = $('minuterie');
+  couche.style.height = '';
+  couche.style.top = '';
+  couche.style.bottom = '';
+}
+
+function ajusterMinuterieAuClavier() {
+  const vv = window.visualViewport;
+  const couche = $('minuterie');
+  if (!vv || couche.hidden) return;
+  couche.style.top = vv.offsetTop + 'px';
+  couche.style.height = vv.height + 'px';
+  couche.style.bottom = 'auto';
 }
 
 function battre() {
@@ -917,6 +959,7 @@ function arreterMinuterie() {
   tictac = null;
   $('minuterie').hidden = true;
   $('minuterie-chiffres').classList.remove('ecoule');
+  cesserDeSuivreClavier();
 }
 
 /* Ferme la minuterie, que ce soit à zéro ou via "Passer", et enchaîne
@@ -1198,6 +1241,7 @@ function rendreReglages() {
   $('reglage-son').checked = reglages.son;
   $('reglage-vibration').checked = reglages.vibration;
   $('reglage-veille').checked = reglages.veille;
+  $('reglage-clavier-recup').checked = reglages.clavierPendantRecup;
   $('reglages-message').textContent = '';
   $('reglages-message').className = 'message';
   $('note-programme').textContent = programme
@@ -1212,6 +1256,7 @@ function sauverReglages() {
     son: $('reglage-son').checked,
     vibration: $('reglage-vibration').checked,
     veille: $('reglage-veille').checked,
+    clavierPendantRecup: $('reglage-clavier-recup').checked,
   };
   ecrire(CLES.reglages, reglages);
 }
@@ -1321,7 +1366,8 @@ function brancher() {
     // vider ce qui attendait, sans obliger à passer par "Tester le pont".
     if (reglages.pont) synchroniser().then(rendreEtatSync).catch(() => {});
   });
-  ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille']
+  ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
+   'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));
 
   $('bouton-tester-pont').addEventListener('click', async () => {

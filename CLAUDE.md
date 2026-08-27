@@ -121,6 +121,16 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     geste de l'utilisateur**, c'est une restriction volontaire de la
     plateforme, pas un défaut contournable. Élargir la cible du geste donne
     au moins le chemin le plus court vers la saisie.
+  - **Le clavier peut rester ouvert pendant toute la récupération**, réglage
+    `clavierPendantRecup` activé par défaut depuis le 27 août 2026 : c'est la
+    seule façon d'être prêt à saisir dès zéro sans geste, puisque le clavier
+    ne peut pas s'ouvrir seul. Le focus est alors posé **sur l'amorce, jamais
+    sur un champ de série**, pour qu'une frappe accidentelle pendant le repos
+    n'écrive dans aucune donnée. Contrepartie assumée : le clavier occupe le
+    bas de l'écran pendant le repos, d'où `suivreClavier()` qui redimensionne
+    la couche de la minuterie sur `visualViewport` afin que le compte à
+    rebours remonte juste au-dessus du clavier. Le réglage permet de revenir
+    au comportement précédent.
 - **La touche Entrée du clavier numérique avance au champ suivant** (charge →
   reps → RIR → bouton de validation, puis la ligne suivante), construit dans
   `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
