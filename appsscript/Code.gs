@@ -101,6 +101,39 @@ function ajouterLignes(onglet, lignes) {
 }
 
 /**
+ * Garde-fou contre les doublons. Les pages plates s'ecrivent par ajout : si
+ * une seance part deux fois (echec en cours d'ecriture, puis nouvel essai de
+ * l'application qui la garde "en attente"), ses lignes seraient comptees
+ * deux fois. On retient donc les identifiants deja traites.
+ *
+ * Cas reel du 27 aout 2026 : une exception sur la mise en forme de la grille
+ * survenait apres l'ecriture des pages plates, laissant la seance en attente
+ * cote telephone. Sans ce garde-fou, le renvoi doublait le tonnage.
+ *
+ * Les grilles par jour, elles, sont naturellement idempotentes : elles
+ * cherchent le groupe de colonnes de la date et le bloc de l'exercice avant
+ * d'ecrire, donc un second passage reecrit les memes cellules.
+ */
+function dejaEcrite(id) {
+  if (!id) return false;
+  const memoire = PropertiesService.getScriptProperties();
+  const brut = memoire.getProperty('seances_ecrites');
+  const liste = brut ? JSON.parse(brut) : [];
+  return liste.indexOf(id) !== -1;
+}
+
+function marquerEcrite(id) {
+  if (!id) return;
+  const memoire = PropertiesService.getScriptProperties();
+  const brut = memoire.getProperty('seances_ecrites');
+  const liste = brut ? JSON.parse(brut) : [];
+  liste.push(id);
+  // Les proprietes de script sont plafonnees : on ne garde que les dernieres,
+  // largement de quoi couvrir les renvois d'une seance restee en attente.
+  memoire.setProperty('seances_ecrites', JSON.stringify(liste.slice(-200)));
+}
+
+/**
  * Numero de semaine ISO. Regrouper par semaine plutot que par date est la
  * maille naturelle d'un programme hebdomadaire : sans cette colonne, chaque
  * graphique devrait la recalculer par formule.
@@ -140,8 +173,12 @@ function feuilleJour(classeur, jour, titre) {
   let feuille = classeur.getSheetByName(jour);
   if (feuille) return feuille;
   feuille = classeur.insertSheet(jour);
-  feuille.getRange(1, 1, 1, PREMIERE_COLONNE_DATE - 1 + LARGEUR_GROUPE_DATE)
-    .merge()
+  // Le titre ne doit PAS etre fusionne sur plusieurs colonnes : figer la
+  // colonne A couperait alors la fusion en deux, ce que Sheets refuse avec
+  // "vous ne pouvez pas figer des colonnes contenant seulement une partie
+  // d'une cellule fusionnee". Le texte deborde visuellement sur les colonnes
+  // voisines, vides, ce qui donne le meme rendu sans la contrainte.
+  feuille.getRange(1, 1)
     .setValue(titre)
     .setBackground(COULEUR_TITRE_JOUR)
     .setFontColor('#ffffff')
@@ -150,6 +187,7 @@ function feuilleJour(classeur, jour, titre) {
   feuille.setColumnWidth(1, 190);
   feuille.setColumnWidth(2, 16);
   feuille.setFrozenRows(3);
+  // Garde le nom de l'exercice visible en faisant defiler les dates a droite.
   feuille.setFrozenColumns(1);
   return feuille;
 }
@@ -157,19 +195,25 @@ function feuilleJour(classeur, jour, titre) {
 /* Cherche le groupe de colonnes d'une date donnee en ligne 2 ; le cree a la
  * suite des groupes existants si absent. Deux seances le meme jour
  * partagent le meme groupe plutot que d'en ouvrir un second. */
+const MAX_GROUPES_DATE = 150;    // environ trois ans de seances hebdomadaires
+
 function colonneGroupeDate(feuille, texteDate) {
-  const derniereColonne = Math.max(feuille.getLastColumn(), PREMIERE_COLONNE_DATE - 1);
-  for (let col = PREMIERE_COLONNE_DATE; col <= derniereColonne; col += LARGEUR_GROUPE_DATE) {
-    const valeur = feuille.getRange(2, col).getValue();
+  // Les groupes occupent des colonnes fixes (3, 7, 11...) : on les lit
+  // directement plutot que de deduire leur nombre de getLastColumn(), dont
+  // le comportement face aux cellules fusionnees n'est pas garanti.
+  const largeur = MAX_GROUPES_DATE * LARGEUR_GROUPE_DATE;
+  const ligne2 = feuille.getRange(2, PREMIERE_COLONNE_DATE, 1, largeur).getValues()[0];
+
+  for (let i = 0; i < MAX_GROUPES_DATE; i++) {
+    const col = PREMIERE_COLONNE_DATE + i * LARGEUR_GROUPE_DATE;
+    const valeur = ligne2[i * LARGEUR_GROUPE_DATE];
     if (valeur === texteDate) return col;
     if (valeur === '') {
       ecrireEnteteGroupeDate(feuille, col, texteDate);
       return col;
     }
   }
-  const col = derniereColonne + 1;
-  ecrireEnteteGroupeDate(feuille, col, texteDate);
-  return col;
+  throw new Error('Plus de place pour une nouvelle date sur la page ' + feuille.getName() + '.');
 }
 
 function ecrireEnteteGroupeDate(feuille, col, texteDate) {
@@ -190,19 +234,28 @@ function ecrireEnteteGroupeDate(feuille, col, texteDate) {
  * existants si absent, avec RANGEES_PAR_EXERCICE lignes reservees. Un
  * exercice qui deborderait un jour de ce nombre de series ecrit dans les
  * lignes du bloc suivant : limite connue, a corriger a la main si ca arrive. */
+const PREMIERE_LIGNE_BLOC = 4;
+const MAX_BLOCS_EXERCICE = 40;
+
 function ligneBlocExercice(feuille, nomExercice) {
-  const derniereLigne = Math.max(feuille.getLastRow(), 3);
-  for (let ligne = 4; ligne <= derniereLigne; ligne += RANGEES_PAR_EXERCICE) {
-    const valeur = feuille.getRange(ligne, 1).getValue();
+  // Les blocs occupent des lignes fixes (4, 10, 16...) : on les lit
+  // directement plutot que de deduire leur nombre de getLastRow(). Celle-ci
+  // ne compte que les lignes reellement remplies, or un bloc de six lignes
+  // dont trois series seulement sont ecrites en laisse trois vides : le bloc
+  // suivant se serait alors pose en plein milieu du precedent.
+  const hauteur = MAX_BLOCS_EXERCICE * RANGEES_PAR_EXERCICE;
+  const colonneA = feuille.getRange(PREMIERE_LIGNE_BLOC, 1, hauteur, 1).getValues();
+
+  for (let i = 0; i < MAX_BLOCS_EXERCICE; i++) {
+    const ligne = PREMIERE_LIGNE_BLOC + i * RANGEES_PAR_EXERCICE;
+    const valeur = colonneA[i * RANGEES_PAR_EXERCICE][0];
     if (valeur === nomExercice) return ligne;
     if (valeur === '') {
       ecrireEnteteBlocExercice(feuille, ligne, nomExercice);
       return ligne;
     }
   }
-  const ligne = derniereLigne + 1;
-  ecrireEnteteBlocExercice(feuille, ligne, nomExercice);
-  return ligne;
+  throw new Error('Plus de place pour un nouvel exercice sur la page ' + feuille.getName() + '.');
 }
 
 function ecrireEnteteBlocExercice(feuille, ligne, nomExercice) {
@@ -228,8 +281,13 @@ function ecrireSeanceGrille(classeur, seance, date) {
     if (!seriesFaites.length) return;
 
     const ligne = ligneBlocExercice(feuille, exo.nom || '');
+    // Le tonnage porte sur TOUTES les series faites, meme si le bloc ne peut
+    // en afficher que RANGEES_PAR_EXERCICE : mieux vaut un total juste et un
+    // detail tronque que l'inverse. Sans ce plafond, l'ecriture deborderait
+    // sur le bloc de l'exercice suivant.
     const tonnage = seriesFaites.reduce(function (t, s) { return t + (s.charge || 0) * (s.reps || 0); }, 0);
-    const donnees = seriesFaites.map(function (s) {
+    const affichables = seriesFaites.slice(0, RANGEES_PAR_EXERCICE);
+    const donnees = affichables.map(function (s) {
       return [s.charge != null ? s.charge : '', s.reps != null ? s.reps : '', s.rir != null ? s.rir : ''];
     });
     feuille.getRange(ligne, col, donnees.length, 3).setValues(donnees);
@@ -340,6 +398,9 @@ function ecrireCourseGrille(classeur, seance, date) {
  * effectif.
  */
 function ecrireSeance(seance) {
+  // Un renvoi de la meme seance ne doit rien ajouter : voir dejaEcrite().
+  if (dejaEcrite(seance.id)) return;
+
   const classeur = SpreadsheetApp.getActiveSpreadsheet();
   const date = seance.fin ? new Date(seance.fin) : new Date();
   const semaine = semaineIso(date);
@@ -358,12 +419,16 @@ function ecrireSeance(seance) {
     // Le type precis (ef, fractionne, incline, seuil) plutot qu'un "footing"
     // uniforme : sans lui, comparer deux sorties reviendrait a melanger une
     // endurance et un fractionne, dont les allures n'ont rien de comparable.
+    // La grille passe en premier : c'est la partie fragile (mise en forme,
+    // fusions), et elle est idempotente. Si elle echoue, rien n'a encore ete
+    // ajoute aux pages plates, donc un renvoi repart proprement.
+    ecrireCourseGrille(classeur, seance, date);
     ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), [[
       date, semaine, jour, f.type || 'ef', duree, '', '', distance, allure,
       vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
       vide(f.charge_kg), vide(f.duree_seuil_min),
     ]]);
-    ecrireCourseGrille(classeur, seance, date);
+    marquerEcrite(seance.id);
     return;
   }
 
@@ -399,10 +464,14 @@ function ecrireSeance(seance) {
 
   if (!lignesExercices.length) return;
 
+  // La grille passe en premier : c'est la partie fragile (mise en forme,
+  // fusions), et elle est idempotente. Si elle echoue, rien n'a encore ete
+  // ajoute aux pages plates, donc un renvoi repart proprement.
+  ecrireSeanceGrille(classeur, seance, date);
   ajouterLignes(ongletPret(classeur, ONGLET_EXERCICES), lignesExercices);
   ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), [[
     date, semaine, jour, 'muscu', dureeMin, seriesSeance, tonnageSeance, '', '',
     '', '', '', '', '',
   ]]);
-  ecrireSeanceGrille(classeur, seance, date);
+  marquerEcrite(seance.id);
 }

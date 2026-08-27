@@ -204,9 +204,32 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     blocs, qui finissait par disparaître si des types de course différents
     s'entremêlaient dans le temps. Défaut trouvé à la relecture, avant tout
     test, le 27 août 2026 ;
-  - **un exercice qui dépasserait un jour les 6 lignes réservées** écrit dans
-    les lignes du bloc suivant : limite connue, à corriger à la main si ça
-    arrive, pas encore un vrai bug rencontré.
+  - **le titre d'une page de jour n'est jamais fusionné sur plusieurs
+    colonnes.** Il l'était au départ, et Sheets refusait alors de figer la
+    colonne A : « vous ne pouvez pas figer des colonnes contenant seulement
+    une partie d'une cellule fusionnée ». L'exception faisait échouer toute
+    la synchronisation. Le texte déborde visuellement sur les colonnes
+    voisines vides, ce qui donne le même rendu sans la contrainte. Erreur
+    rencontrée en production le 27 août 2026 ;
+  - **les blocs et les groupes de dates sont à des positions fixes** (lignes
+    4, 10, 16... et colonnes 3, 7, 11...), lues directement plutôt que
+    déduites de `getLastRow()` / `getLastColumn()`. Ces deux fonctions ne
+    comptent que les cellules réellement remplies : un bloc de six lignes
+    dont trois séries seulement sont écrites en laisse trois vides, et le
+    bloc suivant se serait posé en plein milieu du précédent. Défaut trouvé
+    par relecture le 27 août 2026, avant qu'il ne se manifeste ;
+  - **un exercice qui dépasse les 6 lignes réservées voit son détail tronqué,
+    jamais débordé** sur le bloc suivant. Le tonnage, lui, porte sur toutes
+    les séries : mieux vaut un total juste et un détail incomplet que
+    l'inverse ;
+  - **l'écriture est idempotente** (`dejaEcrite` / `marquerEcrite`, via
+    `PropertiesService`). Les pages plates s'écrivent par ajout : une séance
+    envoyée deux fois y compterait double. C'est arrivé le 27 août 2026,
+    l'exception sur la mise en forme survenant après l'écriture des pages
+    plates, laissant la séance « en attente » côté téléphone. **La grille
+    s'écrit désormais en premier** (partie fragile, mais naturellement
+    idempotente puisqu'elle cherche le groupe de dates et le bloc avant
+    d'écrire), les pages plates ensuite, le marquage en dernier.
 
   Les colonnes `Debut seance` et `Fin seance` de l'ancien onglet unique ont
   été retirées, redondantes avec `Date` et `Duree (min)`.
