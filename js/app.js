@@ -923,7 +923,12 @@ function arreterMinuterie() {
    automatiquement : si la série qui vient de récupérer était la dernière de
    l'exercice, l'exercice suivant s'affiche directement plutôt que de laisser
    l'utilisateur sur une fiche entièrement complétée. */
-function minuterieTerminee() {
+function minuterieTerminee(gesteUtilisateur) {
+  // L'amorce est focalisée en tout premier, tant que le geste est encore
+  // "chaud" : c'est ce qui décide le navigateur à ouvrir le clavier. Tout le
+  // reste (fermeture, changement d'exercice) vient après.
+  if (gesteUtilisateur) amorcerClavier();
+
   arreterMinuterie();
   if (!seance || estFooting()) return;
   const courant = seance.exercices[indexExo];
@@ -935,19 +940,33 @@ function minuterieTerminee() {
   focaliserProchaineSerie();
 }
 
+/* Ouvre le clavier virtuel en focalisant un champ qui existe depuis le
+   chargement de la page.
+
+   Firefox Android, comme les autres navigateurs mobiles, n'ouvre le clavier
+   que si focus() découle directement d'un geste de l'utilisateur. Deux choses
+   le font échouer ici : le champ visé peut venir d'être recréé par
+   rendreExercice(), et le bouton qui portait le geste est masqué au même
+   instant. Passer par un champ permanent contourne les deux, et le transfert
+   de focus vers le vrai champ, d'un champ texte à un autre, garde le clavier
+   ouvert. */
+function amorcerClavier() {
+  const amorce = $('amorce-clavier');
+  if (amorce) amorce.focus({ preventScroll: true });
+}
+
 /* Place le curseur sur le champ charge de la prochaine série non validée, où
    qu'elle se trouve après la fermeture de la minuterie (même exercice ou
-   suivant) : reprendre la saisie sans devoir toucher l'écran au préalable.
-   Un appui sur "Passer" ouvre le clavier ; une fermeture automatique à zéro
-   pose le focus mais certains navigateurs mobiles n'ouvrent pas le clavier
-   sans geste direct de l'utilisateur, c'est une limite de la plateforme. */
+   suivant), pour reprendre la saisie sans toucher l'écran. */
 function focaliserProchaineSerie() {
   const courant = seance.exercices[indexExo];
   const index = prochaineSerie(courant);
   if (index < 0) return;
   const ligne = document.querySelectorAll('.ligne-serie')[index];
   const champCharge = ligne && ligne.querySelector('input');
-  if (champCharge) { champCharge.focus(); champCharge.select(); }
+  if (!champCharge) return;
+  champCharge.focus({ preventScroll: true });
+  champCharge.select();
 }
 
 function signaler() {
@@ -1274,7 +1293,15 @@ function brancher() {
     rendreSeries();
   });
 
-  $('minuterie-passer').addEventListener('click', minuterieTerminee);
+  // Toute la surface de la minuterie ferme et rouvre le clavier, pas
+  // seulement le bouton : après une fermeture automatique à zéro, aucun geste
+  // n'a eu lieu et le clavier reste fermé (aucun navigateur mobile ne
+  // l'ouvre sans interaction). Un appui n'importe où redonne donc le chemin
+  // le plus court vers la saisie. Les boutons +15 et -15 sont exclus.
+  $('minuterie').addEventListener('click', (evenement) => {
+    if (evenement.target.closest('.minuterie-boutons')) return;
+    minuterieTerminee(true);
+  });
   $('minuterie-plus').addEventListener('click', () => {
     if (minuterie) { minuterie.fin += 15000; minuterie.sonne = false; battre(); }
   });

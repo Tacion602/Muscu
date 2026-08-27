@@ -124,6 +124,17 @@
   </nav>
 </section>
 
+<!--
+  Champ d'amorce du clavier virtuel. Permanent dans le DOM depuis le
+  chargement, invisible mais focusable : c'est lui qu'on focalise en premier
+  au sein d'un geste utilisateur pour faire ouvrir le clavier, avant de passer
+  la main au vrai champ de saisie. Voir focaliserProchaineSerie dans app.js.
+  Ne jamais lui mettre display:none ni visibility:hidden, qui le rendraient
+  infocusable et annuleraient tout le mécanisme.
+-->
+<input id="amorce-clavier" class="amorce-clavier" type="text"
+       inputmode="decimal" tabindex="-1" aria-hidden="true">
+
 <!-- Minuterie de récupération -->
 <div id="minuterie" class="minuterie" hidden>
   <div class="minuterie-fond">
@@ -134,7 +145,8 @@
       <button id="minuterie-moins" class="rond">&#8722;15</button>
       <button id="minuterie-plus" class="rond">+15</button>
     </div>
-    <button id="minuterie-passer" class="principal">Passer</button>
+    <button id="minuterie-passer" class="principal">Passer et saisir</button>
+    <p class="minuterie-aide">Touchez n'importe où pour reprendre la saisie</p>
   </div>
 </div>
 

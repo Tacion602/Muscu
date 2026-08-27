@@ -100,11 +100,27 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   s'affiche automatiquement, plutôt que de laisser l'utilisateur sur une
   fiche entièrement complétée sans rien à y faire. **Le focus se pose sur le
   champ charge de la prochaine série non validée** (`focaliserProchaineSerie`)
-  à chaque fermeture, pour reprendre la saisie sans toucher l'écran. Un appui
-  sur "Passer" ouvre le clavier virtuel ; une fermeture automatique à zéro
-  pose le focus mais certains navigateurs mobiles n'ouvrent pas le clavier
-  sans geste direct de l'utilisateur, limite de la plateforme et non un défaut
-  de l'application.
+  à chaque fermeture, pour reprendre la saisie sans toucher l'écran.
+- **Le clavier virtuel s'ouvre via un champ d'amorce permanent**
+  (`#amorce-clavier` dans `index.html`, `amorcerClavier()` dans `js/app.js`),
+  ajouté le 27 août 2026 parce que Firefox Android n'ouvrait pas le clavier en
+  fermant la minuterie. Deux causes se cumulaient : le champ visé venait
+  parfois d'être recréé par `rendreExercice()`, et le bouton porteur du geste
+  était masqué au même instant. L'amorce existe depuis le chargement de la
+  page et est focalisée **en tout premier**, avant même la fermeture, tant que
+  le geste est encore actif ; le transfert vers le vrai champ, d'un champ
+  texte à un autre, garde ensuite le clavier ouvert.
+  - **Ne jamais lui donner `display:none` ni `visibility:hidden`** : elle
+    deviendrait infocusable et tout le mécanisme tomberait en silence. Elle
+    est rendue invisible par `opacity: 0` et sortie du flux, avec
+    `font-size: 16px` pour éviter le zoom automatique à la mise au point.
+  - **Toute la surface de la minuterie ferme et redonne le clavier**, pas
+    seulement le bouton "Passer et saisir" (les boutons +15/-15 sont exclus
+    de la délégation). C'est la seule réponse possible à la fermeture
+    automatique à zéro : **aucun navigateur mobile n'ouvre le clavier sans
+    geste de l'utilisateur**, c'est une restriction volontaire de la
+    plateforme, pas un défaut contournable. Élargir la cible du geste donne
+    au moins le chemin le plus court vers la saisie.
 - **La touche Entrée du clavier numérique avance au champ suivant** (charge →
   reps → RIR → bouton de validation, puis la ligne suivante), construit dans
   `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
