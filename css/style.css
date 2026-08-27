@@ -14,10 +14,12 @@
   --baisse: #f0883e;
   --danger: #f85149;
   /* Fond des champs d'une série, selon son tonnage face à la même série la
-     semaine passée (prototype J1, voir appliquerCouleurTonnage). Le vert
-     reprend --hausse désaturé ; le rouge est propre à cet usage. */
-  --tonnage-hausse-fond: rgba(107, 173, 114, .3);
-  --tonnage-hausse-bord: rgba(107, 173, 114, .65);
+     semaine passée (voir appliquerCouleurTonnage). Le vert reprend le
+     vert-bleu de la récupération (--accent-clair) désaturé et transparent,
+     décision de l'utilisateur le 26 août 2026 pour que les deux se lisent
+     comme une même famille de couleur ; le rouge est propre à cet usage. */
+  --tonnage-hausse-fond: rgba(97, 194, 185, .28);
+  --tonnage-hausse-bord: rgba(97, 194, 185, .6);
   --tonnage-baisse-fond: rgba(181, 107, 100, .32);
   --tonnage-baisse-bord: rgba(181, 107, 100, .68);
   --marge: 16px;
@@ -164,8 +166,10 @@ body { display: flex; flex-direction: column; }
   touch-action: manipulation;
 }
 .chrono-seance[hidden] { display: none; }
-.chrono-seance.vert { background: #2e7d4f; }
-.chrono-seance.vert.tourne { background: #256c43; }
+/* Même vert-bleu que le bouton de récupération, décision de l'utilisateur
+   le 26 août 2026 : les deux chronomètres doivent se lire comme une famille. */
+.chrono-seance.vert { background: var(--accent); }
+.chrono-seance.vert.tourne { background: var(--accent-clair); color: var(--fond); }
 .chrono-seance.rouge { background: #a33a33; }
 .chrono-seance-icone { font-size: 12px; line-height: 1; }
 .chrono-seance-temps:empty { display: none; }

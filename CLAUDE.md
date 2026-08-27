@@ -93,6 +93,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   qu'il a reproduit sa performance précédente sans retaper les nombres.
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
+- **La minuterie se ferme d'elle-même à zéro**, sans afficher de temps
+  écoulé en trop-plein (décision de l'utilisateur le 26 août 2026). Fermeture
+  naturelle et bouton "Passer" partagent `minuterieTerminee()` : si la série
+  qui vient de récupérer était la dernière de l'exercice, l'exercice suivant
+  s'affiche automatiquement, plutôt que de laisser l'utilisateur sur une
+  fiche entièrement complétée sans rien à y faire.
 - **La touche Entrée du clavier numérique avance au champ suivant** (charge →
   reps → RIR → bouton de validation, puis la ligne suivante), construit dans
   `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
@@ -100,7 +106,11 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 - **Une série validée se colore selon son tonnage face à la même série la
   semaine passée** (`appliquerCouleurTonnage` dans `js/app.js`) : rouge
   désaturé à -5 % ou moins, vert désaturé à +6 % ou plus, neutre entre les
-  deux. Éprouvé sur J1 puis étendu à tous les jours le 26 août 2026.
+  deux. Éprouvé sur J1 puis étendu à tous les jours le 26 août 2026. **Le
+  vert reprend `--accent-clair`** (le vert-bleu du bouton de récupération
+  et du chronomètre de séance en marche), désaturé et transparent plutôt
+  qu'un vert franc : décision de l'utilisateur le 26 août 2026 pour que
+  les trois se lisent comme une même famille de couleur.
 - **Un échauffement de 5 minutes s'affiche une seule fois**, au-dessus de la
   consigne technique du premier exercice de la séance (`ECHAUFFEMENT_PAR_JOUR`
   dans `js/app.js`). Rédigé à la main pour les zones travaillées ce jour-là,

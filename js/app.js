@@ -898,21 +898,17 @@ function lancerMinuterie(secondes, exercice, indexSerie) {
 function battre() {
   if (!minuterie) return;
   const restant = (minuterie.fin - Date.now()) / 1000;
-  const chiffres = $('minuterie-chiffres');
 
+  // Le temps écoulé ne s'affiche plus en "trop-plein" : la minuterie se
+  // ferme d'elle-même dès zéro, décision de l'utilisateur le 26 août 2026.
   if (restant <= 0) {
-    chiffres.textContent = '+' + texteDuree(-restant);
-    chiffres.classList.add('ecoule');
-    $('minuterie-suite').textContent = minuterie.libelle + ' &middot; prêt';
-    if (!minuterie.sonne) {
-      minuterie.sonne = true;
-      signaler();
-    }
-  } else {
-    chiffres.textContent = texteDuree(restant);
-    chiffres.classList.remove('ecoule');
-    $('minuterie-suite').textContent = minuterie.libelle;
+    signaler();
+    minuterieTerminee();
+    return;
   }
+
+  $('minuterie-chiffres').textContent = texteDuree(restant);
+  $('minuterie-suite').textContent = minuterie.libelle;
 }
 
 function arreterMinuterie() {
@@ -921,6 +917,21 @@ function arreterMinuterie() {
   tictac = null;
   $('minuterie').hidden = true;
   $('minuterie-chiffres').classList.remove('ecoule');
+}
+
+/* Ferme la minuterie, que ce soit à zéro ou via "Passer", et enchaîne
+   automatiquement : si la série qui vient de récupérer était la dernière de
+   l'exercice, l'exercice suivant s'affiche directement plutôt que de laisser
+   l'utilisateur sur une fiche entièrement complétée. */
+function minuterieTerminee() {
+  arreterMinuterie();
+  if (!seance || estFooting()) return;
+  const courant = seance.exercices[indexExo];
+  const fini = courant.series.every((s) => s.faite);
+  if (fini && indexExo < seance.exercices.length - 1) {
+    indexExo++;
+    rendreExercice();
+  }
 }
 
 function signaler() {
@@ -1247,7 +1258,7 @@ function brancher() {
     rendreSeries();
   });
 
-  $('minuterie-passer').addEventListener('click', arreterMinuterie);
+  $('minuterie-passer').addEventListener('click', minuterieTerminee);
   $('minuterie-plus').addEventListener('click', () => {
     if (minuterie) { minuterie.fin += 15000; minuterie.sonne = false; battre(); }
   });
