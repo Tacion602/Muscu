@@ -171,18 +171,21 @@ body { display: flex; flex-direction: column; }
 .chrono-seance.vert { background: var(--accent); }
 .chrono-seance.vert.tourne { background: var(--accent-clair); color: var(--fond); }
 
-/* Bouton de démarrage agrandi ×3 (bouton et icône), décision de
-   l'utilisateur le 26 août 2026 : sur sa propre ligne, pleine largeur,
-   plutôt que coincé à côté du titre. */
+/* Un bouton à droite du titre, pas un bandeau pleine largeur : le bandeau
+   (×3, sur sa propre ligne) ne rentrait plus à l'écran sur Pixel 9. Revenu à
+   côté du titre le 27 août 2026, hauteur réduite de 30 % par rapport au
+   bandeau (120px → 84px) pour un compromis entre place à l'écran et cible
+   large. Le bouton rouge d'arrêt manuel a été retiré le même jour : le
+   chronomètre s'arrête désormais de lui-même (second appui sur ce bouton,
+   enregistrement de la séance, ou fin de la minuterie de récupération du
+   dernier exercice), voir minuterieTerminee() dans js/app.js. */
 #chrono-seance-demarrer {
-  flex: 1 1 100%;
-  min-height: 120px;
-  padding: 0 30px;
-  gap: 18px;
-  font-size: 42px;
+  min-height: 84px;
+  padding: 0 20px;
+  gap: 12px;
+  font-size: 30px;
 }
-#chrono-seance-demarrer .chrono-seance-icone { font-size: 36px; }
-.chrono-seance.rouge { background: #a33a33; }
+#chrono-seance-demarrer .chrono-seance-icone { font-size: 25px; }
 .chrono-seance-icone { font-size: 12px; line-height: 1; }
 .chrono-seance-temps:empty { display: none; }
 

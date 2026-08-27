@@ -546,17 +546,11 @@ function dureeSeanceMs() {
 function majChronoSeance() {
   const chrono = chronoSeance();
   const demarrer = $('chrono-seance-demarrer');
-  const arreter = $('chrono-seance-arreter');
   const ecoule = dureeSeanceMs();
 
   demarrer.classList.toggle('tourne', !!chrono.demarre);
   $('chrono-seance-temps').textContent = ecoule ? texteDuree(ecoule / 1000) : '';
   demarrer.querySelector('.chrono-seance-icone').innerHTML = chrono.demarre ? '&#10073;&#10073;' : '&#9654;';
-
-  // Le bouton rouge n'apparaît que sur le dernier exercice, là où l'on est
-  // censé conclure : ailleurs, l'arrêt serait presque toujours une erreur.
-  const dernier = indexExo === seance.exercices.length - 1;
-  arreter.hidden = !(dernier && (chrono.demarre || chrono.cumul));
 }
 
 function basculerChronoSeance() {
@@ -979,6 +973,12 @@ function minuterieTerminee(gesteUtilisateur) {
   if (fini && indexExo < seance.exercices.length - 1) {
     indexExo++;
     rendreExercice();
+  } else if (fini && indexExo === seance.exercices.length - 1 && chronoSeance().demarre) {
+    // Le bouton d'arrêt manuel a été retiré : la récupération de la dernière
+    // série du dernier exercice est l'un des trois seuls moments qui arrêtent
+    // le chronomètre de séance (les deux autres : deuxième appui sur le
+    // bouton de démarrage, et enregistrement de la séance dans terminer()).
+    arreterChronoSeance();
   }
   focaliserProchaineSerie();
 }
@@ -1313,7 +1313,6 @@ function brancher() {
 
   $('bouton-terminer').addEventListener('click', terminer);
   $('chrono-seance-demarrer').addEventListener('click', basculerChronoSeance);
-  $('chrono-seance-arreter').addEventListener('click', arreterChronoSeance);
   $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
   $('bouton-consigne-annuler').addEventListener('click', quitterEditionConsigne);
   $('bouton-consigne-enregistrer').addEventListener('click', enregistrerEditionConsigne);

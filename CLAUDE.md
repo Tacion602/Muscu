@@ -233,14 +233,20 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
   Les colonnes `Debut seance` et `Fin seance` de l'ancien onglet unique ont
   été retirées, redondantes avec `Date` et `Duree (min)`.
-- **Un chronomètre mesure la séance entière** : bouton vert à droite du titre
-  de l'exercice pour le lancer ou le mettre en pause, bouton rouge d'arrêt
-  qui n'apparaît que sur la fiche du dernier exercice, là où l'on est censé
-  conclure. Comme celui du footing, il compte depuis son horodatage de départ
-  et survit donc au verrouillage du téléphone. **La durée qu'il mesure fait
-  foi** dans le classeur si le chronomètre a servi : elle reflète le temps
-  réellement passé à s'entraîner, là où l'écart début/fin compterait aussi
-  les interruptions.
+- **Un chronomètre mesure la séance entière** : un seul bouton vert, à droite
+  du titre de l'exercice (pas un bandeau pleine largeur, revenu en arrière le
+  27 août 2026 après un essai trop grand pour tenir sur un Pixel 9). Comme
+  celui du footing, il compte depuis son horodatage de départ et survit donc
+  au verrouillage du téléphone. **La durée qu'il mesure fait foi** dans le
+  classeur si le chronomètre a servi : elle reflète le temps réellement passé
+  à s'entraîner, là où l'écart début/fin compterait aussi les interruptions.
+  **Pas de bouton d'arrêt manuel** : le chronomètre s'arrête de lui-même,
+  toujours par l'un de ces trois chemins, tous dans `minuterieTerminee()` ou
+  `terminer()` de `js/app.js` :
+  1. un second appui sur le bouton vert (`basculerChronoSeance`) ;
+  2. l'enregistrement de la séance (`terminer()`) ;
+  3. la fermeture de la minuterie de récupération de la dernière série du
+     dernier exercice — le seul des trois qui ne dépend d'aucun geste dédié.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
