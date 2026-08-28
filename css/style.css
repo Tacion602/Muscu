@@ -23,7 +23,18 @@
   --tonnage-baisse-fond: rgba(181, 107, 100, .32);
   --tonnage-baisse-bord: rgba(181, 107, 100, .68);
   --marge: 16px;
-  --rayon: 12px;
+  /* Échelle de rayons plutôt que des valeurs au cas par cas : la feuille
+     mélangeait 4, 9, 12 et 20px sans logique. Angles adoucis au passage,
+     le 27 août 2026. Trois crans suffisent, un quatrième n'aurait fait que
+     rouvrir la porte à l'à-peu-près. */
+  --rayon-petit: 10px;    /* champs de saisie, petits boutons */
+  --rayon: 14px;          /* cartes, boutons pleine largeur */
+  --rayon-grand: 22px;    /* feuille de la minuterie */
+  --rayon-plein: 999px;   /* pastilles */
+  /* Une seule transition existait dans toute l'application (la jauge de
+     progression). Assez rapide pour ne pas retarder un geste en salle, mais
+     de quoi éviter les changements d'état abrupts. */
+  --transition: .15s ease;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -194,7 +205,7 @@ body { display: flex; flex-direction: column; }
   font-size: 12px;
   font-weight: 600;
   padding: 4px 9px;
-  border-radius: 999px;
+  border-radius: var(--rayon-plein);
   background: var(--fond-champ);
   color: var(--texte-faible);
 }
@@ -259,7 +270,7 @@ body { display: flex; flex-direction: column; }
   width: 100%;
   height: 60px;
   border: 1px solid var(--trait);
-  border-radius: 9px;
+  border-radius: var(--rayon-petit);
   background: var(--fond-champ);
   color: var(--texte);
   font-size: 34px;
@@ -288,7 +299,7 @@ body { display: flex; flex-direction: column; }
   margin: 6px 0 8px;
   padding: 10px;
   border: 1px solid var(--trait);
-  border-radius: 9px;
+  border-radius: var(--rayon-petit);
   background: var(--fond-champ);
   color: var(--texte);
   font: inherit;
@@ -333,7 +344,7 @@ body { display: flex; flex-direction: column; }
   width: 100%;
   height: 60px;
   border: 1px solid var(--trait);
-  border-radius: 9px;
+  border-radius: var(--rayon-petit);
   background: var(--fond-champ);
   color: var(--texte);
   font-size: 40px;
@@ -351,7 +362,7 @@ body { display: flex; flex-direction: column; }
   width: 100%;
   height: 60px;
   border: 1px solid var(--trait);
-  border-radius: 9px;
+  border-radius: var(--rayon-petit);
   background: var(--fond-champ);
   color: var(--texte-faible);
   font-size: 20px;
@@ -429,7 +440,10 @@ body { display: flex; flex-direction: column; }
   width: 100%;
   background: var(--fond-carte);
   border-top: 2px solid var(--accent-clair);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--rayon-grand) var(--rayon-grand) 0 0;
+  /* Une feuille qui remonte du bas se détache par une ombre, sinon elle
+     paraît collée au fond malgré le voile flouté derrière elle. */
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, .45);
   padding: 22px var(--marge) calc(env(safe-area-inset-bottom) + 22px);
   text-align: center;
 }
@@ -503,6 +517,51 @@ body { display: flex; flex-direction: column; }
   font: inherit;
   cursor: pointer;
 }
+.discret:active { background: var(--fond-champ); color: var(--texte); }
+
+/* ---------- Retour tactile ----------
+
+   Regroupé ici plutôt que dispersé dans chaque règle : ce sont les mêmes
+   deux propriétés pour toutes les surfaces tapables, et les voir ensemble
+   évite qu'un futur bouton soit oublié.
+
+   L'enfoncement est volontairement discret (2 %) et bref : en salle, un
+   geste doit se sentir immédiat, pas animé. `prefers-reduced-motion` le
+   supprime pour qui a désactivé les animations au niveau du système. */
+
+.icone,
+.carte-jour,
+.nav,
+.principal,
+.discret,
+.rond,
+.valider,
+.type-course,
+.chrono-seance,
+.ajouter {
+  transition: background var(--transition), border-color var(--transition),
+              color var(--transition), transform var(--transition);
+}
+
+.icone:active,
+.carte-jour:not([disabled]):active,
+.nav:not([disabled]):active,
+.principal:not([disabled]):active,
+.discret:active,
+.rond:active,
+.valider:active,
+.type-course:active,
+.chrono-seance:active,
+.ajouter:active {
+  transform: scale(.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  .icone:active, .carte-jour:active, .nav:active, .principal:active,
+  .discret:active, .rond:active, .valider:active, .type-course:active,
+  .chrono-seance:active, .ajouter:active { transform: none; }
+}
 
 /* ---------- Résumé de fin ---------- */
 
@@ -525,13 +584,13 @@ body { display: flex; flex-direction: column; }
   height: 46px;
   padding: 0 12px;
   border: 1px solid var(--trait);
-  border-radius: 9px;
+  border-radius: var(--rayon-petit);
   background: var(--fond-champ);
   color: var(--texte);
   font-size: 15px;
 }
 .champ-large small { display: block; margin-top: 6px; font-size: 12px; color: var(--texte-faible); line-height: 1.5; }
-.champ-large code { background: var(--fond-champ); padding: 1px 4px; border-radius: 4px; }
+.champ-large code { background: var(--fond-champ); padding: 1px 4px; border-radius: 6px; }
 
 .bascule { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
 .bascule input { width: 22px; height: 22px; accent-color: var(--accent-clair); }
@@ -553,7 +612,7 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 }
 .entree-historique .titre { font-weight: 600; display: flex; justify-content: space-between; gap: 10px; }
 .entree-historique .details { color: var(--texte-faible); font-size: 13px; margin-top: 4px; }
-.badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; flex: none; }
+.badge { font-size: 11px; padding: 2px 7px; border-radius: var(--rayon-plein); flex: none; }
 .badge.envoye { background: rgba(86, 211, 100, .15); color: var(--hausse); }
 .badge.attente { background: rgba(240, 136, 62, .15); color: var(--baisse); }
 
@@ -561,6 +620,6 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 
 @media (min-width: 620px) {
   .ecran { max-width: 620px; margin: 0 auto; width: 100%; }
-  .minuterie-fond { max-width: 620px; margin: 0 auto; border-radius: 20px; margin-bottom: 20px; }
+  .minuterie-fond { max-width: 620px; margin: 0 auto; border-radius: var(--rayon-grand); margin-bottom: 20px; }
   .minuterie { align-items: center; }
 }
