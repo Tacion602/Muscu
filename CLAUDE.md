@@ -210,6 +210,14 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     blocs, qui finissait par disparaître si des types de course différents
     s'entremêlaient dans le temps. Défaut trouvé à la relecture, avant tout
     test, le 27 août 2026 ;
+  - **`formatDateCourte` n'appelle aucune API de fuseau horaire**, ni
+    `SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone()` ni
+    `Session.getScriptTimeZone()` : les deux ont fait échouer
+    `Utilities.formatDate` en production le 27 août 2026 avec la même
+    exception (« argument incorrect : timeZone, doit être de type String »),
+    sans reproduction possible hors de l'éditeur Apps Script. Le contexte
+    d'exécution d'un web app déployé semble ne pas exposer ces API
+    normalement. Les accesseurs natifs de `Date()` n'en dépendent pas ;
   - **le titre d'une page de jour n'est jamais fusionné sur plusieurs
     colonnes.** Il l'était au départ, et Sheets refusait alors de figer la
     colonne A : « vous ne pouvez pas figer des colonnes contenant seulement

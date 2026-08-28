@@ -153,15 +153,22 @@ function moyenne(valeurs) {
   return Math.round((somme / valeurs.length) * 10) / 10;
 }
 
+/* Formate sans passer par aucune API de fuseau horaire. Deux tentatives
+ * differentes (SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(),
+ * puis Session.getScriptTimeZone()) ont echoue en production le 27 aout 2026
+ * avec la meme exception sur Utilities.formatDate ("argument incorrect :
+ * timeZone, doit etre de type String"), sans qu'on puisse reproduire ni
+ * diagnostiquer hors de l'editeur Apps Script -- le contexte d'execution
+ * d'un web app deploye semble ne pas exposer ces API normalement. Les
+ * accesseurs natifs de Date() n'en dependent pas et suffisent : la seule
+ * consequence d'un decalage de fuseau serait un jour de calendrier
+ * legerement faux aux petites heures, un risque juge negligeable pour ce
+ * qui reste un simple libelle de colonne.
+ */
 function formatDateCourte(date) {
-  // Session.getScriptTimeZone() plutot que
-  // SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone() : la
-  // seconde a fait echouer Utilities.formatDate en production le 27 aout
-  // 2026 ("argument incorrect : timeZone, doit etre de type String"), sans
-  // qu'on puisse verifier pourquoi hors de l'editeur Apps Script. La
-  // premiere est la source recommandee pour ce cas et n'a pas ce probleme.
-  const tz = Session.getScriptTimeZone();
-  return Utilities.formatDate(date, tz, 'dd/MM/yyyy');
+  const jour = String(date.getDate()).padStart(2, '0');
+  const mois = String(date.getMonth() + 1).padStart(2, '0');
+  return jour + '/' + mois + '/' + date.getFullYear();
 }
 
 /* ---------------------------------------------------------------------
