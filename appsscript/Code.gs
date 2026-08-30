@@ -488,3 +488,80 @@ function ecrireSeance(seance) {
   ]]);
   marquerEcrite(seance.id);
 }
+
+/* ---------------------------------------------------------------------
+ * Semis de la semaine de reference, a executer UNE SEULE FOIS.
+ *
+ * Reprend les valeurs deja importees du classeur manuel d'origine (colonne
+ * B des grilles J1/J3/J4, celles qui existaient avant que l'application ne
+ * commence a ecrire) pour donner aux pages J1/J3/J4 un premier point de
+ * comparaison, plutot que de les laisser vides jusqu'a la premiere vraie
+ * seance de chacune. Demande de l'utilisateur le 27 aout 2026.
+ *
+ * J5 est absent : aucun historique n'a ete importe pour ce jour (toutes les
+ * fiches etaient vides au moment de l'import du 26 aout 2026), il n'y a donc
+ * rien a semer sans inventer des chiffres. Sa page se remplira normalement
+ * a la premiere vraie seance.
+ *
+ * A LANCER DEPUIS L'EDITEUR APPS SCRIPT SEULEMENT : choisir semerReference
+ * dans le menu deroulant des fonctions, en haut de l'editeur, puis Executer.
+ * Jamais appelee par le pont ni par l'application. Sans effet si rejouee
+ * (colonneGroupeDate et ligneBlocExercice retrouvent le groupe "Reference"
+ * et les blocs deja crees plutot que d'en recreer), mais inutile de la
+ * relancer une fois le semis fait.
+ */
+const REFERENCE_SEMAINE1 = {
+  J1: {
+    titre: 'J1 PUSH',
+    exercices: [
+      { nom: 'Developpe incline machine', series: [{charge:40,reps:8}, {charge:40,reps:8}, {charge:45,reps:6}, {charge:45,reps:4}] },
+      { nom: 'Dips buste penche', series: [{charge:50,reps:10}, {charge:57,reps:11}, {charge:64,reps:9}] },
+      { nom: 'Ecarte poulie horizontale hauteur poitrine', series: [{charge:10,reps:15}, {charge:12,reps:15}, {charge:14,reps:13}] },
+      { nom: 'Elevation laterale poulie unilaterale', series: [{charge:2,reps:20}, {charge:5,reps:12}, {charge:5,reps:12}, {charge:3,reps:15}] },
+      { nom: 'Extension triceps overhead corde', series: [{charge:10,reps:17}, {charge:15,reps:15}, {charge:12,reps:13}] },
+      { nom: 'Extension triceps poulie barre', series: [{charge:12,reps:15}, {charge:12,reps:16}, {charge:15,reps:13}] },
+    ],
+  },
+  J3: {
+    titre: 'J3 PULL',
+    exercices: [
+      { nom: 'Tirage vertical prise large', series: [{charge:40,reps:13}, {charge:50,reps:9}, {charge:55,reps:9}, {charge:55,reps:9}] },
+      { nom: 'Rowing unilateral machine ou haltere', series: [{charge:40,reps:9}, {charge:40,reps:9}, {charge:45,reps:9}, {charge:45,reps:9}] },
+      { nom: 'Oiseau inverse machine', series: [{charge:25,reps:15}, {charge:30,reps:13}, {charge:30,reps:13}] },
+      { nom: 'Elevation laterale halteres', series: [{charge:6,reps:20}, {charge:8,reps:16}, {charge:6,reps:20}] },
+      { nom: 'Curl incline halteres', series: [{charge:8,reps:13}, {charge:8,reps:10}, {charge:8,reps:7}] },
+      { nom: 'Curl marteau', series: [{charge:6,reps:16}, {charge:6,reps:20}, {charge:8,reps:13}] },
+    ],
+  },
+  J4: {
+    titre: 'J4 BAS DU CORPS',
+    exercices: [
+      { nom: 'PRESSE A CUISSE / HACK SQUAT', series: [{charge:80,reps:18}, {charge:100,reps:13}, {charge:120,reps:13}, {charge:140,reps:10}] },
+      { nom: 'SOULEVE DE TERRE ROUMAIN', series: [{charge:40,reps:10}, {charge:60,reps:10}, {charge:60,reps:11}] },
+      { nom: 'Leg curl allongé', series: [{charge:20,reps:10}, {charge:20,reps:10}, {charge:20,reps:11}] },
+      { nom: 'Extension jambes unilatéral', series: [{charge:20,reps:12}, {charge:20,reps:16}, {charge:25,reps:13}] },
+      { nom: 'Mollets debout unilatéral', series: [{charge:77,reps:15}, {charge:82,reps:13}, {charge:82,reps:12}] },
+    ],
+  },
+};
+
+function semerReference() {
+  const classeur = SpreadsheetApp.getActiveSpreadsheet();
+
+  Object.keys(REFERENCE_SEMAINE1).forEach(function (jour) {
+    const info = REFERENCE_SEMAINE1[jour];
+    const feuille = feuilleJour(classeur, jour, info.titre);
+    const col = colonneGroupeDate(feuille, 'Référence');
+
+    info.exercices.forEach(function (exo) {
+      const ligne = ligneBlocExercice(feuille, exo.nom);
+      const tonnage = exo.series.reduce(function (t, s) { return t + s.charge * s.reps; }, 0);
+      const affichables = exo.series.slice(0, RANGEES_PAR_EXERCICE);
+      const donnees = affichables.map(function (s) { return [s.charge, s.reps, '']; });
+      feuille.getRange(ligne, col, donnees.length, 3).setValues(donnees);
+      feuille.getRange(ligne, col + 3).setValue(tonnage);
+    });
+  });
+
+  Logger.log('Semis termine : ' + Object.keys(REFERENCE_SEMAINE1).join(', '));
+}

@@ -247,6 +247,18 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
   Les colonnes `Debut seance` et `Fin seance` de l'ancien onglet unique ont
   été retirées, redondantes avec `Date` et `Duree (min)`.
+- **Les pages J1, J3 et J4 portent une colonne « Référence »**, semée le
+  27 août 2026 avec `semerReference()` (`appsscript/Code.gs`), reprenant les
+  valeurs déjà importées de l'ancien classeur manuel (celles qui alimentaient
+  `derniereFois()` avant la première vraie séance de chaque jour). But :
+  repartir avec un premier point de comparaison plutôt que des pages vides.
+  **J5 n'a pas de colonne Référence** : aucun historique n'a été importé pour
+  ce jour (fiches vides au moment de l'import du 26 août 2026), et
+  `Rotation externe poulie` / `Gainage anti-extension et anti-rotation` sur
+  J4 en sont dépourvues pour la même raison. `semerReference()` est un
+  utilitaire à lancer une fois depuis l'éditeur Apps Script, jamais appelé
+  par le pont ; sans effet si rejoué, puisqu'elle retrouve le groupe et les
+  blocs déjà créés plutôt que d'en recréer.
 - **Un chronomètre mesure la séance entière** : un seul bouton vert, à droite
   du titre de l'exercice (pas un bandeau pleine largeur, revenu en arrière le
   27 août 2026 après un essai trop grand pour tenir sur un Pixel 9). Comme
