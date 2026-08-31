@@ -80,33 +80,49 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
 ## Comportements côté application, à ne pas défaire sans y repenser
 
+- **Il n'y a plus de bouton de validation sur une série depuis le 27 août
+  2026.** Décision de l'utilisateur : **renseigner le RIR valide la série**
+  (`rendreSeries()` dans `js/app.js`), et l'effacer l'annule, sur un principe
+  symétrique. Un changement de RIR sur une série déjà validée (correction
+  d'une faute de frappe) ne redéclenche ni la validation ni la minuterie :
+  seul le passage vide → rempli (ou l'inverse) agit. `validerParRir()`
+  reprend l'essentiel de l'ancien `basculerSerie()` : elle reprend les
+  chiffres de la dernière fois si charge ou reps manquent, lance la
+  minuterie, et pose le focus sur la prochaine série non validée
+  (`focaliserProchaineSerie()`) pour enchaîner sans toucher l'écran.
 - **L'échauffement ne compte jamais dans le tonnage ni dans la comparaison.**
   Une série se bascule en échauffement par un **appui long (500 ms) sur son
-  bouton de validation** (un tap bref valide normalement) ; l'import du
-  classeur reconnaît déjà les notes `ECH 1`, `ECH 2` de la même façon. Décidé
-  le 26 août 2026 : la colonne numéro et la colonne « dernière fois » ont été
-  retirées de la ligne de série (jugées redondantes avec les placeholders des
-  champs de saisie, qui affichent déjà les valeurs précédentes), ce qui a
-  supprimé le seul geste qui permettait ce basculement.
+  champ charge** (une frappe normale n'y touche pas) ; l'import du classeur
+  reconnaît déjà les notes `ECH 1`, `ECH 2` de la même façon. Relocalisé le
+  27 août 2026 depuis le bouton de validation, supprimé : c'est le seul champ
+  qui restait pour ce geste. Sans texte ni colonne pour le signaler, les
+  trois champs de la ligne passent en bordure tiretée (`.ligne-serie.echauffement
+  input`).
 - **Valider une série sans chiffres saisis reprend ceux de la dernière fois**
   plutôt que d'enregistrer un vide : l'utilisateur peut confirmer d'un geste
   qu'il a reproduit sa performance précédente sans retaper les nombres.
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
+- **La minuterie n'est plus une couche plein écran depuis le 27 août 2026**,
+  mais un bandeau compact affiché sous le chrono de séance, dans le flux
+  normal de la page (`#minuterie` déplacé dans `#bloc-muscu`, `index.html`).
+  Sa hauteur (60px) est 15 % plus petite que celle, déjà réduite de 15 %, du
+  chrono de séance (71px) : les deux se lisent comme une paire.
 - **La minuterie se ferme d'elle-même à zéro**, sans afficher de temps
   écoulé en trop-plein (décision de l'utilisateur le 26 août 2026). Fermeture
-  naturelle et bouton "Passer" partagent `minuterieTerminee()` : si la série
-  qui vient de récupérer était la dernière de l'exercice, l'exercice suivant
-  s'affiche automatiquement, plutôt que de laisser l'utilisateur sur une
-  fiche entièrement complétée sans rien à y faire. **Le focus se pose sur le
-  champ charge de la prochaine série non validée** (`focaliserProchaineSerie`)
-  à chaque fermeture, pour reprendre la saisie sans toucher l'écran.
+  naturelle et appui sur le bandeau partagent `minuterieTerminee()` : si la
+  série qui vient de récupérer était la dernière de l'exercice, l'exercice
+  suivant s'affiche automatiquement, plutôt que de laisser l'utilisateur sur
+  une fiche entièrement complétée sans rien à y faire. **Le focus se pose sur
+  le champ charge de la prochaine série non validée**
+  (`focaliserProchaineSerie`) à chaque fermeture, pour reprendre la saisie
+  sans toucher l'écran.
 - **Le clavier virtuel s'ouvre via un champ d'amorce permanent**
   (`#amorce-clavier` dans `index.html`, `amorcerClavier()` dans `js/app.js`),
   ajouté le 27 août 2026 parce que Firefox Android n'ouvrait pas le clavier en
   fermant la minuterie. Deux causes se cumulaient : le champ visé venait
-  parfois d'être recréé par `rendreExercice()`, et le bouton porteur du geste
-  était masqué au même instant. L'amorce existe depuis le chargement de la
+  parfois d'être recréé par `rendreExercice()`, et l'élément porteur du geste
+  disparaissait au même instant. L'amorce existe depuis le chargement de la
   page et est focalisée **en tout premier**, avant même la fermeture, tant que
   le geste est encore actif ; le transfert vers le vrai champ, d'un champ
   texte à un autre, garde ensuite le clavier ouvert.
@@ -114,23 +130,23 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     deviendrait infocusable et tout le mécanisme tomberait en silence. Elle
     est rendue invisible par `opacity: 0` et sortie du flux, avec
     `font-size: 16px` pour éviter le zoom automatique à la mise au point.
-  - **Toute la surface de la minuterie ferme et redonne le clavier**, pas
-    seulement le bouton "Passer et saisir" (les boutons +15/-15 sont exclus
-    de la délégation). C'est la seule réponse possible à la fermeture
-    automatique à zéro : **aucun navigateur mobile n'ouvre le clavier sans
-    geste de l'utilisateur**, c'est une restriction volontaire de la
-    plateforme, pas un défaut contournable. Élargir la cible du geste donne
-    au moins le chemin le plus court vers la saisie.
+  - **Toute la surface du bandeau de récupération ferme et redonne le
+    clavier** (les boutons ±15 sont exclus de la délégation). C'est la seule
+    réponse possible à la fermeture automatique à zéro : **aucun navigateur
+    mobile n'ouvre le clavier sans geste de l'utilisateur**, c'est une
+    restriction volontaire de la plateforme, pas un défaut contournable.
+    Élargir la cible du geste donne au moins le chemin le plus court vers la
+    saisie.
   - **Le clavier peut rester ouvert pendant toute la récupération**, réglage
     `clavierPendantRecup` activé par défaut depuis le 27 août 2026 : c'est la
     seule façon d'être prêt à saisir dès zéro sans geste, puisque le clavier
     ne peut pas s'ouvrir seul. Le focus est alors posé **sur l'amorce, jamais
     sur un champ de série**, pour qu'une frappe accidentelle pendant le repos
-    n'écrive dans aucune donnée. Contrepartie assumée : le clavier occupe le
-    bas de l'écran pendant le repos, d'où `suivreClavier()` qui redimensionne
-    la couche de la minuterie sur `visualViewport` afin que le compte à
-    rebours remonte juste au-dessus du clavier. Le réglage permet de revenir
-    au comportement précédent.
+    n'écrive dans aucune donnée. Le mécanisme de repositionnement au-dessus
+    du clavier (`suivreClavier()`, sur `visualViewport`) a disparu le même
+    jour avec la couche plein écran : un bandeau en flux normal, proche du
+    haut de l'écran, reste visible sans y penser. Le réglage permet de
+    revenir au comportement précédent.
   - **Changer d'exercice (← / →) amorce aussi le clavier**, sur le même
     principe : appelée dans les gestionnaires de `bouton-precedent` et
     `bouton-suivant`, avant même `rendreExercice()`, pendant que le geste est
@@ -138,9 +154,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     série non validée du nouvel exercice (`focaliserProchaineSerie()`), pour
     arriver prêt à saisir sans toucher l'écran.
 - **La touche Entrée du clavier numérique avance au champ suivant** (charge →
-  reps → RIR → bouton de validation, puis la ligne suivante), construit dans
-  `rendreSeries()` via un tableau `enchainement` reconstitué à chaque rendu :
-  ne pas oublier de le repeupler si la structure de la ligne change.
+  reps → RIR, puis la ligne suivante), construit dans `rendreSeries()` via un
+  tableau `enchainement` reconstitué à chaque rendu : ne pas oublier de le
+  repeupler si la structure de la ligne change. Depuis la suppression du
+  bouton de validation, tous les éléments de ce tableau sont des champs de
+  saisie ; Entrée n'y sert plus qu'à sauter au champ suivant sans attendre la
+  frappe, la validation elle-même passant par le RIR renseigné.
 - **Une série validée se colore selon son tonnage face à la même série la
   semaine passée** (`appliquerCouleurTonnage` dans `js/app.js`) : rouge
   désaturé à -5 % ou moins, vert désaturé à +6 % ou plus, neutre entre les
@@ -295,14 +314,20 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   dans le classeur : `ecrireSeance` (`appsscript/Code.gs`) ignore silencieusement
   les séries dont `faite` est faux, et renvoie `ok:true` même quand elle n'a
   rien à écrire. L'application affiche alors « Classeur mis à jour », ce qui
-  peut induire en erreur si l'utilisateur a saisi des chiffres sans appuyer sur
-  le rond de validation à droite de la ligne : la saisie seule ne suffit pas.
+  peut induire en erreur si l'utilisateur a saisi charge et reps sans jamais
+  renseigner le RIR : depuis le 27 août 2026, c'est ce dernier qui valide (il
+  n'y a plus de bouton), et une série sans RIR reste donc non validée.
 - **Les consignes techniques modifiées depuis l'application restent sur le
   téléphone**, décision de l'utilisateur le 26 août 2026 : la cellule d'origine
   dans le classeur mélange plusieurs informations (prescription, RIR, muscle,
   repos), et y écrire automatiquement risquerait de la casser. Stockées dans
   `localStorage` sous `muscu.consignes`, une clé par `jour|nom d'exercice`
   (`cleConsigne` dans `js/app.js`), elles ne repartent jamais vers le classeur.
+- **« Ne garder que les séances d'aujourd'hui »** (réglages, à côté de
+  l'export) purge `muscu.historique` en local uniquement, après confirmation
+  et avec le compte de séances retirées annoncé à l'avance. Ajouté le 27 août
+  2026 pour nettoyer les séances de test accumulées pendant le
+  développement. Ne touche jamais au classeur, qui a ses propres pages.
 
 ## Vérifications
 

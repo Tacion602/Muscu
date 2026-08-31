@@ -59,6 +59,20 @@
           <span id="chrono-seance-temps" class="chrono-seance-temps"></span>
         </button>
       </div>
+
+      <!-- Minuterie de récupération : bandeau compact sous le chrono de
+           séance, plus une couche plein écran. Un appui n'importe où dessus
+           (hors ±15) passe à la suite, sur le même principe que l'ancienne
+           couche. Voir minuterieTerminee() dans js/app.js. -->
+      <div id="minuterie" class="minuterie" hidden>
+        <span id="minuterie-chiffres" class="minuterie-chiffres">0:00</span>
+        <span id="minuterie-suite" class="minuterie-suite"></span>
+        <div class="minuterie-boutons">
+          <button id="minuterie-moins" class="minuterie-ajust" type="button" aria-label="Moins 15 secondes">&#8722;15</button>
+          <button id="minuterie-plus" class="minuterie-ajust" type="button" aria-label="Plus 15 secondes">+15</button>
+        </div>
+      </div>
+
       <div class="etiquettes">
         <span id="exo-muscle" class="etiquette"></span>
         <span id="exo-prescription" class="etiquette"></span>
@@ -85,7 +99,6 @@
         <span class="col-saisie">Charge</span>
         <span class="col-saisie">Reps</span>
         <span class="col-rir">RIR</span>
-        <span class="col-valide"></span>
       </div>
       <ol id="series" class="series"></ol>
 
@@ -131,21 +144,6 @@
 -->
 <input id="amorce-clavier" class="amorce-clavier" type="text"
        inputmode="decimal" tabindex="-1" aria-hidden="true">
-
-<!-- Minuterie de récupération -->
-<div id="minuterie" class="minuterie" hidden>
-  <div class="minuterie-fond">
-    <p class="minuterie-libelle">Récupération</p>
-    <p id="minuterie-chiffres" class="minuterie-chiffres">0:00</p>
-    <p id="minuterie-suite" class="minuterie-suite"></p>
-    <div class="minuterie-boutons">
-      <button id="minuterie-moins" class="rond">&#8722;15</button>
-      <button id="minuterie-plus" class="rond">+15</button>
-    </div>
-    <button id="minuterie-passer" class="principal">Passer et saisir</button>
-    <p class="minuterie-aide">Touchez n'importe où pour reprendre la saisie</p>
-  </div>
-</div>
 
 <!-- Fin de séance -->
 <section id="ecran-fin" class="ecran">
@@ -201,6 +199,7 @@
     <p id="reglages-message" class="message"></p>
     <hr>
     <button id="bouton-exporter" class="discret">Exporter les séances (JSON)</button>
+    <button id="bouton-nettoyer-historique" class="discret">Ne garder que les séances d'aujourd'hui</button>
     <p class="note" id="note-programme"></p>
   </main>
 </section>

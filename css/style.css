@@ -25,11 +25,11 @@
   --marge: 16px;
   /* Échelle de rayons plutôt que des valeurs au cas par cas : la feuille
      mélangeait 4, 9, 12 et 20px sans logique. Angles adoucis au passage,
-     le 27 août 2026. Trois crans suffisent, un quatrième n'aurait fait que
-     rouvrir la porte à l'à-peu-près. */
+     le 27 août 2026. `--rayon-grand` (22px, la feuille plein écran de la
+     minuterie) a disparu le même jour avec cette feuille, remplacée par un
+     bandeau compact ; deux crans suffisent à ce qui reste. */
   --rayon-petit: 10px;    /* champs de saisie, petits boutons */
   --rayon: 14px;          /* cartes, boutons pleine largeur */
-  --rayon-grand: 22px;    /* feuille de la minuterie */
   --rayon-plein: 999px;   /* pastilles */
   /* Une seule transition existait dans toute l'application (la jauge de
      progression). Assez rapide pour ne pas retarder un geste en salle, mais
@@ -185,18 +185,19 @@ body { display: flex; flex-direction: column; }
 /* Un bouton à droite du titre, pas un bandeau pleine largeur : le bandeau
    (×3, sur sa propre ligne) ne rentrait plus à l'écran sur Pixel 9. Revenu à
    côté du titre le 27 août 2026, hauteur réduite de 30 % par rapport au
-   bandeau (120px → 84px) pour un compromis entre place à l'écran et cible
-   large. Le bouton rouge d'arrêt manuel a été retiré le même jour : le
+   bandeau (120px → 84px), puis de 15 % supplémentaires le même jour pour
+   laisser sa place au bandeau de récupération juste en dessous (84 → 71px).
+   Le bouton rouge d'arrêt manuel a été retiré le 27 août 2026 : le
    chronomètre s'arrête désormais de lui-même (second appui sur ce bouton,
    enregistrement de la séance, ou fin de la minuterie de récupération du
    dernier exercice), voir minuterieTerminee() dans js/app.js. */
 #chrono-seance-demarrer {
-  min-height: 84px;
-  padding: 0 20px;
-  gap: 12px;
-  font-size: 30px;
+  min-height: 71px;
+  padding: 0 17px;
+  gap: 10px;
+  font-size: 26px;
 }
-#chrono-seance-demarrer .chrono-seance-icone { font-size: 25px; }
+#chrono-seance-demarrer .chrono-seance-icone { font-size: 21px; }
 .chrono-seance-icone { font-size: 12px; line-height: 1; }
 .chrono-seance-temps:empty { display: none; }
 
@@ -315,7 +316,7 @@ body { display: flex; flex-direction: column; }
 
 .tableau-titres, .ligne-serie {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.8fr 50px;
+  grid-template-columns: 1fr 1fr 0.8fr;
   gap: 8px;
   align-items: center;
 }
@@ -339,6 +340,10 @@ body { display: flex; flex-direction: column; }
 .ligne-serie.courante { box-shadow: inset 3px 0 0 var(--accent-clair); }
 .ligne-serie.tonnage-hausse input { background: var(--tonnage-hausse-fond); border-color: var(--tonnage-hausse-bord); }
 .ligne-serie.tonnage-baisse input { background: var(--tonnage-baisse-fond); border-color: var(--tonnage-baisse-bord); }
+/* Seul repère d'échauffement restant depuis la suppression du bouton de
+   validation, qui le portait auparavant (texte "ÉCH") : sans colonne libre
+   pour un texte, les trois champs passent en tirets, plus discrets. */
+.ligne-serie.echauffement input { border-style: dashed; color: var(--texte-faible); }
 
 .ligne-serie input {
   width: 100%;
@@ -357,22 +362,6 @@ body { display: flex; flex-direction: column; }
 .ligne-serie input::placeholder { color: #4b5563; font-weight: 400; }
 .ligne-serie input::-webkit-outer-spin-button,
 .ligne-serie input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-.valider {
-  width: 100%;
-  height: 60px;
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon-petit);
-  background: var(--fond-champ);
-  color: var(--texte-faible);
-  font-size: 20px;
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.ligne-serie.faite .valider { background: var(--accent); color: #fff; border-color: var(--accent); }
-.ligne-serie.echauffement .valider { font-size: 12px; font-weight: 700; letter-spacing: .5px; }
 
 .ajouter {
   width: 100%;
@@ -423,43 +412,67 @@ body { display: flex; flex-direction: column; }
 }
 .nav[disabled] { opacity: .35; }
 
-/* ---------- Minuterie ---------- */
+/* ---------- Minuterie de récupération ----------
 
+   Bandeau compact sous le chrono de séance, plus une couche plein écran :
+   décision de l'utilisateur le 27 août 2026, en même temps que la
+   suppression du bouton de validation des séries (c'est désormais le RIR
+   renseigné qui valide et lance cette minuterie, voir rendreSeries() dans
+   js/app.js). Comme l'ancienne couche, toute sa surface fait passer à la
+   suite, sauf les boutons ±15 : voir le gestionnaire sur #minuterie dans
+   js/app.js. La couche plein écran gérait le clavier ouvert en se
+   redimensionnant sur visualViewport pour rester au-dessus ; un bandeau en
+   flux normal, en haut de l'écran, n'a plus besoin de ce mécanisme, retiré
+   avec elle (suivreClavier/ajusterMinuterieAuClavier).
+
+   Sa hauteur (60px) est 15 % plus petite que celle, déjà réduite, du chrono
+   de séance (71px) : les deux doivent se lire comme une paire, l'un sous
+   l'autre. */
 .minuterie {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
   display: flex;
-  align-items: flex-end;
-  background: rgba(13, 17, 23, .82);
-  backdrop-filter: blur(3px);
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  border: 1px solid var(--accent-clair);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+  cursor: pointer;
+  touch-action: manipulation;
 }
 .minuterie[hidden] { display: none; }
-
-.minuterie-fond {
-  width: 100%;
-  background: var(--fond-carte);
-  border-top: 2px solid var(--accent-clair);
-  border-radius: var(--rayon-grand) var(--rayon-grand) 0 0;
-  /* Une feuille qui remonte du bas se détache par une ombre, sinon elle
-     paraît collée au fond malgré le voile flouté derrière elle. */
-  box-shadow: 0 -12px 32px rgba(0, 0, 0, .45);
-  padding: 22px var(--marge) calc(env(safe-area-inset-bottom) + 22px);
-  text-align: center;
-}
-.minuterie-libelle { margin: 0; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--texte-faible); }
 .minuterie-chiffres {
-  margin: 6px 0 2px;
-  font-size: 72px;
-  font-weight: 200;
-  line-height: 1;
+  flex: none;
+  font-size: 22px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -2px;
+  color: var(--accent-clair);
 }
-.minuterie-chiffres.ecoule { color: var(--hausse); }
-.minuterie-suite { margin: 0 0 18px; font-size: 14px; color: var(--texte-faible); min-height: 1.2em; }
-.minuterie-boutons { display: flex; gap: 12px; justify-content: center; margin-bottom: 14px; }
-.minuterie-aide { margin: 10px 0 0; font-size: 12px; color: var(--texte-faible); opacity: .7; }
+.minuterie-suite {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--texte-faible);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.minuterie-boutons { display: flex; gap: 6px; flex: none; }
+.minuterie-ajust {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-champ);
+  color: var(--texte);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
 
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni
    visibility:hidden. Hors flux, transparent, et hors de portée du doigt. */
@@ -475,18 +488,6 @@ body { display: flex; flex-direction: column; }
   font-size: 16px;   /* sous 16px, les navigateurs mobiles zooment à la mise au point */
   pointer-events: none;
   z-index: -1;
-}
-
-.rond {
-  width: 78px;
-  height: 48px;
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon);
-  background: var(--fond-champ);
-  color: var(--texte);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 /* ---------- Boutons génériques ---------- */
@@ -534,8 +535,8 @@ body { display: flex; flex-direction: column; }
 .nav,
 .principal,
 .discret,
-.rond,
-.valider,
+.minuterie,
+.minuterie-ajust,
 .type-course,
 .chrono-seance,
 .ajouter {
@@ -548,8 +549,8 @@ body { display: flex; flex-direction: column; }
 .nav:not([disabled]):active,
 .principal:not([disabled]):active,
 .discret:active,
-.rond:active,
-.valider:active,
+.minuterie:active,
+.minuterie-ajust:active,
 .type-course:active,
 .chrono-seance:active,
 .ajouter:active {
@@ -559,7 +560,7 @@ body { display: flex; flex-direction: column; }
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
   .icone:active, .carte-jour:active, .nav:active, .principal:active,
-  .discret:active, .rond:active, .valider:active, .type-course:active,
+  .discret:active, .minuterie:active, .minuterie-ajust:active, .type-course:active,
   .chrono-seance:active, .ajouter:active { transform: none; }
 }
 
@@ -620,6 +621,4 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 
 @media (min-width: 620px) {
   .ecran { max-width: 620px; margin: 0 auto; width: 100%; }
-  .minuterie-fond { max-width: 620px; margin: 0 auto; border-radius: var(--rayon-grand); margin-bottom: 20px; }
-  .minuterie { align-items: center; }
 }

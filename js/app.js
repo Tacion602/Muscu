@@ -709,9 +709,11 @@ function rendreSeries() {
   liste.innerHTML = '';
 
   let rangTravail = 0;
-  // Ordre réel de navigation au clavier (touche Entrée du pavé numérique) :
-  // les trois champs de chaque ligne puis son bouton de validation, ligne
-  // après ligne. Un bouton, une fois focus, répond nativement à Entrée.
+  // Ordre de navigation au clavier (touche Entrée du pavé numérique) : les
+  // trois champs de chaque ligne, ligne après ligne. Plus de bouton dans
+  // cette liste depuis le 27 août 2026 : le RIR renseigné valide déjà et
+  // avance tout seul (voir plus bas), Entrée n'y sert donc qu'à sauter au
+  // champ suivant sans attendre la frappe.
   const enchainement = [];
 
   courant.series.forEach((serie, index) => {
@@ -732,6 +734,20 @@ function rendreSeries() {
       appliquerCouleurTonnage(ligne, serie, reference);
     });
 
+    // L'appui long bascule l'échauffement, ce qui exclut la série du tonnage
+    // et de la comparaison. Relocalisé ici le 27 août 2026 depuis le bouton
+    // de validation, supprimé : c'est le seul champ qui reste pour ce geste.
+    let minuterieAppuiLong = null;
+    champCharge.addEventListener('pointerdown', () => {
+      minuterieAppuiLong = setTimeout(() => {
+        serie.echauffement = !serie.echauffement;
+        enregistrerSeance();
+        rendreSeries();
+      }, 500);
+    });
+    champCharge.addEventListener('pointerup', () => clearTimeout(minuterieAppuiLong));
+    champCharge.addEventListener('pointerleave', () => clearTimeout(minuterieAppuiLong));
+
     const champReps = champ(serie.reps, reference ? reference.reps : null, 'reps', (v) => {
       serie.reps = v;
       enregistrerSeance();
@@ -739,61 +755,39 @@ function rendreSeries() {
       appliquerCouleurTonnage(ligne, serie, reference);
     });
 
+    // Le RIR renseigné vaut validation : plus de bouton depuis le 27 août
+    // 2026, décision de l'utilisateur. L'effacer annule la validation, sur
+    // le même principe symétrique. Un changement sur une série déjà validée
+    // (correction d'une faute de frappe) ne redéclenche ni la validation ni
+    // la minuterie, seul le passage vide -> rempli le fait.
     const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
+      const etaitFaite = serie.faite;
       serie.rir = v;
-      enregistrerSeance();
-    });
-
-    // Un appui bref valide la série ; un appui long la bascule en
-    // échauffement, ce qui l'exclut du tonnage et de la comparaison. Sans
-    // colonne dédiée pour le numéro, c'est le seul geste qui reste pour ça.
-    const valider = document.createElement('button');
-    valider.className = 'valider';
-    valider.type = 'button';
-    valider.innerHTML = serie.echauffement ? 'ÉCH' : (serie.faite ? '&#10003;' : '&#9675;');
-    valider.setAttribute('aria-label', serie.faite ? 'Annuler la série' : 'Valider la série (appui long : échauffement)');
-
-    let minuterieAppuiLong = null;
-    let appuiLongDeclenche = false;
-    const annulerAppuiLong = () => clearTimeout(minuterieAppuiLong);
-    valider.addEventListener('pointerdown', () => {
-      appuiLongDeclenche = false;
-      minuterieAppuiLong = setTimeout(() => {
-        appuiLongDeclenche = true;
-        serie.echauffement = !serie.echauffement;
+      if (v != null && !etaitFaite) {
+        validerParRir(courant, serie, index);
+      } else if (v == null && etaitFaite) {
+        serie.faite = false;
         enregistrerSeance();
         rendreSeries();
-      }, 500);
-    });
-    valider.addEventListener('pointerup', annulerAppuiLong);
-    valider.addEventListener('pointerleave', annulerAppuiLong);
-    valider.addEventListener('click', () => {
-      if (appuiLongDeclenche) return;
-      basculerSerie(courant, serie, index);
+        rendreJauge();
+      } else {
+        enregistrerSeance();
+      }
     });
 
-    ligne.append(champCharge, champReps, champRir, valider);
+    ligne.append(champCharge, champReps, champRir);
     liste.appendChild(ligne);
-    enchainement.push(champCharge, champReps, champRir, valider);
+    enchainement.push(champCharge, champReps, champRir);
   });
 
   enchainement.forEach((element, position) => {
-    if (element.tagName !== 'INPUT') return;
     element.addEventListener('keydown', (evenement) => {
       if (evenement.key !== 'Enter') return;
       evenement.preventDefault();
       const suivant = enchainement[position + 1];
       if (!suivant) return;
-      if (suivant.tagName === 'INPUT') {
-        suivant.focus();
-        suivant.select();
-      } else {
-        // Après le RIR, le "suivant" est le bouton de validation : le
-        // clavier virtuel ne réappuie pas tout seul sur Entrée une fois le
-        // focus déplacé, donc valider directement plutôt que de se
-        // contenter du focus, sans quoi la récupération ne démarre jamais.
-        suivant.click();
-      }
+      suivant.focus();
+      suivant.select();
     });
   });
 
@@ -855,15 +849,9 @@ function majTonnage(avantConnu) {
   else if (ecart < 0) cible.classList.add('baisse');
 }
 
-function basculerSerie(exercice, serie, index) {
-  if (serie.faite) {
-    serie.faite = false;
-    enregistrerSeance();
-    rendreSeries();
-    rendreJauge();
-    return;
-  }
-
+/* Valide une série dès que son RIR est renseigné (voir rendreSeries) :
+   plus de bouton depuis le 27 août 2026, décision de l'utilisateur. */
+function validerParRir(exercice, serie, index) {
   // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
   // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
   if (serie.charge == null || serie.reps == null) {
@@ -881,6 +869,7 @@ function basculerSerie(exercice, serie, index) {
   enregistrerSeance();
   rendreSeries();
   rendreJauge();
+  focaliserProchaineSerie();
 
   const fiche = ficheExercice();
   if (!serie.echauffement || fiche.repos_s) {
@@ -913,42 +902,11 @@ function lancerMinuterie(secondes, exercice, indexSerie) {
   // encore à zéro : c'est la seule façon d'y être prêt sans geste, aucun
   // navigateur mobile n'ouvrant le clavier de lui-même. Le focus est posé sur
   // l'amorce, jamais sur un champ de saisie réel, pour qu'une frappe
-  // accidentelle pendant le repos n'écrive dans aucune série.
-  if (reglages.clavierPendantRecup) {
-    amorcerClavier();
-    suivreClavier();
-  }
-}
-
-/* Le clavier ouvert masque le bas de l'écran, donc le compte à rebours. On
-   redimensionne la couche de la minuterie sur la zone réellement visible
-   (visualViewport), ce qui la fait remonter juste au-dessus du clavier. */
-function suivreClavier() {
-  const vv = window.visualViewport;
-  if (!vv) return;
-  ajusterMinuterieAuClavier();
-  vv.addEventListener('resize', ajusterMinuterieAuClavier);
-  vv.addEventListener('scroll', ajusterMinuterieAuClavier);
-}
-
-function cesserDeSuivreClavier() {
-  const vv = window.visualViewport;
-  if (!vv) return;
-  vv.removeEventListener('resize', ajusterMinuterieAuClavier);
-  vv.removeEventListener('scroll', ajusterMinuterieAuClavier);
-  const couche = $('minuterie');
-  couche.style.height = '';
-  couche.style.top = '';
-  couche.style.bottom = '';
-}
-
-function ajusterMinuterieAuClavier() {
-  const vv = window.visualViewport;
-  const couche = $('minuterie');
-  if (!vv || couche.hidden) return;
-  couche.style.top = vv.offsetTop + 'px';
-  couche.style.height = vv.height + 'px';
-  couche.style.bottom = 'auto';
+  // accidentelle pendant le repos n'écrive dans aucune série. Le
+  // repositionnement au-dessus du clavier (visualViewport) a disparu le
+  // 27 août 2026 en même temps que la couche plein écran : un bandeau en
+  // flux normal, proche du haut de l'écran, reste visible sans y penser.
+  if (reglages.clavierPendantRecup) amorcerClavier();
 }
 
 function battre() {
@@ -972,8 +930,6 @@ function arreterMinuterie() {
   if (tictac) clearInterval(tictac);
   tictac = null;
   $('minuterie').hidden = true;
-  $('minuterie-chiffres').classList.remove('ecoule');
-  cesserDeSuivreClavier();
 }
 
 /* Ferme la minuterie, que ce soit à zéro ou via "Passer", et enchaîne
@@ -1436,6 +1392,24 @@ function brancher() {
     lien.download = 'seances.json';
     lien.click();
     setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+  });
+
+  // Nettoyage manuel demandé par l'utilisateur le 27 août 2026, après avoir
+  // accumulé des séances de test : purge locale uniquement, le classeur (qui
+  // a ses propres pages, voir CLAUDE.md) n'est pas concerné.
+  $('bouton-nettoyer-historique').addEventListener('click', () => {
+    const aujourdhui = dateCourte(new Date().toISOString());
+    const toutes = lireTableau(CLES.historique);
+    const gardees = toutes.filter((s) => s.fin && dateCourte(s.fin) === aujourdhui);
+    const retirees = toutes.length - gardees.length;
+    if (!retirees) {
+      alert("Rien à retirer : il n'y a pas de séance antérieure à aujourd'hui.");
+      return;
+    }
+    if (!confirm(retirees + ' séance' + (retirees > 1 ? 's' : '') + " antérieure" +
+        (retirees > 1 ? 's' : '') + " à aujourd'hui seront supprimées du téléphone. Continuer ?")) return;
+    ecrire(CLES.historique, gardees);
+    rendreAccueil();
   });
 
   $('bouton-historique').addEventListener('click', () => { rendreHistorique(); afficher('historique'); });
