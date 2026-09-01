@@ -185,8 +185,9 @@ body { display: flex; flex-direction: column; }
 /* Un bouton à droite du titre, pas un bandeau pleine largeur : le bandeau
    (×3, sur sa propre ligne) ne rentrait plus à l'écran sur Pixel 9. Revenu à
    côté du titre le 27 août 2026, hauteur réduite de 30 % par rapport au
-   bandeau (120px → 84px), puis de 15 % supplémentaires le même jour pour
-   laisser sa place au bandeau de récupération juste en dessous (84 → 71px).
+   bandeau (120px → 84px), puis de 15 % supplémentaires le même jour
+   (84 → 71px, la minuterie de récupération étant alors 15 % plus petite que
+   cette valeur : voir .minuterie plus bas, désormais posée ailleurs).
    Le bouton rouge d'arrêt manuel a été retiré le 27 août 2026 : le
    chronomètre s'arrête désormais de lui-même (second appui sur ce bouton,
    enregistrement de la séance, ou fin de la minuterie de récupération du
@@ -414,64 +415,48 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Minuterie de récupération ----------
 
-   Bandeau compact sous le chrono de séance, plus une couche plein écran :
-   décision de l'utilisateur le 27 août 2026, en même temps que la
-   suppression du bouton de validation des séries (c'est désormais le RIR
-   renseigné qui valide et lance cette minuterie, voir rendreSeries() dans
-   js/app.js). Comme l'ancienne couche, toute sa surface fait passer à la
-   suite, sauf les boutons ±15 : voir le gestionnaire sur #minuterie dans
-   js/app.js. La couche plein écran gérait le clavier ouvert en se
-   redimensionnant sur visualViewport pour rester au-dessus ; un bandeau en
-   flux normal, en haut de l'écran, n'a plus besoin de ce mécanisme, retiré
-   avec elle (suivreClavier/ajusterMinuterieAuClavier).
+   À côté de la consigne technique, pas sous le chrono de séance : décision
+   de l'utilisateur le 27 août 2026, après qu'un bandeau placé tout en haut
+   de la page restait hors champ sur mobile une fois le clavier ouvert et la
+   page défilée pour atteindre le champ en cours de saisie (invisible sans
+   que `hidden` ne soit jamais vrai). `.ligne-consigne` met les deux côte à
+   côte ; la minuterie masquée (`[hidden]`) sort du flux flex, la consigne
+   reprend alors toute la largeur. Boutons ±15 retirés le même jour : toute
+   la surface fait passer à la suite, geste unique. La couche plein écran
+   d'origine gérait le clavier ouvert en se redimensionnant sur
+   visualViewport pour rester au-dessus ; ce mécanisme a disparu avec elle
+   (suivreClavier/ajusterMinuterieAuClavier), une minuterie à côté d'un
+   champ de saisie n'ayant plus ce problème. */
+.ligne-consigne { display: flex; align-items: flex-start; gap: 10px; }
+.ligne-consigne .consigne { flex: 1; min-width: 0; }
 
-   Sa hauteur (60px) est 15 % plus petite que celle, déjà réduite, du chrono
-   de séance (71px) : les deux doivent se lire comme une paire, l'un sous
-   l'autre. */
 .minuterie {
+  flex: 0 0 128px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 2px;
   min-height: 60px;
-  margin-bottom: 12px;
-  padding: 0 14px;
+  padding: 8px 10px;
   border: 1px solid var(--accent-clair);
   border-radius: var(--rayon);
   background: var(--fond-carte);
+  text-align: center;
   cursor: pointer;
   touch-action: manipulation;
 }
 .minuterie[hidden] { display: none; }
 .minuterie-chiffres {
-  flex: none;
   font-size: 22px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--accent-clair);
 }
 .minuterie-suite {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  line-height: 1.3;
+  font-size: 11px;
+  line-height: 1.25;
   color: var(--texte-faible);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.minuterie-boutons { display: flex; gap: 6px; flex: none; }
-.minuterie-ajust {
-  min-height: 40px;
-  padding: 0 10px;
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon-petit);
-  background: var(--fond-champ);
-  color: var(--texte);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  touch-action: manipulation;
 }
 
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni

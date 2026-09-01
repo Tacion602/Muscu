@@ -104,10 +104,18 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
 - **La minuterie n'est plus une couche plein écran depuis le 27 août 2026**,
-  mais un bandeau compact affiché sous le chrono de séance, dans le flux
-  normal de la page (`#minuterie` déplacé dans `#bloc-muscu`, `index.html`).
-  Sa hauteur (60px) est 15 % plus petite que celle, déjà réduite de 15 %, du
-  chrono de séance (71px) : les deux se lisent comme une paire.
+  mais un bandeau compact (60px, `.minuterie` dans `css/style.css`). Elle a
+  changé de place le jour même : d'abord posée sous le chrono de séance, tout
+  en haut de la page, elle y restait invisible sur mobile une fois le clavier
+  ouvert et la page défilée pour atteindre le champ en cours de saisie —
+  `hidden` ne devenait jamais vrai, mais le bandeau sortait du cadre visible.
+  **Elle vit maintenant à côté de la consigne technique** (`.ligne-consigne`
+  dans `index.html`, un flex qui met les deux côte à côte) : masquée
+  (`[hidden]`), elle sort du flux flex et la consigne reprend toute la
+  largeur ; active, elle prend 128px fixes sur la droite. Aucun repère fixe
+  n'est garanti à 100 % sur toutes les hauteurs d'écran une fois le clavier
+  ouvert, mais une position au fil du texte plutôt qu'en tête de page limite
+  le risque de scroll qui l'emporte hors champ.
 - **La minuterie se ferme d'elle-même à zéro**, sans afficher de temps
   écoulé en trop-plein (décision de l'utilisateur le 26 août 2026). Fermeture
   naturelle et appui sur le bandeau partagent `minuterieTerminee()` : si la
@@ -131,12 +139,13 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     est rendue invisible par `opacity: 0` et sortie du flux, avec
     `font-size: 16px` pour éviter le zoom automatique à la mise au point.
   - **Toute la surface du bandeau de récupération ferme et redonne le
-    clavier** (les boutons ±15 sont exclus de la délégation). C'est la seule
-    réponse possible à la fermeture automatique à zéro : **aucun navigateur
-    mobile n'ouvre le clavier sans geste de l'utilisateur**, c'est une
-    restriction volontaire de la plateforme, pas un défaut contournable.
-    Élargir la cible du geste donne au moins le chemin le plus court vers la
-    saisie.
+    clavier.** Les boutons ±15 ont existé un temps, exclus de la délégation ;
+    retirés le 27 août 2026, le geste porte maintenant sur tout le bandeau
+    sans exception. C'est la seule réponse possible à la fermeture
+    automatique à zéro : **aucun navigateur mobile n'ouvre le clavier sans
+    geste de l'utilisateur**, c'est une restriction volontaire de la
+    plateforme, pas un défaut contournable. Élargir la cible du geste donne
+    au moins le chemin le plus court vers la saisie.
   - **Le clavier peut rester ouvert pendant toute la récupération**, réglage
     `clavierPendantRecup` activé par défaut depuis le 27 août 2026 : c'est la
     seule façon d'être prêt à saisir dès zéro sans geste, puisque le clavier
@@ -144,9 +153,9 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     sur un champ de série**, pour qu'une frappe accidentelle pendant le repos
     n'écrive dans aucune donnée. Le mécanisme de repositionnement au-dessus
     du clavier (`suivreClavier()`, sur `visualViewport`) a disparu le même
-    jour avec la couche plein écran : un bandeau en flux normal, proche du
-    haut de l'écran, reste visible sans y penser. Le réglage permet de
-    revenir au comportement précédent.
+    jour avec la couche plein écran : dans le flux normal de la page, il n'y
+    a plus de couche à recaler. Le réglage permet de revenir au comportement
+    précédent.
   - **Changer d'exercice (← / →) amorce aussi le clavier**, sur le même
     principe : appelée dans les gestionnaires de `bouton-precedent` et
     `bouton-suivant`, avant même `rendreExercice()`, pendant que le geste est

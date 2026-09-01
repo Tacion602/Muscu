@@ -60,19 +60,6 @@
         </button>
       </div>
 
-      <!-- Minuterie de récupération : bandeau compact sous le chrono de
-           séance, plus une couche plein écran. Un appui n'importe où dessus
-           (hors ±15) passe à la suite, sur le même principe que l'ancienne
-           couche. Voir minuterieTerminee() dans js/app.js. -->
-      <div id="minuterie" class="minuterie" hidden>
-        <span id="minuterie-chiffres" class="minuterie-chiffres">0:00</span>
-        <span id="minuterie-suite" class="minuterie-suite"></span>
-        <div class="minuterie-boutons">
-          <button id="minuterie-moins" class="minuterie-ajust" type="button" aria-label="Moins 15 secondes">&#8722;15</button>
-          <button id="minuterie-plus" class="minuterie-ajust" type="button" aria-label="Plus 15 secondes">+15</button>
-        </div>
-      </div>
-
       <div class="etiquettes">
         <span id="exo-muscle" class="etiquette"></span>
         <span id="exo-prescription" class="etiquette"></span>
@@ -84,16 +71,27 @@
         <ol id="echauffement-liste"></ol>
       </div>
 
-      <details id="exo-consigne-bloc" class="consigne" open>
-        <summary>Consigne technique</summary>
-        <p id="exo-consigne"></p>
-        <textarea id="exo-consigne-champ" class="consigne-champ" rows="3" hidden></textarea>
-        <div class="consigne-boutons">
-          <button id="bouton-consigne-modifier" class="discret" type="button">Modifier</button>
-          <button id="bouton-consigne-enregistrer" class="discret" type="button" hidden>Enregistrer</button>
-          <button id="bouton-consigne-annuler" class="discret" type="button" hidden>Annuler</button>
+      <!-- Consigne et minuterie de récupération côte à côte : la seconde
+           n'apparaît qu'active, la première reprend alors toute la largeur.
+           Un appui n'importe où sur la minuterie passe à la suite. Voir
+           minuterieTerminee() dans js/app.js. -->
+      <div class="ligne-consigne">
+        <details id="exo-consigne-bloc" class="consigne" open>
+          <summary>Consigne technique</summary>
+          <p id="exo-consigne"></p>
+          <textarea id="exo-consigne-champ" class="consigne-champ" rows="3" hidden></textarea>
+          <div class="consigne-boutons">
+            <button id="bouton-consigne-modifier" class="discret" type="button">Modifier</button>
+            <button id="bouton-consigne-enregistrer" class="discret" type="button" hidden>Enregistrer</button>
+            <button id="bouton-consigne-annuler" class="discret" type="button" hidden>Annuler</button>
+          </div>
+        </details>
+
+        <div id="minuterie" class="minuterie" hidden>
+          <span id="minuterie-chiffres" class="minuterie-chiffres">0:00</span>
+          <span id="minuterie-suite" class="minuterie-suite"></span>
         </div>
-      </details>
+      </div>
 
       <div class="tableau-titres">
         <span class="col-saisie">Charge</span>

@@ -891,7 +891,6 @@ function lancerMinuterie(secondes, exercice, indexSerie) {
     libelle: restantes > 0
       ? 'Ensuite : série ' + (indexSerie + 2) + ' sur ' + exercice.series.length
       : 'Dernière série de ' + exercice.nom,
-    sonne: false,
   };
   $('minuterie').hidden = false;
   battre();
@@ -1328,21 +1327,12 @@ function brancher() {
     rendreSeries();
   });
 
-  // Toute la surface de la minuterie ferme et rouvre le clavier, pas
-  // seulement le bouton : après une fermeture automatique à zéro, aucun geste
-  // n'a eu lieu et le clavier reste fermé (aucun navigateur mobile ne
-  // l'ouvre sans interaction). Un appui n'importe où redonne donc le chemin
-  // le plus court vers la saisie. Les boutons +15 et -15 sont exclus.
-  $('minuterie').addEventListener('click', (evenement) => {
-    if (evenement.target.closest('.minuterie-boutons')) return;
-    minuterieTerminee(true);
-  });
-  $('minuterie-plus').addEventListener('click', () => {
-    if (minuterie) { minuterie.fin += 15000; minuterie.sonne = false; battre(); }
-  });
-  $('minuterie-moins').addEventListener('click', () => {
-    if (minuterie) { minuterie.fin -= 15000; battre(); }
-  });
+  // Toute la surface de la minuterie ferme et rouvre le clavier : après une
+  // fermeture automatique à zéro, aucun geste n'a eu lieu et le clavier
+  // reste fermé (aucun navigateur mobile ne l'ouvre sans interaction). Un
+  // appui n'importe où redonne donc le chemin le plus court vers la saisie.
+  // Boutons ±15 retirés le 27 août 2026, plus rien à exclure du geste.
+  $('minuterie').addEventListener('click', () => minuterieTerminee(true));
 
   $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);
   $('bouton-fin-retour').addEventListener('click', () => { afficher('seance'); rendreExercice(); });
