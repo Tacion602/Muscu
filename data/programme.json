@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-08-26T13:41:09+00:00",
+ "importe_le": "2026-09-02T12:17:15+00:00",
  "jours": [
   {
    "code": "J1",
@@ -39,20 +39,6 @@
        "deload": false,
        "total": 1090,
        "series": [
-        {
-         "note": "ECH 1",
-         "charge": 10,
-         "reps": null,
-         "rir": null,
-         "echauffement": true
-        },
-        {
-         "note": "ECH 2",
-         "charge": 20,
-         "reps": null,
-         "rir": null,
-         "echauffement": true
-        },
         {
          "note": "",
          "charge": 40,
