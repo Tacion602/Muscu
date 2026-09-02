@@ -5,7 +5,8 @@
 'use strict';
 
 const CLES = {
-  seance: 'muscu.seance',
+  seance: 'muscu.seance',      // ancien format, une seule séance ; ne sert plus qu'à la reprise
+  seances: 'muscu.seances',    // séances en cours, une par jour, indexées par code
   historique: 'muscu.historique',
   reglages: 'muscu.reglages',
   consignes: 'muscu.consignes',
@@ -117,10 +118,6 @@ const TYPES_COURSE = [
   },
 ];
 
-function typeCourse(cle) {
-  return TYPES_COURSE.find((t) => t.cle === cle) || TYPES_COURSE[0];
-}
-
 let programme = null;
 let seance = null;       // séance en cours, ou null
 let reglages = lire(CLES.reglages, REGLAGES_PAR_DEFAUT);
@@ -180,9 +177,48 @@ function ecrire(cle, valeur) {
   }
 }
 
+/* Plusieurs séances peuvent être en cours en même temps, une par jour :
+   entrer dans J3 ne doit rien effacer de ce qui a été saisi dans J1
+   (décision de l'utilisateur le 27 août 2026). Elles vivent dans une carte
+   indexée par code de jour, là où une seule séance tenait auparavant sous
+   `muscu.seance`. */
+function lireSeancesEnCours() {
+  try {
+    const brut = localStorage.getItem(CLES.seances);
+    if (brut) {
+      const valeur = JSON.parse(brut);
+      if (valeur && typeof valeur === 'object' && !Array.isArray(valeur)) return valeur;
+    }
+  } catch (e) {
+    // Format illisible : on retombe sur l'ancienne clé plutôt que de perdre
+    // une séance en cours.
+  }
+
+  const ancienne = lire(CLES.seance, null);
+  if (ancienne && ancienne.jour && !ancienne.fin) {
+    const carte = {};
+    carte[ancienne.jour] = ancienne;
+    return carte;
+  }
+  return {};
+}
+
+function ecrireSeancesEnCours(carte) {
+  ecrire(CLES.seances, carte);
+  localStorage.removeItem(CLES.seance);
+}
+
 function enregistrerSeance() {
-  if (seance) ecrire(CLES.seance, seance);
-  else localStorage.removeItem(CLES.seance);
+  if (!seance || !seance.jour) return;
+  const carte = lireSeancesEnCours();
+  carte[seance.jour] = seance;
+  ecrireSeancesEnCours(carte);
+}
+
+function oublierSeance(code) {
+  const carte = lireSeancesEnCours();
+  delete carte[code];
+  ecrireSeancesEnCours(carte);
 }
 
 /* ------------------------------------------------------------------ écrans */
@@ -276,6 +312,7 @@ function derniereFois(codeJour, nomExo) {
 function rendreAccueil() {
   const liste = $('liste-jours');
   liste.innerHTML = '';
+  const enCours = lireSeancesEnCours();
 
   programme.jours.forEach((jour) => {
     const item = document.createElement('li');
@@ -284,49 +321,90 @@ function rendreAccueil() {
 
     const titre = jour.titre.replace(/^J\d\s*/, '').replace(/^-\s*/, '');
     const [nom, ...reste] = titre.split(/\s+-\s+/);
+    const derniere = derniereSeanceDuJour(jour.code);
+    const commencee = enCours[jour.code] && !enCours[jour.code].fin;
+    if (commencee) bouton.classList.add('en-cours');
 
-    if (jour.type === 'footing') {
-      const derniere = derniereSeanceDuJour(jour.code);
-      bouton.innerHTML =
-        '<div class="carte-code">' + jour.code + '</div>' +
-        '<div class="carte-nom">' + echapper(nom || 'Footing') + '</div>' +
-        '<div class="carte-detail">Durée et distance' +
-        (derniere ? '<br>Dernière : ' + ilYA(derniere.fin) : '') +
-        '</div>';
-      bouton.addEventListener('click', () => commencer(jour.code));
-    } else {
-      const derniere = derniereSeanceDuJour(jour.code);
-      bouton.innerHTML =
-        '<div class="carte-code">' + jour.code + '</div>' +
-        '<div class="carte-nom">' + echapper(nom) + '</div>' +
-        '<div class="carte-detail">' +
-        jour.exercices.length + ' exercices' +
-        (reste.length ? ' &middot; ' + echapper(reste.join(' ')) : '') +
-        (derniere ? '<br>Dernière : ' + ilYA(derniere.fin) : '') +
-        '</div>';
-      bouton.addEventListener('click', () => commencer(jour.code));
-    }
+    const detail = jour.type === 'footing'
+      ? 'Durée et distance'
+      : jour.exercices.length + ' exercices' +
+        (reste.length ? ' &middot; ' + echapper(reste.join(' ')) : '');
+
+    bouton.innerHTML =
+      '<div class="carte-code">' + jour.code +
+      (commencee ? '<span class="pastille-en-cours">en cours</span>' : '') +
+      '</div>' +
+      '<div class="carte-nom">' + echapper(nom || 'Footing') + '</div>' +
+      '<div class="carte-detail">' + detail +
+      (derniere ? '<br>Dernière : ' + ilYA(derniere.fin) : '') +
+      '</div>';
+    bouton.addEventListener('click', () => commencer(jour.code));
 
     item.appendChild(bouton);
     liste.appendChild(item);
   });
 
-  const enCours = lire(CLES.seance, null);
-  if (enCours && enCours.jour && !enCours.fin) {
-    $('reprise').hidden = false;
-    $('reprise-jour').textContent = enCours.jour;
-    $('reprise-quand').textContent = ilYA(enCours.debut);
-  } else {
-    $('reprise').hidden = true;
-  }
-
+  rendreReprises(enCours);
   rendreEtatSync();
+}
+
+/* Une ligne par séance en cours, avec son propre bouton d'abandon : avec
+   plusieurs jours ouverts en même temps, un bouton unique ne saurait pas
+   lequel il abandonne. */
+function rendreReprises(enCours) {
+  const bloc = $('reprise');
+  const liste = $('reprise-liste');
+  const codes = Object.keys(enCours).filter((c) => enCours[c] && !enCours[c].fin);
+
+  bloc.hidden = !codes.length;
+  liste.innerHTML = '';
+  if (!codes.length) return;
+
+  codes.forEach((code) => {
+    const ligne = document.createElement('div');
+    ligne.className = 'reprise-ligne';
+
+    const texte = document.createElement('span');
+    texte.className = 'reprise-texte';
+    texte.textContent = code + ' · commencée ' + ilYA(enCours[code].debut);
+
+    const abandonner = document.createElement('button');
+    abandonner.className = 'discret';
+    abandonner.type = 'button';
+    abandonner.textContent = 'Abandonner';
+    abandonner.addEventListener('click', () => {
+      if (!confirm('Abandonner la séance ' + code + ' ? Les séries saisies seront perdues.')) return;
+      if (seance && seance.jour === code) seance = null;
+      oublierSeance(code);
+      rendreAccueil();
+    });
+
+    ligne.append(texte, abandonner);
+    liste.appendChild(ligne);
+  });
 }
 
 function derniereSeanceDuJour(code) {
   return lireTableau(CLES.historique)
     .filter((s) => s.jour === code && s.fin)
     .sort((a, b) => new Date(b.fin) - new Date(a.fin))[0] || null;
+}
+
+/* Dernière sortie d'un type de course donné, **tous jours de course
+   confondus** : J2 et J6 sont le même entraînement, comparer une endurance
+   du mardi à une endurance du samedi a du sens, les opposer par jour n'en
+   aurait aucun (décision de l'utilisateur le 27 août 2026). */
+function derniereSortie(cle) {
+  const passees = lireTableau(CLES.historique)
+    .filter((s) => s.type === 'footing' && s.fin)
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin));
+
+  for (const s of passees) {
+    if (seance && s.id === seance.id) continue;
+    const donnees = footingParType(s)[cle];
+    if (donnees && donnees.duree_min && donnees.distance_km) return donnees;
+  }
+  return null;
 }
 
 function echapper(texte) {
@@ -348,13 +426,36 @@ function rendreEtatSync() {
 
 /* -------------------------------------------------------- démarrer / reprendre */
 
+/* Ouvre un jour : reprend la séance déjà commencée dessus s'il y en a une,
+   en crée une sinon. Ne remplace jamais une séance en cours par une neuve,
+   c'est tout l'intérêt de la carte par jour. */
 function commencer(code) {
   const jour = jourDe(code);
   if (!jour) return;
 
-  seance = {
+  const carte = lireSeancesEnCours();
+  const reprise = carte[code] && !carte[code].fin;
+  seance = reprise ? carte[code] : nouvelleSeance(jour);
+
+  indexExo = reprise ? positionDeReprise() : 0;
+  enregistrerSeance();
+  demanderVeille();
+  afficher('seance');
+
+  if (jour.type === 'footing') {
+    rendreFooting();
+  } else {
+    // Ouvrir un jour de musculation démarre le chronomètre de séance : sans
+    // ce geste dédié, il fallait y penser soi-même en plein échauffement.
+    demarrerChronoSeance();
+    rendreExercice();
+  }
+}
+
+function nouvelleSeance(jour) {
+  const neuve = {
     id: 'S' + Date.now(),
-    jour: code,
+    jour: jour.code,
     titre: jour.titre,
     type: jour.type,
     debut: new Date().toISOString(),
@@ -368,21 +469,18 @@ function commencer(code) {
       series: nouvellesSeries(exo),
     })),
   };
-  if (jour.type === 'footing') {
-    seance.footing = { type: 'ef', duree_min: null, distance_km: null };
-  }
-  indexExo = 0;
-  enregistrerSeance();
-  demanderVeille();
-  afficher('seance');
-  if (jour.type === 'footing') {
-    rendreFooting();
-  } else {
-    // Ouvrir un jour de musculation démarre le chronomètre de séance : sans
-    // ce geste dédié, il fallait y penser soi-même en plein échauffement.
-    demarrerChronoSeance();
-    rendreExercice();
-  }
+  // Les quatre types de course sont des exercices distincts, chacun avec ses
+  // propres chiffres : la carte reste vide et se remplit au fur et à mesure.
+  if (jour.type === 'footing') neuve.footing = {};
+  return neuve;
+}
+
+/* Reprend là où la saisie s'est arrêtée : premier exercice dont une série
+   reste à faire, le dernier si tout est déjà rempli. */
+function positionDeReprise() {
+  if (estFooting()) return 0;
+  const index = seance.exercices.findIndex((e) => e.series.some((s) => !s.faite));
+  return index < 0 ? seance.exercices.length - 1 : index;
 }
 
 function nouvellesSeries(exo) {
@@ -400,21 +498,6 @@ function nouvellesSeries(exo) {
   return series;
 }
 
-function reprendre() {
-  seance = lire(CLES.seance, null);
-  if (!seance) return;
-  demanderVeille();
-  afficher('seance');
-
-  if (estFooting()) {
-    rendreFooting();
-    return;
-  }
-
-  indexExo = seance.exercices.findIndex((e) => e.series.some((s) => !s.faite));
-  if (indexExo < 0) indexExo = seance.exercices.length - 1;
-  rendreExercice();
-}
 
 /* ---------------------------------------------------------------- exercice */
 
@@ -430,6 +513,29 @@ function estFooting() {
   return seance && seance.type === 'footing';
 }
 
+/* Les quatre types de course sont des exercices distincts, pas quatre modes
+   d'un même exercice : chacun garde ses propres chiffres, et les quatre
+   peuvent être faits le même jour (décision de l'utilisateur le 27 août
+   2026). `seance.footing` est donc une carte indexée par type, remplie à la
+   demande, là où elle portait auparavant une seule sortie à plat. */
+function sortieCourante() {
+  const cle = TYPES_COURSE[indexExo].cle;
+  if (!seance.footing[cle]) seance.footing[cle] = {};
+  return seance.footing[cle];
+}
+
+/* Les séances antérieures au 27 août 2026 rangeaient une seule sortie à
+   plat dans `footing`. On la relit sous son type plutôt que de la perdre. */
+function footingParType(s) {
+  const f = s.footing || {};
+  if (f.duree_min !== undefined || f.distance_km !== undefined) {
+    const carte = {};
+    carte[f.type || 'ef'] = f;
+    return carte;
+  }
+  return f;
+}
+
 function champFooting(definition) {
   const etiquette = document.createElement('label');
   const titre = document.createElement('span');
@@ -438,11 +544,11 @@ function champFooting(definition) {
   const input = document.createElement('input');
   input.type = 'text';
   input.inputMode = 'decimal';
-  const valeur = seance.footing[definition.cle];
+  const valeur = sortieCourante()[definition.cle];
   input.value = valeur === null || valeur === undefined ? '' : String(valeur);
   input.addEventListener('focus', () => input.select());
   input.addEventListener('input', () => {
-    seance.footing[definition.cle] = nombreOuNull(input.value);
+    sortieCourante()[definition.cle] = nombreOuNull(input.value);
     enregistrerSeance();
     majAllure();
   });
@@ -461,22 +567,23 @@ function rendreFooting() {
   $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
   $('seance-progression').textContent = '';
 
-  const type = typeCourse(seance.footing.type);
+  const type = TYPES_COURSE[indexExo];
   $('footing-nom').textContent = type.complet;
 
   const boutons = $('footing-types');
   boutons.innerHTML = '';
-  TYPES_COURSE.forEach((candidat) => {
+  TYPES_COURSE.forEach((candidat, position) => {
+    const donnees = seance.footing[candidat.cle] || {};
+    const rempli = donnees.duree_min != null || donnees.distance_km != null;
     const bouton = document.createElement('button');
     bouton.type = 'button';
-    bouton.className = 'type-course' + (candidat.cle === type.cle ? ' choisi' : '');
+    bouton.className = 'type-course' + (position === indexExo ? ' choisi' : '') +
+      (rempli ? ' rempli' : '');
     bouton.textContent = candidat.nom;
     bouton.addEventListener('click', () => {
-      // Changer de type efface les champs propres à l'ancien : une pente
-      // héritée d'une séance inclinée n'a aucun sens sur un fractionné.
-      type.champs.forEach((c) => { delete seance.footing[c.cle]; });
-      seance.footing.type = candidat.cle;
-      enregistrerSeance();
+      // Changer de type change d'exercice, il n'efface plus rien : les
+      // quatre gardent leurs chiffres en parallèle.
+      indexExo = position;
       rendreFooting();
     });
     boutons.appendChild(bouton);
@@ -497,10 +604,23 @@ function rendreFooting() {
   majAllure();
 }
 
+/* La pastille des types remplis se recalcule à chaque frappe, pas seulement
+   au rendu : sans cela, celui qu'on est en train de saisir ne s'allumait
+   qu'après en avoir changé, ce qui donnait un tableau de bord en retard. */
+function majPastillesTypes() {
+  const boutons = $('footing-types').querySelectorAll('.type-course');
+  TYPES_COURSE.forEach((candidat, position) => {
+    const donnees = seance.footing[candidat.cle] || {};
+    const rempli = donnees.duree_min != null || donnees.distance_km != null;
+    if (boutons[position]) boutons[position].classList.toggle('rempli', rempli);
+  });
+}
+
 /* L'allure au kilomètre est le repère habituel du coureur, plus parlant que
    la vitesse en km/h : on la calcule dès que durée et distance sont saisies. */
 function majAllure() {
-  const { duree_min: duree, distance_km: distance } = seance.footing;
+  majPastillesTypes();
+  const { duree_min: duree, distance_km: distance } = sortieCourante();
   const cible = $('footing-allure');
 
   if (!duree || !distance) {
@@ -514,14 +634,14 @@ function majAllure() {
   const secondes = Math.round((allure - minutes) * 60);
   cible.textContent = 'Allure ' + minutes + ':' + String(secondes).padStart(2, '0') + ' / km';
 
-  const precedente = derniereSeanceDuJour(seance.jour);
+  const precedente = derniereSortie(TYPES_COURSE[indexExo].cle);
   const compare = $('footing-compare');
   compare.className = 'compare';
-  if (!precedente || !precedente.footing || !precedente.footing.duree_min || !precedente.footing.distance_km) {
+  if (!precedente) {
     compare.textContent = '';
     return;
   }
-  const allureAvant = precedente.footing.duree_min / precedente.footing.distance_km;
+  const allureAvant = precedente.duree_min / precedente.distance_km;
   const ecart = allure - allureAvant;
   const ecartSecondes = Math.round(Math.abs(ecart) * 60);
   if (ecartSecondes < 3) {
@@ -755,24 +875,34 @@ function rendreSeries() {
       appliquerCouleurTonnage(ligne, serie, reference);
     });
 
-    // Le RIR renseigné vaut validation : plus de bouton depuis le 27 août
-    // 2026, décision de l'utilisateur. L'effacer annule la validation, sur
-    // le même principe symétrique. Un changement sur une série déjà validée
-    // (correction d'une faute de frappe) ne redéclenche ni la validation ni
-    // la minuterie, seul le passage vide -> rempli le fait.
+    // Le RIR vaut validation, mais **à sa confirmation, pas à la frappe**
+    // (décision de l'utilisateur le 27 août 2026) : taper le 1 de 10 ne doit
+    // pas valider une série au passage. La frappe se contente d'enregistrer
+    // le chiffre ; la validation attend Entrée ou la sortie du champ.
+    // L'effacer annule la validation, sur le même principe symétrique.
     const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
       const etaitFaite = serie.faite;
       serie.rir = v;
-      if (v != null && !etaitFaite) {
-        validerParRir(courant, serie, index);
-      } else if (v == null && etaitFaite) {
+      if (v == null && etaitFaite) {
         serie.faite = false;
         enregistrerSeance();
         rendreSeries();
         rendreJauge();
-      } else {
-        enregistrerSeance();
+        return;
       }
+      enregistrerSeance();
+    });
+    champRir.dataset.role = 'rir';
+
+    const validerRir = () => {
+      if (serie.faite || serie.rir == null) return;
+      validerParRir(courant, serie, index);
+    };
+    champRir.addEventListener('change', validerRir);
+    champRir.addEventListener('keydown', (evenement) => {
+      if (evenement.key !== 'Enter') return;
+      evenement.preventDefault();
+      validerRir();
     });
 
     ligne.append(champCharge, champReps, champRir);
@@ -781,6 +911,9 @@ function rendreSeries() {
   });
 
   enchainement.forEach((element, position) => {
+    // Le champ RIR est exclu : Entrée y vaut validation, gérée plus haut, et
+    // c'est la validation elle-même qui déplace ensuite le focus.
+    if (element.dataset.role === 'rir') return;
     element.addEventListener('keydown', (evenement) => {
       if (evenement.key !== 'Enter') return;
       evenement.preventDefault();
@@ -867,13 +1000,28 @@ function validerParRir(exercice, serie, index) {
   serie.faite = true;
   serie.heure = new Date().toISOString();
   enregistrerSeance();
-  rendreSeries();
-  rendreJauge();
+
+  // La fiche du repos se lit avant tout changement d'exercice : c'est le
+  // temps de récupération de l'exercice qu'on vient de finir qui compte.
+  const fiche = ficheExercice();
+  const repos = fiche.repos_s;
+
+  // Dernière série d'un exercice : on passe au suivant sans attendre la fin
+  // de la récupération (décision de l'utilisateur le 27 août 2026). La
+  // minuterie continue de tourner par-dessus la fiche suivante, on peut donc
+  // lire le prochain exercice pendant qu'on récupère du précédent.
+  const toutFait = exercice.series.every((s) => s.faite);
+  if (toutFait && indexExo < seance.exercices.length - 1) {
+    indexExo++;
+    rendreExercice();
+  } else {
+    rendreSeries();
+    rendreJauge();
+  }
   focaliserProchaineSerie();
 
-  const fiche = ficheExercice();
-  if (!serie.echauffement || fiche.repos_s) {
-    lancerMinuterie(fiche.repos_s || 90, exercice, index);
+  if (!serie.echauffement || repos) {
+    lancerMinuterie(repos || 90, exercice, index);
   }
 }
 
@@ -931,24 +1079,21 @@ function arreterMinuterie() {
   $('minuterie').hidden = true;
 }
 
-/* Ferme la minuterie, que ce soit à zéro ou via "Passer", et enchaîne
-   automatiquement : si la série qui vient de récupérer était la dernière de
-   l'exercice, l'exercice suivant s'affiche directement plutôt que de laisser
-   l'utilisateur sur une fiche entièrement complétée. */
+/* Ferme la minuterie, à zéro comme sur un appui. Le passage à l'exercice
+   suivant ne se fait plus ici depuis le 27 août 2026 : il a lieu dès la
+   validation de la dernière série (voir validerParRir), la minuterie
+   continuant de tourner par-dessus la fiche suivante. */
 function minuterieTerminee(gesteUtilisateur) {
   // L'amorce est focalisée en tout premier, tant que le geste est encore
-  // "chaud" : c'est ce qui décide le navigateur à ouvrir le clavier. Tout le
-  // reste (fermeture, changement d'exercice) vient après.
+  // "chaud" : c'est ce qui décide le navigateur à ouvrir le clavier.
   if (gesteUtilisateur) amorcerClavier();
 
   arreterMinuterie();
   if (!seance || estFooting()) return;
+
   const courant = seance.exercices[indexExo];
   const fini = courant.series.every((s) => s.faite);
-  if (fini && indexExo < seance.exercices.length - 1) {
-    indexExo++;
-    rendreExercice();
-  } else if (fini && indexExo === seance.exercices.length - 1 && chronoSeance().demarre) {
+  if (fini && indexExo === seance.exercices.length - 1 && chronoSeance().demarre) {
     // Le bouton d'arrêt manuel a été retiré : la récupération de la dernière
     // série du dernier exercice est l'un des trois seuls moments qui arrêtent
     // le chronomètre de séance (les deux autres : deuxième appui sur le
@@ -1104,25 +1249,39 @@ function terminer() {
   afficher('fin');
 }
 
+/* Une sortie par type renseigné : les quatre peuvent avoir été faites le
+   même jour, le résumé les liste toutes plutôt qu'une seule. */
 function terminerFooting(resume) {
-  const { duree_min: duree, distance_km: distance } = seance.footing;
-  let allureTexte = '&mdash;';
-  if (duree && distance) {
-    const allure = duree / distance;
-    allureTexte = Math.floor(allure) + ':' + String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0');
+  const carte = footingParType(seance);
+  const faites = TYPES_COURSE.filter((t) => {
+    const d = carte[t.cle];
+    return d && (d.duree_min != null || d.distance_km != null);
+  });
+
+  resume.innerHTML = '<h3>' + echapper(seance.titre.replace(/^J\d\s*/, '')) + '</h3>';
+
+  if (!faites.length) {
+    resume.innerHTML += '<p class="vide">Aucune sortie renseignée.</p>';
   }
 
-  resume.innerHTML =
-    '<h3>' + echapper(typeCourse(seance.footing.type).complet) + '</h3>' +
-    '<div class="chiffres">' +
-      '<div class="chiffre"><b>' + (duree || 0) + '</b><span>minutes</span></div>' +
-      '<div class="chiffre"><b>' + (distance || 0) + '</b><span>km</span></div>' +
-      '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
-    '</div>';
-
-  if (!duree && !distance) {
-    resume.innerHTML += '<p class="vide">Ni durée ni distance saisies.</p>';
-  }
+  faites.forEach((type) => {
+    const d = carte[type.cle];
+    const duree = d.duree_min || 0;
+    const distance = d.distance_km || 0;
+    let allureTexte = '&mdash;';
+    if (duree && distance) {
+      const allure = duree / distance;
+      allureTexte = Math.floor(allure) + ':' +
+        String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0');
+    }
+    resume.innerHTML +=
+      '<div class="resume-exo-nom">' + echapper(type.complet) + '</div>' +
+      '<div class="chiffres">' +
+        '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
+        '<div class="chiffre"><b>' + distance + '</b><span>km</span></div>' +
+        '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
+      '</div>';
+  });
 
   $('fin-message').textContent = '';
   $('fin-message').className = 'message';
@@ -1136,7 +1295,7 @@ function enregistrerEtSynchroniser() {
   historique.push(seance);
   ecrire(CLES.historique, historique);
 
-  localStorage.removeItem(CLES.seance);
+  oublierSeance(seance.jour);
   relacherVeille();
 
   const message = $('fin-message');
@@ -1249,11 +1408,18 @@ function rendreHistorique() {
 
   cible.innerHTML = seances.map((s) => {
     let details;
-    if (s.type === 'footing' && s.footing) {
-      const morceaux = [];
-      if (s.footing.duree_min) morceaux.push(s.footing.duree_min + ' min');
-      if (s.footing.distance_km) morceaux.push(s.footing.distance_km + ' km');
-      details = morceaux.length ? morceaux.join(', ') : 'Sortie sans chiffres';
+    if (s.type === 'footing') {
+      const carte = footingParType(s);
+      const morceaux = TYPES_COURSE
+        .filter((t) => carte[t.cle] && (carte[t.cle].duree_min || carte[t.cle].distance_km))
+        .map((t) => {
+          const d = carte[t.cle];
+          const bouts = [];
+          if (d.duree_min) bouts.push(d.duree_min + ' min');
+          if (d.distance_km) bouts.push(d.distance_km + ' km');
+          return t.nom + ' ' + bouts.join(', ');
+        });
+      details = morceaux.length ? morceaux.join(' &middot; ') : 'Sortie sans chiffres';
     } else {
       const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
       const series = (s.exercices || []).reduce(
@@ -1271,17 +1437,12 @@ function rendreHistorique() {
 /* --------------------------------------------------------------- démarrage */
 
 function brancher() {
-  $('bouton-reprendre').addEventListener('click', reprendre);
-  $('bouton-abandonner').addEventListener('click', () => {
-    if (!confirm('Abandonner la séance en cours ? Les séries saisies seront perdues.')) return;
-    localStorage.removeItem(CLES.seance);
-    seance = null;
-    rendreAccueil();
-  });
-
+  // Quitter une séance ne l'efface pas : elle reste ouverte et se reprend en
+  // retouchant sa carte. L'abandon explicite se fait depuis l'accueil.
   $('bouton-quitter').addEventListener('click', () => {
     arreterMinuterie();
     relacherVeille();
+    seance = null;
     rendreAccueil();
     afficher('accueil');
   });
@@ -1294,11 +1455,15 @@ function brancher() {
   // Amorcer le clavier avant même de changer d'exercice : le geste (l'appui
   // sur ← / →) est encore "chaud" à cet instant précis, il ne l'est déjà
   // plus une fois rendreExercice() passé. Voir amorcerClavier() plus haut.
+  //
+  // Changer d'exercice n'arrête plus la récupération en cours (27 août
+  // 2026) : elle appartient à la série qu'on vient de finir, pas à la fiche
+  // qu'on regarde, et c'est justement le principe du passage automatique à
+  // l'exercice suivant.
   $('bouton-precedent').addEventListener('click', () => {
     if (indexExo > 0) {
       amorcerClavier();
       indexExo--;
-      arreterMinuterie();
       rendreExercice();
       focaliserProchaineSerie();
     }
@@ -1307,7 +1472,6 @@ function brancher() {
     if (indexExo < seance.exercices.length - 1) {
       amorcerClavier();
       indexExo++;
-      arreterMinuterie();
       rendreExercice();
       focaliserProchaineSerie();
     }

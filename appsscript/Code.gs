@@ -377,25 +377,46 @@ function blocTypeCourse(feuille, type) {
   return { ligne: ligneTitre + 2, colonnes: entetes.length };
 }
 
+/**
+ * Les quatre types de course sont des exercices distincts, tous faisables le
+ * meme jour : on ecrit une ligne par type renseigne, dans son propre bloc.
+ * J2 et J6 partagent la meme page pour la meme raison qu'ils partagent le
+ * meme entrainement, le jour d'origine n'a pas a les separer.
+ */
 function ecrireCourseGrille(classeur, seance, date) {
-  const f = seance.footing || {};
-  if (!f.duree_min && !f.distance_km) return;
-
-  const type = f.type || 'ef';
+  const carte = footingParType(seance);
   const feuille = feuilleCourse(classeur);
-  const bloc = blocTypeCourse(feuille, type);
-  const allure = (f.duree_min && f.distance_km)
-    ? Math.round((f.duree_min / f.distance_km) * 100) / 100
-    : '';
   const vide = function (v) { return v != null ? v : ''; };
-  const base = [formatDateCourte(date), vide(f.duree_min), vide(f.distance_km), allure];
-  const extra = {
-    fractionne: [vide(f.repetitions), vide(f.recup_s)],
-    incline: [vide(f.pente_pct), vide(f.charge_kg)],
-    seuil: [vide(f.duree_seuil_min)],
-  }[type] || [];
 
-  feuille.getRange(bloc.ligne, 1, 1, bloc.colonnes).setValues([base.concat(extra)]);
+  Object.keys(NOMS_TYPE_COURSE).forEach(function (type) {
+    const f = carte[type];
+    if (!f || (!f.duree_min && !f.distance_km)) return;
+
+    const bloc = blocTypeCourse(feuille, type);
+    const allure = (f.duree_min && f.distance_km)
+      ? Math.round((f.duree_min / f.distance_km) * 100) / 100
+      : '';
+    const base = [formatDateCourte(date), vide(f.duree_min), vide(f.distance_km), allure];
+    const extra = {
+      fractionne: [vide(f.repetitions), vide(f.recup_s)],
+      incline: [vide(f.pente_pct), vide(f.charge_kg)],
+      seuil: [vide(f.duree_seuil_min)],
+    }[type] || [];
+
+    feuille.getRange(bloc.ligne, 1, 1, bloc.colonnes).setValues([base.concat(extra)]);
+  });
+}
+
+/** Les seances anterieures au 27 aout 2026 rangeaient une seule sortie a
+ *  plat dans `footing` : on la relit sous son type plutot que de la perdre. */
+function footingParType(seance) {
+  const f = seance.footing || {};
+  if (f.duree_min !== undefined || f.distance_km !== undefined) {
+    const carte = {};
+    carte[f.type || 'ef'] = f;
+    return carte;
+  }
+  return f;
 }
 
 /**
@@ -421,26 +442,35 @@ function ecrireSeance(seance) {
   const dureeMin = seance.duree_min != null ? seance.duree_min : '';
 
   if (seance.type === 'footing') {
-    const f = seance.footing || {};
-    if (!f.duree_min && !f.distance_km) return;
-    const duree = f.duree_min != null ? f.duree_min : '';
-    const distance = f.distance_km != null ? f.distance_km : '';
-    const allure = (f.duree_min && f.distance_km)
-      ? Math.round((f.duree_min / f.distance_km) * 100) / 100
-      : '';
+    const carte = footingParType(seance);
     const vide = function (v) { return v != null ? v : ''; };
-    // Le type precis (ef, fractionne, incline, seuil) plutot qu'un "footing"
-    // uniforme : sans lui, comparer deux sorties reviendrait a melanger une
-    // endurance et un fractionne, dont les allures n'ont rien de comparable.
+
+    // Une ligne par type renseigne : les quatre peuvent avoir ete faits le
+    // meme jour, chacun avec ses propres chiffres. Le type precis (ef,
+    // fractionne, incline, seuil) plutot qu'un "footing" uniforme : sans
+    // lui, comparer deux sorties reviendrait a melanger une endurance et un
+    // fractionne, dont les allures n'ont rien de comparable.
+    const lignes = [];
+    Object.keys(NOMS_TYPE_COURSE).forEach(function (type) {
+      const f = carte[type];
+      if (!f || (!f.duree_min && !f.distance_km)) return;
+      const allure = (f.duree_min && f.distance_km)
+        ? Math.round((f.duree_min / f.distance_km) * 100) / 100
+        : '';
+      lignes.push([
+        date, semaine, jour, type, vide(f.duree_min), '', '',
+        vide(f.distance_km), allure,
+        vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
+        vide(f.charge_kg), vide(f.duree_seuil_min),
+      ]);
+    });
+    if (!lignes.length) return;
+
     // La grille passe en premier : c'est la partie fragile (mise en forme,
     // fusions), et elle est idempotente. Si elle echoue, rien n'a encore ete
     // ajoute aux pages plates, donc un renvoi repart proprement.
     ecrireCourseGrille(classeur, seance, date);
-    ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), [[
-      date, semaine, jour, f.type || 'ef', duree, '', '', distance, allure,
-      vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
-      vide(f.charge_kg), vide(f.duree_seuil_min),
-    ]]);
+    ajouterLignes(ongletPret(classeur, ONGLET_SEANCES), lignes);
     marquerEcrite(seance.id);
     return;
   }

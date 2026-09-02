@@ -145,9 +145,32 @@ body { display: flex; flex-direction: column; }
   border: 1px solid var(--accent);
   border-radius: var(--rayon);
 }
-.reprise-texte { margin: 0 0 10px; font-size: 14px; }
-.reprise-actions { display: flex; gap: 8px; }
-.reprise-actions button { flex: 1; }
+.reprise-titre {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--accent-clair);
+}
+.reprise-ligne { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.reprise-ligne:first-child { margin-top: 0; }
+.reprise-texte { flex: 1; min-width: 0; font-size: 14px; }
+.reprise-ligne .discret { width: auto; flex: none; padding: 8px 12px; font-size: 13px; }
+
+/* Un jour déjà commencé se signale sur sa carte : sans ce repère, rien ne
+   distinguerait une séance en cours d'un jour neuf, et on croirait la
+   reprendre à zéro. */
+.carte-jour.en-cours { border-color: var(--accent); }
+.pastille-en-cours {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: var(--rayon-plein);
+  background: rgba(79, 209, 197, .15);
+  color: var(--accent-clair);
+  font-size: 10px;
+  letter-spacing: .5px;
+}
 
 .pied-accueil { padding: var(--marge); border-top: 1px solid var(--trait); flex: none; }
 .etat-sync { margin: 0 0 10px; font-size: 13px; color: var(--texte-faible); min-height: 1em; }
@@ -255,6 +278,11 @@ body { display: flex; flex-direction: column; }
   touch-action: manipulation;
 }
 .type-course.choisi { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* Un type déjà renseigné se signale même quand il n'est pas celui affiché :
+   les quatre peuvent être faits le même jour, il faut voir d'un coup d'œil
+   lesquels sont remplis. */
+.type-course.rempli { border-color: var(--accent-clair); color: var(--texte); }
+.type-course.rempli::after { content: ' •'; color: var(--accent-clair); }
 
 .footing-champs { display: flex; gap: 10px; margin-bottom: 12px; }
 .footing-champs[hidden] { display: none; }

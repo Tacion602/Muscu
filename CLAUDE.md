@@ -80,16 +80,46 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
 ## Comportements côté application, à ne pas défaire sans y repenser
 
+- **Plusieurs séances peuvent être en cours en même temps, une par jour.**
+  Décision de l'utilisateur le 27 août 2026 : entrer dans J3 ne doit rien
+  effacer de ce qui a été saisi dans J1. Elles vivent dans une carte indexée
+  par code de jour sous `muscu.seances` (`lireSeancesEnCours()` dans
+  `js/app.js`), là où une seule séance tenait sous `muscu.seance`. Points à
+  connaître :
+  - **`commencer(code)` reprend, il ne recrée pas** : une séance déjà ouverte
+    sur ce jour est rouverte à l'exercice où la saisie s'était arrêtée
+    (`positionDeReprise()`), jamais remplacée par une neuve ;
+  - **quitter une séance (←) ne l'efface pas.** L'abandon est explicite, une
+    ligne par jour dans le bloc « Séances en cours » de l'accueil : avec
+    plusieurs jours ouverts, un bouton unique ne saurait pas lequel il
+    abandonne. Les cartes de jour portent une pastille « en cours » ;
+  - **`lireSeancesEnCours()` relit l'ancienne clé** `muscu.seance` si la
+    nouvelle est absente, pour ne pas perdre une séance en cours au moment
+    de la mise à jour.
 - **Il n'y a plus de bouton de validation sur une série depuis le 27 août
-  2026.** Décision de l'utilisateur : **renseigner le RIR valide la série**
+  2026.** Décision de l'utilisateur : **c'est le RIR qui valide la série**
   (`rendreSeries()` dans `js/app.js`), et l'effacer l'annule, sur un principe
-  symétrique. Un changement de RIR sur une série déjà validée (correction
-  d'une faute de frappe) ne redéclenche ni la validation ni la minuterie :
-  seul le passage vide → rempli (ou l'inverse) agit. `validerParRir()`
-  reprend l'essentiel de l'ancien `basculerSerie()` : elle reprend les
-  chiffres de la dernière fois si charge ou reps manquent, lance la
-  minuterie, et pose le focus sur la prochaine série non validée
-  (`focaliserProchaineSerie()`) pour enchaîner sans toucher l'écran.
+  symétrique. `validerParRir()` reprend l'essentiel de l'ancien
+  `basculerSerie()` : elle reprend les chiffres de la dernière fois si charge
+  ou reps manquent, lance la minuterie, et pose le focus sur la prochaine
+  série non validée (`focaliserProchaineSerie()`).
+  - **La validation attend la confirmation du champ, pas la frappe**
+    (précision de l'utilisateur le 27 août 2026, après un premier essai trop
+    pressé) : la saisie se contente d'enregistrer le chiffre, et c'est
+    `change` (sortie du champ) ou Entrée qui valide. Sans cela, taper le 1
+    de 10 validait la série au passage, puis sautait au champ suivant. Le
+    champ RIR est pour cette raison **exclu de la navigation générique par
+    Entrée** (`dataset.role === 'rir'`), qui déplacerait le focus au lieu de
+    valider.
+- **La dernière série d'un exercice fait passer au suivant immédiatement**,
+  sans attendre la fin de la récupération (décision de l'utilisateur le
+  27 août 2026, dans `validerParRir()`). La minuterie continue de tourner
+  par-dessus la fiche suivante : elle appartient à la série qu'on vient de
+  finir, pas à la fiche qu'on regarde. C'est aussi pourquoi **changer
+  d'exercice à la main (← / →) n'arrête plus la minuterie**. Le temps de
+  repos est lu **avant** le changement d'exercice, sinon ce serait celui du
+  nouveau. `minuterieTerminee()` ne change donc plus d'exercice, elle ne
+  garde que l'arrêt du chronomètre de séance sur le dernier exercice fini.
 - **L'échauffement ne compte jamais dans le tonnage ni dans la comparaison.**
   Une série se bascule en échauffement par un **appui long (500 ms) sur son
   champ charge** (une frappe normale n'y touche pas) ; l'import du classeur
@@ -195,17 +225,35 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   ses chiffres après coup plutôt que de laisser l'application tourner.
 - **Quatre types de séance de course** (`TYPES_COURSE` dans `js/app.js`),
   décidés le 26 août 2026 : endurance fondamentale, fractionné, incliné avec
-  option lesté ou farmer walk, et séance au seuil. Trois points structurants :
-  - **chaque type a son échauffement**, parce que l'exigence diffère : une
+  option lesté ou farmer walk, et séance au seuil.
+  - **Ce sont quatre exercices distincts, pas quatre modes d'un même
+    exercice** (correction de l'utilisateur le 27 août 2026). Les quatre
+    peuvent être faits le même jour, chacun avec ses propres chiffres :
+    `seance.footing` est une **carte indexée par type**, remplie à la
+    demande. Les boutons choisissent l'exercice affiché, ils n'effacent plus
+    rien — la première version supprimait les champs de l'ancien type au
+    changement, ce qui rendait impossible d'en faire deux le même jour.
+    `indexExo` sert d'index dans `TYPES_COURSE`, comme il sert d'index
+    d'exercice en musculation.
+  - **J2 et J6 partagent les mêmes données** : c'est le même entraînement,
+    seul le jour de la semaine change. `derniereSortie()` cherche donc la
+    dernière sortie **du même type, tous jours de course confondus**, et le
+    classeur les range dans la même page `Course`, par type. Comparer une
+    endurance du mardi à une endurance du samedi a du sens ; les séparer par
+    jour n'en aurait aucun.
+  - **`footingParType()` relit l'ancien format** (une seule sortie à plat,
+    avec un champ `type`) sous son type, côté application comme côté Apps
+    Script : sans lui, les séances antérieures au 27 août 2026 seraient
+    silencieusement illisibles.
+  - **Chaque type a son échauffement**, parce que l'exigence diffère : une
     endurance fondamentale se lance presque à froid, un fractionné demande un
-    corps déjà chaud sous peine de blessure ;
-  - **changer de type efface les champs propres à l'ancien** : une pente
-    héritée d'une séance inclinée n'a aucun sens sur un fractionné ;
-  - **le type précis part dans le classeur**, jamais un `footing` uniforme :
+    corps déjà chaud sous peine de blessure.
+  - **Le type précis part dans le classeur**, jamais un `footing` uniforme :
     comparer l'allure d'une endurance et celle d'un fractionné n'aurait pas
     de sens, et les colonnes dédiées (répétitions, récup, pente, charge
     portée, durée au seuil) restent traçables en graphique là où un champ
-    texte libre ne le serait pas.
+    texte libre ne le serait pas. Une **ligne par type renseigné**, pas une
+    par séance.
 - **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
   `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
   onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain

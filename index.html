@@ -21,12 +21,11 @@
     <button id="bouton-reglages" class="icone" aria-label="Réglages">&#9881;</button>
   </header>
 
+  <!-- Séances en cours : une ligne par jour commencé, chacune avec son propre
+       abandon. Reprendre se fait en touchant la carte du jour plus bas. -->
   <div id="reprise" class="reprise" hidden>
-    <p class="reprise-texte">Séance <strong id="reprise-jour"></strong> commencée <span id="reprise-quand"></span></p>
-    <div class="reprise-actions">
-      <button id="bouton-reprendre" class="principal">Reprendre</button>
-      <button id="bouton-abandonner" class="discret">Abandonner</button>
-    </div>
+    <p class="reprise-titre">Séances en cours</p>
+    <div id="reprise-liste"></div>
   </div>
 
   <ul id="liste-jours" class="liste-jours"></ul>
