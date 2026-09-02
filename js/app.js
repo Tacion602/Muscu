@@ -854,20 +854,6 @@ function rendreSeries() {
       appliquerCouleurTonnage(ligne, serie, reference);
     });
 
-    // L'appui long bascule l'échauffement, ce qui exclut la série du tonnage
-    // et de la comparaison. Relocalisé ici le 27 août 2026 depuis le bouton
-    // de validation, supprimé : c'est le seul champ qui reste pour ce geste.
-    let minuterieAppuiLong = null;
-    champCharge.addEventListener('pointerdown', () => {
-      minuterieAppuiLong = setTimeout(() => {
-        serie.echauffement = !serie.echauffement;
-        enregistrerSeance();
-        rendreSeries();
-      }, 500);
-    });
-    champCharge.addEventListener('pointerup', () => clearTimeout(minuterieAppuiLong));
-    champCharge.addEventListener('pointerleave', () => clearTimeout(minuterieAppuiLong));
-
     const champReps = champ(serie.reps, reference ? reference.reps : null, 'reps', (v) => {
       serie.reps = v;
       enregistrerSeance();

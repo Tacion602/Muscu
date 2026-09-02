@@ -120,14 +120,23 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   repos est lu **avant** le changement d'exercice, sinon ce serait celui du
   nouveau. `minuterieTerminee()` ne change donc plus d'exercice, elle ne
   garde que l'arrêt du chronomètre de séance sur le dernier exercice fini.
-- **L'échauffement ne compte jamais dans le tonnage ni dans la comparaison.**
-  Une série se bascule en échauffement par un **appui long (500 ms) sur son
-  champ charge** (une frappe normale n'y touche pas) ; l'import du classeur
-  reconnaît déjà les notes `ECH 1`, `ECH 2` de la même façon. Relocalisé le
-  27 août 2026 depuis le bouton de validation, supprimé : c'est le seul champ
-  qui restait pour ce geste. Sans texte ni colonne pour le signaler, les
-  trois champs de la ligne passent en bordure tiretée (`.ligne-serie.echauffement
-  input`).
+- **Plus aucun échauffement ne peut être créé depuis l'application**, décision
+  de l'utilisateur le 2 septembre 2026 : il n'en veut pas dans son suivi, et
+  il a retiré les lignes `ECH` correspondantes du classeur. Le geste qui
+  servait à en marquer un (appui long sur le champ charge, hérité du bouton
+  de validation supprimé la veille) a été retiré : c'était devenu un piège,
+  un appui long involontaire faisant sortir en silence une vraie série du
+  tonnage et du classeur.
+  - **Le reste du code sur l'échauffement doit rester en place.** Il ne
+    fabrique plus rien, mais il protège les données déjà là : une séance
+    enregistrée avant ce jour, ou un historique importé, peut encore porter
+    des séries marquées. Retirer les filtres (`!s.echauffement` dans
+    `tonnageDesSeries`, `derniereFois`, la grille du classeur) les ferait
+    silencieusement recompter et gonflerait les comparaisons.
+  - **Une série marquée avant ce jour n'est plus démarquable** depuis
+    l'application, faute de geste. Cas peu probable, mais s'il se présente
+    (ligne aux bordures tiretées, exclue du tonnage), il faut un nettoyage
+    ponctuel plutôt qu'un rétablissement du geste.
 - **Valider une série sans chiffres saisis reprend ceux de la dernière fois**
   plutôt que d'enregistrer un vide : l'utilisateur peut confirmer d'un geste
   qu'il a reproduit sa performance précédente sans retaper les nombres.
