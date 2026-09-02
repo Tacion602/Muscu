@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-02T12:17:15+00:00",
+ "importe_le": "2026-09-02T14:19:26+00:00",
  "jours": [
   {
    "code": "J1",
@@ -848,6 +848,23 @@
     },
     {
      "numero": 5,
+     "nom": "Abduction de hanche machine",
+     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 15,
+     "reps_max": 20,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",
+     "muscle": "Abducteurs et moyen fessier",
+     "repos_s": 60,
+     "historique": []
+    },
+    {
+     "numero": 6,
      "nom": "Mollets debout unilatéral",
      "prescription": "4 X 12-15 RIR 2 / 2 / 1 / 1",
      "series": 4,
@@ -895,7 +912,7 @@
      ]
     },
     {
-     "numero": 6,
+     "numero": 7,
      "nom": "Rotation externe poulie",
      "prescription": "2 X 15-20 RIR 3/3",
      "series": 2,
@@ -911,7 +928,7 @@
      "historique": []
     },
     {
-     "numero": 7,
+     "numero": 8,
      "nom": "Gainage anti-extension et anti-rotation",
      "prescription": "3-4 X 30-45sec",
      "series": 4,
