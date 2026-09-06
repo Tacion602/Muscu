@@ -274,6 +274,33 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     portée, durée au seuil) restent traçables en graphique là où un champ
     texte libre ne le serait pas. Une **ligne par type renseigné**, pas une
     par séance.
+- **Les jours de footing portent aussi du gainage** depuis le 6 septembre
+  2026, demande de l'utilisateur : planche frontale et planche latérale,
+  4 séries de 30 à 45 s, sur le modèle du gainage de J4.
+  - **Il vit dans `js/app.js` (`GAINAGE_FOOTING`), pas dans le classeur**, et
+    c'est le seul exercice du programme dans ce cas. Les blocs J2 et J6 y sont
+    dessinés en colonnes TEMPS et DISTANCE, celles-là mêmes où l'importateur
+    lirait charge et reps d'une ligne numérotée : les deux lectures
+    entreraient en collision, et `convertir()` bascule de surcroît un jour en
+    `type: "muscu"` dès qu'il trouve un exercice numéroté, ce qui ferait
+    disparaître tout le bloc de course. Le loger dans le code évite de
+    redessiner le classeur pour deux exercices à prescription fixe, comme le
+    font déjà `TYPES_COURSE` et les échauffements.
+  - **Il se saisit en secondes de tenue**, une case par série : une planche
+    n'a ni charge ni répétitions, et la grille à trois colonnes de la
+    musculation n'aurait rien voulu dire ici. Rien à valider non plus, donc
+    pas de minuterie de récupération.
+  - **Il est commun à la journée, pas au type de course** : `seance.gainage`
+    est une carte par exercice, indépendante de `seance.footing`, et changer
+    de type de course ne la touche pas. Le résumé de fin l'affiche même
+    quand aucune sortie n'a été renseignée, le gainage pouvant être fait
+    seul.
+  - **`tenuesGainage()` complète la carte à la lecture**, comme
+    `footingParType()` pour les sorties : une séance de footing commencée
+    avant le 6 septembre 2026 n'en a pas, et une reprise ne doit pas casser.
+  - **Il ne remonte pas encore au classeur** : le pont écrit une ligne par
+    type de course, sans colonne pour une tenue en secondes. À trancher avec
+    l'utilisateur avant de toucher à `appsscript/Code.gs`.
 - **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
   `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
   onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain
