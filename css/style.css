@@ -310,6 +310,50 @@ body { display: flex; flex-direction: column; }
 }
 .footing-champs input:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
 
+/* Gainage des jours de footing. Les champs sont plus petits que ceux de la
+   course : quatre séries tiennent sur une ligne, et une tenue en secondes
+   n'a pas besoin de la même emphase qu'une distance. */
+.footing-gainage { margin-top: 24px; border-top: 1px solid var(--trait); padding-top: 16px; }
+.footing-gainage-titre {
+  margin: 0 0 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--texte-faible);
+  font-weight: 600;
+}
+.gainage-exo + .gainage-exo { margin-top: 18px; }
+.gainage-nom {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gainage-series { display: flex; gap: 8px; }
+.gainage-tenue {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-champ);
+  color: var(--texte);
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.gainage-tenue:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
+.gainage-consigne {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--texte-faible);
+}
+
 .footing-allure {
   margin: 16px 0 4px;
   font-size: 16px;

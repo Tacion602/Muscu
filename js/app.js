@@ -57,6 +57,36 @@ const CHAMPS_FOOTING = [
   { cle: 'distance_km', libelle: 'Distance (km)' },
 ];
 
+/* Gainage des jours de footing, demandé par l'utilisateur le 6 septembre
+   2026. Il ne vient pas du classeur, contrairement aux exercices de
+   musculation : les blocs J2 et J6 y sont dessinés en colonnes TEMPS et
+   DISTANCE, où des lignes numérotées entreraient en collision avec ce que le
+   pont écrit déjà. Il vit donc ici, comme TYPES_COURSE et les échauffements,
+   et se saisit **en secondes de tenue**, une planche n'ayant ni charge ni
+   répétitions. Le modèle est le gainage de J4 : 4 séries de 30 à 45 s. */
+const GAINAGE_FOOTING = [
+  {
+    cle: 'planche_frontale',
+    nom: 'Planche frontale',
+    series: 4,
+    tenue_min: 30,
+    tenue_max: 45,
+    consigne: "Appuis sur les avant-bras et les pointes de pieds. Bassin en rétrovérsion, "
+      + "fessiers et abdominaux serrés, corps aligné des talons à la nuque. Pas de creux "
+      + "dans le bas du dos : couper la série dès qu'il apparaît.",
+  },
+  {
+    cle: 'planche_laterale',
+    nom: 'Planche latérale',
+    series: 4,
+    tenue_min: 30,
+    tenue_max: 45,
+    consigne: "Un côté puis l'autre, sans repos supplémentaire entre les deux. Coude "
+      + "à l'aplomb de l'épaule, hanches hautes, corps dans un seul plan. Le temps noté "
+      + "est celui d'un côté.",
+  },
+];
+
 /* Quatre séances de course distinctes, décidées le 26 août 2026. Chacune a
    son échauffement, parce que l'exigence n'est pas la même : une endurance
    fondamentale se lance presque à froid, un fractionné demande un corps déjà
@@ -471,7 +501,16 @@ function nouvelleSeance(jour) {
   };
   // Les quatre types de course sont des exercices distincts, chacun avec ses
   // propres chiffres : la carte reste vide et se remplit au fur et à mesure.
-  if (jour.type === 'footing') neuve.footing = {};
+  if (jour.type === 'footing') {
+    neuve.footing = {};
+    // Une entrée par exercice de gainage, chacune un tableau de secondes de
+    // tenue, une case par série. Créées vides plutôt qu'à la demande : leur
+    // nombre est connu d'avance, contrairement aux types de course.
+    neuve.gainage = {};
+    GAINAGE_FOOTING.forEach((exo) => {
+      neuve.gainage[exo.cle] = new Array(exo.series).fill(null);
+    });
+  }
   return neuve;
 }
 
@@ -511,6 +550,22 @@ function ficheExercice() {
 
 function estFooting() {
   return seance && seance.type === 'footing';
+}
+
+/* Les séances de footing commencées avant le 6 septembre 2026 n'ont pas de
+   carte de gainage : on la complète à la lecture plutôt que de casser une
+   reprise en cours. */
+function tenuesGainage(exo) {
+  if (!seance.gainage) seance.gainage = {};
+  const actuelles = seance.gainage[exo.cle];
+  if (!Array.isArray(actuelles) || actuelles.length !== exo.series) {
+    const neuves = new Array(exo.series).fill(null);
+    if (Array.isArray(actuelles)) {
+      actuelles.slice(0, exo.series).forEach((v, i) => { neuves[i] = v; });
+    }
+    seance.gainage[exo.cle] = neuves;
+  }
+  return seance.gainage[exo.cle];
 }
 
 /* Les quatre types de course sont des exercices distincts, pas quatre modes
@@ -601,7 +656,58 @@ function rendreFooting() {
   champsType.hidden = !type.champs.length;
   type.champs.forEach((definition) => champsType.appendChild(champFooting(definition)));
 
+  rendreGainage();
   majAllure();
+}
+
+/* Le gainage ne dépend pas du type de course choisi : il est commun à la
+   journée, et se redessine avec le reste sans se vider. */
+function rendreGainage() {
+  const bloc = $('footing-gainage-liste');
+  bloc.innerHTML = '';
+
+  GAINAGE_FOOTING.forEach((exo) => {
+    const tenues = tenuesGainage(exo);
+
+    const carte = document.createElement('div');
+    carte.className = 'gainage-exo';
+
+    const titre = document.createElement('p');
+    titre.className = 'gainage-nom';
+    titre.textContent = exo.nom;
+    const prescription = document.createElement('span');
+    prescription.className = 'etiquette';
+    prescription.textContent = exo.series + ' × ' + exo.tenue_min + '-' + exo.tenue_max + ' s';
+    titre.appendChild(prescription);
+    carte.appendChild(titre);
+
+    const ligne = document.createElement('div');
+    ligne.className = 'gainage-series';
+    tenues.forEach((valeur, index) => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.enterKeyHint = 'next';
+      input.className = 'gainage-tenue';
+      input.value = valeur === null || valeur === undefined ? '' : String(valeur);
+      input.placeholder = String(exo.tenue_min);
+      input.setAttribute('aria-label', exo.nom + ', série ' + (index + 1) + ', secondes');
+      input.addEventListener('focus', () => input.select());
+      input.addEventListener('input', () => {
+        tenuesGainage(exo)[index] = nombreOuNull(input.value);
+        enregistrerSeance();
+      });
+      ligne.appendChild(input);
+    });
+    carte.appendChild(ligne);
+
+    const consigne = document.createElement('p');
+    consigne.className = 'gainage-consigne';
+    consigne.textContent = exo.consigne;
+    carte.appendChild(consigne);
+
+    bloc.appendChild(carte);
+  });
 }
 
 /* La pastille des types remplis se recalcule à chaque frappe, pas seulement
@@ -1271,6 +1377,23 @@ function terminerFooting(resume) {
         '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
         '<div class="chiffre"><b>' + distance + '</b><span>km</span></div>' +
         '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
+      '</div>';
+  });
+
+  // Le gainage est indépendant des sorties : il peut avoir été fait sans
+  // course, et doit donc s'afficher même quand la liste ci-dessus est vide.
+  GAINAGE_FOOTING.forEach((exo) => {
+    const tenues = (seance.gainage || {})[exo.cle] || [];
+    const faites = tenues.filter((v) => v != null);
+    if (!faites.length) return;
+    const total = faites.reduce((somme, v) => somme + v, 0);
+    resume.innerHTML +=
+      '<div class="resume-exo">' +
+        '<div class="resume-exo-nom">' + echapper(exo.nom) + '</div>' +
+        '<div class="resume-exo-series">' +
+          faites.map((v) => v + ' s').join('  ·  ') +
+          '  (total ' + total + ' s)' +
+        '</div>' +
       '</div>';
   });
 
