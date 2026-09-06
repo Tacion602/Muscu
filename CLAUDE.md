@@ -97,23 +97,34 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     nouvelle est absente, pour ne pas perdre une séance en cours au moment
     de la mise à jour.
 - **Il n'y a plus de bouton de validation sur une série depuis le 27 août
-  2026.** Décision de l'utilisateur : **c'est le RIR qui valide la série**
-  (`rendreSeries()` dans `js/app.js`), et l'effacer l'annule, sur un principe
-  symétrique. `validerParRir()` reprend l'essentiel de l'ancien
+  2026.** Décision de l'utilisateur : **ce sont les répétitions qui valident
+  la série** (`rendreSeries()` dans `js/app.js`), et les effacer l'annule, sur
+  un principe symétrique. `validerSerie()` reprend l'essentiel de l'ancien
   `basculerSerie()` : elle reprend les chiffres de la dernière fois si charge
   ou reps manquent, lance la minuterie, et pose le focus sur la prochaine
   série non validée (`focaliserProchaineSerie()`).
+  - **Le RIR ne valide rien, il est purement indicatif** (décision de
+    l'utilisateur le 6 septembre 2026). C'est lui qui validait du 27 août au
+    6 septembre 2026 : d'où l'ancien nom `validerParRir()` qu'on peut encore
+    croiser dans un historique git. Il ne fait plus qu'enregistrer son
+    chiffre.
   - **La validation attend la confirmation du champ, pas la frappe**
     (précision de l'utilisateur le 27 août 2026, après un premier essai trop
     pressé) : la saisie se contente d'enregistrer le chiffre, et c'est
     `change` (sortie du champ) ou Entrée qui valide. Sans cela, taper le 1
     de 10 validait la série au passage, puis sautait au champ suivant. Le
-    champ RIR est pour cette raison **exclu de la navigation générique par
-    Entrée** (`dataset.role === 'rir'`), qui déplacerait le focus au lieu de
-    valider.
+    champ des répétitions est pour cette raison **exclu de la navigation
+    générique par Entrée** (`dataset.role === 'reps'`), qui déplacerait le
+    focus au lieu de valider.
+  - **Conséquence à connaître** : la validation étant déclenchée par le champ
+    du milieu, le focus part vers la série suivante avant le RIR, qui reste
+    saisissable mais seulement en le touchant. Sur la **dernière série d'un
+    exercice**, le basculement automatique vers l'exercice suivant emporte
+    même la ligne : le RIR doit y être saisi **avant** de confirmer les
+    répétitions.
 - **La dernière série d'un exercice fait passer au suivant immédiatement**,
   sans attendre la fin de la récupération (décision de l'utilisateur le
-  27 août 2026, dans `validerParRir()`). La minuterie continue de tourner
+  27 août 2026, dans `validerSerie()`). La minuterie continue de tourner
   par-dessus la fiche suivante : elle appartient à la série qu'on vient de
   finir, pas à la fiche qu'on regarde. C'est aussi pourquoi **changer
   d'exercice à la main (← / →) n'arrête plus la minuterie**. Le temps de
@@ -207,7 +218,7 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   repeupler si la structure de la ligne change. Depuis la suppression du
   bouton de validation, tous les éléments de ce tableau sont des champs de
   saisie ; Entrée n'y sert plus qu'à sauter au champ suivant sans attendre la
-  frappe, la validation elle-même passant par le RIR renseigné.
+  frappe, la validation elle-même passant par les répétitions confirmées.
 - **Une série validée se colore selon son tonnage face à la même série la
   semaine passée** (`appliquerCouleurTonnage` dans `js/app.js`) : rouge
   désaturé à -5 % ou moins, vert désaturé à +6 % ou plus, neutre entre les

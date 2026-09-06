@@ -831,9 +831,9 @@ function rendreSeries() {
   let rangTravail = 0;
   // Ordre de navigation au clavier (touche Entrée du pavé numérique) : les
   // trois champs de chaque ligne, ligne après ligne. Plus de bouton dans
-  // cette liste depuis le 27 août 2026 : le RIR renseigné valide déjà et
-  // avance tout seul (voir plus bas), Entrée n'y sert donc qu'à sauter au
-  // champ suivant sans attendre la frappe.
+  // cette liste depuis le 27 août 2026 : les répétitions confirmées valident
+  // déjà et avancent toutes seules (voir plus bas), Entrée n'y sert donc qu'à
+  // sauter au champ suivant sans attendre la frappe.
   const enchainement = [];
 
   courant.series.forEach((serie, index) => {
@@ -854,21 +854,15 @@ function rendreSeries() {
       appliquerCouleurTonnage(ligne, serie, reference);
     });
 
+    // Ce sont les **répétitions** qui valident la série, et à leur
+    // confirmation, pas à la frappe (décision de l'utilisateur le 6 septembre
+    // 2026) : taper le 1 de 10 ne doit pas valider une série au passage. La
+    // frappe se contente d'enregistrer le chiffre ; la validation attend
+    // Entrée ou la sortie du champ. Les effacer annule la validation, sur le
+    // même principe symétrique.
     const champReps = champ(serie.reps, reference ? reference.reps : null, 'reps', (v) => {
-      serie.reps = v;
-      enregistrerSeance();
-      majTonnage();
-      appliquerCouleurTonnage(ligne, serie, reference);
-    });
-
-    // Le RIR vaut validation, mais **à sa confirmation, pas à la frappe**
-    // (décision de l'utilisateur le 27 août 2026) : taper le 1 de 10 ne doit
-    // pas valider une série au passage. La frappe se contente d'enregistrer
-    // le chiffre ; la validation attend Entrée ou la sortie du champ.
-    // L'effacer annule la validation, sur le même principe symétrique.
-    const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
       const etaitFaite = serie.faite;
-      serie.rir = v;
+      serie.reps = v;
       if (v == null && etaitFaite) {
         serie.faite = false;
         enregistrerSeance();
@@ -877,18 +871,27 @@ function rendreSeries() {
         return;
       }
       enregistrerSeance();
+      majTonnage();
+      appliquerCouleurTonnage(ligne, serie, reference);
     });
-    champRir.dataset.role = 'rir';
+    champReps.dataset.role = 'reps';
 
-    const validerRir = () => {
-      if (serie.faite || serie.rir == null) return;
-      validerParRir(courant, serie, index);
+    const validerReps = () => {
+      if (serie.faite || serie.reps == null) return;
+      validerSerie(courant, serie, index);
     };
-    champRir.addEventListener('change', validerRir);
-    champRir.addEventListener('keydown', (evenement) => {
+    champReps.addEventListener('change', validerReps);
+    champReps.addEventListener('keydown', (evenement) => {
       if (evenement.key !== 'Enter') return;
       evenement.preventDefault();
-      validerRir();
+      validerReps();
+    });
+
+    // Le RIR ne vaut plus validation depuis le 6 septembre 2026 : il n'est
+    // qu'indicatif, on l'enregistre sans qu'il décide de rien.
+    const champRir = champ(serie.rir, reference ? reference.rir : null, 'RIR', (v) => {
+      serie.rir = v;
+      enregistrerSeance();
     });
 
     ligne.append(champCharge, champReps, champRir);
@@ -897,9 +900,9 @@ function rendreSeries() {
   });
 
   enchainement.forEach((element, position) => {
-    // Le champ RIR est exclu : Entrée y vaut validation, gérée plus haut, et
-    // c'est la validation elle-même qui déplace ensuite le focus.
-    if (element.dataset.role === 'rir') return;
+    // Le champ des répétitions est exclu : Entrée y vaut validation, gérée
+    // plus haut, et c'est la validation elle-même qui déplace ensuite le focus.
+    if (element.dataset.role === 'reps') return;
     element.addEventListener('keydown', (evenement) => {
       if (evenement.key !== 'Enter') return;
       evenement.preventDefault();
@@ -968,9 +971,11 @@ function majTonnage(avantConnu) {
   else if (ecart < 0) cible.classList.add('baisse');
 }
 
-/* Valide une série dès que son RIR est renseigné (voir rendreSeries) :
-   plus de bouton depuis le 27 août 2026, décision de l'utilisateur. */
-function validerParRir(exercice, serie, index) {
+/* Valide une série dès que ses répétitions sont confirmées (voir
+   rendreSeries) : plus de bouton depuis le 27 août 2026, et la validation est
+   passée du RIR aux répétitions le 6 septembre 2026, le RIR n'étant
+   qu'indicatif. Décisions de l'utilisateur. */
+function validerSerie(exercice, serie, index) {
   // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
   // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
   if (serie.charge == null || serie.reps == null) {
@@ -1067,7 +1072,7 @@ function arreterMinuterie() {
 
 /* Ferme la minuterie, à zéro comme sur un appui. Le passage à l'exercice
    suivant ne se fait plus ici depuis le 27 août 2026 : il a lieu dès la
-   validation de la dernière série (voir validerParRir), la minuterie
+   validation de la dernière série (voir validerSerie), la minuterie
    continuant de tourner par-dessus la fiche suivante. */
 function minuterieTerminee(gesteUtilisateur) {
   // L'amorce est focalisée en tout premier, tant que le geste est encore
