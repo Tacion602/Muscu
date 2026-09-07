@@ -522,28 +522,34 @@ body { display: flex; flex-direction: column; }
    l'utilisateur le 7 septembre 2026 : le repos doit se voir de loin, pas se
    fondre dans la carte comme un simple compteur secondaire. Le libellé
    "Ensuite : série X sur Y" a disparu le même jour, la minuterie ne montrant
-   plus que le chiffre, seul à occuper tout le cadre. */
+   plus que le chiffre, seul à occuper tout le cadre. Chiffre agrandi une
+   seconde fois le même jour, jusqu'à la limite du cadre (padding réduit à
+   2px) : le plus long repos du programme est 2'30 (`repos_s` max de
+   `programme.json`), quatre caractères qui tiennent tout juste à 58px dans
+   les 128px fixes de la minuterie. */
 .minuterie {
   flex: 0 0 128px;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 71px;
-  padding: 0 10px;
+  padding: 0;
   border: 0;
   border-radius: var(--rayon);
   background: var(--danger);
   text-align: center;
   cursor: pointer;
   touch-action: manipulation;
+  overflow: hidden;
 }
 .minuterie[hidden] { display: none; }
 .minuterie-chiffres {
-  font-size: 34px;
+  font-size: 60px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   color: #fff;
+  white-space: nowrap;
 }
 
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni
