@@ -389,7 +389,7 @@ body { display: flex; flex-direction: column; }
 
 .tableau-titres, .ligne-serie {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1fr 0.8fr auto;
   gap: 8px;
   align-items: center;
 }
@@ -435,6 +435,22 @@ body { display: flex; flex-direction: column; }
 .ligne-serie input::placeholder { color: #4b5563; font-weight: 400; }
 .ligne-serie input::-webkit-outer-spin-button,
 .ligne-serie input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Suppression d'une série en trop (demande de l'utilisateur le 7 septembre
+   2026) : une croix discrète, sans confirmation, la série étant facile à
+   ajouter de nouveau et rien n'étant encore synchronisé pendant la séance. */
+.ligne-serie-suppr {
+  width: 30px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--texte-faible);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.ligne-serie-suppr:active { color: var(--danger); }
 
 .ajouter {
   width: 100%;
@@ -492,7 +508,7 @@ body { display: flex; flex-direction: column; }
    de la page restait hors champ sur mobile une fois le clavier ouvert et la
    page défilée pour atteindre le champ en cours de saisie (invisible sans
    que `hidden` ne soit jamais vrai). `.ligne-consigne` met les deux côte à
-   côte ; la minuterie masquée (`[hidden]`) sort du flux flex, la consigne
+   côté ; la minuterie masquée (`[hidden]`) sort du flux flex, la consigne
    reprend alors toute la largeur. Boutons ±15 retirés le même jour : toute
    la surface fait passer à la suite, geste unique. La couche plein écran
    d'origine gérait le clavier ouvert en se redimensionnant sur
@@ -502,33 +518,32 @@ body { display: flex; flex-direction: column; }
 .ligne-consigne { display: flex; align-items: flex-start; gap: 10px; }
 .ligne-consigne .consigne { flex: 1; min-width: 0; }
 
+/* Fond rouge et même hauteur que #chrono-seance-demarrer (71px), décision de
+   l'utilisateur le 7 septembre 2026 : le repos doit se voir de loin, pas se
+   fondre dans la carte comme un simple compteur secondaire. Le libellé
+   "Ensuite : série X sur Y" a disparu le même jour, la minuterie ne montrant
+   plus que le chiffre, seul à occuper tout le cadre. */
 .minuterie {
   flex: 0 0 128px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 60px;
-  padding: 8px 10px;
-  border: 1px solid var(--accent-clair);
+  min-height: 71px;
+  padding: 0 10px;
+  border: 0;
   border-radius: var(--rayon);
-  background: var(--fond-carte);
+  background: var(--danger);
   text-align: center;
   cursor: pointer;
   touch-action: manipulation;
 }
 .minuterie[hidden] { display: none; }
 .minuterie-chiffres {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 34px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--accent-clair);
-}
-.minuterie-suite {
-  font-size: 11px;
-  line-height: 1.25;
-  color: var(--texte-faible);
+  line-height: 1;
+  color: #fff;
 }
 
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni

@@ -151,6 +151,16 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 - **Valider une série sans chiffres saisis reprend ceux de la dernière fois**
   plutôt que d'enregistrer un vide : l'utilisateur peut confirmer d'un geste
   qu'il a reproduit sa performance précédente sans retaper les nombres.
+- **Une série en trop se supprime d'une croix**, ajoutée le 7 septembre 2026
+  à la demande de l'utilisateur (`.ligne-serie-suppr` dans `rendreSeries()`),
+  sans confirmation : la série se rajoute d'un geste (`+ Ajouter une série`)
+  et rien n'est encore synchronisé pendant la séance, contrairement au
+  nettoyage de l'historique qui, lui, demande confirmation.
+- **Le signal sonore de fin de récupération est au volume maximal utile**
+  depuis le 7 septembre 2026 (gain 0.9 dans `signaler()`, contre 0.3
+  auparavant) : jugé trop faible par l'utilisateur pour s'entendre depuis
+  l'autre bout de la salle. 0.9 plutôt que 1 pour garder une marge avant
+  écrêtage du haut-parleur du téléphone.
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
 - **La minuterie n'est plus une couche plein écran depuis le 27 août 2026**,
@@ -166,6 +176,11 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   n'est garanti à 100 % sur toutes les hauteurs d'écran une fois le clavier
   ouvert, mais une position au fil du texte plutôt qu'en tête de page limite
   le risque de scroll qui l'emporte hors champ.
+  - **Fond rouge, même hauteur que le chrono de séance (71px)**, et plus
+    aucun texte de détail (« Ensuite : série X sur Y » a disparu), demande de
+    l'utilisateur le 7 septembre 2026 : la minuterie doit se voir de loin, un
+    seul gros chiffre en gras remplissant tout le cadre plutôt qu'un petit
+    compteur secondaire à côté d'un libellé.
 - **La minuterie se ferme d'elle-même à zéro**, sans afficher de temps
   écoulé en trop-plein (décision de l'utilisateur le 26 août 2026). Fermeture
   naturelle et appui sur le bandeau partagent `minuterieTerminee()` : si la
@@ -199,13 +214,25 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   - **Le clavier peut rester ouvert pendant toute la récupération**, réglage
     `clavierPendantRecup` activé par défaut depuis le 27 août 2026 : c'est la
     seule façon d'être prêt à saisir dès zéro sans geste, puisque le clavier
-    ne peut pas s'ouvrir seul. Le focus est alors posé **sur l'amorce, jamais
-    sur un champ de série**, pour qu'une frappe accidentelle pendant le repos
-    n'écrive dans aucune donnée. Le mécanisme de repositionnement au-dessus
-    du clavier (`suivreClavier()`, sur `visualViewport`) a disparu le même
-    jour avec la couche plein écran : dans le flux normal de la page, il n'y
-    a plus de couche à recaler. Le réglage permet de revenir au comportement
-    précédent.
+    ne peut pas s'ouvrir seul. Le mécanisme de repositionnement au-dessus du
+    clavier (`suivreClavier()`, sur `visualViewport`) a disparu le 27 août
+    2026 avec la couche plein écran : dans le flux normal de la page, il n'y
+    a plus de couche à recaler.
+    - **Jusqu'au 7 septembre 2026, le focus était posé sur l'amorce, jamais
+      sur un champ de série**, pour qu'une frappe accidentelle pendant le
+      repos n'écrive dans aucune donnée. Mais la charge de la série
+      suivante restait de ce fait impossible à remplir tant que le décompte
+      n'atteignait pas zéro, ce que l'utilisateur a signalé comme une gêne :
+      il voulait pouvoir pré-remplir la charge pendant le repos lui-même.
+      `validerSerie()` amorce désormais le clavier **avant** son propre rendu
+      (`amorcerClavier()` en tout premier, ajouté le 7 septembre 2026 pour la
+      même raison que pour les boutons ← / →), puis focalise directement le
+      champ charge de la série suivante via `focaliserProchaineSerie()` :
+      c'est ce champ, pas l'amorce, qui garde le focus pendant toute la
+      récupération. `lancerMinuterie()` ne touche plus au focus dans ce cas ;
+      le réglage ne sert plus qu'à fermer volontairement le clavier
+      (`document.activeElement.blur()`) quand il est décoché, pour qui ne
+      veut pas du clavier pendant le repos.
   - **Changer d'exercice (← / →) amorce aussi le clavier**, sur le même
     principe : appelée dans les gestionnaires de `bouton-precedent` et
     `bouton-suivant`, avant même `rendreExercice()`, pendant que le geste est

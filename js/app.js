@@ -1000,7 +1000,22 @@ function rendreSeries() {
       enregistrerSeance();
     });
 
-    ligne.append(champCharge, champReps, champRir);
+    // Suppression d'une série en trop (demande de l'utilisateur le
+    // 7 septembre 2026) : sans confirmation, la série étant facile à
+    // rajouter et rien n'étant encore synchronisé pendant la séance.
+    const supprimer = document.createElement('button');
+    supprimer.type = 'button';
+    supprimer.className = 'ligne-serie-suppr';
+    supprimer.setAttribute('aria-label', 'Supprimer cette série');
+    supprimer.textContent = '×';
+    supprimer.addEventListener('click', () => {
+      courant.series.splice(index, 1);
+      enregistrerSeance();
+      rendreSeries();
+      rendreJauge();
+    });
+
+    ligne.append(champCharge, champReps, champRir, supprimer);
     liste.appendChild(ligne);
     enchainement.push(champCharge, champReps, champRir);
   });
@@ -1082,6 +1097,14 @@ function majTonnage(avantConnu) {
    passée du RIR aux répétitions le 6 septembre 2026, le RIR n'étant
    qu'indicatif. Décisions de l'utilisateur. */
 function validerSerie(exercice, serie, index) {
+  // Amorcer le clavier avant tout changement de DOM (voir amorcerClavier) :
+  // le geste (Entrée ou la sortie du champ) est encore "chaud" à cet instant
+  // précis, il ne l'est déjà plus une fois rendreSeries()/rendreExercice()
+  // passé, qui remplacent le champ focalisé par un nouveau. Manquant ici
+  // jusqu'au 7 septembre 2026 : le focus arrivait bien sur la série
+  // suivante, mais sans rouvrir le clavier.
+  amorcerClavier();
+
   // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
   // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
   if (serie.charge == null || serie.reps == null) {
@@ -1118,7 +1141,7 @@ function validerSerie(exercice, serie, index) {
   focaliserProchaineSerie();
 
   if (!serie.echauffement || repos) {
-    lancerMinuterie(repos || 90, exercice, index);
+    lancerMinuterie(repos || 90);
   }
 }
 
@@ -1128,29 +1151,30 @@ function rendreJauge() {
 
 /* --------------------------------------------------------------- minuterie */
 
-function lancerMinuterie(secondes, exercice, indexSerie) {
-  const restantes = exercice.series.length - (indexSerie + 1);
+function lancerMinuterie(secondes) {
   minuterie = {
     fin: Date.now() + secondes * 1000,
     duree: secondes,
-    libelle: restantes > 0
-      ? 'Ensuite : série ' + (indexSerie + 2) + ' sur ' + exercice.series.length
-      : 'Dernière série de ' + exercice.nom,
   };
   $('minuterie').hidden = false;
   battre();
   if (tictac) clearInterval(tictac);
   tictac = setInterval(battre, 250);
 
-  // Le clavier reste ouvert pendant toute la récupération, pour qu'il le soit
-  // encore à zéro : c'est la seule façon d'y être prêt sans geste, aucun
-  // navigateur mobile n'ouvrant le clavier de lui-même. Le focus est posé sur
-  // l'amorce, jamais sur un champ de saisie réel, pour qu'une frappe
-  // accidentelle pendant le repos n'écrive dans aucune série. Le
-  // repositionnement au-dessus du clavier (visualViewport) a disparu le
-  // 27 août 2026 en même temps que la couche plein écran : un bandeau en
-  // flux normal, proche du haut de l'écran, reste visible sans y penser.
-  if (reglages.clavierPendantRecup) amorcerClavier();
+  // Jusqu'au 7 septembre 2026, le clavier restait ouvert pendant tout le
+  // repos mais **sur l'amorce**, jamais sur le vrai champ : la charge de la
+  // série suivante restait donc infaisable tant que le décompte ne touchait
+  // pas zéro. `validerSerie()` focalise désormais directement le champ
+  // charge de la série suivante avant d'appeler cette fonction
+  // (`focaliserProchaineSerie()`) : le clavier est déjà ouvert et connecté
+  // au bon champ, prêt à remplir la charge pendant la récupération
+  // elle-même, ce que l'utilisateur a demandé. Le réglage
+  // `clavierPendantRecup` ne sert donc plus qu'à fermer volontairement ce
+  // clavier quand il n'est pas voulu pendant le repos.
+  if (!reglages.clavierPendantRecup) {
+    const actif = document.activeElement;
+    if (actif && actif !== document.body) actif.blur();
+  }
 }
 
 function battre() {
@@ -1166,7 +1190,6 @@ function battre() {
   }
 
   $('minuterie-chiffres').textContent = texteDuree(restant);
-  $('minuterie-suite').textContent = minuterie.libelle;
 }
 
 function arreterMinuterie() {
@@ -1235,6 +1258,9 @@ function signaler() {
   try {
     if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
     if (audio.state === 'suspended') audio.resume();
+    // Volume porté de 0.3 à 0.9 le 7 septembre 2026, demande de l'utilisateur :
+    // le signal doit s'entendre depuis l'autre bout de la salle. 0.9 plutôt
+    // que 1 pour garder une marge avant écrêtage du haut-parleur du téléphone.
     [0, 0.22, 0.44].forEach((decalage) => {
       const oscillateur = audio.createOscillator();
       const volume = audio.createGain();
@@ -1243,7 +1269,7 @@ function signaler() {
       volume.connect(audio.destination);
       const debut = audio.currentTime + decalage;
       volume.gain.setValueAtTime(0.0001, debut);
-      volume.gain.exponentialRampToValueAtTime(0.3, debut + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.9, debut + 0.02);
       volume.gain.exponentialRampToValueAtTime(0.0001, debut + 0.18);
       oscillateur.start(debut);
       oscillateur.stop(debut + 0.2);
