@@ -431,8 +431,8 @@ function derniereSortie(cle) {
 
   for (const s of passees) {
     if (seance && s.id === seance.id) continue;
-    const donnees = footingParType(s)[cle];
-    if (donnees && donnees.duree_min && donnees.distance_km) return donnees;
+    const cycle = premierPassage(footingParType(s)[cle]);
+    if (cycle && cycle.duree_min && cycle.distance_km) return cycle;
   }
   return null;
 }
@@ -571,27 +571,52 @@ function tenuesGainage(exo) {
 /* Les quatre types de course sont des exercices distincts, pas quatre modes
    d'un même exercice : chacun garde ses propres chiffres, et les quatre
    peuvent être faits le même jour (décision de l'utilisateur le 27 août
-   2026). `seance.footing` est donc une carte indexée par type, remplie à la
-   demande, là où elle portait auparavant une seule sortie à plat. */
-function sortieCourante() {
-  const cle = TYPES_COURSE[indexExo].cle;
-  if (!seance.footing[cle]) seance.footing[cle] = {};
-  return seance.footing[cle];
+   2026). `seance.footing` est donc une carte indexée par type.
+
+   Depuis le 8 septembre 2026, chaque type peut compter **plusieurs
+   passages** dans la même séance (demande de l'utilisateur : refaire
+   l'Incliné à une autre charge sans écraser le premier passage) :
+   `seance.footing[cle]` est donc un tableau de cycles, chacun avec ses
+   propres chiffres, plutôt qu'un objet plat limité à un seul passage. */
+function cyclesCourse(cle) {
+  const brut = seance.footing[cle];
+  if (Array.isArray(brut)) return brut;
+  // Séance reprise, commencée avant le 8 septembre 2026 : un seul passage à
+  // plat, qu'on range dans un tableau à une case plutôt que de le perdre.
+  const cycles = [brut && typeof brut === 'object' ? brut : {}];
+  seance.footing[cle] = cycles;
+  return cycles;
 }
 
 /* Les séances antérieures au 27 août 2026 rangeaient une seule sortie à
-   plat dans `footing`. On la relit sous son type plutôt que de la perdre. */
+   plat dans `footing` ; celles d'entre le 27 août et le 8 septembre 2026,
+   un seul passage par type. Les deux sont relues comme un tableau d'un
+   cycle, pour que `derniereSortie()` et le résumé de fin de séance n'aient
+   qu'un seul format à traiter. */
 function footingParType(s) {
   const f = s.footing || {};
   if (f.duree_min !== undefined || f.distance_km !== undefined) {
     const carte = {};
-    carte[f.type || 'ef'] = f;
+    carte[f.type || 'ef'] = [f];
     return carte;
   }
-  return f;
+  const carte = {};
+  Object.keys(f).forEach((type) => {
+    const brut = f[type];
+    carte[type] = Array.isArray(brut) ? brut : [brut];
+  });
+  return carte;
 }
 
-function champFooting(definition) {
+/* Le premier passage d'un type sert de référence pour la comparaison à la
+   dernière fois (voir majAllureCycle) : les passages suivants n'ont pas
+   d'équivalent fixe d'une séance à l'autre, leur nombre pouvant varier. */
+function premierPassage(donnees) {
+  if (!donnees) return null;
+  return Array.isArray(donnees) ? (donnees[0] || null) : donnees;
+}
+
+function champCycle(cycle, definition, actualiser) {
   const etiquette = document.createElement('label');
   const titre = document.createElement('span');
   titre.textContent = definition.libelle;
@@ -599,13 +624,13 @@ function champFooting(definition) {
   const input = document.createElement('input');
   input.type = 'text';
   input.inputMode = 'decimal';
-  const valeur = sortieCourante()[definition.cle];
+  const valeur = cycle[definition.cle];
   input.value = valeur === null || valeur === undefined ? '' : String(valeur);
   input.addEventListener('focus', () => input.select());
   input.addEventListener('input', () => {
-    sortieCourante()[definition.cle] = nombreOuNull(input.value);
+    cycle[definition.cle] = nombreOuNull(input.value);
     enregistrerSeance();
-    majAllure();
+    actualiser();
   });
 
   etiquette.append(titre, input);
@@ -628,12 +653,10 @@ function rendreFooting() {
   const boutons = $('footing-types');
   boutons.innerHTML = '';
   TYPES_COURSE.forEach((candidat, position) => {
-    const donnees = seance.footing[candidat.cle] || {};
-    const rempli = donnees.duree_min != null || donnees.distance_km != null;
     const bouton = document.createElement('button');
     bouton.type = 'button';
     bouton.className = 'type-course' + (position === indexExo ? ' choisi' : '') +
-      (rempli ? ' rempli' : '');
+      (typeRempli(candidat.cle) ? ' rempli' : '');
     bouton.textContent = candidat.nom;
     bouton.addEventListener('click', () => {
       // Changer de type change d'exercice, il n'efface plus rien : les
@@ -647,17 +670,82 @@ function rendreFooting() {
   $('echauffement-footing-liste').innerHTML =
     type.echauffement.map((item) => '<li>' + echapper(item) + '</li>').join('');
 
-  const champs = $('footing-champs');
-  champs.innerHTML = '';
-  CHAMPS_FOOTING.forEach((definition) => champs.appendChild(champFooting(definition)));
-
-  const champsType = $('footing-champs-type');
-  champsType.innerHTML = '';
-  champsType.hidden = !type.champs.length;
-  type.champs.forEach((definition) => champsType.appendChild(champFooting(definition)));
-
+  rendreCyclesCourse();
   rendreGainage();
-  majAllure();
+}
+
+/* Un type est « rempli » dès qu'un de ses passages porte une durée ou une
+   distance, quel que soit son rang. */
+function typeRempli(cle) {
+  const brut = seance.footing[cle];
+  if (!brut) return false;
+  const cycles = Array.isArray(brut) ? brut : [brut];
+  return cycles.some((c) => c.duree_min != null || c.distance_km != null);
+}
+
+/* Un ou plusieurs passages du type choisi, chacun avec ses propres champs
+   (communs via CHAMPS_FOOTING, propres au type via type.champs) et sa
+   propre allure. Seul le premier passage se compare à la dernière sortie
+   (voir majAllureCycle) : les passages suivants n'ont pas d'équivalent fixe
+   d'une séance à l'autre. */
+function rendreCyclesCourse() {
+  const type = TYPES_COURSE[indexExo];
+  const cycles = cyclesCourse(type.cle);
+  const bloc = $('footing-cycles');
+  bloc.innerHTML = '';
+
+  cycles.forEach((cycle, index) => {
+    const carte = document.createElement('div');
+    carte.className = 'cycle-course';
+
+    if (cycles.length > 1) {
+      const entete = document.createElement('div');
+      entete.className = 'cycle-course-entete';
+      const titre = document.createElement('span');
+      titre.textContent = 'Passage ' + (index + 1);
+      const supprimer = document.createElement('button');
+      supprimer.type = 'button';
+      supprimer.className = 'cycle-course-suppr';
+      supprimer.setAttribute('aria-label', 'Supprimer ce passage');
+      supprimer.textContent = '×';
+      supprimer.addEventListener('click', () => {
+        cycles.splice(index, 1);
+        enregistrerSeance();
+        rendreCyclesCourse();
+      });
+      entete.append(titre, supprimer);
+      carte.appendChild(entete);
+    }
+
+    const allure = document.createElement('p');
+    allure.className = 'footing-allure';
+    const compare = document.createElement('p');
+    compare.className = 'compare';
+    const cleComparaison = index === 0 ? type.cle : null;
+    const actualiser = () => {
+      majPastillesTypes();
+      majAllureCycle(cycle, allure, compare, cleComparaison);
+    };
+
+    const champs = document.createElement('div');
+    champs.className = 'footing-champs';
+    CHAMPS_FOOTING.forEach((definition) => champs.appendChild(champCycle(cycle, definition, actualiser)));
+    carte.appendChild(champs);
+
+    if (type.champs.length) {
+      const champsType = document.createElement('div');
+      champsType.className = 'footing-champs';
+      type.champs.forEach((definition) => champsType.appendChild(champCycle(cycle, definition, actualiser)));
+      carte.appendChild(champsType);
+    }
+
+    carte.append(allure, compare);
+    majAllureCycle(cycle, allure, compare, cleComparaison);
+
+    bloc.appendChild(carte);
+  });
+
+  majPastillesTypes();
 }
 
 /* Le gainage ne dépend pas du type de course choisi : il est commun à la
@@ -716,47 +804,52 @@ function rendreGainage() {
 function majPastillesTypes() {
   const boutons = $('footing-types').querySelectorAll('.type-course');
   TYPES_COURSE.forEach((candidat, position) => {
-    const donnees = seance.footing[candidat.cle] || {};
-    const rempli = donnees.duree_min != null || donnees.distance_km != null;
-    if (boutons[position]) boutons[position].classList.toggle('rempli', rempli);
+    if (boutons[position]) boutons[position].classList.toggle('rempli', typeRempli(candidat.cle));
   });
 }
 
 /* L'allure au kilomètre est le repère habituel du coureur, plus parlant que
-   la vitesse en km/h : on la calcule dès que durée et distance sont saisies. */
-function majAllure() {
-  majPastillesTypes();
-  const { duree_min: duree, distance_km: distance } = sortieCourante();
-  const cible = $('footing-allure');
+   la vitesse en km/h : calculée dès que durée et distance sont saisies,
+   pour **un passage donné**. Depuis le 8 septembre 2026, un type peut
+   compter plusieurs passages (voir rendreCyclesCourse) : seul celui passé
+   en `cle` se compare à la dernière sortie, les autres n'affichent que leur
+   propre allure. */
+function majAllureCycle(cycle, cibleAllure, cibleCompare, cle) {
+  const duree = cycle.duree_min;
+  const distance = cycle.distance_km;
 
   if (!duree || !distance) {
-    cible.textContent = '';
-    $('footing-compare').textContent = '';
+    cibleAllure.textContent = '';
+    cibleCompare.textContent = '';
+    cibleCompare.className = 'compare';
     return;
   }
 
   const allure = duree / distance;
   const minutes = Math.floor(allure);
   const secondes = Math.round((allure - minutes) * 60);
-  cible.textContent = 'Allure ' + minutes + ':' + String(secondes).padStart(2, '0') + ' / km';
+  cibleAllure.textContent = 'Allure ' + minutes + ':' + String(secondes).padStart(2, '0') + ' / km';
 
-  const precedente = derniereSortie(TYPES_COURSE[indexExo].cle);
-  const compare = $('footing-compare');
-  compare.className = 'compare';
+  cibleCompare.className = 'compare';
+  if (!cle) {
+    cibleCompare.textContent = '';
+    return;
+  }
+  const precedente = derniereSortie(cle);
   if (!precedente) {
-    compare.textContent = '';
+    cibleCompare.textContent = '';
     return;
   }
   const allureAvant = precedente.duree_min / precedente.distance_km;
   const ecart = allure - allureAvant;
   const ecartSecondes = Math.round(Math.abs(ecart) * 60);
   if (ecartSecondes < 3) {
-    compare.textContent = 'Même allure que la dernière fois.';
+    cibleCompare.textContent = 'Même allure que la dernière fois.';
     return;
   }
   // Une allure plus basse est plus rapide : le sens de la couleur s'inverse.
-  compare.textContent = ecartSecondes + ' s/km ' + (ecart < 0 ? 'plus rapide' : 'plus lent') + " qu'à la dernière sortie.";
-  compare.classList.add(ecart < 0 ? 'hausse' : 'baisse');
+  cibleCompare.textContent = ecartSecondes + ' s/km ' + (ecart < 0 ? 'plus rapide' : 'plus lent') + " qu'à la dernière sortie.";
+  cibleCompare.classList.add(ecart < 0 ? 'hausse' : 'baisse');
 }
 
 /* ------------------------------------------- chronomètre de la séance entière */
@@ -1366,44 +1459,46 @@ function terminer() {
     resume.innerHTML += '<p class="vide">Aucune série validée.</p>';
   }
 
-  $('fin-message').textContent = '';
-  $('fin-message').className = 'message';
-  $('bouton-enregistrer').disabled = false;
-  afficher('fin');
+  preparerEcranFin();
 }
 
 /* Une sortie par type renseigné : les quatre peuvent avoir été faites le
    même jour, le résumé les liste toutes plutôt qu'une seule. */
 function terminerFooting(resume) {
   const carte = footingParType(seance);
-  const faites = TYPES_COURSE.filter((t) => {
-    const d = carte[t.cle];
-    return d && (d.duree_min != null || d.distance_km != null);
-  });
+  // Un type peut compter plusieurs passages depuis le 8 septembre 2026 : ne
+  // retenir que ceux réellement chiffrés, un type touché sans rien saisir
+  // n'y laissant qu'un passage vide (voir cyclesCourse).
+  const parType = TYPES_COURSE.map((type) => ({
+    type,
+    cycles: (carte[type.cle] || []).filter((c) => c.duree_min != null || c.distance_km != null),
+  })).filter((entree) => entree.cycles.length);
 
   resume.innerHTML = '<h3>' + echapper(seance.titre.replace(/^J\d\s*/, '')) + '</h3>';
 
-  if (!faites.length) {
+  if (!parType.length) {
     resume.innerHTML += '<p class="vide">Aucune sortie renseignée.</p>';
   }
 
-  faites.forEach((type) => {
-    const d = carte[type.cle];
-    const duree = d.duree_min || 0;
-    const distance = d.distance_km || 0;
-    let allureTexte = '&mdash;';
-    if (duree && distance) {
-      const allure = duree / distance;
-      allureTexte = Math.floor(allure) + ':' +
-        String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0');
-    }
-    resume.innerHTML +=
-      '<div class="resume-exo-nom">' + echapper(type.complet) + '</div>' +
-      '<div class="chiffres">' +
-        '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
-        '<div class="chiffre"><b>' + distance + '</b><span>km</span></div>' +
-        '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
-      '</div>';
+  parType.forEach(({ type, cycles }) => {
+    cycles.forEach((d, index) => {
+      const duree = d.duree_min || 0;
+      const distance = d.distance_km || 0;
+      let allureTexte = '&mdash;';
+      if (duree && distance) {
+        const allure = duree / distance;
+        allureTexte = Math.floor(allure) + ':' +
+          String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0');
+      }
+      const nom = cycles.length > 1 ? type.complet + ', passage ' + (index + 1) : type.complet;
+      resume.innerHTML +=
+        '<div class="resume-exo-nom">' + echapper(nom) + '</div>' +
+        '<div class="chiffres">' +
+          '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
+          '<div class="chiffre"><b>' + distance + '</b><span>km</span></div>' +
+          '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
+        '</div>';
+    });
   });
 
   // Le gainage est indépendant des sorties : il peut avoir été fait sans
@@ -1423,9 +1518,18 @@ function terminerFooting(resume) {
       '</div>';
   });
 
+  preparerEcranFin();
+}
+
+/* Commun aux deux types de séance : remise à zéro du message d'envoi,
+   réactivation du bouton, et remarque de fin de séance (voir plus bas)
+   reprise depuis seance.remarque pour survivre à un aller-retour sur
+   l'écran de fin sans repartir d'un champ vide. */
+function preparerEcranFin() {
   $('fin-message').textContent = '';
   $('fin-message').className = 'message';
   $('bouton-enregistrer').disabled = false;
+  $('fin-remarque').value = seance.remarque || '';
   afficher('fin');
 }
 
@@ -1631,6 +1735,12 @@ function brancher() {
     rendreSeries();
   });
 
+  $('bouton-cycle-ajouter').addEventListener('click', () => {
+    cyclesCourse(TYPES_COURSE[indexExo].cle).push({});
+    enregistrerSeance();
+    rendreCyclesCourse();
+  });
+
   // Toute la surface de la minuterie ferme et rouvre le clavier : après une
   // fermeture automatique à zéro, aucun geste n'a eu lieu et le clavier
   // reste fermé (aucun navigateur mobile ne l'ouvre sans interaction). Un
@@ -1640,6 +1750,11 @@ function brancher() {
 
   $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);
   $('bouton-fin-retour').addEventListener('click', () => { afficher('seance'); rendreExercice(); });
+  $('fin-remarque').addEventListener('input', (evenement) => {
+    if (!seance) return;
+    seance.remarque = evenement.target.value;
+    enregistrerSeance();
+  });
 
   $('bouton-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });
   $('bouton-reglages-retour').addEventListener('click', () => {

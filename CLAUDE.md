@@ -288,10 +288,11 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     classeur les range dans la même page `Course`, par type. Comparer une
     endurance du mardi à une endurance du samedi a du sens ; les séparer par
     jour n'en aurait aucun.
-  - **`footingParType()` relit l'ancien format** (une seule sortie à plat,
-    avec un champ `type`) sous son type, côté application comme côté Apps
-    Script : sans lui, les séances antérieures au 27 août 2026 seraient
-    silencieusement illisibles.
+  - **`footingParType()` relit les anciens formats** (une seule sortie à
+    plat avec un champ `type`, jusqu'au 27 août 2026 ; un seul passage par
+    type sans tableau, jusqu'au 8 septembre 2026) sous forme d'un tableau
+    d'un seul cycle, côté application comme côté Apps Script : sans cela, les
+    séances antérieures seraient silencieusement illisibles.
   - **Chaque type a son échauffement**, parce que l'exigence diffère : une
     endurance fondamentale se lance presque à froid, un fractionné demande un
     corps déjà chaud sous peine de blessure.
@@ -299,8 +300,28 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     comparer l'allure d'une endurance et celle d'un fractionné n'aurait pas
     de sens, et les colonnes dédiées (répétitions, récup, pente, charge
     portée, durée au seuil) restent traçables en graphique là où un champ
-    texte libre ne le serait pas. Une **ligne par type renseigné**, pas une
-    par séance.
+    texte libre ne le serait pas. Une **ligne par passage renseigné**, pas
+    une par séance ni une par type.
+- **Un type peut compter plusieurs passages depuis le 8 septembre 2026**,
+  demande de l'utilisateur : refaire l'Incliné à une autre charge dans la
+  même séance, sans écraser le premier passage. `seance.footing[cle]` est
+  donc un **tableau de cycles** (`cyclesCourse()` dans `js/app.js`), chacun
+  avec ses propres champs communs (durée, distance) et propres au type
+  (pente, charge portée...), plutôt qu'un objet plat limité à un seul
+  passage.
+  - **Le bouton « + Ajouter un passage »** pousse un cycle vide dans le
+    tableau du type affiché ; chaque passage au delà du premier porte une
+    croix de suppression, sur le même principe que les séries de musculation
+    en trop (voir plus haut). Aucune confirmation, pour la même raison :
+    rien n'est encore synchronisé pendant la séance.
+  - **Seul le premier passage se compare à la dernière sortie**
+    (`majAllureCycle()`) : les passages suivants n'ont pas d'équivalent fixe
+    d'une séance à l'autre, leur nombre pouvant varier. Ils affichent leur
+    propre allure, sans comparaison.
+  - **Côté classeur, `ecrireCourseGrille()` et la construction des lignes de
+    `ecrireSeance()` itèrent sur les cycles**, pas sur les seuls types : un
+    passage supplémentaire écrit une ligne de plus dans le bloc de son type
+    (`Course`) et dans l'onglet `Seances`, jamais une case écrasée.
 - **Les jours de footing portent aussi du gainage** depuis le 6 septembre
   2026, demande de l'utilisateur : planche frontale et planche latérale,
   4 séries de 30 à 45 s, sur le modèle du gainage de J4.
@@ -328,6 +349,34 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   - **Il ne remonte pas encore au classeur** : le pont écrit une ligne par
     type de course, sans colonne pour une tenue en secondes. À trancher avec
     l'utilisateur avant de toucher à `appsscript/Code.gs`.
+- **Remarque libre de fin de séance**, ajoutée le 8 septembre 2026 : un
+  champ `#fin-remarque` sur `ecran-fin`, commun aux deux types de séance,
+  pour signaler une douleur, une gêne ou une idée d'amélioration à
+  destination du développeur, en dehors de toute conversation.
+  - **Liée à `seance.remarque`, enregistrée à la frappe** comme le reste de
+    la séance en cours (`preparerEcranFin()` la relit à chaque passage sur
+    l'écran de fin) : elle survit à un aller-retour vers l'écran précédent,
+    et à la fermeture de l'application avant l'enregistrement.
+  - **Part avec la séance dans `envoyer({ action: 'seance', seance })`**,
+    sans plomberie dédiée côté requête : `seance` part déjà en entier.
+  - **Côté classeur, `ecrireRemarque()` l'écrit dans un onglet `Remarques`
+    dédié** (`feuilleRemarques()` dans `appsscript/Code.gs`, créé à la
+    première remarque envoyée), jamais dans les grilles de jour ou de
+    course qui restent des tableaux de chiffres. Une remarque vide n'écrit
+    rien, pour ne pas remplir l'onglet d'une ligne blanche par séance sans
+    rien à signaler. Écrite **avant tout retour anticipé** dans
+    `ecrireSeance()` (aucune série faite, aucun passage de course
+    renseigné) : une séance sans rien d'autre à écrire peut tout de même
+    porter une remarque.
+  - **C'est le développeur (Claude) qui doit la lire**, à chaque session de
+    travail sur l'application, pour en tenir compte dans ses propositions.
+    Aucun accès automatique n'existe : le gid de l'onglet `Remarques` n'est
+    connu qu'une fois l'onglet créé, contrairement à celui du programme.
+    `outils/lire_remarques.py --gid <celui de l'onglet>` l'affiche une fois
+    ce gid obtenu (visible dans l'URL du classeur, onglet Remarques ouvert).
+    **Tant que ce gid n'a pas été communiqué, demander à l'utilisateur s'il
+    y a des remarques en attente avant de modifier l'application**, plutôt
+    que de supposer qu'il n'y en a pas.
 - **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
   `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
   onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain

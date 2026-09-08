@@ -310,6 +310,34 @@ body { display: flex; flex-direction: column; }
 }
 .footing-champs input:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
 
+/* Un ou plusieurs passages du type choisi, ajouté le 8 septembre 2026 :
+   pouvoir refaire l'Incliné à une autre charge dans la même séance sans
+   écraser le premier passage. Chaque carte reprend telles quelles les
+   classes .footing-champs, .footing-allure et .compare, déjà éprouvées pour
+   un seul passage. */
+.cycle-course + .cycle-course { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--trait); }
+.cycle-course-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texte-faible);
+}
+.cycle-course-suppr {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--texte-faible);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.cycle-course-suppr:active { color: var(--danger); }
+
 /* Gainage des jours de footing. Les champs sont plus petits que ceux de la
    course : quatre séries tiennent sur une ligne, et une tenue en secondes
    n'a pas besoin de la même emphase qu'une distance. */
