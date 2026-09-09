@@ -377,6 +377,34 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     **Tant que ce gid n'a pas été communiqué, demander à l'utilisateur s'il
     y a des remarques en attente avant de modifier l'application**, plutôt
     que de supposer qu'il n'y en a pas.
+- **Blessure du jour**, ajoutée le 9 septembre 2026 sous la remarque, sur
+  l'écran de fin : la série concernée et la description de ce qui a été
+  ressenti, rangées dans un onglet `Blessures` à part (date, jour, série,
+  blessure).
+  - **Page distincte des remarques, volontairement.** Les deux sont des
+    champs libres de fin de séance, mais ils ne se relisent pas dans le même
+    esprit : la remarque s'adresse au développeur et se périme une fois
+    traitée, la blessure suit le corps dans le temps et gagne à se relire
+    seule, sans le bruit des demandes d'évolution.
+  - **La description fait foi** (`ecrireBlessure` dans `appsscript/Code.gs`) :
+    une série renseignée sans description ne décrit aucune blessure et
+    n'écrit rien.
+  - **La série se saisit librement**, les exercices du jour n'étant proposés
+    qu'en suggestions (`<datalist>` rempli par `nomsDesExercices()`) : une
+    douleur peut ne tenir à aucune série, et une liste fermée obligerait à
+    en désigner une faussement.
+- **Les séances enregistrées se déplient et se suppriment**, demandes de
+  l'utilisateur le 9 septembre 2026 (`rendreHistorique()` dans `js/app.js`).
+  - **Le détail reprend la matière du résumé de fin de séance**, plus la
+    remarque et la blessure : c'est le seul endroit d'où les relire depuis le
+    téléphone une fois la séance enregistrée.
+  - **Un `<details>` natif plutôt qu'une bascule maison** : l'ouverture et la
+    fermeture ne demandent alors aucun état à tenir côté script.
+  - **La suppression demande confirmation**, contrairement à la croix des
+    séries en trop d'une séance en cours : la donnée est ici définitive côté
+    téléphone. Le message distingue les deux cas, **une séance déjà envoyée
+    restant dans le classeur** : l'application n'y écrit que par ajout et ne
+    reprend jamais ce qu'elle y a mis.
 - **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
   `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
   onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain

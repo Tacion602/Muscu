@@ -719,6 +719,20 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 }
 .entree-historique .titre { font-weight: 600; display: flex; justify-content: space-between; gap: 10px; }
 .entree-historique .details { color: var(--texte-faible); font-size: 13px; margin-top: 4px; }
+
+/* Séance dépliable depuis le 9 septembre 2026. Le chevron natif est retiré :
+   il se place mal en tête d'un bloc à deux lignes, et toute la surface du
+   sommaire est déjà cliquable. */
+.entree-historique > summary { cursor: pointer; list-style: none; }
+.entree-historique > summary::-webkit-details-marker { display: none; }
+.detail-historique {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--trait);
+}
+.detail-historique .resume-exo { margin-bottom: 8px; }
+.supprimer-seance { margin-top: 6px; }
+.supprimer-seance:active { color: var(--danger); }
 .badge { font-size: 11px; padding: 2px 7px; border-radius: var(--rayon-plein); flex: none; }
 .badge.envoye { background: rgba(86, 211, 100, .15); color: var(--hausse); }
 .badge.attente { background: rgba(240, 136, 62, .15); color: var(--baisse); }

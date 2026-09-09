@@ -1530,7 +1530,25 @@ function preparerEcranFin() {
   $('fin-message').className = 'message';
   $('bouton-enregistrer').disabled = false;
   $('fin-remarque').value = seance.remarque || '';
+
+  const blessure = seance.blessure || {};
+  $('fin-blessure-serie').value = blessure.serie || '';
+  $('fin-blessure-texte').value = blessure.texte || '';
+  $('fin-blessure-exercices').innerHTML = nomsDesExercices()
+    .map((nom) => '<option value="' + echapper(nom) + '"></option>').join('');
+
   afficher('fin');
+}
+
+/* Suggestions du champ « série concernée » : ce que la séance du jour
+   propose réellement, exercices de musculation ou types de course et
+   gainage. Des suggestions, pas une liste fermée : une douleur peut ne
+   tenir à aucune série (voir le champ dans index.html). */
+function nomsDesExercices() {
+  if (!estFooting()) return (seance.exercices || []).map((e) => e.nom);
+  const carte = seance.footing || {};
+  const noms = TYPES_COURSE.filter((t) => carte[t.cle]).map((t) => t.complet);
+  return noms.concat(GAINAGE_FOOTING.map((exo) => exo.nom));
 }
 
 function enregistrerEtSynchroniser() {
@@ -1650,32 +1668,131 @@ function rendreHistorique() {
     return;
   }
 
-  cible.innerHTML = seances.map((s) => {
-    let details;
-    if (s.type === 'footing') {
-      const carte = footingParType(s);
-      const morceaux = TYPES_COURSE
-        .filter((t) => carte[t.cle] && (carte[t.cle].duree_min || carte[t.cle].distance_km))
-        .map((t) => {
-          const d = carte[t.cle];
-          const bouts = [];
-          if (d.duree_min) bouts.push(d.duree_min + ' min');
-          if (d.distance_km) bouts.push(d.distance_km + ' km');
-          return t.nom + ' ' + bouts.join(', ');
-        });
-      details = morceaux.length ? morceaux.join(' &middot; ') : 'Sortie sans chiffres';
-    } else {
-      const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
-      const series = (s.exercices || []).reduce(
-        (somme, e) => somme + e.series.filter((x) => x.faite && !x.echauffement).length, 0);
-      details = series + ' séries, ' + tonnage + ' kg';
-    }
-    return '<div class="entree-historique">' +
-      '<div class="titre"><span>' + echapper(s.jour) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
-      '<span class="badge ' + (s.envoye ? 'envoye">classeur' : 'attente">en attente') + '</span></div>' +
-      '<div class="details">' + details + '</div>' +
-      '</div>';
-  }).join('');
+  // Chaque séance se déplie sur son détail complet (demande de l'utilisateur
+  // le 9 septembre 2026 : relire une séance passée sans ouvrir le classeur).
+  // Un <details> plutôt qu'une bascule maison : l'ouverture et la fermeture
+  // ne demandent alors aucun état à tenir côté script.
+  cible.innerHTML = seances.map((s) =>
+    '<details class="entree-historique">' +
+      '<summary>' +
+        '<div class="titre"><span>' + echapper(s.jour) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
+        '<span class="badge ' + (s.envoye ? 'envoye">classeur' : 'attente">en attente') + '</span></div>' +
+        '<div class="details">' + resumeCourtSeance(s) + '</div>' +
+      '</summary>' +
+      detailSeance(s) +
+      '<button class="discret supprimer-seance" type="button" data-id="' +
+        echapper(s.id) + '">Supprimer cette séance</button>' +
+    '</details>').join('');
+
+  cible.querySelectorAll('.supprimer-seance').forEach((bouton) => {
+    bouton.addEventListener('click', () => supprimerSeance(bouton.dataset.id));
+  });
+}
+
+/* La ligne repliée : ce qui tient sur un seul niveau de lecture. */
+function resumeCourtSeance(s) {
+  if (s.type === 'footing') {
+    const carte = footingParType(s);
+    const morceaux = [];
+    TYPES_COURSE.forEach((t) => {
+      (carte[t.cle] || []).forEach((d) => {
+        if (!d.duree_min && !d.distance_km) return;
+        const bouts = [];
+        if (d.duree_min) bouts.push(d.duree_min + ' min');
+        if (d.distance_km) bouts.push(d.distance_km + ' km');
+        morceaux.push(t.nom + ' ' + bouts.join(', '));
+      });
+    });
+    return morceaux.length ? morceaux.join(' &middot; ') : 'Sortie sans chiffres';
+  }
+  const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
+  const series = (s.exercices || []).reduce(
+    (somme, e) => somme + (e.series || []).filter((x) => x.faite && !x.echauffement).length, 0);
+  return series + ' séries, ' + tonnage + ' kg';
+}
+
+/* Le détail déplié : la même matière que le résumé de fin de séance, plus la
+   remarque et la blessure éventuelles, qui ne se relisent nulle part ailleurs
+   depuis le téléphone. */
+function detailSeance(s) {
+  let html = '<div class="detail-historique">';
+
+  if (s.type === 'footing') {
+    const carte = footingParType(s);
+    TYPES_COURSE.forEach((t) => {
+      const cycles = (carte[t.cle] || []).filter((d) => d.duree_min != null || d.distance_km != null);
+      cycles.forEach((d, index) => {
+        const bouts = [];
+        if (d.duree_min) bouts.push(d.duree_min + ' min');
+        if (d.distance_km) bouts.push(d.distance_km + ' km');
+        if (d.duree_min && d.distance_km) {
+          const allure = d.duree_min / d.distance_km;
+          bouts.push(Math.floor(allure) + ':' +
+            String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0') + ' / km');
+        }
+        if (d.repetitions) bouts.push(d.repetitions + ' rép.');
+        if (d.recup_s) bouts.push('récup ' + d.recup_s + ' s');
+        if (d.pente_pct) bouts.push('pente ' + d.pente_pct + ' %');
+        if (d.charge_kg) bouts.push(d.charge_kg + ' kg portés');
+        if (d.duree_seuil_min) bouts.push(d.duree_seuil_min + ' min au seuil');
+        html += ligneDetail(cycles.length > 1 ? t.complet + ', passage ' + (index + 1) : t.complet,
+          bouts.join('  ·  '));
+      });
+    });
+    GAINAGE_FOOTING.forEach((exo) => {
+      const tenues = ((s.gainage || {})[exo.cle] || []).filter((v) => v != null);
+      if (!tenues.length) return;
+      html += ligneDetail(exo.nom, tenues.map((v) => v + ' s').join('  ·  '));
+    });
+  } else {
+    (s.exercices || []).forEach((e) => {
+      const faites = (e.series || []).filter((x) => x.faite);
+      if (!faites.length) return;
+      html += ligneDetail(e.nom, faites.map((x) =>
+        (x.echauffement ? 'éch ' : '') +
+        (x.charge != null ? x.charge : '?') + '×' + (x.reps != null ? x.reps : '?') +
+        (x.rir != null ? ' @' + x.rir : '')).join('  ·  '));
+    });
+  }
+
+  if (s.duree_min) html += ligneDetail('Durée', s.duree_min + ' min');
+  if (s.remarque && s.remarque.trim()) html += ligneDetail('Remarque', s.remarque.trim());
+
+  const blessure = s.blessure || {};
+  if (blessure.texte && blessure.texte.trim()) {
+    html += ligneDetail('Blessure',
+      (blessure.serie ? blessure.serie + ' : ' : '') + blessure.texte.trim());
+  }
+
+  return html + '</div>';
+}
+
+function ligneDetail(nom, valeur) {
+  return '<div class="resume-exo">' +
+    '<div class="resume-exo-nom">' + echapper(nom) + '</div>' +
+    '<div class="resume-exo-series">' + echapper(valeur) + '</div>' +
+    '</div>';
+}
+
+/* Suppression d'une séance enregistrée, demandée par l'utilisateur le
+   9 septembre 2026. Confirmation obligatoire, contrairement à la croix des
+   séries en trop d'une séance en cours : ici la donnée est définitive côté
+   téléphone, et rien ne la reprendra au classeur, qui n'est jamais modifié
+   depuis l'application. Le message le dit selon le cas. */
+function supprimerSeance(id) {
+  const historique = lireTableau(CLES.historique);
+  const cible = historique.find((s) => s.id === id);
+  if (!cible) return;
+
+  const suite = cible.envoye
+    ? "Elle restera dans le classeur, que l'application ne modifie jamais."
+    : "Elle n'a pas encore été envoyée au classeur : elle sera perdue.";
+  if (!confirm('Supprimer la séance ' + cible.jour + ' du ' + dateCourte(cible.fin) +
+      ' ?\n\n' + suite)) return;
+
+  ecrire(CLES.historique, historique.filter((s) => s.id !== id));
+  rendreHistorique();
+  rendreEtatSync();
 }
 
 /* --------------------------------------------------------------- démarrage */
@@ -1754,6 +1871,17 @@ function brancher() {
     if (!seance) return;
     seance.remarque = evenement.target.value;
     enregistrerSeance();
+  });
+
+  ['fin-blessure-serie', 'fin-blessure-texte'].forEach((identifiant) => {
+    $(identifiant).addEventListener('input', () => {
+      if (!seance) return;
+      seance.blessure = {
+        serie: $('fin-blessure-serie').value,
+        texte: $('fin-blessure-texte').value,
+      };
+      enregistrerSeance();
+    });
   });
 
   $('bouton-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });

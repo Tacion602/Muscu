@@ -462,6 +462,38 @@ function ecrireRemarque(classeur, seance, date) {
 }
 
 /**
+ * Blessures et douleurs, page a part demandee par l'utilisateur le
+ * 9 septembre 2026. Distincte des remarques, qui s'adressent au developpeur :
+ * celle-ci suit le corps dans le temps, et gagne a se relire seule, sans le
+ * bruit des demandes d'evolution. La serie concernee est saisie librement
+ * dans l'application, les exercices du jour n'etant que des suggestions.
+ */
+function feuilleBlessures(classeur) {
+  let feuille = classeur.getSheetByName('Blessures');
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet('Blessures');
+  feuille.getRange(1, 1, 1, 4)
+    .setValues([['Date', 'Jour', 'Serie', 'Blessure']])
+    .setFontWeight('bold');
+  feuille.setColumnWidth(1, 90);
+  feuille.setColumnWidth(2, 60);
+  feuille.setColumnWidth(3, 220);
+  feuille.setColumnWidth(4, 500);
+  return feuille;
+}
+
+/** La description fait foi : une serie renseignee sans description ne decrit
+ *  aucune blessure, et n'a rien a faire dans cette page. */
+function ecrireBlessure(classeur, seance, date) {
+  const blessure = seance.blessure || {};
+  const texte = (blessure.texte || '').trim();
+  if (!texte) return;
+  feuilleBlessures(classeur).appendRow([
+    formatDateCourte(date), seance.jour || '', (blessure.serie || '').trim(), texte,
+  ]);
+}
+
+/**
  * Ecrit une seance a la fois dans les pages pretes-a-graphiquer (Exercices,
  * Seances) et dans la page de lecture humaine de son jour (grille par
  * exercice, ou bloc de course par type).
@@ -487,9 +519,11 @@ function ecrireSeance(seance) {
     const carte = footingParType(seance);
     const vide = function (v) { return v != null ? v : ''; };
 
-    // La remarque est independante des sorties : ecrite avant tout retour
-    // anticipe, elle ne doit pas dependre d'un passage de course renseigne.
+    // Remarque et blessure sont independantes des sorties : ecrites avant
+    // tout retour anticipe, elles ne doivent pas dependre d'un passage de
+    // course renseigne.
     ecrireRemarque(classeur, seance, date);
+    ecrireBlessure(classeur, seance, date);
 
     // Une ligne par passage renseigne : un type peut en compter plusieurs
     // depuis le 8 septembre 2026 (l'Incline refait a une autre charge, par
@@ -525,9 +559,11 @@ function ecrireSeance(seance) {
     return;
   }
 
-  // Independante des series validees, ecrite avant tout retour anticipe :
-  // une seance sans serie faite peut tout de meme porter une remarque.
+  // Independantes des series validees, ecrites avant tout retour anticipe :
+  // une seance sans serie faite peut tout de meme porter une remarque ou une
+  // blessure, celle-ci pouvant meme etre la raison de l'arret.
   ecrireRemarque(classeur, seance, date);
+  ecrireBlessure(classeur, seance, date);
 
   const lignesExercices = [];
   let tonnageSeance = 0;
