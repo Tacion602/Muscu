@@ -556,3 +556,14 @@ classeur (le piège `FACE PULL` en particulier), sur le modèle de
 4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
    basculer vers un autre bloc d'entraînement demandera de relancer l'import
    sur un autre onglet, geste manuel pour l'instant.
+5. **Sortir ce dépôt de `C:\Users\Utilisateur\.claude\`**, décidé par
+   l'utilisateur le 9 septembre 2026 pour ne plus risquer de confusion avec
+   l'autre projet qu'il y héberge. Le code est déjà séparé (deux dépôts
+   indépendants) ; ce qui est couplé, c'est la session de travail, ancrée sur
+   l'autre projet, dont ce `CLAUDE.md` n'est donc **jamais chargé
+   automatiquement**. S'y ajoute que `.claude` est le dossier de
+   configuration de Claude Code lui-même, mauvais emplacement pour du code.
+   Le déplacement du dossier suffit, `.git` étant dedans et le remote
+   inchangé ; la mémoire de travail, elle, est rangée sous la clé de l'autre
+   projet et devra être recopiée. À faire hors d'une séance en cours de
+   saisie.
