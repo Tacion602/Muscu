@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-10T07:44:02+00:00",
+ "importe_le": "2026-09-10T16:03:21+00:00",
  "jours": [
   {
    "code": "J1",
@@ -390,7 +390,7 @@
      "historique": []
     },
     {
-     "numero": 5,
+     "numero": 4,
      "nom": "Curl incline halteres",
      "prescription": "3 X 10-12 RIR 2 / 1 / 1",
      "series": 3,
@@ -407,7 +407,7 @@
      "historique": []
     },
     {
-     "numero": 4,
+     "numero": 5,
      "nom": "Elevation laterale halteres",
      "prescription": "3 X 15-20 RIR 2 / 1 / 1",
      "series": 3,
@@ -513,100 +513,6 @@
     },
     {
      "numero": 2,
-     "nom": "SOULEVE DE TERRE ROUMAIN",
-     "prescription": "3 X 8-10 RIR 2 / 2 / 1",
-     "series": 3,
-     "reps_min": 8,
-     "reps_max": 10,
-     "rir": [
-      2,
-      2,
-      1
-     ],
-     "consigne": "Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",
-     "muscle": "Ischio-jambiers et fessiers",
-     "repos_s": 120,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "",
-       "deload": false,
-       "total": 1660,
-       "series": [
-        {
-         "note": "barre position 0 = + 40cm",
-         "charge": 40,
-         "reps": 10,
-         "rir": 4,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 60,
-         "reps": 10,
-         "rir": 3,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 60,
-         "reps": 11,
-         "rir": 2,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "numero": 3,
-     "nom": "LEG CURL ALLONGE UNILATERAL",
-     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
-     "series": 3,
-     "reps_min": 10,
-     "reps_max": 12,
-     "rir": [
-      2,
-      1,
-      1
-     ],
-     "consigne": "",
-     "muscle": "Ischio-jambiers et fessiers",
-     "repos_s": 90,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "",
-       "deload": false,
-       "total": 310,
-       "series": [
-        {
-         "note": "",
-         "charge": 10,
-         "reps": 10,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 10,
-         "reps": 10,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 10,
-         "reps": 11,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "numero": 4,
      "nom": "Extension jambes unilatéral",
      "prescription": "3 X 12-15 RIR 2 / 1 / 1",
      "series": 3,
@@ -653,21 +559,115 @@
      ]
     },
     {
-     "numero": 5,
-     "nom": "Abduction de hanche machine",
-     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
+     "numero": 3,
+     "nom": "SOULEVE DE TERRE ROUMAIN",
+     "prescription": "3 X 8-10 RIR 2 / 2 / 1",
      "series": 3,
-     "reps_min": 15,
-     "reps_max": 20,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1
+     ],
+     "consigne": "Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",
+     "muscle": "Ischio-jambiers et fessiers",
+     "repos_s": 120,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 1660,
+       "series": [
+        {
+         "note": "barre position 0 = + 40cm",
+         "charge": 40,
+         "reps": 10,
+         "rir": 4,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 60,
+         "reps": 10,
+         "rir": 3,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 60,
+         "reps": 11,
+         "rir": 2,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 4,
+     "nom": "Extension de hanche machine",
+     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 10,
+     "reps_max": 12,
      "rir": [
       2,
       1,
       1
      ],
-     "consigne": "Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",
-     "muscle": "Abducteurs et moyen fessier",
-     "repos_s": 60,
+     "consigne": "Par jambe. De profil, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",
+     "muscle": "Grand fessier",
+     "repos_s": 90,
      "historique": []
+    },
+    {
+     "numero": 5,
+     "nom": "LEG CURL ALLONGE UNILATERAL",
+     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 10,
+     "reps_max": 12,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "",
+     "muscle": "Ischio-jambiers et fessiers",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 310,
+       "series": [
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 11,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
     },
     {
      "numero": 6,
@@ -719,17 +719,18 @@
     },
     {
      "numero": 7,
-     "nom": "Rotation externe poulie",
-     "prescription": "2 X 15-20 RIR 3/3",
-     "series": 2,
+     "nom": "Abduction de hanche machine",
+     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
+     "series": 3,
      "reps_min": 15,
      "reps_max": 20,
      "rir": [
-      3,
-      3
+      2,
+      1,
+      1
      ],
-     "consigne": "Charge tres legere. Preventif, ne pas chercher l'echec.",
-     "muscle": "Coiffe des rotateurs",
+     "consigne": "Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",
+     "muscle": "Abducteurs et moyen fessier",
      "repos_s": 60,
      "historique": []
     },
