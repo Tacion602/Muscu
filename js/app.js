@@ -339,6 +339,23 @@ function derniereFois(codeJour, nomExo) {
 
 /* ---------------------------------------------------------------- accueil */
 
+/* Le titre du classeur peut nommer plusieurs jours d'un coup depuis que
+   l'utilisateur a renommé le bloc de course « J2 & J6 FOOTING » le
+   10 septembre 2026 : J2 et J6 sont le même entraînement, et la grille ne
+   les distingue pas. Le code du jour affiché vient donc toujours de la
+   séance ou de la fiche (`seance.jour`, `jour.code`), jamais du titre, dont
+   on ne garde que le nom. Sans cela l'écran de fin annonçait « & J6
+   FOOTING » un jour de J2. */
+function sansCodeDeJour(titre) {
+  return (titre || '')
+    .replace(/^(?:J\d\s*(?:[&+]|et\b)?\s*)+/i, '')
+    .replace(/^-\s*/, '');
+}
+
+function nomDuJour(titre) {
+  return sansCodeDeJour(titre).split(/\s+-\s+/)[0].trim();
+}
+
 function rendreAccueil() {
   const liste = $('liste-jours');
   liste.innerHTML = '';
@@ -349,8 +366,7 @@ function rendreAccueil() {
     const bouton = document.createElement('button');
     bouton.className = 'carte-jour';
 
-    const titre = jour.titre.replace(/^J\d\s*/, '').replace(/^-\s*/, '');
-    const [nom, ...reste] = titre.split(/\s+-\s+/);
+    const [nom, ...reste] = sansCodeDeJour(jour.titre).split(/\s+-\s+/);
     const derniere = derniereSeanceDuJour(jour.code);
     const commencee = enCours[jour.code] && !enCours[jour.code].fin;
     if (commencee) bouton.classList.add('en-cours');
@@ -644,7 +660,7 @@ function rendreFooting() {
   $('bouton-precedent').hidden = true;
   $('bouton-suivant').hidden = true;
 
-  $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
+  $('seance-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
   $('seance-progression').textContent = '';
 
   const type = TYPES_COURSE[indexExo];
@@ -929,7 +945,7 @@ function rendreExercice() {
   $('bouton-precedent').hidden = false;
   $('bouton-suivant').hidden = false;
 
-  $('seance-jour').textContent = jour.titre.split(/\s+-\s+/)[0];
+  $('seance-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
   $('seance-progression').textContent = (indexExo + 1) + '/' + seance.exercices.length;
   $('jauge-remplie').style.width = (100 * proportionFaite()) + '%';
 
@@ -1437,7 +1453,7 @@ function terminer() {
   }
 
   resume.innerHTML =
-    '<h3>' + echapper(seance.titre.split(/\s+-\s+/)[0]) + '</h3>' +
+    '<h3>' + echapper(seance.jour + ' ' + nomDuJour(seance.titre)) + '</h3>' +
     '<div class="chiffres">' +
       '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
       '<div class="chiffre"><b>' + seriesFaites + '</b><span>séries</span></div>' +
@@ -1474,7 +1490,7 @@ function terminerFooting(resume) {
     cycles: (carte[type.cle] || []).filter((c) => c.duree_min != null || c.distance_km != null),
   })).filter((entree) => entree.cycles.length);
 
-  resume.innerHTML = '<h3>' + echapper(seance.titre.replace(/^J\d\s*/, '')) + '</h3>';
+  resume.innerHTML = '<h3>' + echapper(seance.jour + ' ' + nomDuJour(seance.titre)) + '</h3>';
 
   if (!parType.length) {
     resume.innerHTML += '<p class="vide">Aucune sortie renseignée.</p>';
