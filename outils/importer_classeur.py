@@ -260,6 +260,14 @@ def convertir(grille):
             exercice["historique"] = historique
             exercices.append(exercice)
 
+        # L'ordre des exercices est celui des numeros de la colonne A, pas celui
+        # des lignes (decision du 10 septembre 2026). Reordonner un jour se fait
+        # donc en changeant des numeros, sans deplacer aucune ligne : deux
+        # deplacements a la main avaient laisse les chiffres d'une seance sur
+        # place pendant que les noms bougeaient, chaque exercice heritant de
+        # l'historique d'un autre.
+        exercices.sort(key=lambda e: e["numero"])
+
         for code in codes:
             jours.append({
                 "code": code,

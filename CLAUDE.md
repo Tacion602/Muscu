@@ -66,6 +66,17 @@ second jour se plaçant sinon à la position de son bloc. Seule la
 **définition** est partagée : J2 et J6 restent deux séances indépendantes,
 avec leurs propres chiffres.
 
+**L'ordre des exercices d'un jour est celui des numéros de la colonne A**, pas
+celui des lignes : `convertir()` trie par `numero` depuis le 10 septembre 2026.
+Jusque-là, l'ordre suivait les lignes et le numéro n'était qu'une étiquette.
+Réordonner un jour se fait donc **en changeant des numéros, sans déplacer de
+ligne**. Motif : deux déplacements à la main avaient laissé les chiffres d'une
+séance sur place pendant que les noms bougeaient (J1, le 9 septembre 2026),
+chaque exercice héritant de l'historique d'un autre. Un exercice retiré se
+supprime **en lignes entières**, jamais en effaçant seulement son numéro :
+sans numéro, ses lignes seraient rattachées au bloc précédent et fausseraient
+sa lecture.
+
 **C'est le seul onglet en entrée. Tous les autres sont des sorties**, écrites
 par le pont et jamais relues pour alimenter l'application : les grilles de
 jour `J1`, `J3`, `J4`, `J5`, la page `Course`, les pages plates
