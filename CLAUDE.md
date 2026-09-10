@@ -164,6 +164,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   courant. L'utilisateur y a perdu toutes ses notes de J4. Le bouton
   « Annuler » réécrit la valeur retenue à l'ouverture de l'éditeur, seul moyen
   de défaire ce que la frappe a déjà enregistré.
+- **`validerSerie()` marque la série faite avant d'amorcer le clavier.**
+  Déplacer le focus fait perdre le sien au champ des répétitions, dont le
+  `change` rappelle alors la validation ; placé en tête jusqu'au 10 septembre
+  2026, l'amorçage provoquait une validation imbriquée, et la dernière série
+  validée par Entrée faisait sauter **deux** exercices. Trouvé par
+  `tests/test_app.py`, pas à la main.
 - **Les flèches d'exercice comptent leur pas depuis l'exercice regardé au
   moment où le doigt se pose**, pas depuis `indexExo` au moment du clic.
   Défaut signalé par l'utilisateur le 10 septembre 2026 et reproduit : un
@@ -626,10 +632,39 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
 ## Vérifications
 
-Pas encore de suite automatisée. À faire avant d'ajouter des fonctionnalités
-qui touchent l'import ou le calcul de tonnage : un test sur un extrait figé du
-classeur (le piège `FACE PULL` en particulier), sur le modèle de
-`tests/test_classify.py` de l'agenda culturel.
+Trois outils, nés le 10 septembre 2026 d'une série d'incidents que les
+vérifications à la main n'avaient pas vus.
+
+- **`pytest tests/`** : l'application dans un vrai Chromium piloté par
+  Playwright (`tests/test_app.py`), servie par un serveur local sur le vrai
+  `data/programme.json`, avec de vrais clics et de vraies saisies. Un test par
+  défaut réellement rencontré ou par décision arrêtée avec l'utilisateur.
+  **Témoin structurel** : chaque test commence par vérifier que l'accueil
+  affiche les six jours, et échoue sur toute exception JavaScript non
+  rattrapée. Les tests ne supposent aucun nom d'exercice, ceux-ci venant du
+  classeur. Préalable, une fois : `python -m playwright install chromium`.
+  - **Les saisies doivent être réelles** (`fill`, `press`, `click`), jamais des
+    événements fabriqués. Dès son premier passage, le test de la dernière
+    série a trouvé que valider avec Entrée sautait **deux** exercices, ce que
+    des dizaines d'essais à la main par `dispatchEvent` n'avaient pas montré.
+    Une valeur réellement tapée rend le champ « sale », et le navigateur
+    déclenche alors un vrai `change` quand le focus part ; une valeur posée
+    par script ne le fait jamais.
+- **`outils/verifier_import.py`**, lancé automatiquement à la fin de chaque
+  import : compare le programme importé au dernier publié, lu dans git, et
+  sort en erreur sur toute **ALERTE** : jour disparu, historique passé d'un
+  exercice à un autre, historique perdu ou modifié, exercice disparu avec son
+  historique. Né des trois incidents du 9 septembre 2026 (J1, J3, J6). Un
+  témoin, un échange d'historique fabriqué, doit être détecté avant toute
+  comparaison, sans quoi l'outil se déclare inexécutable. En simple info, un
+  signal faible : une dernière séance au nombre de séries différent de la
+  prescription, celui qui avait trahi l'échange de J1.
+- **`outils/sauvegarder_classeur.py`** : copie datée du classeur entier, tous
+  onglets, en xlsx dans `sauvegardes/`, **exclu de git** : le dépôt est public,
+  et le classeur contient Remarques et Blessures. L'historique des versions de
+  Google porte sur le classeur entier ; restaurer un onglet ramène tous les
+  autres en arrière, cas réel du 9 septembre 2026. La copie n'est écrite que
+  si elle se relit comme un classeur contenant l'onglet du programme.
 
 ## Chantiers ouverts
 

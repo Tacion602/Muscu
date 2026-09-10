@@ -320,3 +320,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # Verification systematique apres chaque import (voir verifier_import.py) :
+    # les trois incidents du 9 septembre 2026 etaient passes sans un bruit.
+    import verifier_import
+    sys.exit(verifier_import.verifier())

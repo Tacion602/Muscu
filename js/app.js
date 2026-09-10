@@ -1269,14 +1269,6 @@ function majTonnage(avantConnu) {
    passée du RIR aux répétitions le 6 septembre 2026, le RIR n'étant
    qu'indicatif. Décisions de l'utilisateur. */
 function validerSerie(exercice, serie, index) {
-  // Amorcer le clavier avant tout changement de DOM (voir amorcerClavier) :
-  // le geste (Entrée ou la sortie du champ) est encore "chaud" à cet instant
-  // précis, il ne l'est déjà plus une fois rendreSeries()/rendreExercice()
-  // passé, qui remplacent le champ focalisé par un nouveau. Manquant ici
-  // jusqu'au 7 septembre 2026 : le focus arrivait bien sur la série
-  // suivante, mais sans rouvrir le clavier.
-  amorcerClavier();
-
   // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
   // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
   if (serie.charge == null || serie.reps == null) {
@@ -1292,6 +1284,19 @@ function validerSerie(exercice, serie, index) {
   serie.faite = true;
   serie.heure = new Date().toISOString();
   enregistrerSeance();
+
+  // Amorcer le clavier avant tout changement de DOM (voir amorcerClavier) :
+  // le geste (Entrée ou la sortie du champ) est encore "chaud" à cet instant
+  // précis, il ne l'est déjà plus une fois rendreSeries()/rendreExercice()
+  // passé, qui remplacent le champ focalisé par un nouveau.
+  //
+  // **Jamais avant `serie.faite = true`.** Déplacer le focus fait perdre le
+  // sien au champ des répétitions ; si sa valeur a été réellement tapée, le
+  // navigateur y déclenche aussitôt `change`, qui rappelle cette fonction.
+  // Placé en tête jusqu'au 10 septembre 2026, l'amorçage provoquait ainsi une
+  // seconde validation imbriquée, et la dernière série faisait sauter deux
+  // exercices. La série déjà marquée faite, le rappel s'arrête à sa garde.
+  amorcerClavier();
 
   // La fiche du repos se lit avant tout changement d'exercice : c'est le
   // temps de récupération de l'exercice qu'on vient de finir qui compte.

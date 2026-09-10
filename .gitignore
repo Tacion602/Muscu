@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Copies du classeur : contiennent les onglets Remarques et Blessures, et le
+# depot est public (GitHub Pages). Elles restent sur la machine.
+sauvegardes/
