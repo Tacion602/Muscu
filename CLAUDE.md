@@ -385,6 +385,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     disparaître tout le bloc de course. Le loger dans le code évite de
     redessiner le classeur pour deux exercices à prescription fixe, comme le
     font déjà `TYPES_COURSE` et les échauffements.
+  - **Pallof press et rotation externe l'ont rejoint le 10 septembre 2026**,
+    retirés de J4 par l'utilisateur : peu fatigants, ils n'avaient rien à faire
+    dans la séance de jambes. La rotation externe est **le seul exercice de
+    cette liste compté en répétitions** : champ `unite: 'reps'` dans
+    `GAINAGE_FOOTING`, lu par `uniteGainage()` pour l'étiquette, le résumé de
+    fin et l'historique. Sans ce champ, un exercice se compte en secondes.
   - **Il se saisit en secondes de tenue**, une case par série : une planche
     n'a ni charge ni répétitions, et la grille à trois colonnes de la
     musculation n'aurait rien voulu dire ici. Rien à valider non plus, donc

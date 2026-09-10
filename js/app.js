@@ -85,7 +85,36 @@ const GAINAGE_FOOTING = [
       + "à l'aplomb de l'épaule, hanches hautes, corps dans un seul plan. Le temps noté "
       + "est celui d'un côté.",
   },
+  // Les deux suivants viennent de J4, d'où l'utilisateur les a retirés le
+  // 10 septembre 2026 : peu fatigants, ils n'avaient rien à faire dans la
+  // séance de jambes. La rotation externe se compte en répétitions, d'où
+  // le champ `unite`, absent (donc en secondes) pour les autres.
+  {
+    cle: 'pallof_press',
+    nom: 'Pallof press',
+    series: 3,
+    tenue_min: 30,
+    tenue_max: 45,
+    consigne: "Poulie à hauteur de poitrine, de profil. Bras tendus devant la poitrine, "
+      + "résister à la rotation sans que le buste tourne. Un côté puis l'autre, le "
+      + "temps noté est celui d'un côté.",
+  },
+  {
+    cle: 'rotation_externe',
+    nom: 'Rotation externe poulie',
+    series: 2,
+    tenue_min: 15,
+    tenue_max: 20,
+    unite: 'reps',
+    consigne: "Charge très légère, poulie ou élastique. Coude collé au buste. "
+      + "Préventif, ne pas chercher l'échec.",
+  },
 ];
+
+/* Le libellé d'unité d'un exercice de gainage, secondes par défaut. */
+function uniteGainage(exo) {
+  return exo.unite === 'reps' ? 'reps' : 's';
+}
 
 /* Quatre séances de course distinctes, décidées le 26 août 2026. Chacune a
    son échauffement, parce que l'exigence n'est pas la même : une endurance
@@ -781,7 +810,7 @@ function rendreGainage() {
     titre.textContent = exo.nom;
     const prescription = document.createElement('span');
     prescription.className = 'etiquette';
-    prescription.textContent = exo.series + ' × ' + exo.tenue_min + '-' + exo.tenue_max + ' s';
+    prescription.textContent = exo.series + ' × ' + exo.tenue_min + '-' + exo.tenue_max + ' ' + uniteGainage(exo);
     titre.appendChild(prescription);
     carte.appendChild(titre);
 
@@ -795,7 +824,8 @@ function rendreGainage() {
       input.className = 'gainage-tenue';
       input.value = valeur === null || valeur === undefined ? '' : String(valeur);
       input.placeholder = String(exo.tenue_min);
-      input.setAttribute('aria-label', exo.nom + ', série ' + (index + 1) + ', secondes');
+      input.setAttribute('aria-label', exo.nom + ', série ' + (index + 1) + ', ' +
+        (uniteGainage(exo) === 'reps' ? 'répétitions' : 'secondes'));
       input.addEventListener('focus', () => input.select());
       input.addEventListener('input', () => {
         tenuesGainage(exo)[index] = nombreOuNull(input.value);
@@ -885,6 +915,13 @@ function dureeSeanceMs() {
 }
 
 function majChronoSeance() {
+  // Le battement survit à la séance : quitter (←) ou enregistrer remet
+  // `seance` à null sans arrêter l'intervalle, qui levait alors une erreur à
+  // chaque seconde. Il se relance seul à la réouverture (rendreExercice).
+  if (!seance) {
+    if (tictacSeance) { clearInterval(tictacSeance); tictacSeance = null; }
+    return;
+  }
   const chrono = chronoSeance();
   const demarrer = $('chrono-seance-demarrer');
   const ecoule = dureeSeanceMs();
@@ -1554,8 +1591,8 @@ function terminerFooting(resume) {
       '<div class="resume-exo">' +
         '<div class="resume-exo-nom">' + echapper(exo.nom) + '</div>' +
         '<div class="resume-exo-series">' +
-          faites.map((v) => v + ' s').join('  ·  ') +
-          '  (total ' + total + ' s)' +
+          faites.map((v) => v + ' ' + uniteGainage(exo)).join('  ·  ') +
+          '  (total ' + total + ' ' + uniteGainage(exo) + ')' +
         '</div>' +
       '</div>';
   });
@@ -1810,7 +1847,7 @@ function detailSeance(s) {
     GAINAGE_FOOTING.forEach((exo) => {
       const tenues = ((s.gainage || {})[exo.cle] || []).filter((v) => v != null);
       if (!tenues.length) return;
-      html += ligneDetail(exo.nom, tenues.map((v) => v + ' s').join('  ·  '));
+      html += ligneDetail(exo.nom, tenues.map((v) => v + ' ' + uniteGainage(exo)).join('  ·  '));
     });
   } else {
     (s.exercices || []).forEach((e) => {
