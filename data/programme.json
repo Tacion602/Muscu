@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-02T14:19:26+00:00",
+ "importe_le": "2026-09-10T07:44:02+00:00",
  "jours": [
   {
    "code": "J1",
@@ -167,20 +167,19 @@
     },
     {
      "numero": 4,
-     "nom": "Elevation laterale poulie unilaterale",
-     "prescription": "4X12-15 - RIR 2 / 2 / 1 / 1",
-     "series": 4,
+     "nom": "Extension triceps overhead corde",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
      "reps_min": 12,
      "reps_max": 15,
      "rir": [
       2,
-      2,
       1,
       1
      ],
-     "consigne": "",
-     "muscle": "Deltoide lateral",
-     "repos_s": 75,
+     "consigne": "Bras au dessus de la tete pour etirer la longue portion.",
+     "muscle": "Triceps",
+     "repos_s": 90,
      "historique": [
       {
        "seance": 0,
@@ -222,19 +221,20 @@
     },
     {
      "numero": 5,
-     "nom": "Extension triceps overhead corde",
-     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
-     "series": 3,
+     "nom": "Elevation laterale poulie unilaterale",
+     "prescription": "4X12-15 - RIR 2 / 2 / 1 / 1",
+     "series": 4,
      "reps_min": 12,
      "reps_max": 15,
      "rir": [
       2,
+      2,
       1,
       1
      ],
-     "consigne": "Bras au dessus de la tete pour etirer la longue portion.",
-     "muscle": "Triceps",
-     "repos_s": 90,
+     "consigne": "",
+     "muscle": "Deltoide lateral",
+     "repos_s": 75,
      "historique": [
       {
        "seance": 0,
@@ -318,7 +318,7 @@
   },
   {
    "code": "J2",
-   "titre": "J2 FOOTING",
+   "titre": "J2 & J6 FOOTING",
    "type": "footing",
    "exercices": []
   },
@@ -327,11 +327,11 @@
    "titre": "J3 PULL - Grand dorsal en priorite, biceps",
    "type": "muscu",
    "dates": [
-    "24/08/2026",
-    "12/05/2026",
-    "13/05/2026",
-    "14/05/2026",
-    "15/05/2026",
+    "",
+    "",
+    "",
+    "",
+    "",
     "16/05/2026",
     "DELOAD"
    ],
@@ -352,44 +352,7 @@
      "consigne": "Amener la barre a la clavicule. Ne pas cambrer excessivement.",
      "muscle": "Grand dorsal",
      "repos_s": 150,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "24/08/2026",
-       "deload": false,
-       "total": 1960,
-       "series": [
-        {
-         "note": "",
-         "charge": 40,
-         "reps": 13,
-         "rir": 3,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 50,
-         "reps": 9,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 55,
-         "reps": 9,
-         "rir": 2,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 55,
-         "reps": 9,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
+     "historique": []
     },
     {
      "numero": 2,
@@ -407,44 +370,7 @@
      "consigne": "Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",
      "muscle": "Grand dorsal",
      "repos_s": 120,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "24/08/2026",
-       "deload": false,
-       "total": 1530,
-       "series": [
-        {
-         "note": "pos.6",
-         "charge": 40,
-         "reps": 9,
-         "rir": 3,
-         "echauffement": false
-        },
-        {
-         "note": "prise serée verticale/neutre",
-         "charge": 40,
-         "reps": 9,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "pause 3sec en rep 6 et 7",
-         "charge": 45,
-         "reps": 9,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "pause 3sec en rep 6 et 7",
-         "charge": 45,
-         "reps": 9,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
+     "historique": []
     },
     {
      "numero": 3,
@@ -461,84 +387,7 @@
      "consigne": "Bras quasi tendus, pas d'elan du buste.",
      "muscle": "Deltoide posterieur",
      "repos_s": 75,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "24/08/2026",
-       "deload": false,
-       "total": 1155,
-       "series": [
-        {
-         "note": "pos 7;4",
-         "charge": 25,
-         "reps": 15,
-         "rir": 4,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 30,
-         "reps": 13,
-         "rir": 2,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 30,
-         "reps": 13,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "numero": 4,
-     "nom": "Elevation laterale halteres",
-     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
-     "series": 3,
-     "reps_min": 15,
-     "reps_max": 20,
-     "rir": [
-      2,
-      1,
-      1
-     ],
-     "consigne": "Charge legere, tempo controle. Pas de balancier.",
-     "muscle": "Deltoide lateral",
-     "repos_s": 60,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "24/08/2026",
-       "deload": false,
-       "total": 368,
-       "series": [
-        {
-         "note": "",
-         "charge": 6,
-         "reps": 20,
-         "rir": 4,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 8,
-         "reps": 16,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 6,
-         "reps": 20,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
+     "historique": []
     },
     {
      "numero": 5,
@@ -555,37 +404,24 @@
      "consigne": "Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",
      "muscle": "Biceps",
      "repos_s": 90,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "24/08/2026",
-       "deload": false,
-       "total": 240,
-       "series": [
-        {
-         "note": "",
-         "charge": 8,
-         "reps": 13,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 8,
-         "reps": 10,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 8,
-         "reps": 7,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
+     "historique": []
+    },
+    {
+     "numero": 4,
+     "nom": "Elevation laterale halteres",
+     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 15,
+     "reps_max": 20,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Charge legere, tempo controle. Pas de balancier.",
+     "muscle": "Deltoide lateral",
+     "repos_s": 60,
+     "historique": []
     },
     {
      "numero": 6,
@@ -602,37 +438,7 @@
      "consigne": "Prise neutre. Cible le brachial/brachio-radial",
      "muscle": "Biceps",
      "repos_s": 75,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "24/08/2026",
-       "deload": false,
-       "total": 320,
-       "series": [
-        {
-         "note": "",
-         "charge": 6,
-         "reps": 16,
-         "rir": 3,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 6,
-         "reps": 20,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 8,
-         "reps": 13,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
+     "historique": []
     }
    ]
   },
@@ -754,7 +560,7 @@
     },
     {
      "numero": 3,
-     "nom": "Leg curl allongé",
+     "nom": "LEG CURL ALLONGE UNILATERAL",
      "prescription": "3 X 10-12 RIR 2 / 1 / 1",
      "series": 3,
      "reps_min": 10,
@@ -764,7 +570,7 @@
       1,
       1
      ],
-     "consigne": "Position assise, hanche flechie, + efficace que le leg curl couche.",
+     "consigne": "",
      "muscle": "Ischio-jambiers et fessiers",
      "repos_s": 90,
      "historique": [
@@ -772,25 +578,25 @@
        "seance": 0,
        "date": "",
        "deload": false,
-       "total": 620,
+       "total": 310,
        "series": [
         {
          "note": "",
-         "charge": 20,
+         "charge": 10,
          "reps": 10,
          "rir": null,
          "echauffement": false
         },
         {
          "note": "",
-         "charge": 20,
+         "charge": 10,
          "reps": 10,
          "rir": null,
          "echauffement": false
         },
         {
          "note": "",
-         "charge": 20,
+         "charge": 10,
          "reps": 11,
          "rir": null,
          "echauffement": false
@@ -1080,7 +886,7 @@
   },
   {
    "code": "J6",
-   "titre": "J6 FOOTING",
+   "titre": "J2 & J6 FOOTING",
    "type": "footing",
    "exercices": []
   }
