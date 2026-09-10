@@ -419,8 +419,18 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 - **Les séances enregistrées se déplient et se suppriment**, demandes de
   l'utilisateur le 9 septembre 2026 (`rendreHistorique()` dans `js/app.js`).
   - **Le détail reprend la matière du résumé de fin de séance**, plus la
-    remarque et la blessure : c'est le seul endroit d'où les relire depuis le
-    téléphone une fois la séance enregistrée.
+    blessure : c'est le seul endroit d'où la relire depuis le téléphone une
+    fois la séance enregistrée. **La remarque, elle, n'y figure pas**
+    (décision de l'utilisateur le 10 septembre 2026) : elle s'adresse au
+    développeur et n'a plus d'intérêt une fois partie au classeur, là où une
+    douleur se relit d'une séance à l'autre. Elle reste écrite dans l'onglet
+    `Remarques`, mais devient de ce fait **illisible depuis le téléphone**.
+  - **C'est la page d'atterrissage après l'envoi** depuis le même jour :
+    `enregistrerEtSynchroniser()` ouvre la fiche de la séance qu'on vient de
+    finir (`afficherSeanceEnregistree()`) au lieu de renvoyer à l'accueil.
+    Sa pastille dit si elle a atteint le classeur. **Seule l'erreur d'envoi
+    reste sur l'écran de fin** : son message nomme la cause, ce que la
+    pastille « en attente » ne dirait pas.
   - **Un `<details>` natif plutôt qu'une bascule maison** : l'ouverture et la
     fermeture ne demandent alors aucun état à tenir côté script.
   - **La suppression demande confirmation**, contrairement à la croix des

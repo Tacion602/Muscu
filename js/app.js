@@ -1567,7 +1567,19 @@ function nomsDesExercices() {
   return noms.concat(GAINAGE_FOOTING.map((exo) => exo.nom));
 }
 
+/* Une fois la séance envoyée, on atterrit sur sa fiche dans « Séances
+   enregistrées » plutôt que sur l'accueil (demande de l'utilisateur le
+   10 septembre 2026) : c'est exactement la page qu'on rouvrira plus tard pour
+   relire cette séance, et sa pastille dit si elle a atteint le classeur.
+   Seule l'erreur d'envoi reste sur l'écran de fin : son message nomme la
+   cause, que la pastille « en attente » ne dirait pas. */
+function afficherSeanceEnregistree(id) {
+  rendreHistorique(id);
+  afficher('historique');
+}
+
 function enregistrerEtSynchroniser() {
+  const idEnregistre = seance.id;
   seance.fin = new Date().toISOString();
   const historique = lireTableau(CLES.historique).filter((s) => s.id !== seance.id);
   historique.push(seance);
@@ -1585,7 +1597,7 @@ function enregistrerEtSynchroniser() {
       "n'est pas configuré : rendez-vous dans les réglages.";
     seance = null;
     rendreAccueil();
-    setTimeout(() => afficher('accueil'), 2200);
+    setTimeout(() => afficherSeanceEnregistree(idEnregistre), 2200);
     return;
   }
 
@@ -1598,7 +1610,7 @@ function enregistrerEtSynchroniser() {
       : 'Séance gardée sur le téléphone, envoi à réessayer.';
     seance = null;
     rendreAccueil();
-    setTimeout(() => afficher('accueil'), 1600);
+    setTimeout(() => afficherSeanceEnregistree(idEnregistre), 1600);
   }).catch((erreur) => {
     message.className = 'message erreur';
     message.textContent = "Envoi impossible : " + erreur.message +
@@ -1673,7 +1685,7 @@ function sauverReglages() {
   ecrire(CLES.reglages, reglages);
 }
 
-function rendreHistorique() {
+function rendreHistorique(idOuvert) {
   const cible = $('liste-historique');
   const seances = lireTableau(CLES.historique)
     .filter((s) => s.fin)
@@ -1689,7 +1701,7 @@ function rendreHistorique() {
   // Un <details> plutôt qu'une bascule maison : l'ouverture et la fermeture
   // ne demandent alors aucun état à tenir côté script.
   cible.innerHTML = seances.map((s) =>
-    '<details class="entree-historique">' +
+    '<details class="entree-historique"' + (s.id === idOuvert ? ' open' : '') + '>' +
       '<summary>' +
         '<div class="titre"><span>' + echapper(s.jour) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
         '<span class="badge ' + (s.envoye ? 'envoye">classeur' : 'attente">en attente') + '</span></div>' +
@@ -1724,7 +1736,7 @@ function resumeCourtSeance(s) {
   const tonnage = (s.exercices || []).reduce((somme, e) => somme + tonnageDesSeries(e.series), 0);
   const series = (s.exercices || []).reduce(
     (somme, e) => somme + (e.series || []).filter((x) => x.faite && !x.echauffement).length, 0);
-  return series + ' séries, ' + tonnage + ' kg';
+  return series + (series > 1 ? ' séries, ' : ' série, ') + tonnage + ' kg';
 }
 
 /* Le détail déplié : la même matière que le résumé de fin de séance, plus la
@@ -1772,8 +1784,11 @@ function detailSeance(s) {
   }
 
   if (s.duree_min) html += ligneDetail('Durée', s.duree_min + ' min');
-  if (s.remarque && s.remarque.trim()) html += ligneDetail('Remarque', s.remarque.trim());
 
+  // La remarque n'est volontairement pas reprise ici (demande de
+  // l'utilisateur le 10 septembre 2026) : elle s'adresse au développeur et
+  // n'a plus d'intérêt une fois partie au classeur, là où une douleur se
+  // relit d'une séance à l'autre. Elle reste écrite dans l'onglet Remarques.
   const blessure = s.blessure || {};
   if (blessure.texte && blessure.texte.trim()) {
     html += ligneDetail('Blessure',
