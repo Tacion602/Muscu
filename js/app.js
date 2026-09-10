@@ -981,7 +981,17 @@ function rendreExercice() {
   $('bouton-suivant').disabled = indexExo === seance.exercices.length - 1;
 }
 
+/* La consigne s'enregistre à la frappe depuis le 10 septembre 2026, comme le
+   reste de la séance. Elle n'était auparavant écrite que sur appui du bouton
+   « Enregistrer », et `rendreExercice()` refermait l'éditeur en jetant son
+   contenu : changer d'exercice en cours de saisie perdait le texte **sans
+   rien dire**. Le passage automatique à l'exercice suivant après la
+   dernière série (27 août 2026) rendait ce cas courant, et l'utilisateur y a
+   perdu toutes ses notes de J4. */
+let consigneAvantEdition = null;
+
 function quitterEditionConsigne() {
+  consigneAvantEdition = null;
   $('exo-consigne').hidden = false;
   $('exo-consigne-champ').hidden = true;
   $('bouton-consigne-modifier').hidden = false;
@@ -992,6 +1002,9 @@ function quitterEditionConsigne() {
 function modifierConsigne() {
   const champ = $('exo-consigne-champ');
   champ.value = $('exo-consigne').classList.contains('vide-consigne') ? '' : $('exo-consigne').textContent;
+  // Retenu pour le bouton Annuler, seul à pouvoir défaire ce que la frappe a
+  // déjà enregistré.
+  consigneAvantEdition = champ.value;
   champ.hidden = false;
   $('exo-consigne').hidden = true;
   $('bouton-consigne-modifier').hidden = true;
@@ -1000,12 +1013,25 @@ function modifierConsigne() {
   champ.focus();
 }
 
-function enregistrerEditionConsigne() {
-  const texte = $('exo-consigne-champ').value.trim();
+function ecrireConsigneCourante(texte) {
   const courant = seance.exercices[indexExo];
   enregistrerConsigne(seance.jour, courant.nom, texte);
   $('exo-consigne').textContent = texte || 'Aucune consigne pour cet exercice.';
   $('exo-consigne').classList.toggle('vide-consigne', !texte);
+}
+
+function saisirConsigne() {
+  if (!seance || estFooting()) return;
+  ecrireConsigneCourante($('exo-consigne-champ').value.trim());
+}
+
+function enregistrerEditionConsigne() {
+  ecrireConsigneCourante($('exo-consigne-champ').value.trim());
+  quitterEditionConsigne();
+}
+
+function annulerEditionConsigne() {
+  if (consigneAvantEdition !== null) ecrireConsigneCourante(consigneAvantEdition.trim());
   quitterEditionConsigne();
 }
 
@@ -1920,7 +1946,8 @@ function brancher() {
   $('bouton-terminer').addEventListener('click', terminer);
   $('chrono-seance-demarrer').addEventListener('click', basculerChronoSeance);
   $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
-  $('bouton-consigne-annuler').addEventListener('click', quitterEditionConsigne);
+  $('bouton-consigne-annuler').addEventListener('click', annulerEditionConsigne);
+  $('exo-consigne-champ').addEventListener('input', saisirConsigne);
   $('bouton-consigne-enregistrer').addEventListener('click', enregistrerEditionConsigne);
   // Amorcer le clavier avant même de changer d'exercice : le geste (l'appui
   // sur ← / →) est encore "chaud" à cet instant précis, il ne l'est déjà
@@ -1930,22 +1957,35 @@ function brancher() {
   // 2026) : elle appartient à la série qu'on vient de finir, pas à la fiche
   // qu'on regarde, et c'est justement le principe du passage automatique à
   // l'exercice suivant.
-  $('bouton-precedent').addEventListener('click', () => {
-    if (indexExo > 0) {
-      amorcerClavier();
-      indexExo--;
-      rendreExercice();
-      focaliserProchaineSerie();
-    }
+  //
+  // **Le pas se compte depuis l'exercice regardé au moment où le doigt se
+  // pose**, pas depuis `indexExo` au moment du clic. Défaut signalé par
+  // l'utilisateur le 10 septembre 2026 et reproduit : un champ de saisie
+  // perd le focus *avant* que le clic n'arrive, ce qui déclenche son
+  // `change` ; si c'était la dernière série non confirmée, sa validation
+  // faisait déjà passer à l'exercice suivant, puis le clic en ajoutait un
+  // second. Un seul appui sur → sautait donc deux exercices, et un appui
+  // sur ← ne faisait rien de visible, les deux mouvements s'annulant.
+  // `pointerdown` précède le `blur`, il donne donc le bon point de départ.
+  let indexAuToucher = null;
+  const departNavigation = () => (indexAuToucher != null ? indexAuToucher : indexExo);
+  ['bouton-precedent', 'bouton-suivant'].forEach((identifiant) => {
+    // Le clavier physique active un bouton sans `pointerdown` : on retombe
+    // alors sur `indexExo`, ce qui reste juste, aucun blur ne s'étant produit.
+    $(identifiant).addEventListener('pointerdown', () => { indexAuToucher = indexExo; });
   });
-  $('bouton-suivant').addEventListener('click', () => {
-    if (indexExo < seance.exercices.length - 1) {
-      amorcerClavier();
-      indexExo++;
-      rendreExercice();
-      focaliserProchaineSerie();
-    }
-  });
+
+  const allerVersExercice = (cible) => {
+    indexAuToucher = null;
+    if (cible < 0 || cible > seance.exercices.length - 1) return;
+    amorcerClavier();
+    indexExo = cible;
+    rendreExercice();
+    focaliserProchaineSerie();
+  };
+
+  $('bouton-precedent').addEventListener('click', () => allerVersExercice(departNavigation() - 1));
+  $('bouton-suivant').addEventListener('click', () => allerVersExercice(departNavigation() + 1));
 
   $('bouton-serie').addEventListener('click', () => {
     const courant = seance.exercices[indexExo];

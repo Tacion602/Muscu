@@ -145,6 +145,23 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     exercice**, le basculement automatique vers l'exercice suivant emporte
     même la ligne : le RIR doit y être saisi **avant** de confirmer les
     répétitions.
+- **La consigne s'enregistre à la frappe** depuis le 10 septembre 2026, comme
+  le reste de la séance. Elle n'était auparavant écrite que sur appui du bouton
+  « Enregistrer », et `rendreExercice()` refermait l'éditeur en jetant son
+  contenu : **changer d'exercice en cours de saisie perdait le texte sans rien
+  dire**, et le passage automatique à l'exercice suivant rendait ce cas
+  courant. L'utilisateur y a perdu toutes ses notes de J4. Le bouton
+  « Annuler » réécrit la valeur retenue à l'ouverture de l'éditeur, seul moyen
+  de défaire ce que la frappe a déjà enregistré.
+- **Les flèches d'exercice comptent leur pas depuis l'exercice regardé au
+  moment où le doigt se pose**, pas depuis `indexExo` au moment du clic.
+  Défaut signalé par l'utilisateur le 10 septembre 2026 et reproduit : un
+  champ de saisie perd le focus **avant** que le clic n'arrive, ce qui
+  déclenche son `change` ; si c'était la dernière série non confirmée, sa
+  validation faisait déjà passer à l'exercice suivant, puis le clic en
+  ajoutait un second. Un appui sur → sautait donc **deux** exercices, et un
+  appui sur ← ne faisait rien de visible, les deux mouvements s'annulant.
+  `pointerdown` précède le `blur` : c'est lui qui donne le point de départ.
 - **La dernière série d'un exercice fait passer au suivant immédiatement**,
   sans attendre la fin de la récupération (décision de l'utilisateur le
   27 août 2026, dans `validerSerie()`). La minuterie continue de tourner
