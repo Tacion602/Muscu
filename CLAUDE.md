@@ -425,6 +425,19 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     développeur et n'a plus d'intérêt une fois partie au classeur, là où une
     douleur se relit d'une séance à l'autre. Elle reste écrite dans l'onglet
     `Remarques`, mais devient de ce fait **illisible depuis le téléphone**.
+  - **Chaque exercice y porte sa courbe de tonnage** (`progressionTonnage()`
+    et `courbeTonnage()`), demandée par l'utilisateur le 10 septembre 2026 sur
+    cette page précisément. Dessinée en SVG à la main : quelques points et une
+    ligne ne justifient pas une bibliothèque, et l'application doit rester
+    utilisable hors ligne sans rien télécharger. Deux partis pris :
+    - **seules les séances du téléphone comptent**, pas l'historique repris du
+      classeur : celui-ci est une reprise ponctuelle et non un journal, et ses
+      valeurs ont déjà été désalignées de leurs exercices par une manipulation
+      de la grille ;
+    - **la courbe s'arrête à la séance affichée** : rouvrir une séance
+      ancienne montre la progression telle qu'elle était ce jour-là, pas des
+      points postérieurs qui n'existaient pas encore. En dessous de deux
+      points, rien n'est dessiné.
   - **C'est la page d'atterrissage après l'envoi** depuis le même jour :
     `enregistrerEtSynchroniser()` ouvre la fiche de la séance qu'on vient de
     finir (`afficherSeanceEnregistree()`) au lieu de renvoyer à l'accueil.
@@ -438,6 +451,13 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     téléphone. Le message distingue les deux cas, **une séance déjà envoyée
     restant dans le classeur** : l'application n'y écrit que par ajout et ne
     reprend jamais ce qu'elle y a mis.
+- **Les exercices oubliés sont signalés sur l'écran de fin, jamais
+  bloquants** (`#fin-alerte`, rempli par `preparerEcranFin()`), demande de
+  l'utilisateur le 10 septembre 2026 : la liste des exercices restés sans
+  aucune série validée s'affiche au-dessus du bouton, mais **l'envoi reste
+  possible**. Une séance écourtée est une séance, et l'oubli se voit mieux là
+  qu'une fois le classeur rempli. Les jours de course n'ont pas d'exercices
+  numérotés : le résumé y dit déjà « Aucune sortie renseignée ».
 - **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
   `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
   onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain

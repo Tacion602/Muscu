@@ -731,6 +731,42 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
   border-top: 1px solid var(--trait);
 }
 .detail-historique .resume-exo { margin-bottom: 8px; }
+
+/* Courbe de progression du tonnage, un exercice par courbe. Le SVG garde ses
+   proportions, seule la largeur est réglée ici. */
+.courbe { display: block; width: 100%; height: auto; margin-top: 8px; }
+.courbe path {
+  fill: none;
+  stroke: var(--accent-clair);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.courbe circle { fill: var(--accent-clair); }
+.courbe-legende {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Exercices oubliés : un avertissement, jamais un blocage. L'envoi reste
+   possible, une séance écourtée restant une séance. */
+.alerte-incomplete {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--baisse);
+  border-radius: var(--rayon-petit);
+  background: rgba(240, 136, 62, .12);
+  color: var(--baisse);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.alerte-incomplete[hidden] { display: none; }
 .supprimer-seance { margin-top: 6px; }
 .supprimer-seance:active { color: var(--danger); }
 .badge { font-size: 11px; padding: 2px 7px; border-radius: var(--rayon-plein); flex: none; }

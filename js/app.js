@@ -1547,6 +1547,20 @@ function preparerEcranFin() {
   $('bouton-enregistrer').disabled = false;
   $('fin-remarque').value = seance.remarque || '';
 
+  // Exercices restes sans aucune serie validee : signales, jamais bloquants
+  // (demande de l'utilisateur le 10 septembre 2026). Les jours de course
+  // n'ont pas d'exercices numerotes, le resume y dit deja "Aucune sortie
+  // renseignee" quand rien n'a ete saisi.
+  const alerte = $('fin-alerte');
+  const oublies = estFooting()
+    ? []
+    : (seance.exercices || []).filter((e) => !(e.series || []).some((x) => x.faite));
+  alerte.hidden = !oublies.length;
+  alerte.textContent = oublies.length === 1
+    ? 'Un exercice n’a aucune série validée : ' + oublies[0].nom + '.'
+    : oublies.length + ' exercices n’ont aucune série validée : ' +
+      oublies.map((e) => e.nom).join(', ') + '.';
+
   const blessure = seance.blessure || {};
   $('fin-blessure-serie').value = blessure.serie || '';
   $('fin-blessure-texte').value = blessure.texte || '';
@@ -1779,7 +1793,8 @@ function detailSeance(s) {
       html += ligneDetail(e.nom, faites.map((x) =>
         (x.echauffement ? 'éch ' : '') +
         (x.charge != null ? x.charge : '?') + '×' + (x.reps != null ? x.reps : '?') +
-        (x.rir != null ? ' @' + x.rir : '')).join('  ·  '));
+        (x.rir != null ? ' @' + x.rir : '')).join('  ·  '),
+        progressionTonnage(s, e.nom));
     });
   }
 
@@ -1798,11 +1813,74 @@ function detailSeance(s) {
   return html + '</div>';
 }
 
-function ligneDetail(nom, valeur) {
+function ligneDetail(nom, valeur, suite) {
   return '<div class="resume-exo">' +
     '<div class="resume-exo-nom">' + echapper(nom) + '</div>' +
     '<div class="resume-exo-series">' + echapper(valeur) + '</div>' +
+    (suite || '') +
     '</div>';
+}
+
+/* Tonnage de cet exercice au fil des séances, la plus ancienne à gauche,
+   demandé par l'utilisateur le 10 septembre 2026 sur cette page-ci.
+
+   Deux partis pris :
+   - **seules les séances du téléphone comptent**, pas l'historique repris du
+     classeur : celui-ci est une reprise ponctuelle et non un journal, et ses
+     valeurs ont déjà été désalignées de leurs exercices par une manipulation
+     de la grille (voir CLAUDE.md, section « Le classeur ») ;
+   - **on s'arrête à la séance affichée** : rouvrir une séance ancienne doit
+     montrer la progression telle qu'elle était ce jour-là, pas des points
+     postérieurs qui n'existaient pas encore. */
+function progressionTonnage(seanceAffichee, nomExo) {
+  const fin = new Date(seanceAffichee.fin).getTime();
+  const points = lireTableau(CLES.historique)
+    .filter((s) => s.jour === seanceAffichee.jour && s.fin && new Date(s.fin).getTime() <= fin)
+    .sort((a, b) => new Date(a.fin) - new Date(b.fin))
+    .map((s) => {
+      const exo = (s.exercices || []).find((e) => e.nom === nomExo);
+      return exo ? tonnageDesSeries(exo.series) : 0;
+    })
+    .filter((tonnage) => tonnage > 0);
+
+  if (points.length < 2) return '';
+
+  const dernier = points[points.length - 1];
+  const ecart = dernier - points[points.length - 2];
+  const sens = ecart > 0 ? ' hausse' : (ecart < 0 ? ' baisse' : '');
+  return courbeTonnage(points) +
+    '<div class="courbe-legende">' + dernier + ' kg' +
+      '<span class="compare' + sens + '">' +
+        (ecart > 0 ? '+' : '') + ecart + ' depuis la précédente' +
+      '</span>' +
+    '</div>';
+}
+
+/* Dessinée en SVG à la main plutôt qu'avec une bibliothèque : quelques points
+   et une ligne n'en justifient pas une, et l'application doit rester
+   utilisable hors ligne sans rien télécharger. Le viewBox garde ses
+   proportions, la feuille de style ne règle que la largeur. */
+function courbeTonnage(points) {
+  const largeur = 300;
+  const hauteur = 56;
+  const marge = 6;
+  const bas = Math.min(...points);
+  const haut = Math.max(...points);
+  const amplitude = haut - bas || 1;
+  const x = (i) => marge + (i * (largeur - 2 * marge)) / (points.length - 1);
+  const y = (v) => hauteur - marge - ((v - bas) / amplitude) * (hauteur - 2 * marge);
+
+  const chemin = points
+    .map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1))
+    .join(' ');
+  const cercles = points
+    .map((v, i) => '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) +
+      '" r="' + (i === points.length - 1 ? 4 : 2.5) + '"/>')
+    .join('');
+
+  return '<svg class="courbe" viewBox="0 0 ' + largeur + ' ' + hauteur + '" ' +
+    'role="img" aria-label="Progression du tonnage sur ' + points.length + ' séances">' +
+    '<path d="' + chemin + '"/>' + cercles + '</svg>';
 }
 
 /* Suppression d'une séance enregistrée, demandée par l'utilisateur le
