@@ -205,19 +205,33 @@ def exercices_du_jour(lignes):
     return blocs
 
 
+def codes_du_titre(titre):
+    """Un meme bloc peut servir plusieurs jours.
+
+    L'utilisateur a renomme le bloc de course "J2 & J6 FOOTING" le
+    10 septembre 2026 : les deux jours sont le meme entrainement, et tenir
+    deux blocs identiques n'aurait servi qu'a les desynchroniser. On lit donc
+    tous les codes du titre, et non le seul premier, pour produire un jour par
+    code a partir du meme bloc.
+    """
+    return re.findall(r"\bJ\d\b", titre)
+
+
 def convertir(grille):
     jours = []
     for jour in decouper_en_jours(grille):
         entete = grille[jour["entete"]]
         blocs = exercices_du_jour(jour["lignes"])
+        codes = codes_du_titre(jour["titre"]) or [jour["code"]]
         if not blocs:
             # J2 et J6 sont des footings : ni exercice numerote ni charge.
-            jours.append({
-                "code": jour["code"],
-                "titre": jour["titre"],
-                "type": "footing",
-                "exercices": [],
-            })
+            for code in codes:
+                jours.append({
+                    "code": code,
+                    "titre": jour["titre"],
+                    "type": "footing",
+                    "exercices": [],
+                })
             continue
 
         dates = dates_des_seances(entete)
@@ -246,13 +260,19 @@ def convertir(grille):
             exercice["historique"] = historique
             exercices.append(exercice)
 
-        jours.append({
-            "code": jour["code"],
-            "titre": jour["titre"],
-            "type": "muscu",
-            "dates": dates,
-            "exercices": exercices,
-        })
+        for code in codes:
+            jours.append({
+                "code": code,
+                "titre": jour["titre"],
+                "type": "muscu",
+                "dates": dates,
+                "exercices": exercices,
+            })
+
+    # Un bloc a deux codes place son second jour a sa propre position (J6
+    # juste apres J2, au milieu de la semaine) : on remet les jours dans
+    # l'ordre des codes, qui est celui des cartes de l'accueil.
+    jours.sort(key=lambda j: int(j["code"][1:]))
     return jours
 
 

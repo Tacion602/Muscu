@@ -56,6 +56,16 @@ un onglet vide) et ont été supprimés par l'utilisateur le 26 août 2026 : **n
 jamais s'y fier s'ils réapparaissent**, seul l'onglet du programme courant
 compte.
 
+**Un bloc peut servir plusieurs jours.** L'utilisateur a renommé le bloc de
+course « J2 & J6 FOOTING » le 10 septembre 2026 et supprimé le bloc J6, les
+deux jours étant le même entraînement : tenir deux blocs identiques n'aurait
+servi qu'à les désynchroniser. `codes_du_titre()` lit donc **tous** les codes
+du titre, et non le seul premier, et produit un jour par code à partir du
+même bloc ; les jours sont ensuite remis dans l'ordre de leurs codes, un
+second jour se plaçant sinon à la position de son bloc. Seule la
+**définition** est partagée : J2 et J6 restent deux séances indépendantes,
+avec leurs propres chiffres.
+
 **C'est le seul onglet en entrée. Tous les autres sont des sorties**, écrites
 par le pont et jamais relues pour alimenter l'application : les grilles de
 jour `J1`, `J3`, `J4`, `J5`, la page `Course`, les pages plates
