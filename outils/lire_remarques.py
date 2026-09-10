@@ -1,27 +1,33 @@
-"""Affiche les remarques de fin de seance laissees par l'utilisateur.
+"""Affiche les remarques et les blessures laissees par l'utilisateur.
 
-L'onglet Remarques n'existe dans le classeur qu'a partir du premier envoi
-d'une seance qui en porte une (voir ecrireRemarque() dans appsscript/Code.gs) :
-son gid n'est donc pas connu a l'avance, contrairement a celui du programme.
-Il faut le lire une fois dans l'URL du classeur (parametre "gid=" une fois
-l'onglet Remarques ouvert) et le passer ici.
+Les deux onglets sont ecrits par le pont (voir ecrireRemarque() et
+ecrireBlessure() dans appsscript/Code.gs) et n'existent qu'a partir du premier
+envoi qui en porte une.
+
+L'interrogation se fait **par nom d'onglet**, via l'API de visualisation de
+Google Sheets, et non par gid : le gid d'un onglet cree automatiquement n'est
+connu qu'une fois l'onglet ouvert a la main, ce qui obligeait a le demander a
+l'utilisateur. Le nom, lui, est fixe par le code qui cree l'onglet.
 
 Usage :
-    python outils/lire_remarques.py --gid 123456789
+    python outils/lire_remarques.py                 # les deux onglets
+    python outils/lire_remarques.py Blessures       # un seul
 """
 
-import argparse
 import csv
 import io
+import sys
+import urllib.parse
 import urllib.request
 
 CLASSEUR_ID = "1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE"
+ONGLETS = ["Remarques", "Blessures"]
 
 
-def telecharger(gid):
+def telecharger(onglet):
     url = (
         "https://docs.google.com/spreadsheets/d/" + CLASSEUR_ID +
-        "/export?format=csv&gid=" + str(gid)
+        "/gviz/tq?tqx=out:csv&sheet=" + urllib.parse.quote(onglet)
     )
     requete = urllib.request.Request(url, headers={"User-Agent": "suivi-muscu/1.0"})
     with urllib.request.urlopen(requete, timeout=30) as reponse:
@@ -30,20 +36,34 @@ def telecharger(gid):
         return reponse.read().decode("utf-8")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--gid", required=True, type=int, help="gid de l'onglet Remarques")
-    args = parser.parse_args()
+def afficher(onglet):
+    print("=" * 60)
+    print(onglet)
+    print("=" * 60)
 
-    lignes = list(csv.reader(io.StringIO(telecharger(args.gid))))
-    if not lignes:
-        print("Onglet vide.")
+    try:
+        lignes = list(csv.reader(io.StringIO(telecharger(onglet))))
+    except Exception as erreur:
+        # Un onglet absent est un cas normal tant qu'aucune seance n'en a
+        # produit : le dire plutot que de sortir en erreur.
+        print("Onglet introuvable ou illisible : " + str(erreur))
         return
 
-    for date, jour, remarque in lignes[1:]:
-        if not remarque.strip():
-            continue
-        print(date + " (" + jour + ") : " + remarque)
+    corps = [l for l in lignes[1:] if any(c.strip() for c in l)]
+    if not corps:
+        print("Aucune entree.")
+        return
+
+    for ligne in corps:
+        entete = " | ".join(c for c in ligne[:-1] if c.strip())
+        print("\n--- " + entete)
+        print(ligne[-1].strip())
+
+
+def main():
+    for onglet in (sys.argv[1:] or ONGLETS):
+        afficher(onglet)
+        print()
 
 
 if __name__ == "__main__":

@@ -393,13 +393,13 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     porter une remarque.
   - **C'est le développeur (Claude) qui doit la lire**, à chaque session de
     travail sur l'application, pour en tenir compte dans ses propositions.
-    Aucun accès automatique n'existe : le gid de l'onglet `Remarques` n'est
-    connu qu'une fois l'onglet créé, contrairement à celui du programme.
-    `outils/lire_remarques.py --gid <celui de l'onglet>` l'affiche une fois
-    ce gid obtenu (visible dans l'URL du classeur, onglet Remarques ouvert).
-    **Tant que ce gid n'a pas été communiqué, demander à l'utilisateur s'il
-    y a des remarques en attente avant de modifier l'application**, plutôt
-    que de supposer qu'il n'y en a pas.
+    `python outils/lire_remarques.py` affiche les onglets `Remarques` et
+    `Blessures`, **sans rien demander à l'utilisateur**.
+  - **La lecture se fait par nom d'onglet, pas par gid**, via l'API de
+    visualisation (`/gviz/tq?tqx=out:csv&sheet=<nom>`). Le gid d'un onglet
+    créé automatiquement n'est connu qu'une fois l'onglet ouvert à la main,
+    ce qui obligeait à le réclamer ; le nom, lui, est fixé par le code qui
+    crée l'onglet. Éprouvé le 10 septembre 2026 sur les deux onglets.
 - **Blessure du jour**, ajoutée le 9 septembre 2026 sous la remarque, sur
   l'écran de fin : la série concernée et la description de ce qui a été
   ressenti, rangées dans un onglet `Blessures` à part (date, jour, série,
