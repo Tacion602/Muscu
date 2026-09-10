@@ -48,12 +48,25 @@ ligne ou au prochain essai manuel. Rien ne dépend du réseau pendant l'effort.
 
 <https://docs.google.com/spreadsheets/d/1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE>
 
-Un seul onglet fait autorité, celui du programme en cours (gid
-`1138168114`) : six jours, J1 Push, J2 footing, J3 Pull, J4 Bas du corps, J5
-Haut prioritaire, J6/J7 repos ou footing. Deux anciens onglets ont existé
-pendant la conception (un programme antérieur en superset, un onglet vide) et
-ont été supprimés par l'utilisateur le 26 août 2026 : **ne jamais s'y fier
-s'ils réapparaissent**, seul l'onglet du programme courant compte.
+Un seul onglet fait autorité, celui du programme en cours, **nommé
+« semaine 1 »** (gid `1138168114`) : six jours, J1 Push, J2 footing, J3 Pull,
+J4 Bas du corps, J5 Haut prioritaire, J6/J7 repos ou footing. Deux anciens
+onglets ont existé pendant la conception (un programme antérieur en superset,
+un onglet vide) et ont été supprimés par l'utilisateur le 26 août 2026 : **ne
+jamais s'y fier s'ils réapparaissent**, seul l'onglet du programme courant
+compte.
+
+**C'est le seul onglet en entrée. Tous les autres sont des sorties**, écrites
+par le pont et jamais relues pour alimenter l'application : les grilles de
+jour `J1`, `J3`, `J4`, `J5`, la page `Course`, les pages plates
+`Exercices (app)` et `Séances (app)`, et les pages `Remarques` et
+`Blessures`. Y modifier quoi que ce soit ne change rien dans l'application, et
+peut au contraire casser l'écriture suivante : les grilles de jour attendent
+un bloc d'exercice **toutes les 6 lignes à partir de la ligne 4**
+(`ligneBlocExercice`), et un déplacement de lignes y fait perdre cet
+alignement. Cas réel, le 9 septembre 2026 : l'utilisateur a réordonné des
+exercices dans l'onglet de sortie `J3` en croyant modifier le programme, sans
+effet côté application, et a dû restaurer une version du classeur.
 
 Chaque jour de musculation loge sept groupes de cinq colonnes
 (`Exo, Charge, Reps, RIR, Total`), un par séance à venir, le septième portant
