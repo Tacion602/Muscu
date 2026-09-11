@@ -116,6 +116,30 @@ def plausibilite(programme):
     return constats
 
 
+def structure(programme):
+    """Deux numeros identiques dans un jour, ou un exercice sans prescription.
+
+    Cas reel du 11 septembre 2026 : trois lignes de gainage ajoutees en J5,
+    numerotees 1, 2 et 3 alors que ces numeros etaient pris. L'ordre venant
+    des numeros, elles se seraient intercalees entre les premiers exercices,
+    avec trois series vides et un repos par defaut.
+    """
+    constats = []
+    for jour in programme.get("jours", []):
+        vus = {}
+        for exo in jour.get("exercices", []):
+            vus.setdefault(exo.get("numero"), []).append(exo["nom"])
+            if not exo.get("series"):
+                constats.append(("ALERTE", jour["code"] + " : " + exo["nom"]
+                                 + " n'a pas de prescription de series lisible."))
+        for numero, noms in sorted(vus.items(), key=lambda v: str(v[0])):
+            if len(noms) > 1:
+                constats.append(("ALERTE", jour["code"] + " : le numero " + str(numero)
+                                 + " est porte par " + str(len(noms)) + " exercices ("
+                                 + ", ".join(noms) + ")."))
+    return constats
+
+
 def temoin():
     """Un echange d'historique fabrique doit etre signale deux fois."""
     def exo(nom, charge):
@@ -153,6 +177,7 @@ def verifier():
               "seule la plausibilite est controlee.")
     else:
         constats += comparer(ancien, neuf)
+    constats += structure(neuf)
     constats += plausibilite(neuf)
 
     alertes = [t for niveau, t in constats if niveau == "ALERTE"]
