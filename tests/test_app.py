@@ -359,3 +359,49 @@ def test_quitter_une_seance_arrete_le_chronometre(page):
     page.click("#bouton-quitter")
     page.wait_for_timeout(2500)
     assert page.evaluate("tictacSeance") is None
+
+
+def test_une_tenue_tapee_a_la_main_lance_le_repos(page):
+    """Trouve le 12 septembre 2026 par une boucle de controle : le repos
+    partait apres des repetitions confirmees, pas apres une tenue tapee au
+    clavier. Or on tape une tenue chaque fois qu'on a chronometre au mur, ou
+    qu'on corrige apres coup."""
+    ouvrir_gainage(page)
+    carte_gainage(page, 0).locator(".type-course", has_text="Planche").click()
+    champ = carte_gainage(page, 0).locator(".gainage-serie input").first
+    champ.fill("30")
+    champ.press("Tab")
+    assert page.eval_on_selector("#gainage-chrono", "e => !e.hidden")
+    assert "Repos" in page.text_content("#gainage-chrono")
+    assert page.evaluate("seance.mouvements.planche[0]") == 30
+
+
+def test_les_titres_de_colonnes_sont_alignes_sur_les_champs(page):
+    """Trouve le 12 septembre 2026 : les titres et les lignes de series sont
+    deux grilles distinctes, et la colonne de la croix de suppression, laissee
+    en `auto`, se reduisait a zero dans la premiere. Les titres derivaient
+    vers la droite, jusqu'a 26 pixels mesures sur RIR."""
+    ouvrir_jour(page, "J1")
+    ecarts = page.evaluate("""() => {
+      const titres = document.querySelectorAll('.tableau-titres span');
+      const champs = document.querySelectorAll('.ligne-serie input');
+      const centre = (e) => { const r = e.getBoundingClientRect(); return r.left + r.width / 2; };
+      return [0, 1, 2].map(i => Math.abs(centre(titres[i]) - centre(champs[i])));
+    }""")
+    assert max(ecarts) <= 2, "titres decales de " + str(ecarts) + " pixels"
+
+
+def test_le_code_et_sa_documentation_restent_accordes():
+    """Controles statiques de outils/verifier_code.py, joues ici pour qu'un
+    seul `pytest tests/` couvre tout : identifiants du DOM, noms de code cites
+    par CLAUDE.md, invariants de la seance de gainage. Chacun porte son temoin,
+    et l'outil se declare inexecutable si le temoin n'est pas detecte."""
+    import sys
+    sys.path.insert(0, str(RACINE / "outils"))
+    import verifier_code
+
+    controles = verifier_code.verifier(avec_navigateur=False)
+    assert controles, "aucun controle n'a tourne"
+    for controle in controles:
+        assert controle.etat == "REUSSI", (
+            controle.nom + " : " + controle.etat + " ; " + " ; ".join(controle.alertes))

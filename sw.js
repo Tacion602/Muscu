@@ -1,6 +1,13 @@
-/* Sert l'application quand la salle n'a pas de réseau. Le principe : le
-   squelette (HTML/CSS/JS) vient toujours du cache, data/programme.json est
-   pris en réseau si possible pour rester à jour et retombe sur le cache sinon.
+/* Sert l'application quand la salle n'a pas de réseau. Le principe, **réseau
+   d'abord pour tout**, cache en secours : chaque réponse obtenue remplace sa
+   copie en cache, et le cache ne ressort qu'en cas d'échec du réseau. C'est
+   ce qui garantit qu'une mise en ligne est prise dès le premier lancement
+   couvert, au prix d'un démarrage plus lent sur un réseau faible (la requête
+   doit expirer avant que le cache ne prenne le relais).
+
+   Le commentaire disait l'inverse jusqu'au 12 septembre 2026 (« le squelette
+   vient toujours du cache ») : c'était le projet initial, pas le code.
+
    L'écriture de séance elle-même ne passe jamais par ici : localStorage suffit
    et évite tout risque de conflit avec le cache. */
 

@@ -186,7 +186,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     l'utilisateur le 11 septembre 2026, **vitesse saisie**, pas calculée.
   - **Trois modes** : `chrono` (minuteur de tenue de 45 s, interruptible, qui
     note le temps réellement tenu puis lance le repos), `reps`, `charge`
-    (poids, distance, vitesse). **Le dead bug est en répétitions** : le
+    (poids, distance, vitesse). **Le repos part à la confirmation d'une valeur
+    quel que soit le mode** (`serieSaisie()`), et pas seulement au bout du
+    minuteur : une tenue se tape à la main dès qu'on a chronométré au mur ou
+    qu'on corrige après coup. Le cas du bouton ▶ reste juste, le `blur` du
+    champ précédant le `click` : un repos démarre une fraction de seconde
+    avant que la tenue ne le remplace. **Le dead bug est en répétitions** : le
     récapitulatif le disait chrono dans un tableau et « 6-8 par côté » dans
     l'autre, tranché ainsi, le tempo 3-1-3 faisant de chaque répétition la
     mesure utile.
@@ -432,40 +437,42 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     `ecrireSeance()` itèrent sur les cycles**, pas sur les seuls types : un
     passage supplémentaire écrit une ligne de plus dans le bloc de son type
     (`Course`) et dans l'onglet `Seances`, jamais une case écrasée.
-- **Les jours de footing ont porté du gainage** du 6 au 11 septembre
-  2026, remplacé depuis par la séance de gainage (voir plus bas), seul le
-  farmer walk restant aux footings. À l'origine, demande de l'utilisateur : planche frontale et planche latérale,
-  4 séries de 30 à 45 s, sur le modèle du gainage de J4.
-  - **Il vit dans `js/app.js` (`GAINAGE_FOOTING`), pas dans le classeur**, et
-    c'est le seul exercice du programme dans ce cas. Les blocs J2 et J6 y sont
-    dessinés en colonnes TEMPS et DISTANCE, celles-là mêmes où l'importateur
-    lirait charge et reps d'une ligne numérotée : les deux lectures
-    entreraient en collision, et `convertir()` bascule de surcroît un jour en
-    `type: "muscu"` dès qu'il trouve un exercice numéroté, ce qui ferait
-    disparaître tout le bloc de course. Le loger dans le code évite de
-    redessiner le classeur pour deux exercices à prescription fixe, comme le
-    font déjà `TYPES_COURSE` et les échauffements.
-  - **Pallof press et rotation externe l'ont rejoint le 10 septembre 2026**,
-    retirés de J4 par l'utilisateur : peu fatigants, ils n'avaient rien à faire
-    dans la séance de jambes. La rotation externe est **le seul exercice de
-    cette liste compté en répétitions** : champ `unite: 'reps'` dans
-    `GAINAGE_FOOTING`, lu par `uniteGainage()` pour l'étiquette, le résumé de
-    fin et l'historique. Sans ce champ, un exercice se compte en secondes.
-  - **Il se saisit en secondes de tenue**, une case par série : une planche
-    n'a ni charge ni répétitions, et la grille à trois colonnes de la
-    musculation n'aurait rien voulu dire ici. Rien à valider non plus, donc
-    pas de minuterie de récupération.
-  - **Il est commun à la journée, pas au type de course** : `seance.gainage`
-    est une carte par exercice, indépendante de `seance.footing`, et changer
-    de type de course ne la touche pas. Le résumé de fin l'affiche même
-    quand aucune sortie n'a été renseignée, le gainage pouvant être fait
-    seul.
-  - **`tenuesGainage()` complète la carte à la lecture**, comme
-    `footingParType()` pour les sorties : une séance de footing commencée
-    avant le 6 septembre 2026 n'en a pas, et une reprise ne doit pas casser.
-  - **Il ne remonte pas encore au classeur** : le pont écrit une ligne par
-    type de course, sans colonne pour une tenue en secondes. À trancher avec
-    l'utilisateur avant de toucher à `appsscript/Code.gs`.
+- **Les jours de footing ont porté du gainage** du 6 au 11 septembre 2026 :
+  planches frontale et latérale d'abord, pallof press et rotation externe
+  ensuite, retirés de J4 parce que trop peu fatigants pour une séance de
+  jambes. Le tout se saisissait en secondes de tenue, une case par série.
+  **Remplacé le 11 septembre 2026** par la séance de gainage à part (voir
+  plus haut) : seul le farmer walk reste aux jours de course, et la rotation
+  externe est abandonnée.
+  - **Ce qui en subsiste dans le code est en lecture seule** :
+    `GAINAGE_FOOTING_ANCIEN` et `uniteGainage()`. Les séances de cette
+    semaine-là portent encore leurs valeurs dans `seance.gainage`, que le
+    résumé de fin et la fiche d'historique savent afficher. Ne plus rien y
+    écrire de neuf.
+  - **La raison de le loger dans le code plutôt que dans le classeur vaut
+    toujours**, et c'est elle qui a fait loger la séance de gainage au même
+    endroit : les blocs J2 et J6 de « semaine 1 » sont dessinés en colonnes
+    TEMPS et DISTANCE, celles-là mêmes où l'importateur lirait charge et reps
+    d'une ligne numérotée. Les deux lectures entreraient en collision, et
+    `convertir()` bascule de surcroît un jour en `type: "muscu"` dès qu'il
+    trouve un exercice numéroté, ce qui ferait disparaître tout le bloc de
+    course.
+  - **Ce gainage-là ne remontait pas au classeur**, faute de colonne pour une
+    tenue en secondes. Ce n'est plus vrai de ce qui lui succède :
+    `ecrireGainage()` écrit le farmer walk des jours de course dans la page
+    `Gainage`, à côté des séries de la séance de gainage.
+- **Le garde-fou anti-doublon du pont est sectionné**, une marque par page
+  écrite par ajout et non une seule pour la séance entière
+  (`cleEcriture()`, `dejaEcrite(id, section)`). Sans cela le trou du 27 août
+  2026 restait ouvert pour `Remarques`, `Blessures` et `Gainage` : ces trois
+  pages s'écrivent **avant** la grille, la partie fragile, et la marque unique
+  n'était posée qu'après elle. Une exception sur la mise en forme laissait
+  donc la séance « en attente » côté téléphone avec sa remarque, sa blessure
+  et ses douze lignes de gainage déjà ajoutées, que le renvoi ajoutait une
+  seconde fois. Trouvé par relecture le 12 septembre 2026, **jamais observé en
+  production** : le classeur n'en porte aucune trace. Les écrire en premier
+  reste juste, une séance sans série validée pouvant n'avoir qu'une blessure à
+  raconter ; c'est la marque qui devait suivre, pas l'ordre.
 - **Remarque libre de fin de séance**, ajoutée le 8 septembre 2026 : un
   champ `#fin-remarque` sur `ecran-fin`, commun aux deux types de séance,
   pour signaler une douleur, une gêne ou une idée d'amélioration à
@@ -519,9 +526,11 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     développeur et n'a plus d'intérêt une fois partie au classeur, là où une
     douleur se relit d'une séance à l'autre. Elle reste écrite dans l'onglet
     `Remarques`, mais devient de ce fait **illisible depuis le téléphone**.
-  - **Chaque exercice y porte sa courbe de tonnage** (`progressionTonnage()`
-    et `courbeTonnage()`), demandée par l'utilisateur le 10 septembre 2026 sur
-    cette page précisément. Dessinée en SVG à la main : quelques points et une
+  - **Chaque exercice y porte sa courbe de progression**
+    (`progressionPremiereSerie()` et `courbe()`), demandée par l'utilisateur
+    le 10 septembre 2026 sur cette page précisément. Elle trace l'indicateur
+    retenu, charge × répétitions de la première série de travail, et non le
+    tonnage (voir plus haut). Dessinée en SVG à la main : quelques points et une
     ligne ne justifient pas une bibliothèque, et l'application doit rester
     utilisable hors ligne sans rien télécharger. Deux partis pris :
     - **seules les séances du téléphone comptent**, pas l'historique repris du
@@ -694,8 +703,8 @@ vérifications à la main n'avaient pas vus.
   `data/programme.json`, avec de vrais clics et de vraies saisies. Un test par
   défaut réellement rencontré ou par décision arrêtée avec l'utilisateur.
   **Témoin structurel** : chaque test commence par vérifier que l'accueil
-  affiche les six jours, et échoue sur toute exception JavaScript non
-  rattrapée. Les tests ne supposent aucun nom d'exercice, ceux-ci venant du
+  affiche les sept cartes attendues, `J1` à `J6` plus `G`, et échoue sur
+  toute exception JavaScript non rattrapée. Les tests ne supposent aucun nom d'exercice, ceux-ci venant du
   classeur. Préalable, une fois : `python -m playwright install chromium`.
   - **Les saisies doivent être réelles** (`fill`, `press`, `click`), jamais des
     événements fabriqués. Dès son premier passage, le test de la dernière
@@ -713,6 +722,20 @@ vérifications à la main n'avaient pas vus.
   comparaison, sans quoi l'outil se déclare inexécutable. En simple info, un
   signal faible : une dernière séance au nombre de séries différent de la
   prescription, celui qui avait trahi l'échange de J1.
+- **`outils/verifier_code.py`**, né le 12 septembre 2026 d'une relecture
+  complète qui a trouvé, sans qu'aucun outil ne les signale : un passage de ce
+  fichier décrivant des fonctions supprimées la veille, un commentaire de
+  `sw.js` annonçant l'inverse de ce que fait le fichier, et des titres de
+  colonnes décalés de 26 pixels. Quatre contrôles, chacun avec son témoin :
+  identifiants du DOM demandés par `js/app.js` et absents d'`index.html` ;
+  noms de code cités par ce fichier et introuvables dans les sources, sauf
+  dérogation explicite (`NOMS_HISTORIQUES`, pour ceux que le texte présente
+  comme anciens) ; invariants de la séance de gainage (rangs d'interférence
+  distincts et complets, couleur, catégorie unique) ; syntaxe des trois
+  fichiers JavaScript, analysés par Chromium sans être exécutés, seul contrôle
+  que `appsscript/Code.gs` reçoive jamais, faute de tourner ailleurs que chez
+  Google. Les trois premiers sont rejoués par `pytest tests/`, le quatrième
+  demande le navigateur et ne part qu'à la main.
 - **`outils/sauvegarder_classeur.py`** : copie datée du classeur entier, tous
   onglets, en xlsx dans `sauvegardes/`, **exclu de git** : le dépôt est public,
   et le classeur contient Remarques et Blessures. L'historique des versions de
@@ -726,8 +749,10 @@ vérifications à la main n'avaient pas vus.
    secret choisi, dans les réglages de l'application. Rien ne part vers le
    classeur tant que ce n'est pas fait ; l'application reste utilisable en
    local sans cette étape.
-2. **Graphiques de progression** par exercice, une fois plusieurs semaines de
-   séances accumulées dans le classeur.
+2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
+   accumulées. Côté application, c'est fait depuis le 10 septembre 2026 : la
+   fiche d'une séance enregistrée porte la courbe de chaque exercice
+   (`progressionPremiereSerie()`).
 3. **Mensurations et poids de corps**, non retenus au démarrage.
 4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
    basculer vers un autre bloc d'entraînement demandera de relancer l'import

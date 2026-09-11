@@ -415,9 +415,15 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Tableau des séries ---------- */
 
+/* La quatrieme colonne est fixee a la largeur de la croix de suppression et
+   non laissee en `auto` : les titres et les lignes sont deux grilles
+   distinctes, et une colonne `auto` vide se reduit a zero dans la premiere
+   pendant qu'elle mesure 30 px dans les secondes. Les titres derivaient ainsi
+   vers la droite, jusqu'a 26 px de decalage mesures sur la colonne RIR le
+   12 septembre 2026. */
 .tableau-titres, .ligne-serie {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.8fr auto;
+  grid-template-columns: 1fr 1fr 0.8fr 30px;
   gap: 8px;
   align-items: center;
 }

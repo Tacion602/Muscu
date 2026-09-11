@@ -114,23 +114,42 @@ function ajouterLignes(onglet, lignes) {
  * cherchent le groupe de colonnes de la date et le bloc de l'exercice avant
  * d'ecrire, donc un second passage reecrit les memes cellules.
  */
-function dejaEcrite(id) {
+/* Le garde-fou est SECTIONNE depuis le 12 septembre 2026 : une seance y a
+ * une marque par page ecrite par ajout, pas une seule pour l'ensemble.
+ *
+ * Sans cela le trou du 27 aout etait rouvert pour Remarques, Blessures et
+ * Gainage : ces trois pages s'ecrivent AVANT la grille, la partie fragile, et
+ * la marque unique n'etait posee qu'apres elle. Une exception sur la mise en
+ * forme laissait donc la seance "en attente" cote telephone avec sa remarque,
+ * sa blessure et ses douze lignes de gainage deja ajoutees, que le renvoi
+ * ajoutait une seconde fois. Trouve par relecture, jamais observe en
+ * production : le classeur n'en porte aucune trace.
+ *
+ * Les ecrire en premier reste juste : une seance sans serie validee peut
+ * n'avoir qu'une blessure a raconter, et c'est meme souvent la raison de son
+ * arret. C'est la marque qui devait suivre, pas l'ordre. */
+function cleEcriture(id, section) {
+  return section ? id + '#' + section : id;
+}
+
+function dejaEcrite(id, section) {
   if (!id) return false;
   const memoire = PropertiesService.getScriptProperties();
   const brut = memoire.getProperty('seances_ecrites');
   const liste = brut ? JSON.parse(brut) : [];
-  return liste.indexOf(id) !== -1;
+  return liste.indexOf(cleEcriture(id, section)) !== -1;
 }
 
-function marquerEcrite(id) {
+function marquerEcrite(id, section) {
   if (!id) return;
   const memoire = PropertiesService.getScriptProperties();
   const brut = memoire.getProperty('seances_ecrites');
   const liste = brut ? JSON.parse(brut) : [];
-  liste.push(id);
-  // Les proprietes de script sont plafonnees : on ne garde que les dernieres,
-  // largement de quoi couvrir les renvois d'une seance restee en attente.
-  memoire.setProperty('seances_ecrites', JSON.stringify(liste.slice(-200)));
+  liste.push(cleEcriture(id, section));
+  // Les proprietes de script sont plafonnees : on ne garde que les dernieres.
+  // Portee de 200 a 400 avec les marques sectionnees, une seance pouvant en
+  // poser quatre : la profondeur utile en seances reste la meme.
+  memoire.setProperty('seances_ecrites', JSON.stringify(liste.slice(-400)));
 }
 
 /**
@@ -458,7 +477,9 @@ function feuilleRemarques(classeur) {
 function ecrireRemarque(classeur, seance, date) {
   const texte = (seance.remarque || '').trim();
   if (!texte) return;
+  if (dejaEcrite(seance.id, 'remarque')) return;
   feuilleRemarques(classeur).appendRow([formatDateCourte(date), seance.jour || '', texte]);
+  marquerEcrite(seance.id, 'remarque');
 }
 
 /**
@@ -488,9 +509,11 @@ function ecrireBlessure(classeur, seance, date) {
   const blessure = seance.blessure || {};
   const texte = (blessure.texte || '').trim();
   if (!texte) return;
+  if (dejaEcrite(seance.id, 'blessure')) return;
   feuilleBlessures(classeur).appendRow([
     formatDateCourte(date), seance.jour || '', (blessure.serie || '').trim(), texte,
   ]);
+  marquerEcrite(seance.id, 'blessure');
 }
 
 /**
@@ -513,12 +536,14 @@ function feuilleGainage(classeur) {
 function ecrireGainage(classeur, seance, date) {
   const lignes = seance.lignesGainage || [];
   if (!lignes.length) return;
+  if (dejaEcrite(seance.id, 'gainage')) return;
   const vide = function (v) { return v != null ? v : ''; };
   ajouterLignes(feuilleGainage(classeur), lignes.map(function (l) {
     return [formatDateCourte(date), semaineIso(date), seance.jour || '',
       l.categorie || '', l.mouvement || '', vide(l.serie), vide(l.valeur), l.unite || '',
       vide(l.poids), vide(l.distance), vide(l.vitesse)];
   }));
+  marquerEcrite(seance.id, 'gainage');
 }
 
 /**

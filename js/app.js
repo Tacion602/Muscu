@@ -1121,11 +1121,17 @@ function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
     bouton.textContent = '▶ ' + DUREE_TENUE_S;
     bouton.addEventListener('click', () => demarrerTenue(cle, index));
     cellule.appendChild(bouton);
-  } else {
-    input.addEventListener('change', () => {
-      if (valeursMouvement(cle, series)[index] != null) serieSaisie(cle, index);
-    });
   }
+
+  // Le repos part à la confirmation, **quel que soit le mode**. Une tenue
+  // tapée à la main ne le lançait pas jusqu'au 12 septembre 2026, là où des
+  // répétitions le faisaient : or on tape une tenue chaque fois qu'on a
+  // chronométré au mur, ou qu'on corrige après coup. Le cas du bouton ▶ reste
+  // juste : le `blur` du champ précède le `click`, un repos démarre donc une
+  // fraction de seconde avant que la tenue ne le remplace.
+  input.addEventListener('change', () => {
+    if (valeursMouvement(cle, series)[index] != null) serieSaisie(cle, index);
+  });
   return cellule;
 }
 
