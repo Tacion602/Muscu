@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-10T16:03:21+00:00",
+ "importe_le": "2026-09-11T17:48:08+00:00",
  "jours": [
   {
    "code": "J1",
@@ -130,7 +130,7 @@
       1,
       1
      ],
-     "consigne": "Poulie basse, buste legerement incline. Tension continue en bas d'amplitude.",
+     "consigne": "",
      "muscle": "Pectoraux",
      "repos_s": 90,
      "historique": [
@@ -168,10 +168,10 @@
     {
      "numero": 4,
      "nom": "Extension triceps overhead corde",
-     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
      "series": 3,
-     "reps_min": 12,
-     "reps_max": 15,
+     "reps_min": 10,
+     "reps_max": 12,
      "rir": [
       2,
       1,
@@ -617,7 +617,7 @@
       1,
       1
      ],
-     "consigne": "Par jambe. De profil, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",
+     "consigne": "Par jambe. De dos, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",
      "muscle": "Grand fessier",
      "repos_s": 90,
      "historique": []
@@ -733,19 +733,6 @@
      "muscle": "Abducteurs et moyen fessier",
      "repos_s": 60,
      "historique": []
-    },
-    {
-     "numero": 8,
-     "nom": "Gainage anti-extension et anti-rotation",
-     "prescription": "3-4 X 30-45sec",
-     "series": 4,
-     "reps_min": 30,
-     "reps_max": 45,
-     "rir": [],
-     "consigne": "Alterner planche et pallof press. Duree plutot que repetitions.",
-     "muscle": "Sangle abdominale",
-     "repos_s": 60,
-     "historique": []
     }
    ]
   },
@@ -837,11 +824,13 @@
     {
      "numero": 5,
      "nom": "FACE PULL",
-     "prescription": "3 X 15-20 RIR 1'00",
+     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
      "series": 3,
      "reps_min": 15,
      "reps_max": 20,
      "rir": [
+      2,
+      1,
       1
      ],
      "consigne": "Poulie hauteur visage, rotation externe en fin de mouvement.",

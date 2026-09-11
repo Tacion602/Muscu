@@ -179,6 +179,13 @@ def decouper_en_jours(grille):
         if trouve:
             courant = {"code": trouve.group(1), "titre": titre, "entete": index, "lignes": []}
             jours.append(courant)
+        elif re.match(r"^GAINAGE\b", titre, re.IGNORECASE):
+            # Le bloc GAINAGE, ajoute le 11 septembre 2026, n'est pas un jour :
+            # la seance de gainage est definie dans l'application (categories,
+            # mouvements au choix, modes de saisie), faute de pouvoir s'ecrire
+            # dans la grille. Sans cette coupure, ses lignes etaient rattachees
+            # au jour precedent, J5, avec des numeros deja pris.
+            courant = None
         elif courant is not None:
             courant["lignes"].append((index, ligne))
     return jours

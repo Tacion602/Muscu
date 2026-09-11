@@ -77,6 +77,14 @@ supprime **en lignes entières**, jamais en effaçant seulement son numéro :
 sans numéro, ses lignes seraient rattachées au bloc précédent et fausseraient
 sa lecture.
 
+**Le bloc « GAINAGE » de « semaine 1 » est ignoré par l'import**, ajouté
+par l'utilisateur le 11 septembre 2026. Son titre ne commençant pas par un
+code de jour, ses lignes étaient rattachées à J5 avec des numéros déjà pris.
+`decouper_en_jours()` y coupe le jour en cours. La séance de gainage est
+définie dans l'application (catégories, mouvements au choix, modes de
+saisie), ce que la grille ne sait pas représenter : ce bloc n'est qu'un aide-
+mémoire, le modifier ne change rien.
+
 **C'est le seul onglet en entrée. Tous les autres sont des sorties**, écrites
 par le pont et jamais relues pour alimenter l'application : les grilles de
 jour `J1`, `J3`, `J4`, `J5`, la page `Course`, les pages plates
