@@ -494,6 +494,34 @@ function ecrireBlessure(classeur, seance, date) {
 }
 
 /**
+ * Seance de gainage et farmer walk des jours de footing, depuis le
+ * 11 septembre 2026 : une ligne par serie renseignee, dans une page Gainage.
+ * Les lignes arrivent deja a plat de l'application (seance.lignesGainage),
+ * pour que le pont n'ait pas a connaitre les mouvements.
+ */
+function feuilleGainage(classeur) {
+  let feuille = classeur.getSheetByName('Gainage');
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet('Gainage');
+  const entetes = ['Date', 'Semaine', 'Jour', 'Categorie', 'Mouvement', 'Serie',
+    'Valeur', 'Unite', 'Poids (kg)', 'Distance (m)', 'Vitesse (km/h)'];
+  feuille.getRange(1, 1, 1, entetes.length).setValues([entetes]).setFontWeight('bold');
+  feuille.setFrozenRows(1);
+  return feuille;
+}
+
+function ecrireGainage(classeur, seance, date) {
+  const lignes = seance.lignesGainage || [];
+  if (!lignes.length) return;
+  const vide = function (v) { return v != null ? v : ''; };
+  ajouterLignes(feuilleGainage(classeur), lignes.map(function (l) {
+    return [formatDateCourte(date), semaineIso(date), seance.jour || '',
+      l.categorie || '', l.mouvement || '', vide(l.serie), vide(l.valeur), l.unite || '',
+      vide(l.poids), vide(l.distance), vide(l.vitesse)];
+  }));
+}
+
+/**
  * Ecrit une seance a la fois dans les pages pretes-a-graphiquer (Exercices,
  * Seances) et dans la page de lecture humaine de son jour (grille par
  * exercice, ou bloc de course par type).
@@ -515,6 +543,14 @@ function ecrireSeance(seance) {
   const jour = seance.jour || '';
   const dureeMin = seance.duree_min != null ? seance.duree_min : '';
 
+  if (seance.type === 'gainage') {
+    ecrireRemarque(classeur, seance, date);
+    ecrireBlessure(classeur, seance, date);
+    ecrireGainage(classeur, seance, date);
+    marquerEcrite(seance.id);
+    return;
+  }
+
   if (seance.type === 'footing') {
     const carte = footingParType(seance);
     const vide = function (v) { return v != null ? v : ''; };
@@ -524,6 +560,7 @@ function ecrireSeance(seance) {
     // course renseigne.
     ecrireRemarque(classeur, seance, date);
     ecrireBlessure(classeur, seance, date);
+    ecrireGainage(classeur, seance, date);
 
     // Une ligne par passage renseigne : un type peut en compter plusieurs
     // depuis le 8 septembre 2026 (l'Incline refait a une autre charge, par

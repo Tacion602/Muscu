@@ -57,64 +57,111 @@ const CHAMPS_FOOTING = [
   { cle: 'distance_km', libelle: 'Distance (km)' },
 ];
 
-/* Gainage des jours de footing, demandé par l'utilisateur le 6 septembre
-   2026. Il ne vient pas du classeur, contrairement aux exercices de
-   musculation : les blocs J2 et J6 y sont dessinés en colonnes TEMPS et
-   DISTANCE, où des lignes numérotées entreraient en collision avec ce que le
-   pont écrit déjà. Il vit donc ici, comme TYPES_COURSE et les échauffements,
-   et se saisit **en secondes de tenue**, une planche n'ayant ni charge ni
-   répétitions. Le modèle est le gainage de J4 : 4 séries de 30 à 45 s. */
-const GAINAGE_FOOTING = [
-  {
-    cle: 'planche_frontale',
-    nom: 'Planche frontale',
-    series: 4,
-    tenue_min: 30,
-    tenue_max: 45,
-    consigne: "Appuis sur les avant-bras et les pointes de pieds. Bassin en rétrovérsion, "
-      + "fessiers et abdominaux serrés, corps aligné des talons à la nuque. Pas de creux "
-      + "dans le bas du dos : couper la série dès qu'il apparaît.",
-  },
-  {
-    cle: 'planche_laterale',
-    nom: 'Planche latérale',
-    series: 4,
-    tenue_min: 30,
-    tenue_max: 45,
-    consigne: "Un côté puis l'autre, sans repos supplémentaire entre les deux. Coude "
-      + "à l'aplomb de l'épaule, hanches hautes, corps dans un seul plan. Le temps noté "
-      + "est celui d'un côté.",
-  },
-  // Les deux suivants viennent de J4, d'où l'utilisateur les a retirés le
-  // 10 septembre 2026 : peu fatigants, ils n'avaient rien à faire dans la
-  // séance de jambes. La rotation externe se compte en répétitions, d'où
-  // le champ `unite`, absent (donc en secondes) pour les autres.
-  {
-    cle: 'pallof_press',
-    nom: 'Pallof press',
-    series: 3,
-    tenue_min: 30,
-    tenue_max: 45,
-    consigne: "Poulie à hauteur de poitrine, de profil. Bras tendus devant la poitrine, "
-      + "résister à la rotation sans que le buste tourne. Un côté puis l'autre, le "
-      + "temps noté est celui d'un côté.",
-  },
-  {
-    cle: 'rotation_externe',
-    nom: 'Rotation externe poulie',
-    series: 2,
-    tenue_min: 15,
-    tenue_max: 20,
-    unite: 'reps',
-    consigne: "Charge très légère, poulie ou élastique. Coude collé au buste. "
-      + "Préventif, ne pas chercher l'échec.",
-  },
+/* Gainage des jours de footing, du 6 au 11 septembre 2026 : planches, pallof
+   press, rotation externe. Remplacé le 11 septembre 2026 par la séance de
+   gainage à part (voir CATEGORIES_GAINAGE), la rotation externe étant
+   abandonnée par l'utilisateur. Conservé pour relire les séances de footing
+   de cette période, qui portent encore ces valeurs dans `seance.gainage`. */
+const GAINAGE_FOOTING_ANCIEN = [
+  { cle: 'planche_frontale', nom: 'Planche frontale' },
+  { cle: 'planche_laterale', nom: 'Planche latérale' },
+  { cle: 'pallof_press', nom: 'Pallof press' },
+  { cle: 'rotation_externe', nom: 'Rotation externe poulie', unite: 'reps' },
 ];
 
-/* Le libellé d'unité d'un exercice de gainage, secondes par défaut. */
+/* Le libellé d'unité d'un exercice de l'ancien gainage, secondes par défaut. */
 function uniteGainage(exo) {
   return exo.unite === 'reps' ? 'reps' : 's';
 }
+
+/* Séance de gainage optionnelle, spécifiée le 11 septembre 2026 dans le
+   récapitulatif de programme de l'utilisateur : quatre catégories, un
+   mouvement au choix dans chacune, trois séries. Elle vit dans le code et non
+   dans le classeur, dont la grille ne sait représenter ni les mouvements au
+   choix ni les modes de saisie (voir CLAUDE.md, bloc « GAINAGE » ignoré).
+
+   `mode` décide de la saisie : `chrono` (secondes de tenue, minuteur de 45 s
+   interruptible), `reps`, ou `charge` (poids, distance, vitesse saisie, le
+   farmer walk seulement). `interference` est le rang de fatigue imposé aux
+   muscles de la course, 1 le plus faible, et `couleur` sa pastille. Le dead
+   bug est en répétitions : le récapitulatif le disait chrono dans un tableau
+   et « 6-8 par côté » dans l'autre, tranché ainsi le 11 septembre 2026, le
+   tempo 3-1-3 faisant de la qualité de chaque répétition la mesure utile. */
+const MOUVEMENTS_GAINAGE = {
+  dead_bug: {
+    nom: 'Dead bug', mode: 'reps', prescription: '6-8 par côté', repos: 45,
+    interference: 4, couleur: '#D9EF8B',
+    consigne: '3 s de descente bras et jambe opposés, 1 s en bas, 3 s de retour. '
+      + 'Bas du dos plaqué au sol en permanence.',
+  },
+  planche: {
+    nom: 'Planche', mode: 'chrono', prescription: '45 s', repos: 45,
+    interference: 3, couleur: '#91CF60',
+    consigne: 'Bassin en rétroversion légère, fessiers contractés.',
+  },
+  pallof_press: {
+    nom: 'Pallof press', mode: 'reps', prescription: '8-10 par côté', repos: 45,
+    interference: 1, couleur: '#1A9850',
+    consigne: 'Poulie à hauteur de poitrine, à 1 m, perpendiculaire. 2 s pour tendre, '
+      + '2 s de maintien, 2 s de retour. Départ 10 à 15 kg. Le buste ne pivote pas.',
+  },
+  bird_dog: {
+    nom: 'Bird dog', mode: 'chrono', prescription: '45 s', repos: 45,
+    interference: 5, couleur: '#FEE08B',
+    consigne: "2 s d'extension bras et jambe opposés, 2 s de maintien, 2 s de retour. "
+      + 'Hanches horizontales.',
+  },
+  marche_ours: {
+    nom: "Marche de l'ours", mode: 'chrono', prescription: '45 s', repos: 45,
+    interference: 8, couleur: '#D73027',
+    consigne: 'Genoux à quelques centimètres du sol, dos plat, bassin qui ne bascule '
+      + 'pas latéralement.',
+  },
+  planche_laterale: {
+    nom: 'Planche latérale', mode: 'chrono', prescription: '45 s par côté', repos: 45,
+    interference: 2, couleur: '#52B151',
+    consigne: "Ligne cheville-hanche-épaule, hanche empilée sur l'épaule et haute. "
+      + "Le temps noté est celui d'un côté.",
+  },
+  farmer_walk: {
+    nom: 'Farmer walk une main', mode: 'charge', prescription: '20-30 m par côté', repos: 60,
+    interference: 9, couleur: '#A50026',
+    consigne: "Départ 18 à 20 kg. Épaules horizontales, arrêt dès l'inclinaison, quelle "
+      + 'que soit la distance restante.',
+    info: 'Il ne fatigue pas la sangle comme les autres : il charge la chaîne portante '
+      + "complète sous contrainte axiale. Son rang n'est pas directement comparable "
+      + 'aux huit autres.',
+  },
+  crunch_inverse: {
+    nom: 'Crunch inversé', mode: 'reps', prescription: '10-12', repos: 45,
+    interference: 6, couleur: '#FDAE61',
+    consigne: '2 s de montée, 3 s de descente contrôlée. Le bassin décolle, pas '
+      + 'seulement les jambes. Aucun élan.',
+  },
+  releve_genoux: {
+    nom: 'Relevé de genoux suspendu', mode: 'reps', prescription: '8-12', repos: 60,
+    interference: 7, couleur: '#F46D43',
+    consigne: 'Rétroversion du bassin en fin de mouvement. Aucun balancement. Sangles '
+      + "si le grip lâche avant l'abdomen.",
+  },
+};
+
+const CATEGORIES_GAINAGE = [
+  { cle: 'anti_extension', nom: 'Anti-extension', series: 3,
+    mouvements: ['dead_bug', 'planche'] },
+  { cle: 'anti_rotation', nom: 'Anti-rotation', series: 3,
+    mouvements: ['pallof_press', 'bird_dog', 'marche_ours'] },
+  { cle: 'anti_lateroflexion', nom: 'Anti-latéroflexion', series: 3,
+    mouvements: ['planche_laterale', 'farmer_walk'] },
+  { cle: 'flexion_chargee', nom: 'Flexion chargée', series: 3,
+    mouvements: ['crunch_inverse', 'releve_genoux'] },
+];
+
+const DUREE_TENUE_S = 45;
+
+/* Ajoutée aux jours du programme au démarrage : elle ne vient pas du
+   classeur (voir MOUVEMENTS_GAINAGE). */
+const JOUR_GAINAGE = { code: 'G', titre: 'Gainage', type: 'gainage', exercices: [] };
 
 /* Quatre séances de course distinctes, décidées le 26 août 2026. Chacune a
    son échauffement, parce que l'exigence n'est pas la même : une endurance
@@ -402,7 +449,9 @@ function rendreAccueil() {
 
     const detail = jour.type === 'footing'
       ? 'Durée et distance'
-      : jour.exercices.length + ' exercices' +
+      : jour.type === 'gainage'
+        ? 'Optionnelle, 4 catégories'
+        : jour.exercices.length + ' exercices' +
         (reste.length ? ' &middot; ' + echapper(reste.join(' ')) : '');
 
     bouton.innerHTML =
@@ -508,6 +557,7 @@ function commencer(code) {
   const jour = jourDe(code);
   if (!jour) return;
 
+  arreterMinuteurGainage();
   const carte = lireSeancesEnCours();
   const reprise = carte[code] && !carte[code].fin;
   seance = reprise ? carte[code] : nouvelleSeance(jour);
@@ -519,6 +569,8 @@ function commencer(code) {
 
   if (jour.type === 'footing') {
     rendreFooting();
+  } else if (jour.type === 'gainage') {
+    rendreSeanceGainage();
   } else {
     // Ouvrir un jour de musculation démarre le chronomètre de séance : sans
     // ce geste dédié, il fallait y penser soi-même en plein échauffement.
@@ -546,15 +598,16 @@ function nouvelleSeance(jour) {
   };
   // Les quatre types de course sont des exercices distincts, chacun avec ses
   // propres chiffres : la carte reste vide et se remplit au fur et à mesure.
+  // Le farmer walk, seul exercice annexe des footings depuis le 11 septembre
+  // 2026, vit dans `mouvements` comme ceux de la séance de gainage.
   if (jour.type === 'footing') {
     neuve.footing = {};
-    // Une entrée par exercice de gainage, chacune un tableau de secondes de
-    // tenue, une case par série. Créées vides plutôt qu'à la demande : leur
-    // nombre est connu d'avance, contrairement aux types de course.
-    neuve.gainage = {};
-    GAINAGE_FOOTING.forEach((exo) => {
-      neuve.gainage[exo.cle] = new Array(exo.series).fill(null);
-    });
+    neuve.mouvements = {};
+  }
+  if (jour.type === 'gainage') {
+    neuve.choix = {};
+    CATEGORIES_GAINAGE.forEach((c) => { neuve.choix[c.cle] = mouvementParDefaut(c); });
+    neuve.mouvements = {};
   }
   return neuve;
 }
@@ -562,7 +615,7 @@ function nouvelleSeance(jour) {
 /* Reprend là où la saisie s'est arrêtée : premier exercice dont une série
    reste à faire, le dernier si tout est déjà rempli. */
 function positionDeReprise() {
-  if (estFooting()) return 0;
+  if (estFooting() || estGainage()) return 0;
   const index = seance.exercices.findIndex((e) => e.series.some((s) => !s.faite));
   return index < 0 ? seance.exercices.length - 1 : index;
 }
@@ -597,20 +650,8 @@ function estFooting() {
   return seance && seance.type === 'footing';
 }
 
-/* Les séances de footing commencées avant le 6 septembre 2026 n'ont pas de
-   carte de gainage : on la complète à la lecture plutôt que de casser une
-   reprise en cours. */
-function tenuesGainage(exo) {
-  if (!seance.gainage) seance.gainage = {};
-  const actuelles = seance.gainage[exo.cle];
-  if (!Array.isArray(actuelles) || actuelles.length !== exo.series) {
-    const neuves = new Array(exo.series).fill(null);
-    if (Array.isArray(actuelles)) {
-      actuelles.slice(0, exo.series).forEach((v, i) => { neuves[i] = v; });
-    }
-    seance.gainage[exo.cle] = neuves;
-  }
-  return seance.gainage[exo.cle];
+function estGainage() {
+  return seance && seance.type === 'gainage';
 }
 
 /* Les quatre types de course sont des exercices distincts, pas quatre modes
@@ -686,6 +727,7 @@ function rendreFooting() {
   const jour = jourDe(seance.jour);
   $('bloc-muscu').hidden = true;
   $('bloc-footing').hidden = false;
+  $('bloc-gainage').hidden = true;
   $('bouton-precedent').hidden = true;
   $('bouton-suivant').hidden = true;
 
@@ -716,7 +758,7 @@ function rendreFooting() {
     type.echauffement.map((item) => '<li>' + echapper(item) + '</li>').join('');
 
   rendreCyclesCourse();
-  rendreGainage();
+  rendreFarmerWalkFooting();
 }
 
 /* Un type est « rempli » dès qu'un de ses passages porte une durée ou une
@@ -793,55 +835,380 @@ function rendreCyclesCourse() {
   majPastillesTypes();
 }
 
-/* Le gainage ne dépend pas du type de course choisi : il est commun à la
-   journée, et se redessine avec le reste sans se vider. */
-function rendreGainage() {
-  const bloc = $('footing-gainage-liste');
+/* Farmer walk des jours de footing, à historique commun avec la séance de
+   gainage (décision de l'utilisateur le 11 septembre 2026) : les deux écrivent
+   dans `seance.mouvements.farmer_walk`, et derniereFoisMouvement() lit l'un et
+   l'autre. */
+function rendreFarmerWalkFooting() {
+  const bloc = $('footing-farmer');
   bloc.innerHTML = '';
+  bloc.appendChild(carteMouvement('Farmer walk', 3, 'farmer_walk', null));
+}
 
-  GAINAGE_FOOTING.forEach((exo) => {
-    const tenues = tenuesGainage(exo);
+/* ------------------------------------------------------ séance de gainage */
 
-    const carte = document.createElement('div');
-    carte.className = 'gainage-exo';
+function rendreSeanceGainage() {
+  $('bloc-muscu').hidden = true;
+  $('bloc-footing').hidden = true;
+  $('bloc-gainage').hidden = false;
+  $('bouton-precedent').hidden = true;
+  $('bouton-suivant').hidden = true;
+  $('seance-jour').textContent = 'Gainage';
+  $('seance-progression').textContent = '';
+  rendreCategoriesGainage();
+}
 
-    const titre = document.createElement('p');
-    titre.className = 'gainage-nom';
-    titre.textContent = exo.nom;
-    const prescription = document.createElement('span');
-    prescription.className = 'etiquette';
-    prescription.textContent = exo.series + ' × ' + exo.tenue_min + '-' + exo.tenue_max + ' ' + uniteGainage(exo);
-    titre.appendChild(prescription);
-    carte.appendChild(titre);
+function rendreCategoriesGainage() {
+  const bloc = $('gainage-categories');
+  bloc.innerHTML = '';
+  if (!seance.choix) seance.choix = {};
+  CATEGORIES_GAINAGE.forEach((categorie) => {
+    if (!categorie.mouvements.includes(seance.choix[categorie.cle])) {
+      seance.choix[categorie.cle] = mouvementParDefaut(categorie);
+    }
+    bloc.appendChild(carteMouvement(categorie.nom, categorie.series,
+      seance.choix[categorie.cle], categorie));
+  });
+}
 
-    const ligne = document.createElement('div');
-    ligne.className = 'gainage-series';
-    tenues.forEach((valeur, index) => {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.inputMode = 'decimal';
-      input.enterKeyHint = 'next';
-      input.className = 'gainage-tenue';
-      input.value = valeur === null || valeur === undefined ? '' : String(valeur);
-      input.placeholder = String(exo.tenue_min);
-      input.setAttribute('aria-label', exo.nom + ', série ' + (index + 1) + ', ' +
-        (uniteGainage(exo) === 'reps' ? 'répétitions' : 'secondes'));
-      input.addEventListener('focus', () => input.select());
-      input.addEventListener('input', () => {
-        tenuesGainage(exo)[index] = nombreOuNull(input.value);
+/* Réaffiche la séance en cours selon son type : l'écran de fin y revient par
+   « ← ». Il appelait jusqu'au 11 septembre 2026 l'affichage de musculation
+   quel que soit le jour, et plantait donc sur un footing. */
+function rendreSeanceCourante() {
+  if (estFooting()) rendreFooting();
+  else if (estGainage()) rendreSeanceGainage();
+  else rendreExercice();
+}
+
+/* Les valeurs d'un mouvement dans la séance en cours, une case par série,
+   créées à la demande : un mouvement jamais choisi n'encombre pas la séance. */
+function valeursMouvement(cle, series) {
+  if (!seance.mouvements) seance.mouvements = {};
+  const actuelles = seance.mouvements[cle];
+  if (!Array.isArray(actuelles) || actuelles.length < series) {
+    const neuves = new Array(series).fill(null);
+    (actuelles || []).forEach((v, i) => { if (i < series) neuves[i] = v; });
+    seance.mouvements[cle] = neuves;
+  }
+  return seance.mouvements[cle];
+}
+
+function seriesDuMouvement(cle) {
+  const categorie = CATEGORIES_GAINAGE.find((c) => c.mouvements.includes(cle));
+  return categorie ? categorie.series : 3;
+}
+
+function valeurRenseignee(v) {
+  if (v == null) return false;
+  if (typeof v === 'object') return v.poids != null || v.distance != null || v.vitesse != null;
+  return true;
+}
+
+/* Dernières valeurs d'un mouvement, toutes séances confondues : séance de
+   gainage comme jour de footing pour le farmer walk. Chaque mouvement garde
+   ainsi sa propre série temporelle, même en alternant d'une séance à
+   l'autre, comme le demande le récapitulatif. */
+function derniereFoisMouvement(cle) {
+  const passees = lireTableau(CLES.historique)
+    .filter((s) => s.fin && (!seance || s.id !== seance.id))
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin));
+  for (const s of passees) {
+    const valeurs = (s.mouvements || {})[cle];
+    if (Array.isArray(valeurs) && valeurs.some(valeurRenseignee)) return valeurs;
+  }
+  return null;
+}
+
+/* Par défaut, le mouvement choisi à la dernière séance de gainage pour cette
+   catégorie : pas d'alternance automatique, la progression se suit sur un
+   mouvement donné. */
+function mouvementParDefaut(categorie) {
+  const passees = lireTableau(CLES.historique)
+    .filter((s) => s.type === 'gainage' && s.fin && s.choix)
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin));
+  for (const s of passees) {
+    if (categorie.mouvements.includes(s.choix[categorie.cle])) return s.choix[categorie.cle];
+  }
+  return categorie.mouvements[0];
+}
+
+function texteValeur(mouvement, v) {
+  if (!valeurRenseignee(v)) return '';
+  if (mouvement.mode === 'charge') {
+    const bouts = [];
+    if (v.poids != null) bouts.push(v.poids + ' kg');
+    if (v.distance != null) bouts.push(v.distance + ' m');
+    if (v.vitesse != null) bouts.push(v.vitesse + ' km/h');
+    return bouts.join(', ');
+  }
+  return v + (mouvement.mode === 'chrono' ? ' s' : ' rép.');
+}
+
+/* Les mouvements renseignés d'une séance, une ligne chacun : résumé de fin et
+   fiche de l'historique, séance de gainage comme farmer walk des footings. */
+function lignesMouvementsHtml(s, cles, prefixe) {
+  return cles.map((cle) => {
+    const valeurs = ((s.mouvements || {})[cle] || []).filter(valeurRenseignee);
+    if (!valeurs.length) return '';
+    const m = MOUVEMENTS_GAINAGE[cle];
+    return ligneDetail((prefixe ? prefixe + ' · ' : '') + m.nom,
+      valeurs.map((v) => texteValeur(m, v)).join('  ·  '));
+  }).join('');
+}
+
+/* À plat pour le classeur, une ligne par série renseignée. Calculé ici pour
+   que le pont n'ait pas à connaître les mouvements. */
+function lignesGainage(s) {
+  const lignes = [];
+  CATEGORIES_GAINAGE.forEach((categorie) => {
+    categorie.mouvements.forEach((cle) => {
+      const m = MOUVEMENTS_GAINAGE[cle];
+      ((s.mouvements || {})[cle] || []).forEach((v, index) => {
+        if (!valeurRenseignee(v)) return;
+        const objet = typeof v === 'object';
+        lignes.push({
+          categorie: categorie.nom,
+          mouvement: m.nom,
+          serie: index + 1,
+          valeur: objet ? null : v,
+          unite: m.mode === 'chrono' ? 's' : (m.mode === 'reps' ? 'reps' : ''),
+          poids: objet ? v.poids : null,
+          distance: objet ? v.distance : null,
+          vitesse: objet ? v.vitesse : null,
+        });
+      });
+    });
+  });
+  return lignes;
+}
+
+function pastille(mouvement) {
+  const point = document.createElement('span');
+  point.className = 'pastille-couleur';
+  point.style.background = mouvement.couleur;
+  point.title = 'Interférence avec la course : rang ' + mouvement.interference + ' sur 9';
+  return point;
+}
+
+function carteMouvement(titre, series, cle, categorie) {
+  const mouvement = MOUVEMENTS_GAINAGE[cle];
+  const valeurs = valeursMouvement(cle, series);
+
+  const carte = document.createElement('div');
+  carte.className = 'gainage-exo';
+  carte.dataset.mouvement = cle;
+
+  const entete = document.createElement('p');
+  entete.className = 'gainage-nom';
+  entete.textContent = titre;
+  const etiquette = document.createElement('span');
+  etiquette.className = 'etiquette';
+  etiquette.textContent = series + ' séries';
+  entete.appendChild(etiquette);
+  carte.appendChild(entete);
+
+  if (categorie) {
+    const choix = document.createElement('div');
+    choix.className = 'gainage-choix';
+    categorie.mouvements.forEach((candidat) => {
+      const m = MOUVEMENTS_GAINAGE[candidat];
+      const bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.className = 'type-course' + (candidat === cle ? ' choisi' : '');
+      bouton.dataset.mouvement = candidat;
+      bouton.append(pastille(m), document.createTextNode(m.nom));
+      bouton.addEventListener('click', () => {
+        seance.choix[categorie.cle] = candidat;
+        enregistrerSeance();
+        rendreCategoriesGainage();
+      });
+      choix.appendChild(bouton);
+    });
+    carte.appendChild(choix);
+  }
+
+  const prescription = document.createElement('p');
+  prescription.className = 'gainage-prescription';
+  prescription.append(pastille(mouvement), document.createTextNode(
+    mouvement.nom + ' · ' + mouvement.prescription + ' · repos ' + mouvement.repos + ' s'));
+  carte.appendChild(prescription);
+
+  const avant = derniereFoisMouvement(cle);
+  const ligne = document.createElement('div');
+  ligne.className = 'gainage-series' + (mouvement.mode === 'charge' ? ' gainage-series-charge' : '');
+  valeurs.forEach((valeur, index) => {
+    ligne.appendChild(celluleSerie(mouvement, cle, series, index, valeur, avant ? avant[index] : null));
+  });
+  carte.appendChild(ligne);
+
+  if (avant) {
+    const derniere = document.createElement('p');
+    derniere.className = 'gainage-derniere';
+    derniere.textContent = 'Dernière fois : ' + avant.filter(valeurRenseignee)
+      .map((v) => texteValeur(mouvement, v)).join('  ·  ');
+    carte.appendChild(derniere);
+  }
+
+  const consigne = document.createElement('p');
+  consigne.className = 'gainage-consigne';
+  consigne.textContent = mouvement.consigne;
+  carte.appendChild(consigne);
+
+  if (mouvement.info) {
+    const info = document.createElement('p');
+    info.className = 'gainage-info';
+    info.textContent = mouvement.info;
+    carte.appendChild(info);
+  }
+  return carte;
+}
+
+function champGainage(valeur, suggestion, libelle, aChange) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'decimal';
+  input.className = 'gainage-tenue';
+  input.value = valeur == null ? '' : String(valeur);
+  input.placeholder = suggestion == null ? '' : String(suggestion);
+  input.setAttribute('aria-label', libelle);
+  input.addEventListener('focus', () => input.select());
+  input.addEventListener('input', () => aChange(nombreOuNull(input.value)));
+  return input;
+}
+
+function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
+  const cellule = document.createElement('div');
+  cellule.className = 'gainage-serie';
+  const libelle = mouvement.nom + ', série ' + (index + 1);
+
+  if (mouvement.mode === 'charge') {
+    const v = valeur || {};
+    const p = precedente || {};
+    [['poids', 'kg'], ['distance', 'm'], ['vitesse', 'km/h']].forEach(([champ, unite]) => {
+      const input = champGainage(v[champ], p[champ], libelle + ', ' + champ + ' en ' + unite, (n) => {
+        const toutes = valeursMouvement(cle, series);
+        toutes[index] = Object.assign({}, toutes[index] || {}, { [champ]: n });
         enregistrerSeance();
       });
-      ligne.appendChild(input);
+      input.dataset.champ = champ;
+      // Le repos part quand la série est décrite, poids et distance au moins.
+      input.addEventListener('change', () => {
+        const serie = valeursMouvement(cle, series)[index] || {};
+        if (serie.poids != null && serie.distance != null) serieSaisie(cle, index);
+      });
+      const etiquette = document.createElement('label');
+      etiquette.className = 'gainage-champ';
+      const texte = document.createElement('span');
+      texte.textContent = unite;
+      etiquette.append(input, texte);
+      cellule.appendChild(etiquette);
     });
-    carte.appendChild(ligne);
+    return cellule;
+  }
 
-    const consigne = document.createElement('p');
-    consigne.className = 'gainage-consigne';
-    consigne.textContent = exo.consigne;
-    carte.appendChild(consigne);
+  const input = champGainage(valeur, precedente,
+    libelle + (mouvement.mode === 'chrono' ? ', secondes' : ', répétitions'), (n) => {
+      valeursMouvement(cle, series)[index] = n;
+      enregistrerSeance();
+    });
+  cellule.appendChild(input);
 
-    bloc.appendChild(carte);
-  });
+  if (mouvement.mode === 'chrono') {
+    const bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.className = 'gainage-demarrer';
+    bouton.setAttribute('aria-label', 'Démarrer la tenue, ' + libelle);
+    bouton.textContent = '▶ ' + DUREE_TENUE_S;
+    bouton.addEventListener('click', () => demarrerTenue(cle, index));
+    cellule.appendChild(bouton);
+  } else {
+    input.addEventListener('change', () => {
+      if (valeursMouvement(cle, series)[index] != null) serieSaisie(cle, index);
+    });
+  }
+  return cellule;
+}
+
+/* Un seul minuteur, partagé par la séance de gainage et le farmer walk des
+   footings, qui compte tour à tour la tenue en cours et le repos qui suit.
+   « Démarrage à 45 secondes pour tous les mouvements en mode chrono,
+   indépendamment de l'historique, interruptible à tout moment » : le
+   récapitulatif, mot pour mot. */
+let minuteurGainage = null;   // { type: 'tenue' | 'repos', debut, fin, cle, index }
+let tictacGainage = null;
+
+function arreterMinuteurGainage() {
+  minuteurGainage = null;
+  if (tictacGainage) { clearInterval(tictacGainage); tictacGainage = null; }
+  const bandeau = document.getElementById('gainage-chrono');
+  if (bandeau) bandeau.hidden = true;
+}
+
+function lancerMinuteurGainage(type, secondes, cle, index) {
+  if (tictacGainage) clearInterval(tictacGainage);
+  minuteurGainage = { type, debut: Date.now(), fin: Date.now() + secondes * 1000, cle, index };
+  $('gainage-chrono').hidden = false;
+  battreGainage();
+  tictacGainage = setInterval(battreGainage, 250);
+}
+
+function battreGainage() {
+  if (!minuteurGainage) return;
+  const restant = (minuteurGainage.fin - Date.now()) / 1000;
+  if (restant <= 0) {
+    signaler();
+    if (minuteurGainage.type === 'tenue') finirTenue(true);
+    else arreterMinuteurGainage();
+    return;
+  }
+  const m = MOUVEMENTS_GAINAGE[minuteurGainage.cle];
+  $('gainage-chrono-libelle').textContent = minuteurGainage.type === 'tenue'
+    ? 'Tenue · ' + m.nom + ', série ' + (minuteurGainage.index + 1)
+    : 'Repos';
+  $('gainage-chrono-chiffres').textContent = texteDuree(restant);
+}
+
+function demarrerTenue(cle, index) {
+  if (minuteurGainage && minuteurGainage.type === 'tenue') finirTenue(false);
+  lancerMinuteurGainage('tenue', DUREE_TENUE_S, cle, index);
+}
+
+/* Fin d'une tenue, au bout des 45 s ou sur appui : on note le temps réellement
+   tenu, puis le repos démarre. Le critère d'arrêt est la dégradation de la
+   position, pas le minuteur : 20 secondes correctes valent mieux que 45 avec
+   le dos creusé. */
+function finirTenue(complete) {
+  const tenue = minuteurGainage;
+  if (!tenue || tenue.type !== 'tenue') return;
+  const tenu = complete
+    ? DUREE_TENUE_S
+    : Math.min(DUREE_TENUE_S, Math.max(1, Math.round((Date.now() - tenue.debut) / 1000)));
+  valeursMouvement(tenue.cle, seriesDuMouvement(tenue.cle))[tenue.index] = tenu;
+  enregistrerSeance();
+  arreterMinuteurGainage();
+  if (estGainage()) rendreCategoriesGainage();
+  lancerMinuteurGainage('repos', MOUVEMENTS_GAINAGE[tenue.cle].repos, tenue.cle, tenue.index);
+}
+
+/* Répétitions ou charge confirmées : le repos démarre, sans jamais couper une
+   tenue en cours ailleurs dans la séance. */
+function serieSaisie(cle, index) {
+  if (minuteurGainage && minuteurGainage.type === 'tenue') return;
+  lancerMinuteurGainage('repos', MOUVEMENTS_GAINAGE[cle].repos, cle, index);
+}
+
+function appuiBandeauGainage() {
+  if (!minuteurGainage) return;
+  if (minuteurGainage.type === 'tenue') finirTenue(false);
+  else arreterMinuteurGainage();
+}
+
+function terminerGainage(resume) {
+  resume.innerHTML = '<h3>Gainage</h3>';
+  const html = CATEGORIES_GAINAGE
+    .map((c) => lignesMouvementsHtml(seance, c.mouvements, c.nom)).join('');
+  resume.innerHTML += html || '<p class="vide">Aucune série renseignée.</p>';
+  preparerEcranFin();
 }
 
 /* La pastille des types remplis se recalcule à chaque frappe, pas seulement
@@ -979,6 +1346,7 @@ function rendreExercice() {
 
   $('bloc-muscu').hidden = false;
   $('bloc-footing').hidden = true;
+  $('bloc-gainage').hidden = true;
   $('bouton-precedent').hidden = false;
   $('bouton-suivant').hidden = false;
 
@@ -1370,6 +1738,7 @@ function battre() {
 }
 
 function arreterMinuterie() {
+  arreterMinuteurGainage();
   minuterie = null;
   if (tictac) clearInterval(tictac);
   tictac = null;
@@ -1492,6 +1861,10 @@ function terminer() {
     terminerFooting(resume);
     return;
   }
+  if (estGainage()) {
+    terminerGainage(resume);
+    return;
+  }
 
   // Le chrono encore en marche est arrêté ici : c'est bien la fin de séance.
   if (chronoSeance().demarre) arreterChronoSeance();
@@ -1598,7 +1971,7 @@ function terminerFooting(resume) {
 
   // Le gainage est indépendant des sorties : il peut avoir été fait sans
   // course, et doit donc s'afficher même quand la liste ci-dessus est vide.
-  GAINAGE_FOOTING.forEach((exo) => {
+  GAINAGE_FOOTING_ANCIEN.forEach((exo) => {
     const tenues = (seance.gainage || {})[exo.cle] || [];
     const faites = tenues.filter((v) => v != null);
     if (!faites.length) return;
@@ -1612,6 +1985,7 @@ function terminerFooting(resume) {
         '</div>' +
       '</div>';
   });
+  resume.innerHTML += lignesMouvementsHtml(seance, ['farmer_walk']);
 
   preparerEcranFin();
 }
@@ -1654,10 +2028,14 @@ function preparerEcranFin() {
    gainage. Des suggestions, pas une liste fermée : une douleur peut ne
    tenir à aucune série (voir le champ dans index.html). */
 function nomsDesExercices() {
+  if (estGainage()) {
+    return CATEGORIES_GAINAGE.map((c) =>
+      MOUVEMENTS_GAINAGE[(seance.choix || {})[c.cle] || c.mouvements[0]].nom);
+  }
   if (!estFooting()) return (seance.exercices || []).map((e) => e.nom);
   const carte = seance.footing || {};
   const noms = TYPES_COURSE.filter((t) => carte[t.cle]).map((t) => t.complet);
-  return noms.concat(GAINAGE_FOOTING.map((exo) => exo.nom));
+  return noms.concat(MOUVEMENTS_GAINAGE.farmer_walk.nom);
 }
 
 /* Une fois la séance envoyée, on atterrit sur sa fiche dans « Séances
@@ -1674,6 +2052,7 @@ function afficherSeanceEnregistree(id) {
 function enregistrerEtSynchroniser() {
   const idEnregistre = seance.id;
   seance.fin = new Date().toISOString();
+  seance.lignesGainage = lignesGainage(seance);
   const historique = lireTableau(CLES.historique).filter((s) => s.id !== seance.id);
   historique.push(seance);
   ecrire(CLES.historique, historique);
@@ -1812,6 +2191,15 @@ function rendreHistorique(idOuvert) {
 
 /* La ligne repliée : ce qui tient sur un seul niveau de lecture. */
 function resumeCourtSeance(s) {
+  if (s.type === 'gainage') {
+    const noms = [];
+    CATEGORIES_GAINAGE.forEach((c) => c.mouvements.forEach((cle) => {
+      if (((s.mouvements || {})[cle] || []).some(valeurRenseignee)) {
+        noms.push(echapper(MOUVEMENTS_GAINAGE[cle].nom));
+      }
+    }));
+    return noms.length ? noms.join(' &middot; ') : 'Séance sans chiffres';
+  }
   if (s.type === 'footing') {
     const carte = footingParType(s);
     const morceaux = [];
@@ -1838,7 +2226,10 @@ function resumeCourtSeance(s) {
 function detailSeance(s) {
   let html = '<div class="detail-historique">';
 
-  if (s.type === 'footing') {
+  if (s.type === 'gainage') {
+    html += CATEGORIES_GAINAGE
+      .map((c) => lignesMouvementsHtml(s, c.mouvements, c.nom)).join('');
+  } else if (s.type === 'footing') {
     const carte = footingParType(s);
     TYPES_COURSE.forEach((t) => {
       const cycles = (carte[t.cle] || []).filter((d) => d.duree_min != null || d.distance_km != null);
@@ -1860,11 +2251,12 @@ function detailSeance(s) {
           bouts.join('  ·  '));
       });
     });
-    GAINAGE_FOOTING.forEach((exo) => {
+    GAINAGE_FOOTING_ANCIEN.forEach((exo) => {
       const tenues = ((s.gainage || {})[exo.cle] || []).filter((v) => v != null);
       if (!tenues.length) return;
       html += ligneDetail(exo.nom, tenues.map((v) => v + ' ' + uniteGainage(exo)).join('  ·  '));
     });
+    html += lignesMouvementsHtml(s, ['farmer_walk']);
   } else {
     (s.exercices || []).forEach((e, index) => {
       const faites = (e.series || []).filter((x) => x.faite);
@@ -2083,9 +2475,10 @@ function brancher() {
   // appui n'importe où redonne donc le chemin le plus court vers la saisie.
   // Boutons ±15 retirés le 27 août 2026, plus rien à exclure du geste.
   $('minuterie').addEventListener('click', () => minuterieTerminee(true));
+  $('gainage-chrono').addEventListener('click', appuiBandeauGainage);
 
   $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);
-  $('bouton-fin-retour').addEventListener('click', () => { afficher('seance'); rendreExercice(); });
+  $('bouton-fin-retour').addEventListener('click', () => { afficher('seance'); rendreSeanceCourante(); });
   $('fin-remarque').addEventListener('input', (evenement) => {
     if (!seance) return;
     seance.remarque = evenement.target.value;
@@ -2180,6 +2573,7 @@ async function demarrer() {
   try {
     const reponse = await fetch('data/programme.json', { cache: 'no-cache' });
     programme = await reponse.json();
+    programme.jours.push(JOUR_GAINAGE);
   } catch (e) {
     document.body.innerHTML =
       '<p class="vide">Programme introuvable. Lancez <code>python outils/importer_classeur.py</code>.</p>';

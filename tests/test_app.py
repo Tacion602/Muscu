@@ -61,7 +61,7 @@ def page(navigateur, adresse):
     onglet.wait_for_selector(".carte-jour")
     codes = onglet.eval_on_selector_all(
         ".carte-code", "cartes => cartes.map(c => c.textContent.trim().slice(0, 2))")
-    assert codes == ["J1", "J2", "J3", "J4", "J5", "J6"], "accueil incomplet : " + str(codes)
+    assert codes == ["J1", "J2", "J3", "J4", "J5", "J6", "G"], "accueil incomplet : " + str(codes)
     yield onglet
     contexte.close()
     assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
@@ -189,13 +189,113 @@ def test_j2_et_j6_sont_deux_seances_distinctes(page):
     assert page.locator(".cycle-course input").nth(0).input_value() == ""
 
 
-def test_la_rotation_externe_se_compte_en_repetitions(page):
-    """Seul exercice du gainage de footing compte en repetitions, depuis le
-    10 septembre 2026 ; les autres restent en secondes."""
+def test_les_footings_n_ont_plus_que_le_farmer_walk(page):
+    """11 septembre 2026 : le gainage des footings rejoint la seance de
+    gainage, la rotation externe est abandonnee, le farmer walk reste."""
     ouvrir_jour(page, "J2")
-    etiquettes = page.locator(".gainage-nom").all_text_contents()
-    assert any("Rotation externe" in t and t.endswith("reps") for t in etiquettes)
-    assert any("Planche frontale" in t and t.endswith(" s") for t in etiquettes)
+    texte = page.text_content("#bloc-footing")
+    assert "Planche frontale" not in texte and "Rotation externe" not in texte
+    assert "Farmer walk" in page.text_content("#footing-farmer")
+
+
+def test_revenir_de_l_ecran_de_fin_sur_un_footing(page):
+    """Defaut ancien, corrige le 11 septembre 2026 : le retour depuis l'ecran
+    de fin rappelait l'affichage de musculation, qui plantait sur un footing.
+    L'exception est controlee par la fixture."""
+    ouvrir_jour(page, "J2")
+    page.click("#bouton-terminer")
+    page.click("#bouton-fin-retour")
+    assert page.is_visible("#bloc-footing")
+
+
+# --------------------------------------------------------- seance gainage
+
+
+def ouvrir_gainage(page):
+    page.locator(".carte-jour").nth(6).click()
+
+
+def carte_gainage(page, rang):
+    return page.locator("#gainage-categories .gainage-exo").nth(rang)
+
+
+def test_la_seance_de_gainage_propose_quatre_categories(page):
+    """Recapitulatif du 11 septembre 2026 : quatre categories, un mouvement
+    au choix, le premier par defaut faute d'historique, et la legende de
+    l'interference avec la course."""
+    ouvrir_gainage(page)
+    assert page.locator("#gainage-categories .gainage-exo").count() == 4
+    choisis = page.locator("#gainage-categories .type-course.choisi").all_text_contents()
+    assert choisis == ["Dead bug", "Pallof press", "Planche latérale", "Crunch inversé"]
+    assert "Interférence avec les muscles de la course" in page.text_content("#bloc-gainage")
+
+
+def test_le_mouvement_par_defaut_est_celui_de_la_derniere_seance(page):
+    """Pas d'alternance automatique : chaque categorie reprend le mouvement
+    de la seance precedente, et montre ses dernieres valeurs."""
+    precedente = {
+        "id": "G1", "jour": "G", "titre": "Gainage", "type": "gainage",
+        "fin": "2026-09-05T18:00:00.000Z", "envoye": True,
+        "choix": {"anti_extension": "planche", "anti_rotation": "bird_dog",
+                  "anti_lateroflexion": "farmer_walk", "flexion_chargee": "releve_genoux"},
+        "mouvements": {"planche": [40, 35, 30]},
+    }
+    page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", [precedente])
+    ouvrir_gainage(page)
+    choisis = page.locator("#gainage-categories .type-course.choisi").all_text_contents()
+    assert choisis == ["Planche", "Bird dog", "Farmer walk une main", "Relevé de genoux suspendu"]
+    assert "Dernière fois : 40 s" in carte_gainage(page, 0).text_content()
+
+
+def test_une_tenue_se_chronometre_et_s_interrompt(page):
+    """Minuteur de 45 s en mode chrono, interruptible : on note le temps
+    reellement tenu, puis le repos demarre."""
+    ouvrir_gainage(page)
+    carte = carte_gainage(page, 0)
+    carte.locator(".type-course", has_text="Planche").click()
+    carte_gainage(page, 0).locator(".gainage-demarrer").first.click()
+    page.wait_for_timeout(1500)
+    assert "Tenue" in page.text_content("#gainage-chrono")
+    page.click("#gainage-chrono")
+    tenu = page.evaluate("seance.mouvements.planche[0]")
+    assert 1 <= tenu <= 3
+    assert "Repos" in page.text_content("#gainage-chrono")
+
+
+def test_le_farmer_walk_partage_son_historique_avec_le_footing(page):
+    """Decision du 11 septembre 2026 : un seul historique pour le farmer
+    walk, qu'il ait ete fait en footing ou en seance de gainage."""
+    footing = {
+        "id": "F1", "jour": "J2", "titre": "J2 & J6 FOOTING", "type": "footing",
+        "fin": "2026-09-05T18:00:00.000Z", "envoye": True, "footing": {},
+        "mouvements": {"farmer_walk": [{"poids": 20, "distance": 25, "vitesse": 4.5}, None, None]},
+    }
+    page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", [footing])
+    ouvrir_gainage(page)
+    carte_gainage(page, 2).locator(".type-course", has_text="Farmer walk").click()
+    carte = carte_gainage(page, 2)
+    assert "Dernière fois : 20 kg, 25 m, 4.5 km/h" in carte.text_content()
+    assert carte.locator("input[data-champ='poids']").first.get_attribute("placeholder") == "20"
+
+
+def test_la_seance_de_gainage_s_enregistre_et_se_relit(page):
+    """La seance part avec ses lignes a plat pour le classeur, et se relit
+    dans l'historique."""
+    ouvrir_gainage(page)
+    champ = carte_gainage(page, 0).locator(".gainage-serie input").first
+    champ.fill("7")
+    champ.press("Tab")
+    page.click("#bouton-terminer")
+    assert "Anti-extension · Dead bug" in page.text_content("#fin-resume")
+    assert "7 rép." in page.text_content("#fin-resume")
+    page.click("#bouton-enregistrer")
+    page.wait_for_selector("#ecran-historique.actif", timeout=8000)
+    assert "Dead bug" in page.text_content("#liste-historique")
+    enregistree = page.evaluate("JSON.parse(localStorage.getItem('muscu.historique')).pop()")
+    assert enregistree["lignesGainage"] == [{
+        "categorie": "Anti-extension", "mouvement": "Dead bug", "serie": 1, "valeur": 7,
+        "unite": "reps", "poids": None, "distance": None, "vitesse": None,
+    }]
 
 
 # ---------------------------------------------------------- fin de seance

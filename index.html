@@ -50,6 +50,14 @@
   <div id="jauge" class="jauge"><div id="jauge-remplie"></div></div>
 
   <main class="corps">
+    <!-- Minuteur de la séance de gainage et du farmer walk des footings : il
+         compte la tenue en cours (45 s, interruptible) puis le repos. Un appui
+         l'arrête. Voir lancerMinuteurGainage() dans js/app.js. -->
+    <div id="gainage-chrono" class="minuterie gainage-chrono" hidden>
+      <span id="gainage-chrono-libelle"></span>
+      <span id="gainage-chrono-chiffres" class="minuterie-chiffres">0:45</span>
+    </div>
+
     <div id="bloc-muscu">
       <div class="ligne-titre">
         <h2 id="exo-nom"></h2>
@@ -124,12 +132,24 @@
       <div id="footing-cycles"></div>
       <button id="bouton-cycle-ajouter" class="ajouter" type="button">+ Ajouter un passage</button>
 
-      <!-- Gainage du jour, commun aux quatre types de course. Rempli par
-           rendreGainage() dans js/app.js à partir de GAINAGE_FOOTING. -->
+      <!-- Farmer walk, à historique commun avec la séance de gainage (décision
+           de l'utilisateur le 11 septembre 2026). Le gainage des footings a
+           rejoint la séance de gainage, la rotation externe est abandonnée. -->
       <section class="footing-gainage">
-        <h3 class="footing-gainage-titre">Gainage</h3>
-        <div id="footing-gainage-liste"></div>
+        <h3 class="footing-gainage-titre">Farmer walk</h3>
+        <div id="footing-farmer"></div>
       </section>
+    </div>
+
+    <!-- Séance de gainage optionnelle, depuis le 11 septembre 2026 : quatre
+         catégories, un mouvement au choix dans chacune. Rempli par
+         rendreSeanceGainage() dans js/app.js, à partir de CATEGORIES_GAINAGE. -->
+    <div id="bloc-gainage" hidden>
+      <h2>Gainage</h2>
+      <p class="gainage-legende">Interférence avec les muscles de la course. Vert : faible. Rouge : élevée.</p>
+      <div class="gainage-degrade" aria-hidden="true"></div>
+      <p class="gainage-note">Arrêter la série dès que la position se dégrade, pas à la brûlure ni à la fin du minuteur : 20 secondes correctes valent mieux que 45 avec le dos creusé. Progression : 2 à 3 semaines aux valeurs de départ, puis 5 à 10 s de plus sur les tenues, 2 répétitions de plus sur le reste, charge ou distance sur le farmer walk.</p>
+      <div id="gainage-categories"></div>
     </div>
   </main>
 

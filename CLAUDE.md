@@ -172,6 +172,40 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   courant. L'utilisateur y a perdu toutes ses notes de J4. Le bouton
   « Annuler » réécrit la valeur retenue à l'ouverture de l'éditeur, seul moyen
   de défaire ce que la frappe a déjà enregistré.
+- **Séance de gainage optionnelle**, carte `G` de l'accueil, spécifiée le
+  11 septembre 2026 par le récapitulatif de programme de l'utilisateur.
+  Définie dans le code (`MOUVEMENTS_GAINAGE`, `CATEGORIES_GAINAGE`) et ajoutée
+  aux jours au démarrage (`JOUR_GAINAGE`), jamais importée : le bloc
+  « GAINAGE » du classeur n'est qu'un aide-mémoire.
+  - **Quatre catégories, un mouvement au choix**, par défaut celui de la
+    dernière séance de gainage pour cette catégorie (`mouvementParDefaut`) :
+    pas d'alternance automatique, la progression se suit sur un mouvement.
+  - **Historique par mouvement**, toutes séances confondues
+    (`derniereFoisMouvement`, sur `seance.mouvements`). Le farmer walk partage
+    le sien entre la séance de gainage et les footings, décision de
+    l'utilisateur le 11 septembre 2026, **vitesse saisie**, pas calculée.
+  - **Trois modes** : `chrono` (minuteur de tenue de 45 s, interruptible, qui
+    note le temps réellement tenu puis lance le repos), `reps`, `charge`
+    (poids, distance, vitesse). **Le dead bug est en répétitions** : le
+    récapitulatif le disait chrono dans un tableau et « 6-8 par côté » dans
+    l'autre, tranché ainsi, le tempo 3-1-3 faisant de chaque répétition la
+    mesure utile.
+  - **Un minuteur à part** (`#gainage-chrono`, collé en haut de l'écran)
+    pour la tenue et le repos (45 s, 60 s pour le farmer walk et le relevé de
+    genoux), indépendant de la minuterie de musculation ; `arreterMinuterie()`
+    l'arrête aussi, comme `commencer()`.
+  - **Pastille d'interférence avec la course** devant chaque mouvement, du
+    vert au rouge, jamais le nom lui-même en couleur.
+  - **Vers le classeur**, `lignesGainage()` met les séries à plat dans
+    `seance.lignesGainage` à l'enregistrement, et `ecrireGainage()` les écrit
+    dans une page `Gainage` : le pont n'a pas à connaître les mouvements.
+  - **La rotation externe est abandonnée**, décision de l'utilisateur le
+    11 septembre 2026.
+- **Le retour depuis l'écran de fin réaffiche la séance selon son type**
+  (`rendreSeanceCourante`). Il appelait l'affichage de musculation quel que
+  soit le jour, et plantait donc sur un footing. L'erreur avait été vue dans
+  la console dès le 8 septembre 2026 et prise à tort pour un artefact de
+  test : une exception vue en vérifiant se reproduit avant d'être écartée.
 - **L'indicateur de progression est la première série de travail**, charge ×
   répétitions, depuis le 11 septembre 2026 (récapitulatif de programme de
   l'utilisateur, `Desktop\PROGRAMME_RECAP.md` sur sa machine) : courbes de la
@@ -398,8 +432,9 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     `ecrireSeance()` itèrent sur les cycles**, pas sur les seuls types : un
     passage supplémentaire écrit une ligne de plus dans le bloc de son type
     (`Course`) et dans l'onglet `Seances`, jamais une case écrasée.
-- **Les jours de footing portent aussi du gainage** depuis le 6 septembre
-  2026, demande de l'utilisateur : planche frontale et planche latérale,
+- **Les jours de footing ont porté du gainage** du 6 au 11 septembre
+  2026, remplacé depuis par la séance de gainage (voir plus bas), seul le
+  farmer walk restant aux footings. À l'origine, demande de l'utilisateur : planche frontale et planche latérale,
   4 séries de 30 à 45 s, sur le modèle du gainage de J4.
   - **Il vit dans `js/app.js` (`GAINAGE_FOOTING`), pas dans le classeur**, et
     c'est le seul exercice du programme dans ce cas. Les blocs J2 et J6 y sont

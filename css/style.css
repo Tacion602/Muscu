@@ -778,3 +778,74 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 @media (min-width: 620px) {
   .ecran { max-width: 620px; margin: 0 auto; width: 100%; }
 }
+
+/* Séance de gainage et farmer walk des footings, depuis le 11 septembre 2026.
+   Pastille ronde devant le nom, jamais le nom lui-même en couleur : les teintes
+   claires du milieu de gamme seraient illisibles en texte (récapitulatif de
+   programme de l'utilisateur). */
+.pastille-couleur {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.gainage-legende { font-size: 12px; color: var(--texte-faible); margin: 0 0 6px; }
+.gainage-degrade {
+  height: 6px;
+  margin: 0 0 12px;
+  border-radius: var(--rayon-plein);
+  background: linear-gradient(90deg, #1A9850, #52B151, #91CF60, #D9EF8B, #FEE08B,
+    #FDAE61, #F46D43, #D73027, #A50026);
+}
+.gainage-note { font-size: 12px; line-height: 1.5; color: var(--texte-faible); margin: 0 0 14px; }
+.gainage-choix { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.gainage-choix .type-course {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.gainage-prescription { display: flex; align-items: center; margin: 0 0 8px; font-size: 13px; }
+.gainage-serie { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.gainage-series-charge { flex-direction: column; }
+.gainage-series-charge .gainage-serie { flex-direction: row; }
+.gainage-champ { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.gainage-champ .gainage-tenue { width: 100%; }
+.gainage-champ span { font-size: 11px; color: var(--texte-faible); }
+.gainage-demarrer {
+  height: 36px;
+  border: 1px solid var(--accent-clair);
+  border-radius: var(--rayon-petit);
+  background: transparent;
+  color: var(--accent-clair);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.gainage-derniere {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--texte-faible);
+  font-variant-numeric: tabular-nums;
+}
+.gainage-info { margin: 6px 0 0; font-size: 12px; line-height: 1.5; font-style: italic; color: var(--texte-faible); }
+/* Collé en haut de l'écran pendant qu'il tourne : un minuteur hors champ,
+   une fois la page défilée, a déjà été signalé sur téléphone. */
+.gainage-chrono {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex: none;
+  width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 14px;
+}
+.gainage-chrono .minuterie-chiffres { font-size: 44px; }
+#gainage-chrono-libelle { font-size: 13px; font-weight: 600; color: #fff; }
+#bloc-gainage h2 { margin: 0 0 8px; }
