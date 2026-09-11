@@ -1508,16 +1508,27 @@ function terminer() {
     : Math.round((Date.now() - new Date(seance.debut).getTime()) / 60000);
   seance.duree_min = duree;
 
+  // Comparaison sur l'indicateur retenu (voir premiereSerieDeTravail) et non
+  // plus sur le tonnage : première série de travail de l'exercice 1.
   const precedente = derniereSeanceDuJour(seance.jour);
   let comparaison = '';
-  if (precedente) {
-    const avant = (precedente.exercices || []).reduce(
-      (somme, e) => somme + tonnageDesSeries(e.series), 0);
-    if (avant) {
-      const ecart = tonnage - avant;
-      comparaison = '<p class="carte-detail">Dernière séance ' + avant + ' kg, soit ' +
-        (ecart >= 0 ? '+' : '') + ecart + '.</p>';
-    }
+  const premier = seance.exercices[0];
+  const maintenant = premiereSerieDeTravail(premier);
+  const avantSerie = precedente && premier
+    ? premiereSerieDeTravail((precedente.exercices || []).find((e) => e.nom === premier.nom))
+    : null;
+  if (maintenant && avantSerie) {
+    const ecart = Math.round((indicateur(maintenant) - indicateur(avantSerie)) * 10) / 10;
+    // La mesure ne vaut qu'à RIR constant : on le dit plutôt que de comparer
+    // deux séries qui n'ont pas été menées au même effort.
+    const rirDifferent = maintenant.rir != null && avantSerie.rir != null &&
+      maintenant.rir !== avantSerie.rir;
+    comparaison = '<p class="carte-detail">Indicateur de séance, 1re série de ' +
+      echapper(premier.nom) + ' : ' + maintenant.charge + ' × ' + maintenant.reps +
+      ', contre ' + avantSerie.charge + ' × ' + avantSerie.reps + ' la dernière fois (' +
+      (ecart >= 0 ? '+' : '') + ecart + ').' +
+      (rirDifferent ? ' RIR différent (' + maintenant.rir + ' contre ' + avantSerie.rir +
+        '), comparaison indicative.' : '') + '</p>';
   }
 
   resume.innerHTML =
@@ -1855,14 +1866,14 @@ function detailSeance(s) {
       html += ligneDetail(exo.nom, tenues.map((v) => v + ' ' + uniteGainage(exo)).join('  ·  '));
     });
   } else {
-    (s.exercices || []).forEach((e) => {
+    (s.exercices || []).forEach((e, index) => {
       const faites = (e.series || []).filter((x) => x.faite);
       if (!faites.length) return;
       html += ligneDetail(e.nom, faites.map((x) =>
         (x.echauffement ? 'éch ' : '') +
         (x.charge != null ? x.charge : '?') + '×' + (x.reps != null ? x.reps : '?') +
         (x.rir != null ? ' @' + x.rir : '')).join('  ·  '),
-        progressionTonnage(s, e.nom));
+        progressionPremiereSerie(s, e.nom, index === 0));
     });
   }
 
@@ -1889,35 +1900,52 @@ function ligneDetail(nom, valeur, suite) {
     '</div>';
 }
 
-/* Tonnage de cet exercice au fil des séances, la plus ancienne à gauche,
-   demandé par l'utilisateur le 10 septembre 2026 sur cette page-ci.
+/* Indicateur de progression retenu le 11 septembre 2026, dans le
+   récapitulatif de programme de l'utilisateur : charge × répétitions de la
+   première série de travail, à RIR constant. Le tonnage, tracé jusque-là,
+   est écarté comme indicateur : il monte mécaniquement quand la charge
+   baisse et que les répétitions montent, et ferait passer un recul pour un
+   progrès. */
+function premiereSerieDeTravail(exercice) {
+  return ((exercice && exercice.series) || [])
+    .find((x) => x.faite && !x.echauffement && x.charge != null && x.reps != null) || null;
+}
 
-   Deux partis pris :
+function indicateur(serie) {
+  return serie ? Math.round(serie.charge * serie.reps * 10) / 10 : 0;
+}
+
+/* Courbe de cet exercice au fil des séances, la plus ancienne à gauche,
+   demandée par l'utilisateur le 10 septembre 2026 sur cette page-ci, et
+   tracée depuis le 11 septembre 2026 sur l'indicateur ci-dessus.
+
+   Trois partis pris :
    - **seules les séances du téléphone comptent**, pas l'historique repris du
      classeur : celui-ci est une reprise ponctuelle et non un journal, et ses
      valeurs ont déjà été désalignées de leurs exercices par une manipulation
      de la grille (voir CLAUDE.md, section « Le classeur ») ;
    - **on s'arrête à la séance affichée** : rouvrir une séance ancienne doit
-     montrer la progression telle qu'elle était ce jour-là, pas des points
-     postérieurs qui n'existaient pas encore. */
-function progressionTonnage(seanceAffichee, nomExo) {
+     montrer la progression telle qu'elle était ce jour-là ;
+   - **l'exercice 1 porte l'indicateur de séance** du récapitulatif ; les
+     autres suivent la même mesure, à titre de repère. */
+function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance) {
   const fin = new Date(seanceAffichee.fin).getTime();
-  const points = lireTableau(CLES.historique)
+  const series = lireTableau(CLES.historique)
     .filter((s) => s.jour === seanceAffichee.jour && s.fin && new Date(s.fin).getTime() <= fin)
     .sort((a, b) => new Date(a.fin) - new Date(b.fin))
-    .map((s) => {
-      const exo = (s.exercices || []).find((e) => e.nom === nomExo);
-      return exo ? tonnageDesSeries(exo.series) : 0;
-    })
-    .filter((tonnage) => tonnage > 0);
+    .map((s) => premiereSerieDeTravail((s.exercices || []).find((e) => e.nom === nomExo)))
+    .filter(Boolean);
 
-  if (points.length < 2) return '';
+  if (series.length < 2) return '';
 
-  const dernier = points[points.length - 1];
-  const ecart = dernier - points[points.length - 2];
+  const points = series.map(indicateur);
+  const derniere = series[series.length - 1];
+  const ecart = Math.round((points[points.length - 1] - points[points.length - 2]) * 10) / 10;
   const sens = ecart > 0 ? ' hausse' : (ecart < 0 ? ' baisse' : '');
-  return courbeTonnage(points) +
-    '<div class="courbe-legende">' + dernier + ' kg' +
+  return courbe(points, 'première série, charge × répétitions') +
+    '<div class="courbe-legende">' +
+      (estIndicateurDeSeance ? 'Indicateur de séance · ' : '') +
+      '1re série ' + derniere.charge + ' × ' + derniere.reps + ' = ' + points[points.length - 1] +
       '<span class="compare' + sens + '">' +
         (ecart > 0 ? '+' : '') + ecart + ' depuis la précédente' +
       '</span>' +
@@ -1928,7 +1956,7 @@ function progressionTonnage(seanceAffichee, nomExo) {
    et une ligne n'en justifient pas une, et l'application doit rester
    utilisable hors ligne sans rien télécharger. Le viewBox garde ses
    proportions, la feuille de style ne règle que la largeur. */
-function courbeTonnage(points) {
+function courbe(points, libelle) {
   const largeur = 300;
   const hauteur = 56;
   const marge = 6;
@@ -1947,7 +1975,7 @@ function courbeTonnage(points) {
     .join('');
 
   return '<svg class="courbe" viewBox="0 0 ' + largeur + ' ' + hauteur + '" ' +
-    'role="img" aria-label="Progression du tonnage sur ' + points.length + ' séances">' +
+    'role="img" aria-label="Progression, ' + libelle + ', sur ' + points.length + ' séances">' +
     '<path d="' + chemin + '"/>' + cercles + '</svg>';
 }
 

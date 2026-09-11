@@ -222,6 +222,34 @@ def test_remarque_et_blessure_partent_avec_la_seance(page):
     assert enregistree["blessure"] == {"serie": "Dips", "texte": "Epaule sensible"}
 
 
+def test_la_courbe_suit_la_premiere_serie_et_non_le_tonnage(page):
+    """Indicateur retenu le 11 septembre 2026 : charge x reps de la premiere
+    serie de travail. Le tonnage est ecarte, parce qu'il monte quand la charge
+    baisse et que les repetitions montent. Ici le tonnage progresse d'une
+    seance a l'autre (1000 puis 1440) alors que la premiere serie recule
+    (500 puis 480) : la courbe doit annoncer une baisse."""
+    nom = page.evaluate("programme.jours[0].exercices[0].nom")
+
+    def seance(identifiant, fin, series):
+        return {"id": identifiant, "jour": "J1", "titre": "J1", "type": "muscu",
+                "fin": fin, "envoye": True,
+                "exercices": [{"nom": nom, "series": [
+                    {"charge": c, "reps": r, "faite": True} for c, r in series]}]}
+
+    historique = [
+        seance("A", "2026-09-01T18:00:00.000Z", [(50, 10), (50, 10)]),
+        seance("B", "2026-09-08T18:00:00.000Z", [(40, 12), (40, 12), (40, 12)]),
+    ]
+    page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", historique)
+    page.click("#bouton-historique")
+    page.locator(".entree-historique summary").first.click()
+    legende = page.locator(".courbe-legende").first
+    assert "Indicateur de séance" in legende.text_content()
+    assert "40 × 12 = 480" in legende.text_content()
+    assert "-20" in legende.text_content()
+    assert "baisse" in legende.locator(".compare").get_attribute("class")
+
+
 def test_quitter_une_seance_arrete_le_chronometre(page):
     """Defaut du 10 septembre 2026 : quitter laissait le battement du
     chronometre tourner sur une seance nulle, une exception par seconde.

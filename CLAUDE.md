@@ -172,6 +172,17 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   courant. L'utilisateur y a perdu toutes ses notes de J4. Le bouton
   « Annuler » réécrit la valeur retenue à l'ouverture de l'éditeur, seul moyen
   de défaire ce que la frappe a déjà enregistré.
+- **L'indicateur de progression est la première série de travail**, charge ×
+  répétitions, depuis le 11 septembre 2026 (récapitulatif de programme de
+  l'utilisateur, `Desktop\PROGRAMME_RECAP.md` sur sa machine) : courbes de la
+  fiche de séance (`progressionPremiereSerie`) et comparaison de fin de
+  séance, sur l'exercice 1. **Le tonnage n'y sert plus** : il monte
+  mécaniquement quand la charge baisse et que les répétitions montent, et
+  ferait passer un recul pour un progrès. La comparaison se dit indicative si
+  les deux premières séries n'ont pas le même RIR, la mesure ne valant qu'à
+  RIR constant. Le tonnage reste affiché comme simple chiffre, sans
+  comparaison. Un test le garde, sur un cas où le tonnage monte pendant que
+  la première série recule.
 - **`validerSerie()` marque la série faite avant d'amorcer le clavier.**
   Déplacer le focus fait perdre le sien au champ des répétitions, dont le
   `change` rappelle alors la validation ; placé en tête jusqu'au 10 septembre
