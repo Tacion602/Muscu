@@ -6,8 +6,17 @@ la dernière fois pour juger la surcharge progressive, minuterie de
 récupération. Les séances sont écrites dans le classeur Google Sheets qui sert
 de programme.
 
-Porteur du projet : le même qu'sur l'agenda culturel géolocalisé, projet
+Porteur du projet : le même que sur l'agenda culturel géolocalisé, projet
 voisin sans rapport de contenu. Phase de démarrage.
+
+**Ce dépôt vit dans `C:\Users\Utilisateur\Musculation`** depuis le
+13 septembre 2026, sorti de `C:\Users\Utilisateur\.claude\MUSCU` (voir
+l'ancien chantier « Sortir ce dépôt de `.claude` », résolu ci-dessous). Une
+copie de travail, faite avant ce déplacement et non encore supprimée à cette
+date, peut encore trainer à l'ancien emplacement : elle n'est plus la
+référence, `origin` désigne le même dépôt GitHub (`Tacion602/Muscu`) dans les
+deux cas, donc pousser depuis l'une ferait diverger l'autre en silence si les
+deux étaient utilisées à la fois.
 
 ## Décision de départ
 
@@ -814,14 +823,20 @@ vérifications à la main n'avaient pas vus.
 4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
    basculer vers un autre bloc d'entraînement demandera de relancer l'import
    sur un autre onglet, geste manuel pour l'instant.
-5. **Sortir ce dépôt de `C:\Users\Utilisateur\.claude\`**, décidé par
-   l'utilisateur le 9 septembre 2026 pour ne plus risquer de confusion avec
-   l'autre projet qu'il y héberge. Le code est déjà séparé (deux dépôts
-   indépendants) ; ce qui est couplé, c'est la session de travail, ancrée sur
-   l'autre projet, dont ce `CLAUDE.md` n'est donc **jamais chargé
-   automatiquement**. S'y ajoute que `.claude` est le dossier de
-   configuration de Claude Code lui-même, mauvais emplacement pour du code.
-   Le déplacement du dossier suffit, `.git` étant dedans et le remote
-   inchangé ; la mémoire de travail, elle, est rangée sous la clé de l'autre
-   projet et devra être recopiée. À faire hors d'une séance en cours de
-   saisie.
+5. ~~Sortir ce dépôt de `C:\Users\Utilisateur\.claude\`~~ **Fait le
+   13 septembre 2026** (voir en tête de ce document) : le dossier a été
+   dupliqué tel quel vers `C:\Users\Utilisateur\Musculation`, `.git` compris,
+   `origin` restant `Tacion602/Muscu` sur GitHub. Décidé par l'utilisateur le
+   9 septembre 2026 pour ne plus risquer de confusion avec l'autre projet
+   hébergé dans `.claude`, qui est par ailleurs le dossier de configuration
+   de Claude Code lui-même, mauvais emplacement pour du code.
+   - **Reste à faire** : supprimer l'ancienne copie sous `.claude\MUSCU` une
+     fois le nouvel emplacement éprouvé à l'usage (suppression volontairement
+     non faite le jour du déplacement, pour garder un filet le temps de
+     vérifier), et recopier la mémoire de travail liée à ce projet, encore
+     rangée sous la clé de session de l'autre projet (`.claude\APPLI`) faute
+     d'avoir pu être déplacée par un outil de fichiers.
+   - Ce `CLAUDE.md` n'est **toujours pas chargé automatiquement** : il ne le
+     sera que dans une session Claude Code ouverte directement sur
+     `C:\Users\Utilisateur\Musculation`, ce que ce déplacement permet
+     maintenant sans risque de confusion avec l'autre projet.
