@@ -2163,8 +2163,30 @@ async function envoyer(charge) {
   return resultat;
 }
 
+/* Les consignes techniques ne vivaient, jusqu'au 13 septembre 2026, que dans
+   le stockage local du téléphone (`CLES.consignes`) : jamais envoyées au
+   pont, elles seraient perdues sans recours si l'appareil était remplacé ou
+   son stockage effacé, contrairement à l'historique des séances, qui survit
+   dans le classeur une fois synchronisé. L'ensemble courant part à chaque
+   synchronisation, pas seulement la consigne qui vient de changer : plus
+   simple qu'un suivi de ce qui a changé, pour un volume qui ne pèse rien.
+   Une sauvegarde manquée ne bloque jamais l'envoi des séances, le vrai enjeu
+   de `synchroniser()` : voir `feuilleConsignes`/`ecrireConsignes` côté
+   `appsscript/Code.gs`, page de secours jamais relue par l'application. */
+async function synchroniserConsignes() {
+  const consignes = lire(CLES.consignes, {});
+  if (!Object.keys(consignes).length) return;
+  try {
+    await envoyer({ action: 'consignes', consignes });
+  } catch (e) {
+    console.warn('Sauvegarde des consignes différée', e);
+  }
+}
+
 async function synchroniser() {
   if (!reglages.pont) return 0;
+  await synchroniserConsignes();
+
   const historique = lireTableau(CLES.historique);
   const attente = historique.filter((s) => s.fin && !s.envoye);
   let envoyees = 0;

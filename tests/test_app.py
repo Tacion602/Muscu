@@ -407,6 +407,39 @@ def test_la_courbe_suit_la_premiere_serie_et_non_le_tonnage(page):
     assert "baisse" in legende.locator(".compare").get_attribute("class")
 
 
+# -------------------------------------------------------- pont, sauvegardes
+
+
+def test_les_consignes_sont_sauvegardees_a_la_synchronisation(page):
+    """Ajoute le 13 septembre 2026 : les consignes techniques ne vivaient que
+    dans le stockage du telephone (`muscu.consignes`), sans aucune sauvegarde
+    si l'appareil etait perdu ou son stockage efface. Elles partent desormais
+    au classeur a chaque synchronisation, en plus des seances."""
+    ouvrir_jour(page, "J1")
+    nom = page.evaluate("() => seance.exercices[0].nom")
+    page.click("#bouton-consigne-modifier")
+    page.fill("#exo-consigne-champ", "Note a sauvegarder")
+    page.click("#bouton-consigne-enregistrer")
+    page.click("#bouton-quitter")
+
+    requetes = []
+
+    def intercepter(route):
+        requetes.append(route.request.post_data_json)
+        route.fulfill(status=200, content_type="application/json",
+                      body='{"ok": true, "classeur": "Test"}')
+
+    page.route("https://exemple-test.invalid/pont", intercepter)
+    page.click("#bouton-reglages")
+    page.fill("#reglage-pont", "https://exemple-test.invalid/pont")
+    page.click("#bouton-tester-pont")
+    page.wait_for_selector("#reglages-message.ok", timeout=8000)
+
+    consignes_envoyees = [r["consignes"] for r in requetes if r.get("action") == "consignes"]
+    assert consignes_envoyees, "aucune synchronisation de consignes n'a ete envoyee"
+    assert consignes_envoyees[0].get("J1|" + nom) == "Note a sauvegarder"
+
+
 def test_quitter_une_seance_arrete_le_chronometre(page):
     """Defaut du 10 septembre 2026 : quitter laissait le battement du
     chronometre tourner sur une seance nulle, une exception par seconde.

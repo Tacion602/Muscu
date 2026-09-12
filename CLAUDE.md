@@ -719,12 +719,25 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   peut induire en erreur si l'utilisateur a saisi charge et reps sans jamais
   renseigner le RIR : depuis le 27 août 2026, c'est ce dernier qui valide (il
   n'y a plus de bouton), et une série sans RIR reste donc non validée.
-- **Les consignes techniques modifiées depuis l'application restent sur le
-  téléphone**, décision de l'utilisateur le 26 août 2026 : la cellule d'origine
-  dans le classeur mélange plusieurs informations (prescription, RIR, muscle,
-  repos), et y écrire automatiquement risquerait de la casser. Stockées dans
-  `localStorage` sous `muscu.consignes`, une clé par `jour|nom d'exercice`
-  (`cleConsigne` dans `js/app.js`), elles ne repartent jamais vers le classeur.
+- **Les consignes techniques modifiées depuis l'application ont le téléphone
+  pour source**, décision de l'utilisateur le 26 août 2026 : la cellule
+  d'origine dans le classeur mélange plusieurs informations (prescription,
+  RIR, muscle, repos), et y écrire automatiquement risquerait de la casser.
+  Stockées dans `localStorage` sous `muscu.consignes`, une clé par
+  `jour|nom d'exercice` (`cleConsigne` dans `js/app.js`), **jamais relues par
+  l'import ni réécrites dans « semaine 1 »**.
+  - **Sauvegardées vers le classeur depuis le 13 septembre 2026**
+    (`synchroniserConsignes()`), après avoir constaté qu'elles n'avaient
+    jusque-là aucune copie hors du téléphone : un appareil perdu ou vidé les
+    effaçait sans recours, contrairement à l'historique des séances, lui
+    synchronisé. L'ensemble courant part à chaque synchronisation, dans une
+    page `Consignes` à part (`feuilleConsignes`/`ecrireConsignes` dans
+    `appsscript/Code.gs`), une ligne par `(jour, exercice)` mise à jour sur
+    place plutôt qu'ajoutée à chaque envoi. **C'est une sauvegarde de secours,
+    pas une seconde source** : elle n'est relue ni par l'application, ni par
+    l'import, qui continue de ne connaître que « semaine 1 ». Un échec de
+    cette sauvegarde n'empêche jamais l'envoi des séances, qui reste
+    l'essentiel de `synchroniser()`.
 - **« Ne garder que les séances d'aujourd'hui »** (réglages, à côté de
   l'export) purge `muscu.historique` en local uniquement, après confirmation
   et avec le compte de séances retirées annoncé à l'avance. Ajouté le 27 août

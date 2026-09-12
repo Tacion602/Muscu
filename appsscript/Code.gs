@@ -71,6 +71,17 @@ function doPost(requete) {
     }
   }
 
+  // Sauvegarde des consignes techniques (voir feuilleConsignes) : le
+  // telephone envoie l'ensemble courant a chaque synchronisation.
+  if (corps.action === 'consignes') {
+    try {
+      ecrireConsignes(SpreadsheetApp.getActiveSpreadsheet(), corps.consignes, new Date());
+      return reponse({ ok: true });
+    } catch (e) {
+      return reponse({ ok: false, erreur: String(e) });
+    }
+  }
+
   return reponse({ ok: false, erreur: 'action inconnue' });
 }
 
@@ -480,6 +491,76 @@ function ecrireRemarque(classeur, seance, date) {
   if (dejaEcrite(seance.id, 'remarque')) return;
   feuilleRemarques(classeur).appendRow([formatDateCourte(date), seance.jour || '', texte]);
   marquerEcrite(seance.id, 'remarque');
+}
+
+/**
+ * Sauvegarde des consignes techniques modifiees depuis le telephone, ajoutee
+ * le 13 septembre 2026. Ces notes ne vivent que dans le stockage local du
+ * telephone (`muscu.consignes` cote js/app.js) : jamais envoyees au pont
+ * avant cette date, elles seraient perdues sans recours si l'appareil etait
+ * remplace ou son stockage efface, contrairement aux seances, dont
+ * l'historique survit ici une fois synchronise.
+ *
+ * Une ligne par (jour, exercice), a la difference des autres pages : ce
+ * n'est pas un journal mais un etat courant, donc une mise a jour sur place
+ * (`ecrireConsignes`) plutot qu'un ajout a chaque envoi. Sans quoi
+ * resynchroniser la meme consigne dix fois ajouterait dix lignes
+ * identiques.
+ *
+ * Cette page est une sauvegarde consultable, jamais relue par l'application
+ * ni par l'import : "semaine 1" reste la seule source des consignes a
+ * l'import (voir plus haut, "Le classeur"). Une consigne effacee depuis le
+ * telephone (l'application ne propose aujourd'hui que de la remplacer,
+ * jamais de l'effacer) resterait donc ici jusqu'a suppression manuelle.
+ */
+function feuilleConsignes(classeur) {
+  let feuille = classeur.getSheetByName('Consignes');
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet('Consignes');
+  feuille.getRange(1, 1, 1, 4)
+    .setValues([['Jour', 'Exercice', 'Consigne', 'Mise a jour']])
+    .setFontWeight('bold');
+  feuille.setFrozenRows(1);
+  feuille.setColumnWidth(1, 50);
+  feuille.setColumnWidth(2, 260);
+  feuille.setColumnWidth(3, 500);
+  feuille.setColumnWidth(4, 100);
+  return feuille;
+}
+
+/* `consignes` est la carte brute du telephone, telle que stockee sous
+ * `muscu.consignes` : cle "Jour|Exercice", valeur le texte. Le telephone
+ * envoie l'ensemble courant a chaque synchronisation, pas seulement la
+ * consigne qui vient de changer : plus simple qu'un suivi de ce qui a
+ * change, pour un volume (quelques dizaines de notes courtes) qui ne pese
+ * rien. Une entree vide n'est pas ecrite : elle ne decrit aucune consigne. */
+function ecrireConsignes(classeur, consignes, date) {
+  const entrees = Object.keys(consignes || {}).map(function (cle) {
+    const sep = cle.indexOf('|');
+    if (sep < 0) return null;
+    const texte = (consignes[cle] || '').trim();
+    if (!texte) return null;
+    return { jour: cle.slice(0, sep), nom: cle.slice(sep + 1), texte: texte };
+  }).filter(Boolean);
+  if (!entrees.length) return;
+
+  const feuille = feuilleConsignes(classeur);
+  const derniere = feuille.getLastRow();
+  const existantes = derniere > 1 ? feuille.getRange(2, 1, derniere - 1, 2).getValues() : [];
+  const ligneDeLaCle = {};
+  existantes.forEach(function (valeurs, i) {
+    ligneDeLaCle[valeurs[0] + '|' + valeurs[1]] = 2 + i;
+  });
+
+  entrees.forEach(function (e) {
+    const cle = e.jour + '|' + e.nom;
+    const ligne = ligneDeLaCle[cle];
+    if (ligne) {
+      feuille.getRange(ligne, 3, 1, 2).setValues([[e.texte, formatDateCourte(date)]]);
+    } else {
+      feuille.appendRow([e.jour, e.nom, e.texte, formatDateCourte(date)]);
+    }
+  });
 }
 
 /**
