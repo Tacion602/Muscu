@@ -122,6 +122,33 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
 ## Comportements côté application, à ne pas défaire sans y repenser
 
+- **L'identité d'un exercice est son nom, jamais le jour où il est fait**
+  (décision de l'utilisateur le 13 septembre 2026). « Élévation latérale
+  haltères » apparaît en J3 et en J5 : c'est le même exercice, et il ne doit
+  suivre qu'une seule progression. `derniereFois(nomExo)` cherche donc dans
+  toutes les séances enregistrées, sans filtrer par jour ; même règle dans
+  `progressionPremiereSerie()` pour la courbe de l'historique. C'est aussi ce
+  qui permet de remplacer un exercice un temps puis de le remettre plus tard
+  sans rien perdre : l'historique du téléphone (`muscu.historique`) est
+  indépendant du programme du moment, et n'importe quelle séance passée
+  portant ce nom est retrouvée dès qu'il réapparaît dans un jour, quel qu'il
+  soit. Aucune modification du classeur ni de `appsscript/Code.gs` n'est donc
+  nécessaire pour ce geste : les pages du classeur sont des sorties
+  d'écriture, jamais relues (voir plus haut, « Le classeur »).
+  - **La correspondance est exacte au caractère près.** Un nom ressaisi
+    autrement (accent oublié, casse différente, espace en trop) démarre en
+    silence un second historique au lieu de rejoindre le premier : rien dans
+    l'application ne le signale, la nouvelle fiche paraît juste vide de
+    passé. `outils/verifier_import.py` (`noms_ambigus`) compare les noms d'un
+    même import une fois accents, casse et espaces neutralisés, et alerte sur
+    toute paire proche mais non identique — sans confondre ce cas avec celui,
+    désormais normal, de deux jours qui partagent vraiment le même nom.
+  - **Les consignes techniques ne suivent pas ce regroupement** : elles
+    restent indexées par jour et par nom (`cleConsigne`), pas seulement par
+    nom. Un même exercice peut donc afficher une consigne différente sur
+    deux jours si elle a été modifiée sur l'un et pas l'autre ; non demandé,
+    à revoir si ça gêne à l'usage.
+
 - **Plusieurs séances peuvent être en cours en même temps, une par jour.**
   Décision de l'utilisateur le 27 août 2026 : entrer dans J3 ne doit rien
   effacer de ce qui a été saisi dans J1. Elles vivent dans une carte indexée
@@ -199,8 +226,19 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     pour la tenue et le repos (45 s, 60 s pour le farmer walk et le relevé de
     genoux), indépendant de la minuterie de musculation ; `arreterMinuterie()`
     l'arrête aussi, comme `commencer()`.
-  - **Pastille d'interférence avec la course** devant chaque mouvement, du
-    vert au rouge, jamais le nom lui-même en couleur.
+  - **Le nom du mouvement porte la couleur d'interférence avec la course**,
+    du vert au rouge (`nomMouvementColore()`) : plus de pastille à côté,
+    décision de l'utilisateur le 13 septembre 2026 qui inverse celle du
+    11 (pastille préférée en pensant les teintes pâles illisibles en texte).
+    Mesuré sur les fonds réels de l'écran : c'est l'inverse qui est vrai, les
+    teintes pâles du dégradé sont très lisibles sur fond sombre (12 à 15:1),
+    et seules les deux plus sombres tombent sous le seuil WCAG AA de 4,5:1
+    (`farmer_walk` 1,9:1, `marche_ours` 3,2:1) : `couleurTexte` les éclaircit
+    pour l'affichage sans changer `couleur`. Sur le bouton choisi, les neuf
+    teintes perdent toute lisibilité sur le fond turquoise de la sélection
+    (1 à 3,8:1) : le nom y reste blanc (`.type-course.choisi
+    .gainage-nom-mouvement` dans `css/style.css`), la sélection étant déjà
+    dite par ce fond.
   - **Vers le classeur**, `lignesGainage()` met les séries à plat dans
     `seance.lignesGainage` à l'enregistrement, et `ecrireGainage()` les écrit
     dans une page `Gainage` : le pont n'a pas à connaître les mouvements.
@@ -722,6 +760,12 @@ vérifications à la main n'avaient pas vus.
   comparaison, sans quoi l'outil se déclare inexécutable. En simple info, un
   signal faible : une dernière séance au nombre de séries différent de la
   prescription, celui qui avait trahi l'échange de J1.
+  - **`noms_ambigus`**, ajouté le 13 septembre 2026 avec le regroupement de
+    l'historique par nom d'exercice (voir plus haut) : deux noms qui ne
+    diffèrent que par la casse, un accent ou un espace sortent en ALERTE, un
+    nom rigoureusement partagé entre deux jours ne l'est jamais. Son propre
+    témoin, distinct de celui de `comparer()`, doit détecter une paire
+    fabriquée avant que le contrôle ne se prononce.
 - **`outils/verifier_code.py`**, né le 12 septembre 2026 d'une relecture
   complète qui a trouvé, sans qu'aucun outil ne les signale : un passage de ce
   fichier décrivant des fonctions supprimées la veille, un commentaire de

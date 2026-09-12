@@ -26,6 +26,7 @@ Lance aussi automatiquement a la fin de importer_classeur.py.
 import json
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent.parent
@@ -140,6 +141,44 @@ def structure(programme):
     return constats
 
 
+def normaliser_nom(nom):
+    """Casse, accents et espaces neutralises : ne sert qu'a comparer deux
+    noms, jamais a en afficher un a la place de l'autre."""
+    sans_accents = unicodedata.normalize("NFKD", nom).encode("ascii", "ignore").decode("ascii")
+    return " ".join(sans_accents.lower().split())
+
+
+def noms_ambigus(programme):
+    """Deux exercices dont le nom ne differe qu'en casse, accents ou espaces
+    sont presque surement le meme exercice resaisi differemment.
+
+    Depuis le 13 septembre 2026, l'identite d'un exercice est son nom exact
+    (voir `derniereFois` dans js/app.js) : le meme exercice sur plusieurs
+    jours partage sa progression, a condition d'etre ecrit a l'identique.
+    Une variante muette (l'apostrophe droite pour la courbe, un accent
+    oublie, un espace de trop) demarre un second historique au lieu de
+    rejoindre le premier, sans qu'aucune erreur ne le signale a la saisie.
+    Meme piege que les deux apostrophes de que-faire-a-paris dans l'autre
+    projet, ici sur le nom qui sert de cle plutot que sur un mot-cle.
+
+    Deux noms rigoureusement identiques ne sont volontairement PAS signales
+    ici : c'est le cas normal, et desormais voulu, d'un exercice partage
+    entre plusieurs jours.
+    """
+    constats = []
+    par_forme = {}
+    for jour in programme.get("jours", []):
+        for exo in jour.get("exercices", []):
+            par_forme.setdefault(normaliser_nom(exo["nom"]), set()).add(exo["nom"])
+    for noms in par_forme.values():
+        if len(noms) > 1:
+            constats.append(("ALERTE", "noms proches mais distincts : "
+                             + " / ".join(repr(n) for n in sorted(noms))
+                             + " -- si c'est le meme exercice, l'ecrire a l'identique pour "
+                             + "qu'il partage son historique ; sinon, ignorer."))
+    return constats
+
+
 def temoin():
     """Un echange d'historique fabrique doit etre signale deux fois."""
     def exo(nom, charge):
@@ -150,6 +189,20 @@ def temoin():
     trouves = [t for niveau, t in comparer(ancien, neuf)
                if niveau == "ALERTE" and "porte maintenant" in t]
     return len(trouves) == 2
+
+
+def temoin_noms_ambigus():
+    """Deux noms qui ne different que par un accent doivent etre signales ;
+    deux jours qui partagent le meme nom, exactement, ne doivent pas l'etre."""
+    fabrique = {"jours": [{"code": "J9", "exercices": [
+        {"nom": "Elevation laterale", "numero": 1},
+        {"nom": "Élévation latérale", "numero": 2},
+        {"nom": "Développé couché", "numero": 3},
+    ]}, {"code": "J10", "exercices": [
+        {"nom": "Développé couché", "numero": 1},
+    ]}]}
+    trouves = noms_ambigus(fabrique)
+    return len(trouves) == 1 and "Elevation laterale" in trouves[0][1]
 
 
 def reference():
@@ -168,6 +221,9 @@ def verifier():
     if not temoin():
         print("  INEXECUTABLE : le temoin, un echange d'historique fabrique, n'est pas detecte.")
         return 2
+    if not temoin_noms_ambigus():
+        print("  INEXECUTABLE : le temoin des noms ambigus n'est pas detecte.")
+        return 2
 
     neuf = json.loads(FICHIER.read_text(encoding="utf-8"))
     constats = []
@@ -179,6 +235,7 @@ def verifier():
         constats += comparer(ancien, neuf)
     constats += structure(neuf)
     constats += plausibilite(neuf)
+    constats += noms_ambigus(neuf)
 
     alertes = [t for niveau, t in constats if niveau == "ALERTE"]
     infos = [t for niveau, t in constats if niveau == "info"]

@@ -786,18 +786,22 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 }
 
 /* Séance de gainage et farmer walk des footings, depuis le 11 septembre 2026.
-   Pastille ronde devant le nom, jamais le nom lui-même en couleur : les teintes
-   claires du milieu de gamme seraient illisibles en texte (récapitulatif de
-   programme de l'utilisateur). */
-.pastille-couleur {
-  display: inline-block;
-  flex: none;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
-}
+
+   Le nom du mouvement porte la couleur d'interférence, plus de pastille à
+   côté (décision de l'utilisateur le 13 septembre 2026, qui inverse le choix
+   du 11 septembre : la pastille avait été préférée en pensant les teintes
+   pâles illisibles en texte). Mesuré sur les fonds réels de cet écran
+   (`--fond` 0d1117, `--fond-champ` 1f2630) : c'est l'inverse qui est vrai,
+   les teintes pâles du dégradé sont très lisibles sur un fond sombre
+   (12 à 15:1), et seules les deux plus sombres du dégradé posent un problème
+   (`farmer_walk` 1,9:1, `marche_ours` 3,2:1, sous le seuil WCAG AA de
+   4,5:1) : `couleurTexte` les éclaircit pour cet usage (voir
+   MOUVEMENTS_GAINAGE dans js/app.js). */
+.gainage-nom-mouvement { color: var(--couleur-mouvement, var(--texte)); }
+/* Sur le bouton choisi, le fond turquoise (--accent) écrase toute lisibilité
+   des neuf couleurs (1 à 3,8:1 mesurés) : le blanc du bouton sélectionné
+   l'emporte, la sélection étant déjà signalée par ce fond. */
+.type-course.choisi .gainage-nom-mouvement { color: #fff; }
 .gainage-legende { font-size: 12px; color: var(--texte-faible); margin: 0 0 6px; }
 .gainage-degrade {
   height: 6px;

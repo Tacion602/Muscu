@@ -154,6 +154,40 @@ def test_annuler_la_consigne_revient_a_la_valeur_d_avant(page):
     assert page.text_content("#exo-consigne") == "Premiere version"
 
 
+# ---------------------------------------------------- historique par nom
+
+
+def test_le_meme_exercice_partage_son_historique_entre_jours(page):
+    """L'identite d'un exercice est son nom, pas le jour ou il est fait
+    (decision de l'utilisateur du 13 septembre 2026) : deux jours qui
+    partagent un exercice du meme nom partagent aussi sa progression.
+
+    La seance semee porte volontairement un autre jour que celui ouvert,
+    pour prouver que seul le nom compte, pas le jour de la seance passee.
+    Aucun nom d'exercice n'est suppose : on prend le premier exercice d'un
+    jour de musculation, et on fait comme si le jour suivant partageait
+    son nom."""
+    jours_muscu = page.evaluate(
+        "() => programme.jours.filter(j => j.type !== 'footing' "
+        "&& j.type !== 'gainage').map(j => j.code)")
+    assert len(jours_muscu) >= 2, "il faut au moins deux jours de musculation pour ce test"
+    jour_ouvert, jour_semee = jours_muscu[0], jours_muscu[1]
+    nom = page.evaluate(
+        "j => programme.jours.find(x => x.code === j).exercices[0].nom", jour_ouvert)
+
+    precedente = {
+        "id": "H1", "jour": jour_semee, "titre": jour_semee, "type": "muscu",
+        "fin": "2026-09-01T18:00:00.000Z", "envoye": True,
+        "exercices": [{"nom": nom, "series": [{"charge": 33, "reps": 11, "faite": True}]}],
+    }
+    page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", [precedente])
+
+    ouvrir_jour(page, jour_ouvert)
+    champs = page.locator(".ligne-serie").nth(0).locator("input")
+    assert champs.nth(0).get_attribute("placeholder") == "33"
+    assert champs.nth(1).get_attribute("placeholder") == "11"
+
+
 # ---------------------------------------------------------------- footing
 
 
@@ -228,6 +262,29 @@ def test_la_seance_de_gainage_propose_quatre_categories(page):
     choisis = page.locator("#gainage-categories .type-course.choisi").all_text_contents()
     assert choisis == ["Dead bug", "Pallof press", "Planche latérale", "Crunch inversé"]
     assert "Interférence avec les muscles de la course" in page.text_content("#bloc-gainage")
+
+
+def test_le_nom_du_mouvement_est_colore_sans_pastille(page):
+    """Decision de l'utilisateur du 13 septembre 2026, qui inverse celle du
+    11 : plus de pastille de couleur devant le nom, la couleur se porte sur
+    le nom lui-meme. Le mouvement choisi reste blanc : deja signale par le
+    fond turquoise du bouton, une teinte propre y perdrait toute lisibilite
+    (mesure sur les neuf couleurs, voir CLAUDE.md)."""
+    ouvrir_gainage(page)
+    assert page.locator(".pastille-couleur").count() == 0
+
+    carte = carte_gainage(page, 0)
+
+    def couleur(selecteur):
+        return carte.locator(selecteur).first.evaluate("e => getComputedStyle(e).color")
+
+    assert couleur(".type-course.choisi .gainage-nom-mouvement") == "rgb(255, 255, 255)"
+    assert couleur(".type-course:not(.choisi) .gainage-nom-mouvement") != "rgb(255, 255, 255)"
+
+    carte.locator(".type-course", has_text="Planche").click()
+    carte = carte_gainage(page, 0)
+    assert couleur(".type-course.choisi .gainage-nom-mouvement") == "rgb(255, 255, 255)"
+    assert couleur(".gainage-prescription .gainage-nom-mouvement") != "rgb(255, 255, 255)"
 
 
 def test_le_mouvement_par_defaut_est_celui_de_la_derniere_seance(page):

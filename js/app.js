@@ -83,10 +83,20 @@ function uniteGainage(exo) {
    `mode` décide de la saisie : `chrono` (secondes de tenue, minuteur de 45 s
    interruptible), `reps`, ou `charge` (poids, distance, vitesse saisie, le
    farmer walk seulement). `interference` est le rang de fatigue imposé aux
-   muscles de la course, 1 le plus faible, et `couleur` sa pastille. Le dead
-   bug est en répétitions : le récapitulatif le disait chrono dans un tableau
-   et « 6-8 par côté » dans l'autre, tranché ainsi le 11 septembre 2026, le
-   tempo 3-1-3 faisant de la qualité de chaque répétition la mesure utile. */
+   muscles de la course, 1 le plus faible, et `couleur` la teinte du nom de
+   l'exercice (voir `carteMouvement`, décision de l'utilisateur le
+   13 septembre 2026 : plus de pastille, la couleur se porte sur le texte).
+   Le dead bug est en répétitions : le récapitulatif le disait chrono dans un
+   tableau et « 6-8 par côté » dans l'autre, tranché ainsi le 11 septembre
+   2026, le tempo 3-1-3 faisant de la qualité de chaque répétition la mesure
+   utile.
+
+   `couleurTexte`, quand présent, remplace `couleur` pour l'affichage : mesuré
+   sur les fonds réels de l'écran (`--fond`, `--fond-champ`), `farmer_walk`
+   (2,4:1) et `marche_ours` (3,9:1) tombent sous le seuil de lisibilité WCAG
+   AA (4,5:1) en texte de cette taille, là où les sept autres teintes passent
+   largement (5:1 et plus). Éclaircies vers le blanc jusqu'à repasser ce
+   seuil sur le fond le plus défavorable, en gardant la même teinte. */
 const MOUVEMENTS_GAINAGE = {
   dead_bug: {
     nom: 'Dead bug', mode: 'reps', prescription: '6-8 par côté', repos: 45,
@@ -113,7 +123,7 @@ const MOUVEMENTS_GAINAGE = {
   },
   marche_ours: {
     nom: "Marche de l'ours", mode: 'chrono', prescription: '45 s', repos: 45,
-    interference: 8, couleur: '#D73027',
+    interference: 8, couleur: '#D73027', couleurTexte: '#E1665F',
     consigne: 'Genoux à quelques centimètres du sol, dos plat, bassin qui ne bascule '
       + 'pas latéralement.',
   },
@@ -125,7 +135,7 @@ const MOUVEMENTS_GAINAGE = {
   },
   farmer_walk: {
     nom: 'Farmer walk une main', mode: 'charge', prescription: '20-30 m par côté', repos: 60,
-    interference: 9, couleur: '#A50026',
+    interference: 9, couleur: '#A50026', couleurTexte: '#CD7085',
     consigne: "Départ 18 à 20 kg. Épaules horizontales, arrêt dès l'inclinaison, quelle "
       + 'que soit la distance restante.',
     info: 'Il ne fatigue pas la sangle comme les autres : il charge la chaîne portante '
@@ -380,12 +390,30 @@ function tonnageDesSeries(series) {
 
 /* ------------------------------------------- ce qui a été fait la dernière fois */
 
+/* Convertit une date "JJ/MM/AAAA" du classeur (voir MOTIF_DATE dans
+   importer_classeur.py) en forme triable "AAAA-MM-JJ". Chaîne vide si la
+   date est absente ou mal formée : elle trie alors avant tout le reste. */
+function dateClasseurTriable(date) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(date || '');
+  return m ? m[3] + '-' + m[2] + '-' + m[1] : '';
+}
+
 /* Cherche d'abord dans les séances enregistrées sur le téléphone, puis dans
    l'historique repris du classeur. Le deload est écarté : comparer une séance
-   normale à une semaine de décharge fausserait la lecture de la progression. */
-function derniereFois(codeJour, nomExo) {
+   normale à une semaine de décharge fausserait la lecture de la progression.
+
+   L'identité d'un exercice est son nom, pas le jour où il est fait
+   (décision de l'utilisateur le 13 septembre 2026) : « Élévation latérale
+   haltères » apparaît en J3 et en J5, c'est le même mouvement, et il doit
+   suivre une seule progression plutôt que deux qui s'ignorent. La recherche
+   ignore donc le jour, aussi bien côté téléphone que côté classeur. Elle
+   reste exacte au caractère près : un nom ressaisi autrement (accent, casse,
+   espace) démarre silencieusement un second historique plutôt que de
+   rejoindre le premier (voir `outils/verifier_import.py`, qui signale les
+   quasi-doublons de nom entre exercices). */
+function derniereFois(nomExo) {
   const passees = lireTableau(CLES.historique)
-    .filter((s) => s.jour === codeJour && s.fin)
+    .filter((s) => s.fin)
     .sort((a, b) => new Date(b.fin) - new Date(a.fin));
 
   for (const s of passees) {
@@ -400,11 +428,22 @@ function derniereFois(codeJour, nomExo) {
     }
   }
 
-  const jour = jourDe(codeJour);
-  const fiche = jour && jour.exercices.find((e) => e.nom === nomExo);
-  if (!fiche || !fiche.historique.length) return null;
-  const ancien = fiche.historique.filter((h) => !h.deload).pop();
-  if (!ancien) return null;
+  // Historique importé du classeur, avant l'application : le même nom peut
+  // porter ses colonnes dans plusieurs jours si aucun n'a encore de séance
+  // téléphone. Un candidat par jour où il apparaît (le dernier de son bloc,
+  // deload écarté), puis le plus récent par date connue ; à défaut, celui du
+  // premier jour rencontré, comme avant cette fusion par nom.
+  const candidats = [];
+  (programme.jours || []).forEach((j) => {
+    (j.exercices || []).filter((e) => e.nom === nomExo).forEach((fiche) => {
+      const dernier = (fiche.historique || []).filter((h) => !h.deload).pop();
+      if (dernier) candidats.push(dernier);
+    });
+  });
+  if (!candidats.length) return null;
+  const ancien = candidats.reduce((meilleur, c) => (
+    !meilleur || dateClasseurTriable(c.date) > dateClasseurTriable(meilleur.date) ? c : meilleur
+  ), null);
   return {
     quand: null,
     dateTexte: ancien.date,
@@ -982,12 +1021,19 @@ function lignesGainage(s) {
   return lignes;
 }
 
-function pastille(mouvement) {
-  const point = document.createElement('span');
-  point.className = 'pastille-couleur';
-  point.style.background = mouvement.couleur;
-  point.title = 'Interférence avec la course : rang ' + mouvement.interference + ' sur 9';
-  return point;
+/* Le nom du mouvement porte lui-même la couleur d'interférence, plus de
+   pastille à côté (décision de l'utilisateur le 13 septembre 2026). La
+   variable CSS `--couleur-mouvement` plutôt qu'un `style.color` direct :
+   `.type-course.choisi` la remplace par du blanc (voir style.css), la
+   teinte propre au mouvement ayant trop peu de contraste sur le fond
+   turquoise du bouton sélectionné, mesuré pour les neuf couleurs. */
+function nomMouvementColore(mouvement) {
+  const nom = document.createElement('span');
+  nom.className = 'gainage-nom-mouvement';
+  nom.textContent = mouvement.nom;
+  nom.style.setProperty('--couleur-mouvement', mouvement.couleurTexte || mouvement.couleur);
+  nom.title = 'Interférence avec la course : rang ' + mouvement.interference + ' sur 9';
+  return nom;
 }
 
 function carteMouvement(titre, series, cle, categorie) {
@@ -1016,7 +1062,7 @@ function carteMouvement(titre, series, cle, categorie) {
       bouton.type = 'button';
       bouton.className = 'type-course' + (candidat === cle ? ' choisi' : '');
       bouton.dataset.mouvement = candidat;
-      bouton.append(pastille(m), document.createTextNode(m.nom));
+      bouton.appendChild(nomMouvementColore(m));
       bouton.addEventListener('click', () => {
         seance.choix[categorie.cle] = candidat;
         enregistrerSeance();
@@ -1029,8 +1075,8 @@ function carteMouvement(titre, series, cle, categorie) {
 
   const prescription = document.createElement('p');
   prescription.className = 'gainage-prescription';
-  prescription.append(pastille(mouvement), document.createTextNode(
-    mouvement.nom + ' · ' + mouvement.prescription + ' · repos ' + mouvement.repos + ' s'));
+  prescription.append(nomMouvementColore(mouvement), document.createTextNode(
+    ' · ' + mouvement.prescription + ' · repos ' + mouvement.repos + ' s'));
   carte.appendChild(prescription);
 
   const avant = derniereFoisMouvement(cle);
@@ -1476,7 +1522,7 @@ function proportionFaite() {
 
 function rendreSeries() {
   const courant = seance.exercices[indexExo];
-  const avant = derniereFois(seance.jour, courant.nom);
+  const avant = derniereFois(courant.nom);
   const liste = $('series');
   liste.innerHTML = '';
 
@@ -1613,7 +1659,7 @@ function champ(valeur, suggestion, etiquette, aChange) {
    de l'exercice, pour servir de repère avant même la première série. */
 function majTonnage(avantConnu) {
   const courant = seance.exercices[indexExo];
-  const avant = avantConnu !== undefined ? avantConnu : derniereFois(seance.jour, courant.nom);
+  const avant = avantConnu !== undefined ? avantConnu : derniereFois(courant.nom);
   const actuel = tonnageDesSeries(courant.series);
 
   $('tonnage-actuel').textContent = actuel;
@@ -1646,7 +1692,7 @@ function validerSerie(exercice, serie, index) {
   // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
   // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
   if (serie.charge == null || serie.reps == null) {
-    const avant = derniereFois(seance.jour, exercice.nom);
+    const avant = derniereFois(exercice.nom);
     const rang = exercice.series.slice(0, index).filter((s) => !s.echauffement).length;
     const reference = avant && !serie.echauffement ? avant.series[rang] : null;
     if (reference) {
@@ -2317,7 +2363,7 @@ function indicateur(serie) {
    demandée par l'utilisateur le 10 septembre 2026 sur cette page-ci, et
    tracée depuis le 11 septembre 2026 sur l'indicateur ci-dessus.
 
-   Trois partis pris :
+   Quatre partis pris :
    - **seules les séances du téléphone comptent**, pas l'historique repris du
      classeur : celui-ci est une reprise ponctuelle et non un journal, et ses
      valeurs ont déjà été désalignées de leurs exercices par une manipulation
@@ -2325,11 +2371,14 @@ function indicateur(serie) {
    - **on s'arrête à la séance affichée** : rouvrir une séance ancienne doit
      montrer la progression telle qu'elle était ce jour-là ;
    - **l'exercice 1 porte l'indicateur de séance** du récapitulatif ; les
-     autres suivent la même mesure, à titre de repère. */
+     autres suivent la même mesure, à titre de repère ;
+   - **le nom identifie l'exercice, pas le jour** (voir `derniereFois`) : la
+     courbe d'un exercice qui revient sur plusieurs jours suit toutes ses
+     séances, pas seulement celles du jour affiché. */
 function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance) {
   const fin = new Date(seanceAffichee.fin).getTime();
   const series = lireTableau(CLES.historique)
-    .filter((s) => s.jour === seanceAffichee.jour && s.fin && new Date(s.fin).getTime() <= fin)
+    .filter((s) => s.fin && new Date(s.fin).getTime() <= fin)
     .sort((a, b) => new Date(a.fin) - new Date(b.fin))
     .map((s) => premiereSerieDeTravail((s.exercices || []).find((e) => e.nom === nomExo)))
     .filter(Boolean);
