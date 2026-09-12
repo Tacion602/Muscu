@@ -735,11 +735,13 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   Stockées dans `localStorage` sous `muscu.consignes`, une clé par
   `jour|nom d'exercice` (`cleConsigne` dans `js/app.js`), **jamais relues par
   l'import ni réécrites dans « semaine 1 »**.
-  - **Sauvegardées vers le classeur depuis le 13 septembre 2026**
-    (`synchroniserConsignes()`), après avoir constaté qu'elles n'avaient
-    jusque-là aucune copie hors du téléphone : un appareil perdu ou vidé les
-    effaçait sans recours, contrairement à l'historique des séances, lui
-    synchronisé. L'ensemble courant part à chaque synchronisation, dans une
+  - **Code écrit le 13 septembre 2026 pour les sauvegarder vers le
+    classeur** (`synchroniserConsignes()`), après avoir constaté qu'elles
+    n'avaient jusque-là aucune copie hors du téléphone : un appareil perdu ou
+    vidé les effaçait sans recours, contrairement à l'historique des
+    séances, lui synchronisé. **Inactif tant que `appsscript/Code.gs` n'a
+    pas été redéployé** (voir « Chantiers ouverts » ci-dessous) : jusque-là,
+    ce risque reste entier. L'ensemble courant part à chaque synchronisation, dans une
     page `Consignes` à part (`feuilleConsignes`/`ecrireConsignes` dans
     `appsscript/Code.gs`), une ligne par `(jour, exercice)` mise à jour sur
     place plutôt qu'ajoutée à chaque envoi. **C'est une sauvegarde de secours,
@@ -755,7 +757,7 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
 
 ## Vérifications
 
-Trois outils, nés le 10 septembre 2026 d'une série d'incidents que les
+Quatre outils, nés le 10 septembre 2026 d'une série d'incidents que les
 vérifications à la main n'avaient pas vus.
 
 - **`pytest tests/`** : l'application dans un vrai Chromium piloté par
@@ -809,12 +811,28 @@ vérifications à la main n'avaient pas vus.
   autres en arrière, cas réel du 9 septembre 2026. La copie n'est écrite que
   si elle se relit comme un classeur contenant l'onglet du programme.
 
+**Environnement observé** : le service worker de cette PWA (`sw.js`) refuse
+de s'enregistrer dans le navigateur d'aperçu intégré à Claude Code (erreur
+générique côté `navigator.serviceWorker.register`), alors que le fichier se
+sert correctement et qu'un `fetch()` direct du même script réussit. Vérifié
+sur un serveur sain (`ThreadingHTTPServer`, HTTP/1.1) : très probablement une
+restriction du bac à sable de prévisualisation, pas un défaut de
+l'application. À revérifier sur un vrai Chrome Android avant de conclure à
+un bug si le sujet revient.
+
 ## Chantiers ouverts
 
-1. **Déployer `appsscript/Code.gs`** et coller l'adresse obtenue, ainsi que le
-   secret choisi, dans les réglages de l'application. Rien ne part vers le
-   classeur tant que ce n'est pas fait ; l'application reste utilisable en
-   local sans cette étape.
+1. **Redéployer `appsscript/Code.gs`** (nouvelle version du déploiement
+   existant, coller le code ne suffit pas). Le pont a déjà été déployé et
+   utilisé avec succès par le passé (séances reçues dans le classeur) :
+   ce qui est en attente aujourd'hui, ce sont **trois évolutions écrites
+   depuis mais jamais mises en ligne** : le garde-fou anti-doublon devenu
+   sectionné par page plutôt qu'unique pour la séance entière, l'écriture de
+   la séance de gainage dans une page `Gainage`, et la sauvegarde des
+   consignes techniques dans une page `Consignes`. Rien de tout ça n'atteint
+   le classeur tant que le redéploiement n'est pas fait ; l'application
+   reste par ailleurs utilisable en local sans cette étape, l'adresse et le
+   secret du pont restant ceux déjà en place dans les réglages.
 2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
    accumulées. Côté application, c'est fait depuis le 10 septembre 2026 : la
    fiche d'une séance enregistrée porte la courbe de chaque exercice
@@ -840,3 +858,38 @@ vérifications à la main n'avaient pas vus.
      sera que dans une session Claude Code ouverte directement sur
      `C:\Users\Utilisateur\Musculation`, ce que ce déplacement permet
      maintenant sans risque de confusion avec l'autre projet.
+6. **Trois consignes techniques restent vides dans « semaine 1 »**, jamais
+   remplies côté classeur : `Ecarté poulie horizontale hauteur poitrine` et
+   `Elévation latérale poulie unilatérale` en J1, `Leg curl allongé
+   unilatéral` en J4. Un contenu à écrire par l'utilisateur (ou à proposer,
+   sur demande, sans l'inventer sans le dire) ; `outils/verifier_import.py`
+   ne le détecte pas, une consigne vide n'étant pas une anomalie qu'il sache
+   reconnaître.
+
+## Posture sur les questions d'entraînement
+
+Demandé mot pour mot par l'utilisateur le 10 septembre 2026 : **« Sois mon
+coach, pour le sport. »** Ce cadre vaut pour les questions d'entraînement
+(programmation, progression, technique, charge) ; **il ne vaut pas pour le
+travail sur cette application**, où les échanges gardent leur forme
+habituelle.
+
+- Pas de flatteries ; direct, objectif, succinct.
+- Il ne cherche pas de validation mais une expertise.
+- **Ne jamais inventer de donnée.** L'interroger si le contexte ou les
+  éléments fournis sont insuffisants, **avant** de répondre plutôt qu'en
+  déduisant à sa place.
+- Approche scientifique, rationnelle et structurée. Corriger factuellement
+  une erreur de raisonnement, dire si un objectif est trop élevé.
+- Justifier en citant les concepts ou principes sous-jacents.
+- Appuyer les recommandations **d'abord sur des données ciblant des
+  pratiquants récréatifs ou intermédiaires**, puis sur des athlètes
+  professionnels.
+- **Si la réponse n'est pas certaine, l'admettre simplement.**
+- Distinguer nettement ce qui est établi (méta-analyses, essais contrôlés)
+  de ce qui n'est qu'inféré d'un principe. Un résultat d'EMG n'est pas une
+  preuve d'hypertrophie. Quand une comparaison directe n'a pas été étudiée,
+  le dire plutôt que d'extrapoler avec assurance.
+
+Il est en reconversion professionnelle, méthodique, et travaille avec un
+programme écrit : une réponse complaisante ne lui sert à rien.
