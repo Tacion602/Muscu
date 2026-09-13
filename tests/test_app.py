@@ -215,16 +215,37 @@ def test_l_historique_footing_liste_chaque_passage(page):
     assert "Sortie sans chiffres" not in texte
 
 
-def test_j2_et_j6_sont_deux_seances_distinctes(page):
-    """J6 est engendre depuis le bloc 'J2 & J6 FOOTING' du classeur : meme
-    definition, mais chaque jour garde ses propres chiffres."""
+def test_j2_et_j6_sont_desormais_le_meme_footing(page):
+    """13 septembre 2026 : J6 devient un alias strict de J2 (demande de
+    l'utilisateur), inversant la decision du 27 aout 2026 verifiee ici avant
+    ce jour. Les deux bulles restent sur l'accueil comme repere de jour
+    (mardi/samedi), mais ouvrent desormais la meme seance en cours et le
+    meme historique ; seul le nom de la bulle differe encore."""
     ouvrir_jour(page, "J6")
-    assert page.text_content("#seance-jour").startswith("J6")
+    assert page.text_content("#seance-jour").startswith("J2")
     page.locator(".cycle-course input").nth(0).fill("30")
     page.click("#bouton-quitter")
     ouvrir_jour(page, "J2")
     assert page.text_content("#seance-jour").startswith("J2")
-    assert page.locator(".cycle-course input").nth(0).input_value() == ""
+    assert page.locator(".cycle-course input").nth(0).input_value() == "30"
+
+
+def test_l_historique_j6_fusionne_dans_j2_au_demarrage(page):
+    """13 septembre 2026 : les seances deja enregistrees sous J6 avant la
+    fusion rejoignent l'historique de J2 au lancement (demande de
+    l'utilisateur), et les deux bulles affichent la meme derniere fois."""
+    ancien = [{
+        "id": "F1", "jour": "J6", "titre": "J2 & J6 FOOTING", "type": "footing",
+        "fin": "2026-09-06T18:00:00.000Z", "envoye": True,
+        "footing": {"ef": [{"duree_min": 20, "distance_km": 3}]}, "mouvements": {},
+    }]
+    page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", ancien)
+    page.reload()
+    page.wait_for_selector(".carte-jour")
+    historique = page.evaluate("JSON.parse(localStorage.getItem('muscu.historique'))")
+    assert historique[0]["jour"] == "J2"
+    assert "Durée et distance ·" in page.locator(".carte-jour").nth(1).text_content()
+    assert "Durée et distance ·" in page.locator(".carte-jour").nth(5).text_content()
 
 
 def test_le_footing_n_a_plus_de_gainage_ni_de_farmer_walk_a_part(page):

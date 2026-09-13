@@ -335,6 +335,29 @@ function ecrireSeancesEnCours(carte) {
   localStorage.removeItem(CLES.seance);
 }
 
+/* Migration unique, jouée sans condition à chaque lancement (voir
+   demarrer()) : les séances déjà enregistrées sous J6 avant le 13 septembre
+   2026 rejoignent l'historique de J2 (demande de l'utilisateur), et une
+   éventuelle séance J6 encore en cours à ce moment-là devient la séance J2,
+   sauf si une séance J2 est elle-même déjà en cours en parallèle — cas
+   rarissime laissé de côté plutôt que d'en écraser une des deux. Sans
+   effet si rejouée : plus aucune séance ni séance en cours ne porte le
+   code J6 une fois faite. */
+function fusionnerJ6DansJ2() {
+  const historique = lireTableau(CLES.historique);
+  let touche = false;
+  historique.forEach((s) => { if (s.jour === 'J6') { s.jour = 'J2'; touche = true; } });
+  if (touche) ecrire(CLES.historique, historique);
+
+  const carte = lireSeancesEnCours();
+  if (carte.J6 && (!carte.J2 || carte.J2.fin)) {
+    carte.J6.jour = 'J2';
+    carte.J2 = carte.J6;
+    delete carte.J6;
+    ecrireSeancesEnCours(carte);
+  }
+}
+
 function enregistrerSeance() {
   if (!seance || !seance.jour) return;
   const carte = lireSeancesEnCours();
@@ -364,6 +387,17 @@ function afficher(nom) {
 
 function jourDe(code) {
   return programme.jours.find((j) => j.code === code) || null;
+}
+
+/* J6 est un alias strict de J2 depuis le 13 septembre 2026 (demande de
+   l'utilisateur, en inversant la décision du 27 août 2026 qui les gardait
+   indépendants) : les deux bulles restent sur l'accueil comme repère de
+   jour (mardi/samedi), mais partagent désormais la même séance en cours et
+   le même historique. Tout ce qui touche à l'identité de la séance (clé de
+   stockage, `seance.jour`) passe par ce code canonique ; seul l'affichage
+   de la bulle garde le code d'origine. */
+function codeCanonique(code) {
+  return code === 'J6' ? 'J2' : code;
 }
 
 function nombreOuNull(valeur) {
@@ -493,8 +527,12 @@ function rendreAccueil() {
     bouton.className = 'carte-jour';
 
     const nom = nomDuJour(jour.titre);
-    const derniere = derniereSeanceDuJour(jour.code);
-    const commencee = enCours[jour.code] && !enCours[jour.code].fin;
+    // J6 lit sous le code canonique J2 (voir codeCanonique) : les deux
+    // bulles reflètent donc la même séance en cours et la même dernière
+    // fois, seul jour.code affiché plus bas reste celui de la bulle.
+    const codeSeance = codeCanonique(jour.code);
+    const derniere = derniereSeanceDuJour(codeSeance);
+    const commencee = enCours[codeSeance] && !enCours[codeSeance].fin;
     if (commencee) bouton.classList.add('en-cours');
 
     // Bulles compactées le 13 septembre 2026 pour tenir sur un seul écran.
@@ -613,6 +651,7 @@ function rendreEtatSync() {
    en crée une sinon. Ne remplace jamais une séance en cours par une neuve,
    c'est tout l'intérêt de la carte par jour. */
 function commencer(code) {
+  code = codeCanonique(code);
   const jour = jourDe(code);
   if (!jour) return;
 
@@ -2685,6 +2724,7 @@ async function demarrer() {
     return;
   }
 
+  fusionnerJ6DansJ2();
   brancher();
   rendreAccueil();
   afficher('accueil');
