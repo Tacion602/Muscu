@@ -59,9 +59,13 @@ def page(navigateur, adresse):
     onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
     onglet.goto(adresse)
     onglet.wait_for_selector(".carte-jour")
+    # La carte de gainage affiche "Bonus" plutot que son code "G" depuis le
+    # 13 septembre 2026 (demande de l'utilisateur, d'abord "Option" puis
+    # "Bonus" le meme jour) : le temoin verifie donc "Bo", ce que
+    # .slice(0, 2) en retient.
     codes = onglet.eval_on_selector_all(
         ".carte-code", "cartes => cartes.map(c => c.textContent.trim().slice(0, 2))")
-    assert codes == ["J1", "J2", "J3", "J4", "J5", "J6", "G"], "accueil incomplet : " + str(codes)
+    assert codes == ["J1", "J2", "J3", "J4", "J5", "J6", "Bo"], "accueil incomplet : " + str(codes)
     yield onglet
     contexte.close()
     assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
@@ -223,13 +227,18 @@ def test_j2_et_j6_sont_deux_seances_distinctes(page):
     assert page.locator(".cycle-course input").nth(0).input_value() == ""
 
 
-def test_les_footings_n_ont_plus_que_le_farmer_walk(page):
+def test_le_footing_n_a_plus_de_gainage_ni_de_farmer_walk_a_part(page):
     """11 septembre 2026 : le gainage des footings rejoint la seance de
-    gainage, la rotation externe est abandonnee, le farmer walk reste."""
+    gainage, la rotation externe est abandonnee. 13 septembre 2026 : le
+    farmer walk separe du footing est retire a son tour, l'onglet Incline
+    (champ Charge (kg)) en tient lieu desormais."""
     ouvrir_jour(page, "J2")
     texte = page.text_content("#bloc-footing")
     assert "Planche frontale" not in texte and "Rotation externe" not in texte
-    assert "Farmer walk" in page.text_content("#footing-farmer")
+    assert "Farmer walk" not in texte
+    assert page.locator("#footing-farmer").count() == 0
+    page.locator(".type-course").nth(2).click()
+    assert "Charge (kg)" in page.text_content("#footing-cycles")
 
 
 def test_revenir_de_l_ecran_de_fin_sur_un_footing(page):

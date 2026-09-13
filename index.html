@@ -78,10 +78,13 @@
         <ol id="echauffement-liste"></ol>
       </div>
 
-      <!-- Consigne et minuterie de récupération côte à côte : la seconde
-           n'apparaît qu'active, la première reprend alors toute la largeur.
-           Un appui n'importe où sur la minuterie passe à la suite. Voir
-           minuterieTerminee() dans js/app.js. -->
+      <!-- Consigne et minuterie de récupération côte à côte. La minuterie
+           reste toujours visible depuis le 12 septembre 2026, en
+           transparence (.inactif) quand aucun repos n'est lancé : un appui
+           dessus dans cet état lance un repos manuel (utile sur les
+           unilatéraux, entre les deux côtés) ; un appui pendant qu'elle
+           tourne passe à la suite. Voir minuterieTerminee() et
+           lancerMinuterie() dans js/app.js. -->
       <div class="ligne-consigne">
         <details id="exo-consigne-bloc" class="consigne" open>
           <summary>Consigne technique</summary>
@@ -94,7 +97,7 @@
           </div>
         </details>
 
-        <div id="minuterie" class="minuterie" hidden>
+        <div id="minuterie" class="minuterie inactif">
           <span id="minuterie-chiffres" class="minuterie-chiffres">0:00</span>
         </div>
       </div>
@@ -131,14 +134,6 @@
            la même séance). Rempli par rendreCyclesCourse() dans js/app.js. -->
       <div id="footing-cycles"></div>
       <button id="bouton-cycle-ajouter" class="ajouter" type="button">+ Ajouter un passage</button>
-
-      <!-- Farmer walk, à historique commun avec la séance de gainage (décision
-           de l'utilisateur le 11 septembre 2026). Le gainage des footings a
-           rejoint la séance de gainage, la rotation externe est abandonnée. -->
-      <section class="footing-gainage">
-        <h3 class="footing-gainage-titre">Farmer walk</h3>
-        <div id="footing-farmer"></div>
-      </section>
     </div>
 
     <!-- Séance de gainage optionnelle, depuis le 11 septembre 2026 : quatre

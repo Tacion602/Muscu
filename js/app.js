@@ -173,6 +173,17 @@ const DUREE_TENUE_S = 45;
    classeur (voir MOUVEMENTS_GAINAGE). */
 const JOUR_GAINAGE = { code: 'G', titre: 'Gainage', type: 'gainage', exercices: [] };
 
+/* Une icône par jour sur les cartes de l'accueil, demande de l'utilisateur
+   le 13 septembre 2026. Les jours de musculation n'ayant pas de type
+   distinct entre eux (tous "muscu"), l'icône se choisit par code plutôt que
+   par type ; footing et gainage, eux, sont identifiés par leur type. */
+const ICONES_JOUR = { J1: '💪', J3: '🧗', J4: '🦵', J5: '🔥' };
+function iconeJour(jour) {
+  if (jour.type === 'footing') return '🏃';
+  if (jour.type === 'gainage') return '🧘';
+  return ICONES_JOUR[jour.code] || '🏋️';
+}
+
 /* Quatre séances de course distinctes, décidées le 26 août 2026. Chacune a
    son échauffement, parce que l'exigence n'est pas la même : une endurance
    fondamentale se lance presque à froid, un fractionné demande un corps déjà
@@ -481,25 +492,34 @@ function rendreAccueil() {
     const bouton = document.createElement('button');
     bouton.className = 'carte-jour';
 
-    const [nom, ...reste] = sansCodeDeJour(jour.titre).split(/\s+-\s+/);
+    const nom = nomDuJour(jour.titre);
     const derniere = derniereSeanceDuJour(jour.code);
     const commencee = enCours[jour.code] && !enCours[jour.code].fin;
     if (commencee) bouton.classList.add('en-cours');
 
+    // Bulles compactées le 13 septembre 2026 pour tenir sur un seul écran.
+    // Le détail d'un jour de musculation montre la dernière séance plutôt
+    // que le nombre d'exercices (déjà visible sur la fiche d'exercice),
+    // demande de l'utilisateur le même jour ; footing et gainage gardent
+    // leur propre repère et affichent la date à la suite. Voir .carte-jour
+    // dans css/style.css.
     const detail = jour.type === 'footing'
       ? 'Durée et distance'
       : jour.type === 'gainage'
-        ? 'Optionnelle, 4 catégories'
-        : jour.exercices.length + ' exercices' +
-        (reste.length ? ' &middot; ' + echapper(reste.join(' ')) : '');
+        ? 'Bonus'
+        : (derniere ? 'Dernière : ' + ilYA(derniere.fin) : 'Pas encore faite');
 
+    // L'icône part en attribut plutôt qu'en texte (CSS ::before, plus bas) :
+    // le témoin structurel des tests lit .carte-code par ses deux premiers
+    // caractères (J1, J2...), qu'un emoji devant le texte aurait décalés.
     bouton.innerHTML =
-      '<div class="carte-code">' + jour.code +
+      '<div class="carte-code" data-icone="' + echapper(iconeJour(jour)) + '">' +
+      (jour.type === 'gainage' ? 'Bonus' : jour.code) +
       (commencee ? '<span class="pastille-en-cours">en cours</span>' : '') +
       '</div>' +
       '<div class="carte-nom">' + echapper(nom || 'Footing') + '</div>' +
       '<div class="carte-detail">' + detail +
-      (derniere ? '<br>Dernière : ' + ilYA(derniere.fin) : '') +
+      (jour.type !== 'muscu' && derniere ? ' &middot; ' + ilYA(derniere.fin) : '') +
       '</div>';
     bouton.addEventListener('click', () => commencer(jour.code));
 
@@ -637,8 +657,9 @@ function nouvelleSeance(jour) {
   };
   // Les quatre types de course sont des exercices distincts, chacun avec ses
   // propres chiffres : la carte reste vide et se remplit au fur et à mesure.
-  // Le farmer walk, seul exercice annexe des footings depuis le 11 septembre
-  // 2026, vit dans `mouvements` comme ceux de la séance de gainage.
+  // `mouvements` ne sert plus qu'à relire d'anciennes séances antérieures au
+  // 13 septembre 2026, qui y portaient encore le farmer walk séparé du
+  // footing (retiré, l'onglet Incliné en tient lieu désormais).
   if (jour.type === 'footing') {
     neuve.footing = {};
     neuve.mouvements = {};
@@ -741,7 +762,7 @@ function premierPassage(donnees) {
   return Array.isArray(donnees) ? (donnees[0] || null) : donnees;
 }
 
-function champCycle(cycle, definition, actualiser) {
+function champCycle(cycle, definition, actualiser, precedente) {
   const etiquette = document.createElement('label');
   const titre = document.createElement('span');
   titre.textContent = definition.libelle;
@@ -751,6 +772,12 @@ function champCycle(cycle, definition, actualiser) {
   input.inputMode = 'decimal';
   const valeur = cycle[definition.cle];
   input.value = valeur === null || valeur === undefined ? '' : String(valeur);
+  // Valeur de la dernière sortie du même type, en grisé, pour s'y repérer
+  // sans l'imposer (demande de l'utilisateur le 13 septembre 2026) : comme
+  // pour les séries de musculation, une valeur affichée en placeholder n'est
+  // jamais enregistrée tant qu'elle n'est pas retapée.
+  const suggestion = precedente && precedente[definition.cle] != null ? precedente[definition.cle] : null;
+  input.placeholder = suggestion == null ? '' : String(suggestion);
   input.addEventListener('focus', () => input.select());
   input.addEventListener('input', () => {
     cycle[definition.cle] = nombreOuNull(input.value);
@@ -797,7 +824,6 @@ function rendreFooting() {
     type.echauffement.map((item) => '<li>' + echapper(item) + '</li>').join('');
 
   rendreCyclesCourse();
-  rendreFarmerWalkFooting();
 }
 
 /* Un type est « rempli » dès qu'un de ses passages porte une durée ou une
@@ -848,6 +874,7 @@ function rendreCyclesCourse() {
     const compare = document.createElement('p');
     compare.className = 'compare';
     const cleComparaison = index === 0 ? type.cle : null;
+    const precedente = cleComparaison ? derniereSortie(cleComparaison) : null;
     const actualiser = () => {
       majPastillesTypes();
       majAllureCycle(cycle, allure, compare, cleComparaison);
@@ -855,13 +882,13 @@ function rendreCyclesCourse() {
 
     const champs = document.createElement('div');
     champs.className = 'footing-champs';
-    CHAMPS_FOOTING.forEach((definition) => champs.appendChild(champCycle(cycle, definition, actualiser)));
+    CHAMPS_FOOTING.forEach((definition) => champs.appendChild(champCycle(cycle, definition, actualiser, precedente)));
     carte.appendChild(champs);
 
     if (type.champs.length) {
       const champsType = document.createElement('div');
       champsType.className = 'footing-champs';
-      type.champs.forEach((definition) => champsType.appendChild(champCycle(cycle, definition, actualiser)));
+      type.champs.forEach((definition) => champsType.appendChild(champCycle(cycle, definition, actualiser, precedente)));
       carte.appendChild(champsType);
     }
 
@@ -872,16 +899,6 @@ function rendreCyclesCourse() {
   });
 
   majPastillesTypes();
-}
-
-/* Farmer walk des jours de footing, à historique commun avec la séance de
-   gainage (décision de l'utilisateur le 11 septembre 2026) : les deux écrivent
-   dans `seance.mouvements.farmer_walk`, et derniereFoisMouvement() lit l'un et
-   l'autre. */
-function rendreFarmerWalkFooting() {
-  const bloc = $('footing-farmer');
-  bloc.innerHTML = '';
-  bloc.appendChild(carteMouvement('Farmer walk', 3, 'farmer_walk', null));
 }
 
 /* ------------------------------------------------------ séance de gainage */
@@ -1753,7 +1770,7 @@ function lancerMinuterie(secondes) {
     fin: Date.now() + secondes * 1000,
     duree: secondes,
   };
-  $('minuterie').hidden = false;
+  $('minuterie').classList.remove('inactif');
   battre();
   if (tictac) clearInterval(tictac);
   tictac = setInterval(battre, 250);
@@ -1794,7 +1811,8 @@ function arreterMinuterie() {
   minuterie = null;
   if (tictac) clearInterval(tictac);
   tictac = null;
-  $('minuterie').hidden = true;
+  $('minuterie').classList.add('inactif');
+  $('minuterie-chiffres').textContent = '0:00';
 }
 
 /* Ferme la minuterie, à zéro comme sur un appui. Le passage à l'exercice
@@ -2086,8 +2104,7 @@ function nomsDesExercices() {
   }
   if (!estFooting()) return (seance.exercices || []).map((e) => e.nom);
   const carte = seance.footing || {};
-  const noms = TYPES_COURSE.filter((t) => carte[t.cle]).map((t) => t.complet);
-  return noms.concat(MOUVEMENTS_GAINAGE.farmer_walk.nom);
+  return TYPES_COURSE.filter((t) => carte[t.cle]).map((t) => t.complet);
 }
 
 /* Une fois la séance envoyée, on atterrit sur sa fiche dans « Séances
@@ -2551,7 +2568,18 @@ function brancher() {
   // reste fermé (aucun navigateur mobile ne l'ouvre sans interaction). Un
   // appui n'importe où redonne donc le chemin le plus court vers la saisie.
   // Boutons ±15 retirés le 27 août 2026, plus rien à exclure du geste.
-  $('minuterie').addEventListener('click', () => minuterieTerminee(true));
+  //
+  // Un appui pendant qu'elle est inactive (en transparence) lance un repos
+  // manuel, demande de l'utilisateur le 12 septembre 2026 : rien ne démarre
+  // seul entre les deux côtés d'un unilatéral, ce geste permet de s'assurer
+  // d'en prendre assez sans attendre la validation d'une série.
+  $('minuterie').addEventListener('click', () => {
+    if (minuterie) {
+      minuterieTerminee(true);
+    } else if (seance && !estFooting() && !estGainage()) {
+      lancerMinuterie(ficheExercice().repos_s || 90);
+    }
+  });
   $('gainage-chrono').addEventListener('click', appuiBandeauGainage);
 
   $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);

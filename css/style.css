@@ -116,7 +116,21 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Accueil ---------- */
 
-.liste-jours { list-style: none; margin: 0; padding: var(--marge); flex: 1; overflow-y: auto; }
+/* Grille de deux colonnes depuis le 13 septembre 2026 (demande de
+   l'utilisateur) : les sept cartes (J1 à J6, Bonus) tiennent sur un seul
+   écran sans défiler, chacune réduite à sa largeur minimale plutôt
+   qu'étalée sur toute la largeur comme avant. */
+.liste-jours {
+  list-style: none;
+  margin: 0;
+  padding: var(--marge);
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  align-content: start;
+}
 
 .carte-jour {
   display: block;
@@ -125,8 +139,7 @@ body { display: flex; flex-direction: column; }
   background: var(--fond-carte);
   border: 1px solid var(--trait);
   border-radius: var(--rayon);
-  padding: 14px 16px;
-  margin-bottom: 10px;
+  padding: 10px 12px;
   color: var(--texte);
   font: inherit;
   cursor: pointer;
@@ -134,9 +147,25 @@ body { display: flex; flex-direction: column; }
 .carte-jour:active { border-color: var(--accent-clair); }
 .carte-jour[disabled] { opacity: .45; cursor: default; }
 
-.carte-code { font-size: 13px; color: var(--accent-clair); font-weight: 700; letter-spacing: 1px; }
-.carte-nom { font-size: 17px; font-weight: 600; margin: 3px 0 4px; }
-.carte-detail { font-size: 13px; color: var(--texte-faible); }
+.carte-code {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--accent-clair);
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+.carte-code::before { content: attr(data-icone); }
+.carte-nom { font-size: 15px; font-weight: 600; margin: 2px 0 3px; }
+.carte-detail {
+  font-size: 12px;
+  color: var(--texte-faible);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .reprise {
   margin: var(--marge) var(--marge) 0;
@@ -309,6 +338,7 @@ body { display: flex; flex-direction: column; }
   font-variant-numeric: tabular-nums;
 }
 .footing-champs input:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
+.footing-champs input::placeholder { color: #4b5563; font-weight: 400; }
 
 /* Un ou plusieurs passages du type choisi, ajouté le 8 septembre 2026 :
    pouvoir refaire l'Incliné à une autre charge dans la même séance sans
@@ -338,18 +368,6 @@ body { display: flex; flex-direction: column; }
 }
 .cycle-course-suppr:active { color: var(--danger); }
 
-/* Gainage des jours de footing. Les champs sont plus petits que ceux de la
-   course : quatre séries tiennent sur une ligne, et une tenue en secondes
-   n'a pas besoin de la même emphase qu'une distance. */
-.footing-gainage { margin-top: 24px; border-top: 1px solid var(--trait); padding-top: 16px; }
-.footing-gainage-titre {
-  margin: 0 0 12px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  color: var(--texte-faible);
-  font-weight: 600;
-}
 .gainage-exo + .gainage-exo { margin-top: 18px; }
 .gainage-nom {
   margin: 0 0 8px;
@@ -577,6 +595,14 @@ body { display: flex; flex-direction: column; }
   overflow: hidden;
 }
 .minuterie[hidden] { display: none; }
+
+/* Bandeau de récupération toujours visible depuis le 12 septembre 2026, en
+   transparence quand aucun repos n'est lancé (demande de l'utilisateur) :
+   sur un unilatéral, où rien ne le démarre automatiquement entre les deux
+   côtés, un appui dessus lance un repos manuel pour s'assurer d'en prendre
+   assez. `[hidden]` ne sert donc plus qu'à `#gainage-chrono`, resté
+   masqué hors de son usage. */
+.minuterie.inactif { opacity: .35; }
 .minuterie-chiffres {
   font-size: 60px;
   font-weight: 800;
