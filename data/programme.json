@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-11T17:48:08+00:00",
+ "importe_le": "2026-09-13T14:06:48+00:00",
  "jours": [
   {
    "code": "J1",
@@ -130,7 +130,7 @@
       1,
       1
      ],
-     "consigne": "",
+     "consigne": "Poulies a hauteur de poitrine, un pas en avant. Coudes legerement flechis et fixes, rapprocher les mains devant le sternum. Revenir jusqu'a l'etirement des pectoraux sans perdre la tension.",
      "muscle": "Pectoraux",
      "repos_s": 90,
      "historique": [
@@ -232,7 +232,7 @@
       1,
       1
      ],
-     "consigne": "",
+     "consigne": "Poulie basse, buste legerement incline. Tension continue en bas d'amplitude.",
      "muscle": "Deltoide lateral",
      "repos_s": 75,
      "historique": [
@@ -634,7 +634,7 @@
       1,
       1
      ],
-     "consigne": "",
+     "consigne": "Bassin plaque au banc, sans le decoller en fin de flexion. Descente controlee jusqu'au genou presque tendu.",
      "muscle": "Ischio-jambiers et fessiers",
      "repos_s": 90,
      "historique": [
@@ -770,7 +770,7 @@
     },
     {
      "numero": 2,
-     "nom": "Developpe machine unilateral",
+     "nom": "Developpe machine",
      "prescription": "4 X 8-10 RIR 2 / 2 / 1 / 1",
      "series": 4,
      "reps_min": 8,
