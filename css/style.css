@@ -116,10 +116,10 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Accueil ---------- */
 
-/* Grille de deux colonnes depuis le 13 septembre 2026 (demande de
-   l'utilisateur) : les sept cartes (J1 à J6, Bonus) tiennent sur un seul
-   écran sans défiler, chacune réduite à sa largeur minimale plutôt
-   qu'étalée sur toute la largeur comme avant. */
+/* Une seule colonne de bulles à 65 % de la largeur, emoji en grand sur
+   toute la hauteur de la bulle (retour de l'utilisateur sur Pixel 9, le
+   13 septembre 2026, après une première grille à deux colonnes le même
+   jour) : les sept cartes (J1 à J6, Bonus) tiennent sur un seul écran. */
 .liste-jours {
   list-style: none;
   margin: 0;
@@ -127,23 +127,35 @@ body { display: flex; flex-direction: column; }
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: minmax(0, 65%);
   gap: 8px;
   align-content: start;
 }
 
 .carte-jour {
-  display: block;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
   width: 100%;
   text-align: left;
   background: var(--fond-carte);
   border: 1px solid var(--trait);
   border-radius: var(--rayon);
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--texte);
   font: inherit;
   cursor: pointer;
 }
+/* L'emoji vit dans un pseudo-élément : le témoin des tests lit le texte de
+   .carte-code (J1, J2...), qu'un emoji en texte aurait décalé. */
+.carte-jour::before {
+  content: attr(data-icone);
+  grid-row: 1 / span 3;
+  font-size: 34px;
+  line-height: 1;
+}
+.carte-jour > div { grid-column: 2; }
 .carte-jour:active { border-color: var(--accent-clair); }
 .carte-jour[disabled] { opacity: .45; cursor: default; }
 
@@ -157,7 +169,6 @@ body { display: flex; flex-direction: column; }
   font-weight: 700;
   letter-spacing: .5px;
 }
-.carte-code::before { content: attr(data-icone); }
 .carte-nom { font-size: 15px; font-weight: 600; margin: 2px 0 3px; }
 .carte-detail {
   font-size: 12px;

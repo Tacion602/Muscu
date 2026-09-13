@@ -230,6 +230,34 @@ def test_j2_et_j6_sont_desormais_le_meme_footing(page):
     assert page.locator(".cycle-course input").nth(0).input_value() == "30"
 
 
+def test_la_minuterie_est_visible_apres_une_validation(page):
+    """13 septembre 2026 : apres validation des repetitions, l'ecran doit
+    montrer la minuterie (demande de l'utilisateur). Fenetre basse pour
+    simuler le clavier ouvert, series defilees vers le haut comme en salle."""
+    page.set_viewport_size({"width": 390, "height": 420})
+    ouvrir_jour(page, "J1")
+    page.evaluate("document.querySelectorAll('.ligne-serie')[2].scrollIntoView({block: 'end'})")
+    # La fiche defile dans .corps, sous la barre du haut : la visibilite se
+    # mesure par rapport a ce conteneur, pas a la fenetre.
+    visible = (
+        "(() => { const m = document.getElementById('minuterie').getBoundingClientRect();"
+        " const c = document.getElementById('minuterie').closest('.corps').getBoundingClientRect();"
+        " return m.top >= c.top && m.bottom <= c.bottom; })()")
+    assert not page.evaluate(visible), "precondition : minuterie deja visible avant validation"
+    saisir_serie(page, 0, 40, 8)
+    page.wait_for_timeout(800)
+    assert page.evaluate(visible), "minuterie hors du cadre apres validation"
+
+
+def test_le_developpe_machine_reprend_l_historique_de_l_unilateral(page):
+    """13 septembre 2026 : le developpe machine unilateral devient bilateral
+    et garde ses valeurs (demande de l'utilisateur), quel que soit l'accent
+    du nouveau nom dans le classeur. Un nom sans alias reste distinct."""
+    assert page.evaluate("memeExercice('Developpe machine unilateral', 'Développé machine')")
+    assert page.evaluate("memeExercice('Developpe machine unilateral', 'Developpe machine')")
+    assert not page.evaluate("memeExercice('Developpe incline machine', 'Developpe machine')")
+
+
 def test_l_historique_j6_fusionne_dans_j2_au_demarrage(page):
     """13 septembre 2026 : les seances deja enregistrees sous J6 avant la
     fusion rejoignent l'historique de J2 au lancement (demande de

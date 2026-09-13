@@ -456,6 +456,26 @@ function dateClasseurTriable(date) {
    espace) démarre silencieusement un second historique plutôt que de
    rejoindre le premier (voir `outils/verifier_import.py`, qui signale les
    quasi-doublons de nom entre exercices). */
+/* Anciens noms repris par un exercice renommé dans le classeur, pour que
+   l'historique du téléphone le suive : l'identité d'un exercice étant son
+   nom, un renommage seul démarrerait un historique vide. Comparaison sans
+   accents ni casse, le nouveau nom pouvant être ressaisi avec ou sans. */
+const ANCIENS_NOMS = {
+  // 13 septembre 2026, demande de l'utilisateur : le développé machine
+  // devient bilatéral, et garde les valeurs de la version unilatérale.
+  'developpe machine': ['developpe machine unilateral'],
+};
+
+function formeDuNom(nom) {
+  return String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().split(/\s+/).filter(Boolean).join(' ');
+}
+
+function memeExercice(nomEnregistre, nomExo) {
+  if (nomEnregistre === nomExo) return true;
+  return (ANCIENS_NOMS[formeDuNom(nomExo)] || []).includes(formeDuNom(nomEnregistre));
+}
+
 function derniereFois(nomExo) {
   const passees = lireTableau(CLES.historique)
     .filter((s) => s.fin)
@@ -463,7 +483,7 @@ function derniereFois(nomExo) {
 
   for (const s of passees) {
     if (seance && s.id === seance.id) continue;
-    const exo = (s.exercices || []).find((e) => e.nom === nomExo);
+    const exo = (s.exercices || []).find((e) => memeExercice(e.nom, nomExo));
     if (exo && exo.series.some((x) => x.faite)) {
       return {
         quand: s.fin,
@@ -547,11 +567,12 @@ function rendreAccueil() {
         ? 'Bonus'
         : (derniere ? 'Dernière : ' + ilYA(derniere.fin) : 'Pas encore faite');
 
-    // L'icône part en attribut plutôt qu'en texte (CSS ::before, plus bas) :
-    // le témoin structurel des tests lit .carte-code par ses deux premiers
+    // L'icône part en attribut plutôt qu'en texte (.carte-jour::before) : le
+    // témoin structurel des tests lit .carte-code par ses deux premiers
     // caractères (J1, J2...), qu'un emoji devant le texte aurait décalés.
+    bouton.dataset.icone = iconeJour(jour);
     bouton.innerHTML =
-      '<div class="carte-code" data-icone="' + echapper(iconeJour(jour)) + '">' +
+      '<div class="carte-code">' +
       (jour.type === 'gainage' ? 'Bonus' : jour.code) +
       (commencee ? '<span class="pastille-en-cours">en cours</span>' : '') +
       '</div>' +
@@ -1795,6 +1816,10 @@ function validerSerie(exercice, serie, index) {
 
   if (!serie.echauffement || repos) {
     lancerMinuterie(repos || 90);
+    // La minuterie doit se voir après chaque validation (demande de
+    // l'utilisateur le 13 septembre 2026) : la saisie fait défiler la page
+    // vers les séries, qui l'emportent sinon au-dessus du cadre.
+    $('minuterie').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 }
 
@@ -1997,7 +2022,7 @@ function terminer() {
   const premier = seance.exercices[0];
   const maintenant = premiereSerieDeTravail(premier);
   const avantSerie = precedente && premier
-    ? premiereSerieDeTravail((precedente.exercices || []).find((e) => e.nom === premier.nom))
+    ? premiereSerieDeTravail((precedente.exercices || []).find((e) => memeExercice(e.nom, premier.nom)))
     : null;
   if (maintenant && avantSerie) {
     const ecart = Math.round((indicateur(maintenant) - indicateur(avantSerie)) * 10) / 10;
@@ -2458,7 +2483,7 @@ function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance)
   const series = lireTableau(CLES.historique)
     .filter((s) => s.fin && new Date(s.fin).getTime() <= fin)
     .sort((a, b) => new Date(a.fin) - new Date(b.fin))
-    .map((s) => premiereSerieDeTravail((s.exercices || []).find((e) => e.nom === nomExo)))
+    .map((s) => premiereSerieDeTravail((s.exercices || []).find((e) => memeExercice(e.nom, nomExo))))
     .filter(Boolean);
 
   if (series.length < 2) return '';
