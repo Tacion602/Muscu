@@ -116,18 +116,21 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Accueil ---------- */
 
-/* Une seule colonne de bulles à 65 % de la largeur, emoji en grand sur
-   toute la hauteur de la bulle (retour de l'utilisateur sur Pixel 9, le
-   13 septembre 2026, après une première grille à deux colonnes le même
-   jour) : les sept cartes (J1 à J6, Bonus) tiennent sur un seul écran. */
+/* Une seule colonne de bulles pleine largeur, emoji en grand sur toute la
+   hauteur de la bulle (retour de l'utilisateur sur Pixel 9, le
+   13 septembre 2026 : d'abord une grille à deux colonnes, puis 65 % de
+   largeur, puis pleine largeur le même jour) : les sept cartes (J1 à J6,
+   Bonus) tiennent sur un seul écran. */
 .liste-jours {
   list-style: none;
   margin: 0;
-  padding: var(--marge);
+  /* Marge latérale réduite par rapport au reste de l'application (var(--marge)
+     = 16px) : les bulles restaient trop étroites même en pleine largeur,
+     demande de l'utilisateur le 14 septembre 2026. */
+  padding: var(--marge) 8px;
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: minmax(0, 65%);
   gap: 8px;
   align-content: start;
 }
@@ -139,7 +142,12 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   width: 100%;
   text-align: left;
-  background: var(--fond-carte);
+  /* Fond éclairci par rapport aux autres cartes de l'application
+     (var(--fond-carte)) : demande de l'utilisateur le 14 septembre 2026,
+     les bulles de l'accueil se distinguent mieux du fond de l'écran. Plus
+     clair qu'aucun fond existant (var(--fond-champ) restait trop proche),
+     d'où une couleur propre plutôt qu'un jeton réutilisé. */
+  background: #333f4d;
   border: 1px solid var(--trait);
   border-radius: var(--rayon);
   padding: 8px 12px;
