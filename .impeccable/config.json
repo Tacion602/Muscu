@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-09-16T05:34:30.478Z",
         "reason": "meme regle que l'ignore deja pose sur index.html : .ligne-serie.courante, liseret de 3px marquant la serie en cours (premiere version du projet, avant cette session), repere fonctionnel pendant l'effort, pas un accent decoratif de carte."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-16T06:27:50.670Z",
+        "reason": "Agent: #mensurations-slider-avant/-apres n'ont pas de src statique (rempli par majPhotosComparees()) ; ils vivent dans #mensurations-slider, cache par defaut, et rendreComparerMensurations() pose les deux src et retire le hidden dans le meme appel synchrone -- l'etat sans src ne s'affiche jamais."
       }
     ]
   }
