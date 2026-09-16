@@ -381,7 +381,9 @@
         </details>
 
         <div id="minuterie" class="minuterie inactif">
-          <span id="minuterie-chiffres" class="minuterie-chiffres">0:00</span>
+          <div class="jauge-pilule" aria-hidden="true">
+            <div id="minuterie-jauge-remplissage" class="jauge-pilule-remplissage"></div>
+          </div>
         </div>
       </div>
 
@@ -467,7 +469,13 @@
      Voir lancerMinuterie(), battre() et minuterieTerminee() dans
      js/app.js. -->
 <div id="minuterie-plein-ecran" class="minuterie-plein-ecran" hidden>
-  <span id="minuterie-plein-ecran-chiffres" class="minuterie-plein-ecran-chiffres">0:00</span>
+  <div class="jauge-pilule" aria-hidden="true">
+    <div id="minuterie-plein-ecran-jauge-remplissage" class="jauge-pilule-remplissage"></div>
+  </div>
+  <div id="minuterie-plein-ecran-bilan" class="minuterie-bilan" hidden>
+    <p id="minuterie-bilan-tonnage" class="minuterie-bilan-tonnage" hidden></p>
+    <p id="minuterie-bilan-suivant" class="minuterie-bilan-suivant" hidden></p>
+  </div>
 </div>
 
 <!-- Fin de séance -->
@@ -539,6 +547,13 @@
     <label class="bascule">
       <input id="reglage-vibration" type="checkbox" checked>
       <span>Vibration en fin de récupération</span>
+    </label>
+    <label class="bascule">
+      <input id="reglage-notification" type="checkbox">
+      <span>Notification système en fin de récupération
+        <small>Pour l'entendre même hors de l'application (écran verrouillé,
+        autre appli ouverte). Demande une autorisation à part.</small>
+      </span>
     </label>
     <label class="bascule">
       <input id="reglage-veille" type="checkbox" checked>

@@ -21,6 +21,7 @@ const REGLAGES_PAR_DEFAUT = {
   vibration: true,
   veille: true,
   clavierPendantRecup: true,
+  notification: false,
 };
 
 /* Échauffement de début de séance, optimisé aux zones travaillées ce jour-là,
@@ -1941,9 +1942,16 @@ function validerSerie(exercice, serie, index) {
   // minuterie continue de tourner par-dessus la fiche suivante, on peut donc
   // lire le prochain exercice pendant qu'on récupère du précédent.
   const toutFait = exercice.series.every((s) => s.faite);
+  // Bilan du dernier repos de l'exercice (demande de l'utilisateur le
+  // 16 septembre 2026) : tonnage total déjà connu (exercice.series au
+  // complet), nom du suivant lu une fois indexExo avancé plus bas.
+  const bilan = toutFait
+    ? { tonnageActuel: tonnageDesSeries(exercice.series), tonnageAvant: avant ? avant.tonnage : null, nomSuivant: null }
+    : null;
   if (toutFait && indexExo < seance.exercices.length - 1) {
     indexExo++;
     rendreExercice();
+    bilan.nomSuivant = seance.exercices[indexExo].nom;
   } else {
     rendreSeries();
     rendreJauge();
@@ -1951,7 +1959,7 @@ function validerSerie(exercice, serie, index) {
   focaliserProchaineSerie();
 
   if (!serie.echauffement || repos) {
-    lancerMinuterie(repos || 90);
+    lancerMinuterie(repos || 90, bilan);
     // La minuterie doit se voir après chaque validation (demande de
     // l'utilisateur le 13 septembre 2026) : la saisie fait défiler la page
     // vers les séries, qui l'emportent sinon au-dessus du cadre.
@@ -1965,13 +1973,14 @@ function rendreJauge() {
 
 /* --------------------------------------------------------------- minuterie */
 
-function lancerMinuterie(secondes) {
+function lancerMinuterie(secondes, bilan) {
   const instance = {
     fin: Date.now() + secondes * 1000,
     duree: secondes,
   };
   minuterie = instance;
   $('minuterie').classList.remove('inactif');
+  rendreBilanMinuterie(bilan || null);
   battre();
   if (tictac) clearInterval(tictac);
   tictac = setInterval(battre, 250);
@@ -2022,9 +2031,17 @@ function battre() {
     return;
   }
 
-  const texte = texteDuree(restant);
-  $('minuterie-chiffres').textContent = texte;
-  $('minuterie-plein-ecran-chiffres').textContent = texte;
+  // Le chiffre a cédé la place à une jauge le 16 septembre 2026 (voir
+  // .jauge-pilule dans css/style.css) : seul le pourcentage écoulé reste
+  // affiché visuellement, le temps exact restant ne survit qu'en aria-label
+  // pour un lecteur d'écran.
+  const progres = Math.min(1, Math.max(0, 1 - restant / minuterie.duree));
+  const pourcent = (progres * 100) + '%';
+  $('minuterie-jauge-remplissage').style.width = pourcent;
+  $('minuterie-plein-ecran-jauge-remplissage').style.width = pourcent;
+  const libelle = 'Récupération, ' + texteDuree(restant) + ' restant';
+  $('minuterie').setAttribute('aria-label', libelle);
+  $('minuterie-plein-ecran').setAttribute('aria-label', libelle);
 
   // Le plein écran laisse la main avant la fin, dans les 20 % de temps
   // restant (demande de l'utilisateur le 16 septembre 2026) : bloquer tout
@@ -2045,9 +2062,35 @@ function arreterMinuterie() {
   if (tictac) clearInterval(tictac);
   tictac = null;
   $('minuterie').classList.add('inactif');
-  $('minuterie-chiffres').textContent = '0:00';
+  $('minuterie-jauge-remplissage').style.width = '0%';
   $('minuterie-plein-ecran').hidden = true;
-  $('minuterie-plein-ecran-chiffres').textContent = '0:00';
+  $('minuterie-plein-ecran-jauge-remplissage').style.width = '0%';
+  rendreBilanMinuterie(null);
+}
+
+/* Bilan du dernier repos d'un exercice (demande de l'utilisateur le
+   16 septembre 2026) : tonnage total de l'exercice qui vient de se
+   terminer face à la semaine dernière, puis nom du prochain exercice.
+   `bilan` vaut null sur un repos ordinaire (rien à comparer avant la fin
+   de tous les exercices). Voir validerSerie(). */
+function rendreBilanMinuterie(bilan) {
+  const bloc = $('minuterie-plein-ecran-bilan');
+  const ligneTonnage = $('minuterie-bilan-tonnage');
+  const ligneSuivant = $('minuterie-bilan-suivant');
+
+  ligneTonnage.hidden = true;
+  ligneSuivant.hidden = true;
+
+  if (bilan && bilan.tonnageAvant) {
+    const ecart = Math.round(((bilan.tonnageActuel - bilan.tonnageAvant) / bilan.tonnageAvant) * 100);
+    ligneTonnage.textContent = 'Tonnage exercice ' + (ecart > 0 ? '+' : '') + ecart + ' % vs la semaine dernière';
+    ligneTonnage.hidden = false;
+  }
+  if (bilan && bilan.nomSuivant) {
+    ligneSuivant.textContent = 'Ensuite : ' + bilan.nomSuivant;
+    ligneSuivant.hidden = false;
+  }
+  bloc.hidden = ligneTonnage.hidden && ligneSuivant.hidden;
 }
 
 /* Ferme la minuterie, à zéro comme sur un appui. Le passage à l'exercice
@@ -2105,6 +2148,7 @@ function focaliserProchaineSerie() {
 
 function signaler() {
   if (reglages.vibration && navigator.vibrate) navigator.vibrate([180, 90, 180]);
+  if (reglages.notification) notifierRecuperationTerminee();
   if (!reglages.son) return;
   try {
     if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
@@ -2128,6 +2172,29 @@ function signaler() {
   } catch (e) {
     console.warn('Signal sonore indisponible', e);
   }
+}
+
+/* Alerte hors application (demande de l'utilisateur le 13 septembre 2026, le
+   bip ne s'entend pas quand le téléphone est ailleurs que sur l'appli) : une
+   notification système, qui a son propre son et sa propre vibration côté OS,
+   contrairement au bip Web Audio qui ne joue que si la page est au premier
+   plan. `new Notification()` échoue sur Chrome Android (« Illegal
+   constructor ») ; seul `ServiceWorkerRegistration.showNotification` marche
+   depuis une page mobile, d'où le passage par le service worker déjà
+   enregistré pour le mode hors ligne. `tag` + `renotify` remplacent la
+   notification précédente au lieu de les empiler à chaque récupération. */
+function notifierRecuperationTerminee() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!navigator.serviceWorker) return;
+  navigator.serviceWorker.ready.then((registration) => {
+    registration.showNotification('Récupération terminée', {
+      body: 'Série suivante.',
+      tag: 'muscu-repos',
+      renotify: true,
+      vibrate: [180, 90, 180],
+      silent: false,
+    });
+  }).catch(() => {});
 }
 
 /* ------------------------------------------------------------------ veille */
@@ -2484,6 +2551,8 @@ function rendreReglages() {
   $('reglage-vibration').checked = reglages.vibration;
   $('reglage-veille').checked = reglages.veille;
   $('reglage-clavier-recup').checked = reglages.clavierPendantRecup;
+  $('reglage-notification').checked = reglages.notification
+    && typeof Notification !== 'undefined' && Notification.permission === 'granted';
   $('reglages-message').textContent = '';
   $('reglages-message').className = 'message';
   $('note-programme').textContent = programme
@@ -2499,6 +2568,7 @@ function sauverReglages() {
     vibration: $('reglage-vibration').checked,
     veille: $('reglage-veille').checked,
     clavierPendantRecup: $('reglage-clavier-recup').checked,
+    notification: $('reglage-notification').checked,
   };
   ecrire(CLES.reglages, reglages);
 }
@@ -2873,11 +2943,25 @@ function rendreTonnageMuscles() {
   }
   const zoneDetail = ZONES_MUSCULAIRES.find((z) => z.cle === zoneTonnageChoisie);
   const exercices = exercicesZoneTonnage(zoneDetail, depuis);
-  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + tonnages[zoneDetail.cle] + ' kg</h3>' +
+  // Une simple liste chiffrée jugée peu parlante par l'utilisateur le
+  // 16 septembre 2026 : chaque exercice dédié à la zone (2-3 en général,
+  // exercicesZoneTonnage ne gardant que ceux travaillés sur la fenêtre)
+  // affiche désormais sa courbe de progression au fil des semaines, pas
+  // seulement son tonnage des 7 derniers jours. progressionPremiereSerie()
+  // attend une séance de référence pour borner les points affichés (la
+  // fiche d'historique s'en sert pour rejouer "l'état ce jour-là") ; ici on
+  // veut tout l'historique jusqu'à maintenant, d'où cette séance fictive
+  // qui ne porte qu'un `fin` égal à l'instant présent.
+  const jusquaMaintenant = { fin: new Date().toISOString() };
+  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + tonnages[zoneDetail.cle] + ' kg sur 7 jours</h3>' +
     (exercices.length
-      ? exercices.map(([nom, t]) => (
-          '<div class="tonnage-detail-ligne"><span>' + echapper(nom) + '</span><span>' + t + ' kg</span></div>'
-        )).join('')
+      ? exercices.map(([nom, t]) => {
+          const courbeHtml = progressionPremiereSerie(jusquaMaintenant, nom, false);
+          return '<div class="tonnage-detail-exo">' +
+            '<div class="tonnage-detail-ligne"><span>' + echapper(nom) + '</span><span>' + t + ' kg</span></div>' +
+            (courbeHtml || '<p class="vide">Pas encore assez de séances pour une courbe.</p>') +
+          '</div>';
+        }).join('')
       : '<p class="vide">Rien sur les ' + TONNAGE_PERIODE_JOURS + ' derniers jours.</p>');
 }
 
@@ -2893,7 +2977,13 @@ function rendreTonnageMuscles() {
    un coucher tardif ou un réveil précoce, hors du cadre habituel. Un seul
    état à retenir par créneau (dans ou hors insomnie) suffit aux deux cas. */
 const SOMMEIL_DEBUT_MIN = 22 * 60;
-const SOMMEIL_NB_CRENEAUX = 26;
+// 48 créneaux (24h) depuis le 16 septembre 2026, demande de l'utilisateur :
+// la frise ne couvrait jusque-là que 22h-11h (26 créneaux), sans place pour
+// un sport ou un repère de l'après-midi (indexCreneauPourHeure renvoyait
+// -1). 24 créneaux par ligne (voir .sommeil-frise dans css/style.css) pour
+// que la session de sommeil 00h-8h, qui tombe entièrement dans la première
+// ligne (22h-9h30), ne soit jamais coupée par un retour à la ligne.
+const SOMMEIL_NB_CRENEAUX = 48;
 const SOMMEIL_COEUR_DEBUT = 3;   // 23:30
 const SOMMEIL_COEUR_FIN = 19;    // 07:30, dernier créneau du cœur (se termine à 8h)
 
@@ -2906,9 +2996,10 @@ function creneauxSommeil() {
   return creneaux;
 }
 
-/* Position du sport dans la frise (demande de l'utilisateur le
-   16 septembre 2026) : -1 si hors de la fenêtre affichée (22h-11h), le
-   sport de l'après-midi n'y ayant pas sa place. */
+/* Position d'une heure dans la frise (demande de l'utilisateur le
+   16 septembre 2026, pour le sport puis tout repère de journée) : la frise
+   couvrant les 24h depuis le même jour, -1 ne peut plus arriver qu'en
+   théorie (heure absente). */
 function indexCreneauPourHeure(heure) {
   if (!heure) return -1;
   const [h, m] = heure.split(':').map(Number);
@@ -2988,7 +3079,7 @@ function lireSommeil() {
 function nuitPour(cle) {
   return lireSommeil().find((n) => n.cle === cle) ||
     { cle, insomnies: [], raisons: [], alcool: false, cafe: 0, pipi: 0, ecranTard: false, repasTardif: false,
-      sportType: null, sportHeure: null };
+      sports: {} };
 }
 
 function enregistrerNuit(nuit) {
@@ -3022,18 +3113,26 @@ function actionnerJourneeSommeil(nuit, item) {
 }
 
 /* Sport du jour saisi à la main plutôt que déduit seul de l'historique
-   (demande de l'utilisateur le 16 septembre 2026, l'ancien badge n'étant
-   pas sélectionnable) : muscu ou footing, un seul à la fois, avec l'heure
-   pour le repérer sur la frise quand elle tombe dans sa fenêtre (22h-11h). */
+   (demande de l'utilisateur le 16 septembre 2026, l'ancien badge n'était
+   pas sélectionnable). Muscu et course dissociés le même jour, quelques
+   heures plus tard (nouvelle demande) : un seul `sportType` empêchait de
+   noter les deux le même jour, ce qui arrive (J2/J6 avec gainage, ou une
+   sortie en plus d'une séance). `nuit.sports` est une carte par type
+   (`{ muscu: '23:00', footing: '' }`), chaque clé absente valant "pas
+   choisi" — pas de reprise de l'ancien `sportType`/`sportHeure` : la
+   fonctionnalité vient d'être ajoutée dans cette même session, aucune
+   nuit réelle ne porte encore l'ancien format. */
 function basculerSportJournee(nuit, type) {
-  nuit.sportType = nuit.sportType === type ? null : type;
-  if (!nuit.sportType) nuit.sportHeure = null;
+  nuit.sports = nuit.sports || {};
+  if (nuit.sports[type] != null) delete nuit.sports[type];
+  else nuit.sports[type] = '';
   enregistrerNuit(nuit);
   rendreSommeil();
 }
 
-function majHeureSport(nuit, heure) {
-  nuit.sportHeure = heure || null;
+function majHeureSport(nuit, type, heure) {
+  nuit.sports = nuit.sports || {};
+  nuit.sports[type] = heure || '';
   enregistrerNuit(nuit);
   rendreSommeil();
 }
@@ -3047,8 +3146,12 @@ function remettreAZeroJournee(nuit, cle) {
 function rendreSommeil() {
   const nuit = nuitPour(nuitAffichee);
   const creneaux = creneauxSommeil();
-  const indexSport = indexCreneauPourHeure(nuit.sportHeure);
-  const spSport = SPORT_JOURNEE.find((s) => s.cle === nuit.sportType);
+  // Un sport peut tomber sur le même créneau qu'un autre repère si deux
+  // heures coïncident : la frise n'affiche qu'une icône par créneau,
+  // premier trouvé, cas limite jamais signalé.
+  const sportsChoisis = SPORT_JOURNEE
+    .filter((sp) => nuit.sports && nuit.sports[sp.cle] != null)
+    .map((sp) => ({ sp, heure: nuit.sports[sp.cle], index: indexCreneauPourHeure(nuit.sports[sp.cle]) }));
 
   $('sommeil-nuit-titre').textContent = 'Nuit du ' + nuitAffichee + ' au ' + decalerCle(nuitAffichee, 1);
   $('bouton-sommeil-suivant').disabled = !cleAnterieure(nuitAffichee, cleNuitCourante());
@@ -3065,7 +3168,8 @@ function rendreSommeil() {
     // tombant toujours sur l'heure pile (creneaux de 30 min depuis 22:00).
     // Icône du sport (même demande) quand son heure tombe sur ce créneau,
     // par-dessus le numéro d'heure s'ils coïncident.
-    const icone = (index === indexSport && spSport) ? '<span class="sommeil-creneau-sport" title="' + echapper(spSport.nom + ' ' + nuit.sportHeure) + '">' + spSport.icone + '</span>' : '';
+    const sportIci = sportsChoisis.find((s) => s.index === index);
+    const icone = sportIci ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure) + '">' + sportIci.sp.icone + '</span>' : '';
     const heure = (index % 2 === 0 && !icone) ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
     if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
     return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '">' + heure + icone + '</button>';
@@ -3084,15 +3188,19 @@ function rendreSommeil() {
   });
 
   // Sport du jour saisi à la main (16 septembre 2026, l'ancien badge auto
-  // n'était pas sélectionnable) : muscu ou footing, plus une heure une fois
-  // choisi, pour le repérer sur la frise (voir indexCreneauPourHeure).
+  // n'était pas sélectionnable) : muscu et footing indépendants (même jour,
+  // demande ultérieure), chacun avec sa propre heure une fois choisi, pour
+  // se repérer sur la frise (voir indexCreneauPourHeure).
   $('sommeil-journee').innerHTML =
-    SPORT_JOURNEE.map((sp) => (
-      '<button type="button" class="journee-item' + (nuit.sportType === sp.cle ? ' choisi' : '') + '" data-sport="' + sp.cle + '">' +
-        sp.icone + ' ' + echapper(sp.nom) +
-      '</button>'
-    )).join('') +
-    (nuit.sportType ? '<input type="time" id="sommeil-sport-heure" class="sommeil-sport-heure" value="' + (nuit.sportHeure || '') + '">' : '') +
+    SPORT_JOURNEE.map((sp) => {
+      const choisi = nuit.sports && nuit.sports[sp.cle] != null;
+      const bouton = '<button type="button" class="journee-item' + (choisi ? ' choisi' : '') + '" data-sport="' + sp.cle + '">' +
+        sp.icone + ' ' + echapper(sp.nom) + '</button>';
+      const champHeure = choisi
+        ? '<input type="time" class="sommeil-sport-heure" data-heure-pour="' + sp.cle + '" value="' + (nuit.sports[sp.cle] || '') + '">'
+        : '';
+      return bouton + champHeure;
+    }).join('') +
     JOURNEE_SOMMEIL.map((item) => {
       if (item.type === 'bascule') {
         return '<button type="button" class="journee-item' + (nuit[item.cle] ? ' choisi' : '') + '" data-cle="' + item.cle + '">' +
@@ -3107,13 +3215,11 @@ function rendreSommeil() {
   $('sommeil-journee').querySelectorAll('.journee-item[data-sport]').forEach((bouton) => {
     bouton.addEventListener('click', () => basculerSportJournee(nuit, bouton.dataset.sport));
   });
-  // #sommeil-sport-heure n'existe que si un sport est choisi : recherché
-  // via querySelector scopé plutôt que $() (id absent d'index.html, comme
-  // les autres éléments créés dynamiquement, voir mensurations-photo-suppr).
-  const champHeureSport = $('sommeil-journee').querySelector('#sommeil-sport-heure');
-  if (champHeureSport) {
-    champHeureSport.addEventListener('change', (evenement) => majHeureSport(nuit, evenement.target.value));
-  }
+  // Un champ heure par sport choisi (id absent d'index.html, comme les
+  // autres éléments créés dynamiquement, voir mensurations-photo-suppr).
+  $('sommeil-journee').querySelectorAll('.sommeil-sport-heure').forEach((champ) => {
+    champ.addEventListener('change', (evenement) => majHeureSport(nuit, champ.dataset.heurePour, evenement.target.value));
+  });
   $('sommeil-journee').querySelectorAll('.journee-item[data-cle]').forEach((bouton) => {
     bouton.addEventListener('click', (evenement) => {
       const remise = evenement.target.closest('[data-remise]');
@@ -3539,10 +3645,9 @@ function courbe(points, libelle) {
   const amplitude = haut - bas || 1;
   const x = (i) => marge + (i * (largeur - 2 * marge)) / (points.length - 1);
   const y = (v) => hauteur - marge - ((v - bas) / amplitude) * (hauteur - 2 * marge);
+  const coords = points.map((v, i) => [x(i), y(v)]);
 
-  const chemin = points
-    .map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1))
-    .join(' ');
+  const chemin = cheminLisse(coords);
   const cercles = points
     .map((v, i) => '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) +
       '" r="' + (i === points.length - 1 ? 4 : 2.5) + '"/>')
@@ -3551,6 +3656,33 @@ function courbe(points, libelle) {
   return '<svg class="courbe" viewBox="0 0 ' + largeur + ' ' + hauteur + '" ' +
     'role="img" aria-label="Progression, ' + libelle + ', sur ' + points.length + ' séances">' +
     '<path d="' + chemin + '"/>' + cercles + '</svg>';
+}
+
+/* Courbe lissée (Catmull-Rom vers Bézier, tension 1/6) plutôt qu'une simple
+   polyligne reliant les points au trait droit (demande de l'utilisateur le
+   16 septembre 2026, « courbes plus fluides ») : partagée par toutes les
+   courbes de l'application (progression d'exercice, vitesse et distance de
+   course), courbe() étant leur seul point de passage. Les cercles restent
+   posés exactement sur chaque valeur réelle, seul le tracé entre deux
+   points est lissé, jamais la donnée elle-même. */
+function cheminLisse(points) {
+  if (points.length < 3) {
+    return points.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  }
+  let d = 'M' + points[0][0].toFixed(1) + ' ' + points[0][1].toFixed(1);
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? i : i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ' C' + cp1x.toFixed(1) + ' ' + cp1y.toFixed(1) + ' ' +
+      cp2x.toFixed(1) + ' ' + cp2y.toFixed(1) + ' ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+  }
+  return d;
 }
 
 /* Suppression d'une séance enregistrée, demandée par l'utilisateur le
@@ -3790,6 +3922,25 @@ function brancher() {
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
    'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));
+  // À part : cocher doit d'abord obtenir la permission du navigateur, un
+  // geste que sauverReglages() seule ne déclenche pas.
+  $('reglage-notification').addEventListener('change', async (evenement) => {
+    if (evenement.target.checked) {
+      if (!('Notification' in window)) {
+        evenement.target.checked = false;
+        $('reglages-message').className = 'message erreur';
+        $('reglages-message').textContent = 'Notifications non prises en charge par ce navigateur.';
+      } else if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          evenement.target.checked = false;
+          $('reglages-message').className = 'message erreur';
+          $('reglages-message').textContent = 'Autorisation refusée : impossible de notifier hors de l\'application.';
+        }
+      }
+    }
+    sauverReglages();
+  });
 
   $('bouton-tester-pont').addEventListener('click', async () => {
     sauverReglages();

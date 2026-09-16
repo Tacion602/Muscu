@@ -221,20 +221,26 @@ body { display: flex; flex-direction: column; }
   text-align: center;
 }
 .calendrier-case {
-  aspect-ratio: 1;
+  /* Plus haute que large (4/5) depuis le 16 septembre 2026, demande de
+     l'utilisateur (« calendrier plus grand ») : la grille remplit déjà
+     toute la largeur disponible en 7 colonnes, aspect-ratio:1 ne laissait
+     donc aucune marge pour agrandir sans élargir l'écran. */
+  aspect-ratio: 4 / 5;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   border-radius: var(--rayon-petit);
   background: var(--fond-carte);
   border: 1px solid var(--trait);
+  overflow: hidden;
 }
 .calendrier-case.vide { visibility: hidden; }
 .calendrier-case.aujourdhui { border-color: var(--accent); border-width: 2px; }
-.calendrier-num { font-size: 11px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
-.calendrier-icone { font-size: 16px; line-height: 1; }
+.calendrier-num { font-size: 12px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
+.calendrier-icone { font-size: 24px; line-height: 1; }
 /* Réutilisées par la vue mensuelle du sommeil (rendreMoisSommeil) : mêmes
    trois couleurs que l'état musculaire, sur le fond de la case plutôt que
    le texte. */
@@ -332,23 +338,42 @@ body { display: flex; flex-direction: column; }
 }
 .tonnage-detail-ligne:last-child { border-bottom: none; }
 
+/* Un exercice par bloc (nom + tonnage 7 jours, puis courbe), depuis le
+   16 septembre 2026 : voir rendreTonnageMuscles() dans js/app.js. La ligne
+   interne réutilise .tonnage-detail-ligne mais perd son propre trait, la
+   séparation se faisant désormais entre exercices plutôt qu'entre chaque
+   ligne de chiffres. */
+.tonnage-detail-exo { padding: 10px 0; border-bottom: 1px solid var(--trait); }
+.tonnage-detail-exo:last-child { border-bottom: none; }
+.tonnage-detail-exo .tonnage-detail-ligne { border-bottom: none; padding: 0; font-weight: 600; }
+
 /* ---------- Sommeil ----------
 
    Seul écran de l'application à s'écarter du fond clair général (demande
    de l'utilisateur le 16 septembre 2026, « fond dégradé jour/nuit ») :
    dégradé de crépuscule en haut vers la nuit profonde en bas, assez sombre
    sur toute sa hauteur pour qu'un seul jeu de couleurs de texte (blanc)
-   reste lisible partout, sans avoir à recalculer un contraste par zone. */
+   reste lisible partout, sans avoir à recalculer un contraste par zone.
+
+   Porté sur #ecran-sommeil (l'écran entier, header compris) plutôt que sur
+   .corps-sommeil seul, corrigé le même jour : la barre gardait un fond uni
+   (#17213b) au-dessus du dégradé du corps, qui reprenait alors une teinte
+   plus claire juste en dessous — une bande plate visible à la jonction. Un
+   seul dégradé continu sur toute la hauteur de l'écran (100%, jamais plus)
+   supprime la coupure sans rien faire déborder hors du cadre. */
+#ecran-sommeil {
+  background: linear-gradient(180deg, #4c6a94 0%, #2c3e6b 45%, #17213b 75%, #0f1729 100%);
+}
 .barre-sommeil {
-  background: #17213b;
-  border-bottom-color: #2a3a5c;
+  background: transparent;
+  border-bottom-color: transparent;
 }
 .barre-titre-sommeil span { color: #fff; }
 .icone-sommeil { color: #fff; }
 .icone-sommeil:active { background: rgba(255, 255, 255, .12); }
 .icone-sommeil[disabled] { opacity: .35; }
 .corps-sommeil {
-  background: linear-gradient(180deg, #4c6a94 0%, #2c3e6b 45%, #17213b 75%, #0f1729 100%);
+  background: transparent;
   color: #fff;
 }
 .sommeil-nuit-nav {
@@ -374,8 +399,15 @@ body { display: flex; flex-direction: column; }
   gap: 3px;
   margin-bottom: 8px;
 }
+/* 20 par ligne pour les 48 créneaux (24h, demande de l'utilisateur le
+   16 septembre 2026) : la première ligne couvre alors 22h-7h30 pile
+   (SOMMEIL_COEUR_FIN, dernier créneau du cœur de nuit), si bien que la
+   session de sommeil 00h-8h tient entière dessus, jamais coupée par un
+   retour à la ligne (autre demande du même jour) — 20 est le plus petit pas
+   qui le garantisse tout en gardant les créneaux aussi grands que possible
+   (24 par ligne, essayé d'abord, les aurait inutilement rétrécis). */
 .sommeil-creneau {
-  width: calc((100% - 36px) / 13);
+  width: calc((100% - 57px) / 20);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -436,7 +468,21 @@ body { display: flex; flex-direction: column; }
 }
 .raison-chip.choisi { background: var(--danger); border-color: var(--danger); }
 .journee-item.choisi { background: var(--accent-clair); border-color: var(--accent-clair); }
-.journee-remise { margin-left: 2px; opacity: .8; }
+/* Cible agrandie le 16 septembre 2026 (signalé difficile à toucher) : la
+   croix ne mesurait que sa propre police (13px), au milieu d'un bouton par
+   ailleurs cliquable pour incrémenter — un appui imprécis relançait le
+   compteur au lieu de le remettre à zéro. Marges négatives compensées par
+   le padding pour agrandir la zone tactile sans pousser le texte voisin. */
+.journee-remise {
+  margin: -6px -6px -6px 6px;
+  padding: 6px 8px;
+  border-radius: var(--rayon-plein);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  opacity: .85;
+}
+.journee-remise:active { background: rgba(255, 255, 255, .3); opacity: 1; }
 /* Heure du sport (16 septembre 2026, sport devenu sélectionnable) : même
    habillage que les puces plutôt qu'un champ nu, pour rester dans le
    même registre visuel sombre que le reste de l'écran. */
@@ -1155,15 +1201,17 @@ body { display: flex; flex-direction: column; }
 .ligne-consigne { display: flex; align-items: flex-start; gap: 10px; }
 .ligne-consigne .consigne { flex: 1; min-width: 0; }
 
-/* Fond rouge et même hauteur que #chrono-seance-demarrer (71px), décision de
-   l'utilisateur le 7 septembre 2026 : le repos doit se voir de loin, pas se
-   fondre dans la carte comme un simple compteur secondaire. Le libellé
-   "Ensuite : série X sur Y" a disparu le même jour, la minuterie ne montrant
-   plus que le chiffre, seul à occuper tout le cadre. Chiffre agrandi une
-   seconde fois le même jour, jusqu'à la limite du cadre (padding réduit à
-   2px) : le plus long repos du programme est 2'30 (`repos_s` max de
-   `programme.json`), quatre caractères qui tiennent tout juste à 58px dans
-   les 128px fixes de la minuterie. */
+/* Même hauteur que #chrono-seance-demarrer (71px), décision de l'utilisateur
+   le 7 septembre 2026 : le repos doit se voir de loin, pas se fondre dans la
+   carte comme un simple compteur secondaire. Fond passé du rouge (alerte) au
+   teal `--accent` le 16 septembre 2026 (demande de l'utilisateur, "pas fond
+   rouge sur blanc") : c'est la même famille de couleur que le bouton de
+   récupération et le tonnage en hausse (voir plus bas, `--accent-clair`
+   côté `appliquerCouleurTonnage`), le rouge restant réservé aux vraies
+   alertes (`--danger`, blessure, suppression). Le chiffre a cédé la place
+   le même jour à une jauge (voir .jauge-pilule) : jugé peu fiable en fond
+   de tâche par l'utilisateur, remplacé par un repère visuel de
+   progression plutôt qu'un compte à rebours exact à lire. */
 .minuterie {
   flex: 0 0 128px;
   display: flex;
@@ -1173,7 +1221,7 @@ body { display: flex; flex-direction: column; }
   padding: 0;
   border: 0;
   border-radius: var(--rayon);
-  background: var(--danger);
+  background: var(--accent);
   text-align: center;
   cursor: pointer;
   touch-action: manipulation;
@@ -1197,6 +1245,30 @@ body { display: flex; flex-direction: column; }
   white-space: nowrap;
 }
 
+/* Jauge de progression du repos (16 septembre 2026, remplace le chiffre) :
+   pilule blanche à contour noir, remplissage vert qui grandit avec le temps
+   écoulé — couleurs demandées explicitement par l'utilisateur plutôt que
+   reprises de la palette, ce repère devant rester lisible sur n'importe quel
+   fond (bandeau teal ou plein écran). `--hausse` sert de vert : c'est déjà
+   celui du tonnage en progression, pas une couleur neuve. Taille distincte
+   dans le bandeau compact et en plein écran, voir plus bas. */
+.jauge-pilule {
+  width: 84px;
+  height: 22px;
+  border-radius: var(--rayon-plein);
+  border: 2px solid #000;
+  background: #fff;
+  overflow: hidden;
+}
+.jauge-pilule-remplissage {
+  height: 100%;
+  width: 0%;
+  background: var(--hausse);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .jauge-pilule-remplissage { transition: width .2s linear; }
+}
+
 /* Plein écran repris le 16 septembre 2026, à la demande de l'utilisateur,
    sur le même principe que .vague-demarrage (position:fixed, inset:0) :
    la panne du 27 août 2026 venait du clavier virtuel qui poussait une
@@ -1218,20 +1290,45 @@ body { display: flex; flex-direction: column; }
   inset: 0;
   z-index: 60;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--danger);
+  gap: 24px;
+  background: var(--accent);
   cursor: pointer;
   touch-action: manipulation;
 }
 .minuterie-plein-ecran[hidden] { display: none; }
-.minuterie-plein-ecran-chiffres {
-  font-size: 96px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  color: #fff;
+.minuterie-plein-ecran .jauge-pilule {
+  width: min(70vw, 320px);
+  height: 32px;
+  border-width: 3px;
 }
+
+/* Bilan affiché uniquement sur le dernier repos d'un exercice (demande de
+   l'utilisateur le 16 septembre 2026) : le tonnage de l'exercice qui vient
+   de se terminer comparé à la semaine dernière (même principe que
+   afficherComparaisonTonnage, mais sur le total de l'exercice plutôt qu'une
+   série), puis le nom du prochain exercice. Voir validerSerie() et
+   rendreBilanMinuterie() dans js/app.js. Texte blanc simple, sans le
+   code couleur hausse/baisse habituel : sur le fond teal plein écran,
+   `--hausse`/`--baisse` (pensées pour un fond clair) manqueraient de
+   contraste, et le signe du pourcentage suffit à lire le sens. */
+.minuterie-bilan { text-align: center; color: #fff; }
+.minuterie-bilan[hidden] { display: none; }
+.minuterie-bilan-tonnage {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.minuterie-bilan-tonnage[hidden] { display: none; }
+.minuterie-bilan-suivant {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, .72);
+}
+.minuterie-bilan-suivant[hidden] { display: none; }
 
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni
    visibility:hidden. Hors flux, transparent, et hors de portée du doigt. */

@@ -343,6 +343,30 @@ def test_toucher_la_minuterie_plein_ecran_ferme_le_repos(page):
     assert not page.locator("#minuterie-plein-ecran").is_visible()
 
 
+def test_le_bilan_du_dernier_repos_annonce_l_exercice_suivant(page):
+    """16 septembre 2026, demande de l'utilisateur : le dernier repos d'un
+    exercice affiche, en plus de la jauge habituelle, le tonnage total de
+    l'exercice qui vient de se terminer face a la semaine derniere (silencieux
+    sans reference, comme le reste des comparaisons de l'appli) et le nom du
+    prochain exercice, toujours present des qu'il y en a un."""
+    ouvrir_jour(page, "J1")
+    nom_suivant = page.evaluate("seance.exercices[1].nom")
+    for rang in range(nombre_de_series(page)):
+        saisir_serie(page, rang, 50, 10)
+    bilan = page.locator("#minuterie-plein-ecran-bilan")
+    bilan.wait_for(state="visible", timeout=2000)
+    assert nom_suivant in page.locator("#minuterie-bilan-suivant").text_content()
+
+
+def test_le_bilan_ne_s_affiche_pas_sur_un_repos_ordinaire(page):
+    """Le bilan est reserve au dernier repos d'un exercice : une premiere
+    serie ordinaire n'a rien a comparer, l'exercice n'etant pas fini."""
+    ouvrir_jour(page, "J1")
+    saisir_serie(page, 0, 50, 10)
+    page.locator("#minuterie-plein-ecran").wait_for(state="visible", timeout=2000)
+    assert not page.locator("#minuterie-plein-ecran-bilan").is_visible()
+
+
 def test_le_developpe_machine_reprend_l_historique_de_l_unilateral(page):
     """13 septembre 2026 : le developpe machine unilateral devient bilateral
     et garde ses valeurs (demande de l'utilisateur), quel que soit l'accent
@@ -428,11 +452,25 @@ def test_le_coeur_de_la_frise_de_sommeil_est_bleu_par_defaut(page):
     qu'on n'y touche pas."""
     ouvrir_sommeil(page)
     creneaux = page.locator(".sommeil-creneau")
-    assert creneaux.count() == 26
+    assert creneaux.count() == 48   # 24h, depuis le 16 septembre 2026 (etait 26, 22h-11h)
     assert "sommeil" in creneaux.nth(3).get_attribute("class")    # 23:30
     assert "sommeil" in creneaux.nth(19).get_attribute("class")   # 07:30, dernier du coeur
     assert "libre" in creneaux.nth(0).get_attribute("class")      # 22:00
     assert "libre" in creneaux.nth(20).get_attribute("class")     # 08:00
+
+
+def test_la_session_de_sommeil_tient_sur_une_seule_ligne_de_frise(page):
+    """16 septembre 2026 : 20 creneaux par ligne (voir .sommeil-creneau dans
+    css/style.css), choisis pour que 22h-7h30 (le coeur de nuit, indices 0 a
+    19) tombe entierement sur la premiere ligne. Verifie par la position
+    verticale plutot que par un nombre par ligne, la mise en page n'exposant
+    rien d'autre a lire."""
+    ouvrir_sommeil(page)
+    creneaux = page.locator(".sommeil-creneau")
+    haut_premiere_ligne = creneaux.nth(0).bounding_box()["y"]
+    for i in (3, 19):   # 23:30 et 07:30, les bornes du coeur de nuit
+        assert creneaux.nth(i).bounding_box()["y"] == haut_premiere_ligne
+    assert creneaux.nth(20).bounding_box()["y"] > haut_premiere_ligne   # 08:00, ligne suivante
 
 
 def test_toucher_un_creneau_de_sommeil_bascule_en_insomnie(page):
@@ -468,22 +506,40 @@ def test_le_sport_du_jour_se_choisit_a_la_main(page):
     ouvrir_sommeil(page)
     page.locator("#sommeil-journee .journee-item", has_text="Muscu").click()
     assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Muscu").get_attribute("class")
-    champ_heure = page.locator("#sommeil-sport-heure")
+    champ_heure = page.locator(".sommeil-sport-heure")
     assert champ_heure.count() == 1
     champ_heure.fill("23:00")
     champ_heure.press("Tab")
     assert page.locator(".sommeil-creneau-sport").count() == 1
 
 
-def test_le_sport_ne_marque_pas_la_frise_hors_de_sa_fenetre(page):
-    """Le sport de l'apres-midi (hors 22h-11h) n'a pas de repere sur la
-    frise, mais reste selectionne."""
+def test_muscu_et_footing_se_choisissent_independamment(page):
+    """Dissocies le 16 septembre 2026 (meme jour, demande ulterieure) : un
+    seul choix empechait de noter les deux le meme jour (ex. J2/J6 avec du
+    gainage, ou une sortie en plus d'une seance). Chacun garde sa propre
+    heure et son propre repere sur la frise."""
+    ouvrir_sommeil(page)
+    page.locator("#sommeil-journee .journee-item", has_text="Muscu").click()
+    page.locator(".sommeil-sport-heure").fill("19:00")
+    page.locator(".sommeil-sport-heure").press("Tab")
+    page.locator("#sommeil-journee .journee-item", has_text="Footing").click()
+    page.locator(".sommeil-sport-heure").nth(1).fill("07:00")
+    page.locator(".sommeil-sport-heure").nth(1).press("Tab")
+    assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Muscu").get_attribute("class")
+    assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Footing").get_attribute("class")
+    assert page.locator(".sommeil-sport-heure").count() == 2
+    assert page.locator(".sommeil-creneau-sport").count() == 2
+
+
+def test_le_sport_de_l_apres_midi_a_desormais_un_repere_sur_la_frise(page):
+    """La frise couvrant les 24h depuis le 16 septembre 2026 (etait 22h-11h),
+    un sport de l'apres-midi a maintenant sa place, contrairement a avant."""
     ouvrir_sommeil(page)
     page.locator("#sommeil-journee .journee-item", has_text="Footing").click()
-    champ_heure = page.locator("#sommeil-sport-heure")
+    champ_heure = page.locator(".sommeil-sport-heure")
     champ_heure.fill("17:00")
     champ_heure.press("Tab")
-    assert page.locator(".sommeil-creneau-sport").count() == 0
+    assert page.locator(".sommeil-creneau-sport").count() == 1
     assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Footing").get_attribute("class")
 
 
