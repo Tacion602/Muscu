@@ -431,8 +431,8 @@ def test_le_coeur_de_la_frise_de_sommeil_est_bleu_par_defaut(page):
     assert creneaux.count() == 26
     assert "sommeil" in creneaux.nth(3).get_attribute("class")    # 23:30
     assert "sommeil" in creneaux.nth(19).get_attribute("class")   # 07:30, dernier du coeur
-    assert "vide" in creneaux.nth(0).get_attribute("class")       # 22:00
-    assert "vide" in creneaux.nth(20).get_attribute("class")      # 08:00
+    assert "libre" in creneaux.nth(0).get_attribute("class")      # 22:00
+    assert "libre" in creneaux.nth(20).get_attribute("class")     # 08:00
 
 
 def test_toucher_un_creneau_de_sommeil_bascule_en_insomnie(page):

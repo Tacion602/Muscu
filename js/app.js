@@ -3027,7 +3027,12 @@ function rendreSommeil() {
   $('sommeil-frise').innerHTML = creneaux.map((creneau, index) => {
     const enInsomnie = nuit.insomnies.includes(creneau);
     const dansLeCoeur = index >= SOMMEIL_COEUR_DEBUT && index <= SOMMEIL_COEUR_FIN;
-    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau vide" data-index="' + index + '" aria-label="Ajouter ' + creneau + '"></button>';
+    // "libre", pas "vide" : la classe générique .vide (messages d'état vide
+    // en <p>, padding 40px) matchait aussi ces boutons et leur imposait
+    // 80px de haut, seule vraie cause de la frise débordante signalée par
+    // l'utilisateur le 16 septembre 2026 — pas un problème de grille ou de
+    // flexbox, malgré tout ce que ça y ressemblait à l'essai.
+    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '"></button>';
     return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '"></button>';
   }).join('');
   $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {

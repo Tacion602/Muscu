@@ -359,13 +359,23 @@ body { display: flex; flex-direction: column; }
 }
 .sommeil-nuit-titre { font-size: 15px; font-weight: 600; }
 
+/* Signalé par l'utilisateur : la frise débordait de l'écran. Longtemps pris
+   pour un problème de grille puis de flexbox (`grid-template-columns:
+   repeat(13, 1fr)`, implicit row sizing, aspect-ratio ignoré...) avant de
+   trouver la vraie cause, sans rapport avec la mise en page : les créneaux
+   "pas encore marqués" portaient la classe générique `.vide` (plus bas,
+   messages d'état vide en `<p>`, `padding: 40px 0`), qui leur imposait
+   donc 80px de haut. Renommée `.sommeil-creneau.libre` (voir
+   rendreSommeil() dans js/app.js) plutôt que réutilisée : deux sens
+   différents de "vide" n'avaient pas à partager la même classe. */
 .sommeil-frise {
-  display: grid;
-  grid-template-columns: repeat(13, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 3px;
   margin-bottom: 8px;
 }
 .sommeil-creneau {
+  width: calc((100% - 36px) / 13);
   aspect-ratio: 1;
   border: 0;
   border-radius: 4px;
@@ -373,7 +383,7 @@ body { display: flex; flex-direction: column; }
   cursor: pointer;
   touch-action: manipulation;
 }
-.sommeil-creneau.vide { background: rgba(255, 255, 255, .08); }
+.sommeil-creneau.libre { background: rgba(255, 255, 255, .08); }
 .sommeil-creneau.sommeil { background: #6fa8dc; }
 .sommeil-creneau.insomnie { background: var(--danger); }
 .sommeil-legende { font-size: 12px; color: rgba(255, 255, 255, .7); margin: 0 0 22px; }
