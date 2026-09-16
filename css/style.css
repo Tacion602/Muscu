@@ -1,27 +1,32 @@
-/* Interface de salle : fond sombre contre les néons, cibles larges pour des
-   doigts moites, chiffres lisibles à bout de bras posé au sol. */
+/* Interface de salle, mode clair depuis le 16 septembre 2026 (demande de
+   l'utilisateur, direction "sortie standard" du protocole impeccable.style,
+   barre de finition Strava — voir PRODUCT.md, Brand Commitments) : neutres
+   chauds plutôt que blanc pur, un seul accent teal repris de l'identité
+   existante, cibles larges pour des doigts moites, chiffres lisibles à bout
+   de bras posé au sol. Remplace le fond sombre d'origine ; tout le contraste
+   ci-dessous est mesuré (WCAG) contre ces trois fonds précisément, jamais
+   estimé à l'œil. */
 
 :root {
-  --fond: #0d1117;
-  --fond-carte: #161b22;
-  --fond-champ: #1f2630;
-  --trait: #2a323d;
-  --texte: #e6edf3;
-  --texte-faible: #8b949e;
-  --accent: #2F7E7A;
-  --accent-clair: #4FD1C5;
-  --hausse: #56d364;
-  --baisse: #f0883e;
-  --danger: #f85149;
+  --fond: #f6f5f2;
+  --fond-carte: #ffffff;
+  --fond-champ: #eef0ee;
+  --trait: #dde3e0;
+  --texte: #14201d;
+  --texte-faible: #55625f;
+  --accent: #155e56;
+  --accent-clair: #0f766e;
+  --hausse: #1f7a34;
+  --baisse: #a35a12;
+  --danger: #b3271e;
   /* Fond des champs d'une série, selon son tonnage face à la même série la
-     semaine passée (voir appliquerCouleurTonnage). Le vert reprend le
-     vert-bleu de la récupération (--accent-clair) désaturé et transparent,
-     décision de l'utilisateur le 26 août 2026 pour que les deux se lisent
-     comme une même famille de couleur ; le rouge est propre à cet usage. */
-  --tonnage-hausse-fond: rgba(97, 194, 185, .28);
-  --tonnage-hausse-bord: rgba(97, 194, 185, .6);
-  --tonnage-baisse-fond: rgba(181, 107, 100, .32);
-  --tonnage-baisse-bord: rgba(181, 107, 100, .68);
+     semaine passée (voir appliquerCouleurTonnage). Le vert reprend --hausse,
+     le rouge --baisse, en lavis pâle : le texte assombri au-dessus reste le
+     porteur du contraste, ce fond n'est qu'un repère visuel. */
+  --tonnage-hausse-fond: rgba(31, 122, 52, .14);
+  --tonnage-hausse-bord: rgba(31, 122, 52, .45);
+  --tonnage-baisse-fond: rgba(163, 90, 18, .14);
+  --tonnage-baisse-bord: rgba(163, 90, 18, .45);
   --marge: 16px;
   /* Échelle de rayons plutôt que des valeurs au cas par cas : la feuille
      mélangeait 4, 9, 12 et 20px sans logique. Angles adoucis au passage,
@@ -142,12 +147,8 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   width: 100%;
   text-align: left;
-  /* Fond éclairci par rapport aux autres cartes de l'application
-     (var(--fond-carte)) : demande de l'utilisateur le 14 septembre 2026,
-     les bulles de l'accueil se distinguent mieux du fond de l'écran. Plus
-     clair qu'aucun fond existant (var(--fond-champ) restait trop proche),
-     d'où une couleur propre plutôt qu'un jeton réutilisé. */
-  background: #333f4d;
+  background: var(--fond-carte);
+  box-shadow: 0 1px 2px rgba(20, 32, 29, .06);
   border: 1px solid var(--trait);
   border-radius: var(--rayon);
   padding: 8px 12px;
@@ -189,7 +190,7 @@ body { display: flex; flex-direction: column; }
 .reprise {
   margin: var(--marge) var(--marge) 0;
   padding: 14px 16px;
-  background: rgba(79, 209, 197, .1);
+  background: rgba(15, 118, 110, .08);
   border: 1px solid var(--accent);
   border-radius: var(--rayon);
 }
@@ -214,7 +215,7 @@ body { display: flex; flex-direction: column; }
   margin-left: 8px;
   padding: 1px 7px;
   border-radius: var(--rayon-plein);
-  background: rgba(79, 209, 197, .15);
+  background: rgba(15, 118, 110, .12);
   color: var(--accent-clair);
   font-size: 10px;
   letter-spacing: .5px;
@@ -283,14 +284,14 @@ body { display: flex; flex-direction: column; }
   color: var(--texte-faible);
 }
 .etiquette:empty { display: none; }
-#exo-muscle { background: rgba(47, 126, 122, .3); color: var(--accent-clair); }
+#exo-muscle { background: rgba(21, 94, 86, .16); color: var(--accent-clair); }
 
 .echauffement-jour {
   margin-bottom: 14px;
   padding: 10px 12px;
   border: 1px solid var(--accent);
   border-radius: var(--rayon);
-  background: rgba(47, 126, 122, .1);
+  background: rgba(21, 94, 86, .08);
 }
 .echauffement-jour[hidden] { display: none; }
 .echauffement-titre {
@@ -357,7 +358,7 @@ body { display: flex; flex-direction: column; }
   font-variant-numeric: tabular-nums;
 }
 .footing-champs input:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
-.footing-champs input::placeholder { color: #4b5563; font-weight: 400; }
+.footing-champs input::placeholder { color: #7a8583; font-weight: 400; }
 
 /* Un ou plusieurs passages du type choisi, ajouté le 8 septembre 2026 :
    pouvoir refaire l'Incliné à une autre charge dans la même séance sans
@@ -480,7 +481,7 @@ body { display: flex; flex-direction: column; }
   padding: 6px 2px;
   border-bottom: 1px solid var(--trait);
 }
-.ligne-serie.faite { background: rgba(47, 126, 122, .12); }
+.ligne-serie.faite { background: rgba(21, 94, 86, .1); }
 .ligne-serie.courante { box-shadow: inset 3px 0 0 var(--accent-clair); }
 .ligne-serie.tonnage-hausse input { background: var(--tonnage-hausse-fond); border-color: var(--tonnage-hausse-bord); }
 .ligne-serie.tonnage-baisse input { background: var(--tonnage-baisse-fond); border-color: var(--tonnage-baisse-bord); }
@@ -503,7 +504,7 @@ body { display: flex; flex-direction: column; }
   padding: 0 2px;
 }
 .ligne-serie input:focus { outline: 2px solid var(--accent-clair); outline-offset: -2px; }
-.ligne-serie input::placeholder { color: #4b5563; font-weight: 400; }
+.ligne-serie input::placeholder { color: #7a8583; font-weight: 400; }
 .ligne-serie input::-webkit-outer-spin-button,
 .ligne-serie input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
@@ -661,7 +662,7 @@ body { display: flex; flex-direction: column; }
   font-weight: 600;
   cursor: pointer;
 }
-.principal:active { background: #266a67; }
+.principal:active { background: #0e453f; }
 .principal.grand { padding: 18px; font-size: 17px; margin-top: 20px; }
 .principal[disabled] { opacity: .5; }
 
@@ -812,7 +813,7 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
   padding: 10px 12px;
   border: 1px solid var(--baisse);
   border-radius: var(--rayon-petit);
-  background: rgba(240, 136, 62, .12);
+  background: rgba(163, 90, 18, .1);
   color: var(--baisse);
   font-size: 13px;
   line-height: 1.5;
@@ -821,8 +822,8 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 .supprimer-seance { margin-top: 6px; }
 .supprimer-seance:active { color: var(--danger); }
 .badge { font-size: 11px; padding: 2px 7px; border-radius: var(--rayon-plein); flex: none; }
-.badge.envoye { background: rgba(86, 211, 100, .15); color: var(--hausse); }
-.badge.attente { background: rgba(240, 136, 62, .15); color: var(--baisse); }
+.badge.envoye { background: rgba(31, 122, 52, .14); color: var(--hausse); }
+.badge.attente { background: rgba(163, 90, 18, .14); color: var(--baisse); }
 
 .vide { color: var(--texte-faible); text-align: center; padding: 40px 0; font-size: 14px; }
 

@@ -91,51 +91,56 @@ function uniteGainage(exo) {
    2026, le tempo 3-1-3 faisant de la qualité de chaque répétition la mesure
    utile.
 
-   `couleurTexte`, quand présent, remplace `couleur` pour l'affichage : mesuré
-   sur les fonds réels de l'écran (`--fond`, `--fond-champ`), `farmer_walk`
-   (2,4:1) et `marche_ours` (3,9:1) tombent sous le seuil de lisibilité WCAG
-   AA (4,5:1) en texte de cette taille, là où les sept autres teintes passent
-   largement (5:1 et plus). Éclaircies vers le blanc jusqu'à repasser ce
-   seuil sur le fond le plus défavorable, en gardant la même teinte. */
+   `couleurTexte`, quand présent, remplace `couleur` pour l'affichage :
+   `couleur` reste la teinte de référence de l'échelle divergente (celle du
+   dégradé `.gainage-degrade`), `couleurTexte` sa version assombrie pour
+   rester lisible en texte. Recalculé le 16 septembre 2026 pour le passage au
+   fond clair (remplace le calcul du 13 septembre, fait pour un fond sombre) :
+   mesuré sur les trois fonds clairs de l'application (`--fond`, `--fond-carte`,
+   `--fond-champ`), les neuf teintes d'origine tombent presque toutes sous le
+   seuil WCAG AA (4,5:1) en texte de cette taille — de 1,1:1 à 4,4:1 --, `A50026`
+   (farmer walk) étant la seule à passer telle quelle (7:1). Les huit autres
+   sont assombries jusqu'à repasser ce seuil sur le fond le plus défavorable,
+   en gardant la même teinte. */
 const MOUVEMENTS_GAINAGE = {
   dead_bug: {
     nom: 'Dead bug', mode: 'reps', prescription: '6-8 par côté', repos: 45,
-    interference: 4, couleur: '#D9EF8B',
+    interference: 4, couleur: '#D9EF8B', couleurTexte: '#5d7310',
     consigne: '3 s de descente bras et jambe opposés, 1 s en bas, 3 s de retour. '
       + 'Bas du dos plaqué au sol en permanence.',
   },
   planche: {
     nom: 'Planche', mode: 'chrono', prescription: '45 s', repos: 45,
-    interference: 3, couleur: '#91CF60',
+    interference: 3, couleur: '#91CF60', couleurTexte: '#497724',
     consigne: 'Bassin en rétroversion légère, fessiers contractés.',
   },
   pallof_press: {
     nom: 'Pallof press', mode: 'reps', prescription: '8-10 par côté', repos: 45,
-    interference: 1, couleur: '#1A9850',
+    interference: 1, couleur: '#1A9850', couleurTexte: '#157c41',
     consigne: 'Poulie à hauteur de poitrine, à 1 m, perpendiculaire. 2 s pour tendre, '
       + '2 s de maintien, 2 s de retour. Départ 10 à 15 kg. Le buste ne pivote pas.',
   },
   bird_dog: {
     nom: 'Bird dog', mode: 'chrono', prescription: '45 s', repos: 45,
-    interference: 5, couleur: '#FEE08B',
+    interference: 5, couleur: '#FEE08B', couleurTexte: '#896501',
     consigne: "2 s d'extension bras et jambe opposés, 2 s de maintien, 2 s de retour. "
       + 'Hanches horizontales.',
   },
   marche_ours: {
     nom: "Marche de l'ours", mode: 'chrono', prescription: '45 s', repos: 45,
-    interference: 8, couleur: '#D73027', couleurTexte: '#E1665F',
+    interference: 8, couleur: '#D73027', couleurTexte: '#cc2e25',
     consigne: 'Genoux à quelques centimètres du sol, dos plat, bassin qui ne bascule '
       + 'pas latéralement.',
   },
   planche_laterale: {
     nom: 'Planche latérale', mode: 'chrono', prescription: '45 s par côté', repos: 45,
-    interference: 2, couleur: '#52B151',
+    interference: 2, couleur: '#52B151', couleurTexte: '#377a37',
     consigne: "Ligne cheville-hanche-épaule, hanche empilée sur l'épaule et haute. "
       + "Le temps noté est celui d'un côté.",
   },
   farmer_walk: {
     nom: 'Farmer walk une main', mode: 'charge', prescription: '20-30 m par côté', repos: 60,
-    interference: 9, couleur: '#A50026', couleurTexte: '#CD7085',
+    interference: 9, couleur: '#A50026',
     consigne: "Départ 18 à 20 kg. Épaules horizontales, arrêt dès l'inclinaison, quelle "
       + 'que soit la distance restante.',
     info: 'Il ne fatigue pas la sangle comme les autres : il charge la chaîne portante '
@@ -144,13 +149,13 @@ const MOUVEMENTS_GAINAGE = {
   },
   crunch_inverse: {
     nom: 'Crunch inversé', mode: 'reps', prescription: '10-12', repos: 45,
-    interference: 6, couleur: '#FDAE61',
+    interference: 6, couleur: '#FDAE61', couleurTexte: '#a95502',
     consigne: '2 s de montée, 3 s de descente contrôlée. Le bassin décolle, pas '
       + 'seulement les jambes. Aucun élan.',
   },
   releve_genoux: {
     nom: 'Relevé de genoux suspendu', mode: 'reps', prescription: '8-12', repos: 60,
-    interference: 7, couleur: '#F46D43',
+    interference: 7, couleur: '#F46D43', couleurTexte: '#c8380c',
     consigne: 'Rétroversion du bassin en fin de mouvement. Aucun balancement. Sangles '
       + "si le grip lâche avant l'abdomen.",
   },
