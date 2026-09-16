@@ -340,6 +340,137 @@ body { display: flex; flex-direction: column; }
 #sommeil-mois .calendrier-num { color: rgba(255, 255, 255, .7); }
 #sommeil-mois .calendrier-case.aujourdhui { border-color: #fff; }
 
+/* ---------- Mensurations ---------- */
+
+.mensurations-corps { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+.mensurations-silhouette { max-width: 130px; margin: 0; flex: none; }
+.mensurations-repere { fill: var(--accent); }
+.mensurations-repere-num { fill: #fff; font-size: 11px; font-weight: 700; text-anchor: middle; }
+
+.mensurations-champs { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.mensurations-champ {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-petit);
+  padding: 6px 10px;
+  background: var(--fond-carte);
+}
+.mensurations-champ-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mensurations-champ-nom { flex: 1; font-size: 13px; color: var(--texte-faible); }
+.mensurations-champ input {
+  width: 64px;
+  height: 34px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-champ);
+  color: var(--texte);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.mensurations-champ-unite { flex: none; font-size: 12px; color: var(--texte-faible); }
+.mensurations-champ.mensurations-poids .mensurations-champ-num { background: var(--accent-clair); }
+
+.mensurations-photo {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-width: 220px;
+  border-radius: var(--rayon);
+  border: 1px dashed var(--trait);
+  background: var(--fond-champ);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+  position: relative;
+}
+.mensurations-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mensurations-photo-vide { font-size: 13px; color: var(--texte-faible); text-align: center; padding: 0 16px; }
+.mensurations-photo-suppr {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(20, 32, 29, .55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mensurations-comparer-choix { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.mensurations-comparer-choix select {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-champ);
+  color: var(--texte);
+  font-size: 14px;
+}
+
+.mensurations-slider {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto 8px;
+  border-radius: var(--rayon);
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+.mensurations-slider[hidden] { display: none; }
+.mensurations-slider img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mensurations-slider-apres-bloc { position: absolute; inset: 0; overflow: hidden; clip-path: inset(0 0 0 50%); }
+.mensurations-slider-apres-bloc img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mensurations-slider-poignee {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .2);
+  transform: translateX(-50%);
+  cursor: ew-resize;
+}
+.mensurations-slider-poignee::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  transform: translate(-50%, -50%);
+}
+
 /* ---------- Accueil ---------- */
 
 /* Une seule colonne de bulles pleine largeur, emoji en grand sur toute la

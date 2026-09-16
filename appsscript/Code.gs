@@ -82,6 +82,17 @@ function doPost(requete) {
     }
   }
 
+  // Mensurations (valeurs et photo), ajoutees le 16 septembre 2026 : voir
+  // ecrireMensuration ci-dessous.
+  if (corps.action === 'mensuration') {
+    try {
+      ecrireMensuration(SpreadsheetApp.getActiveSpreadsheet(), corps.mensuration);
+      return reponse({ ok: true });
+    } catch (e) {
+      return reponse({ ok: false, erreur: String(e) });
+    }
+  }
+
   return reponse({ ok: false, erreur: 'action inconnue' });
 }
 
@@ -561,6 +572,102 @@ function ecrireConsignes(classeur, consignes, date) {
       feuille.appendRow([e.jour, e.nom, e.texte, formatDateCourte(date)]);
     }
   });
+}
+
+/**
+ * Mensurations (valeurs et photo), ajoutees le 16 septembre 2026. Meme
+ * principe que Consignes ci-dessus : la source reste le telephone
+ * (muscu.mensurations cote js/app.js), cette page est une sauvegarde
+ * consultable, jamais relue par l'application. Une ligne par date, mise a
+ * jour sur place plutot qu'ajoutee : resynchroniser la meme date (valeur
+ * corrigee, photo ajoutee apres coup) ne doit pas empiler des lignes.
+ *
+ * La photo part en data URL base64 dans le corps de la requete (deja
+ * compressee cote telephone a 900 px de large, quelques dizaines a
+ * quelques centaines de Ko) et va dans un dossier Drive dedie plutot que
+ * dans la feuille elle-meme, Sheets n'etant pas fait pour heberger des
+ * images. Seul le lien du fichier reste dans la colonne Photo.
+ *
+ * Necessite l'autorisation Drive en plus de celle deja accordee pour
+ * Sheets : redemandee au premier appel qui suit le redeploiement
+ * introduisant cette fonction (voir "Chantiers ouverts", CLAUDE.md). Tant
+ * que ce n'est pas fait, ecrireMensuration continue d'enregistrer les
+ * valeurs et note l'echec de la photo dans la colonne Photo plutot que de
+ * perdre tout l'envoi.
+ */
+const DOSSIER_PHOTOS_MENSURATIONS = 'Muscu - Mensurations';
+
+function dossierPhotosMensurations() {
+  const dossiers = DriveApp.getFoldersByName(DOSSIER_PHOTOS_MENSURATIONS);
+  return dossiers.hasNext() ? dossiers.next() : DriveApp.createFolder(DOSSIER_PHOTOS_MENSURATIONS);
+}
+
+/* `photo` est une data URL ("data:image/jpeg;base64,....") telle que
+ * produite par canvas.toDataURL() cote client. */
+function enregistrerPhotoMensuration(cle, photo) {
+  const virgule = photo.indexOf(',');
+  const type = photo.slice(5, virgule).split(';')[0];
+  const octets = Utilities.base64Decode(photo.slice(virgule + 1));
+  const nomFichier = 'Mensuration ' + cle.replace(/\//g, '-') + '.jpg';
+  const blob = Utilities.newBlob(octets, type, nomFichier);
+
+  const dossier = dossierPhotosMensurations();
+  // Remplace un fichier existant pour la meme date plutot que d'en empiler
+  // un second : une photo corrigee doit remplacer, pas s'ajouter a cote.
+  const existants = dossier.getFilesByName(nomFichier);
+  while (existants.hasNext()) existants.next().setTrashed(true);
+
+  const fichier = dossier.createFile(blob);
+  fichier.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return fichier.getUrl();
+}
+
+function feuilleMensurations(classeur) {
+  let feuille = classeur.getSheetByName('Mensurations');
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet('Mensurations');
+  const entetes = ['Date', 'Poids (kg)', 'Poitrine (cm)', 'Bras (cm)', 'Taille (cm)',
+    'Hanches (cm)', 'Cuisse (cm)', 'Mollet (cm)', 'Photo'];
+  feuille.getRange(1, 1, 1, entetes.length).setValues([entetes]).setFontWeight('bold');
+  feuille.setFrozenRows(1);
+  return feuille;
+}
+
+function ecrireMensuration(classeur, m) {
+  if (!m || !m.cle) return;
+  const feuille = feuilleMensurations(classeur);
+  const derniere = feuille.getLastRow();
+  const dates = derniere > 1 ? feuille.getRange(2, 1, derniere - 1, 1).getValues() : [];
+  let ligne = null;
+  for (let i = 0; i < dates.length; i++) {
+    if (dates[i][0] === m.cle) { ligne = 2 + i; break; }
+  }
+
+  const vide = function (v) { return v != null ? v : ''; };
+  let lienPhoto = '';
+  if (m.photo) {
+    try {
+      lienPhoto = enregistrerPhotoMensuration(m.cle, m.photo);
+    } catch (e) {
+      // Les valeurs partent quand meme si la photo echoue (Drive pas
+      // encore autorise, par exemple) : mieux vaut un chiffre enregistre
+      // sans sa photo qu'un envoi entierement perdu.
+      lienPhoto = 'Erreur photo : ' + String(e);
+    }
+  }
+
+  const valeurs = [m.cle, vide(m.poids), vide(m.poitrine), vide(m.bras), vide(m.taille),
+    vide(m.hanches), vide(m.cuisse), vide(m.mollet), lienPhoto];
+
+  if (ligne) {
+    // Une photo deja enregistree ne doit pas disparaitre si cette
+    // synchronisation n'en apporte pas de nouvelle (valeurs seules
+    // corrigees apres coup) : la colonne Photo n'est alors pas touchee.
+    if (!m.photo) valeurs.pop();
+    feuille.getRange(ligne, 1, 1, valeurs.length).setValues([valeurs]);
+  } else {
+    feuille.appendRow(valeurs);
+  }
 }
 
 /**

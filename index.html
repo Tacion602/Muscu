@@ -80,6 +80,10 @@
       <span class="carte-menu-icone" aria-hidden="true">&#127769;</span>
       <span class="carte-menu-nom">Sommeil</span>
     </button></li>
+    <li><button id="bouton-suivi-mensurations" class="carte-menu carte-menu-petite">
+      <span class="carte-menu-icone" aria-hidden="true">&#128207;</span>
+      <span class="carte-menu-nom">Mensurations</span>
+    </button></li>
   </ul>
 </section>
 
@@ -139,6 +143,71 @@
 
     <h2 class="sommeil-sous-titre">Le mois</h2>
     <div id="sommeil-mois" class="calendrier"></div>
+  </main>
+</section>
+
+<!-- Mensurations : silhouette de repère, valeurs, photo du jour, comparaison
+     entre deux dates. Voir rendreMensurations() dans js/app.js. -->
+<section id="ecran-mensurations" class="ecran">
+  <header class="barre">
+    <button id="bouton-mensurations-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Mensurations</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps">
+    <div class="sommeil-nuit-nav">
+      <button id="bouton-mensurations-precedent" class="icone" aria-label="Jour précédent">&#8592;</button>
+      <span id="mensurations-date-titre" class="sommeil-nuit-titre"></span>
+      <button id="bouton-mensurations-suivant" class="icone" aria-label="Jour suivant">&#8594;</button>
+    </div>
+
+    <div class="mensurations-corps">
+      <svg viewBox="0 0 140 240" class="mannequin-svg mensurations-silhouette" role="img" aria-hidden="true">
+        <circle class="silhouette" cx="70" cy="18" r="14"></circle>
+        <rect class="silhouette" x="64" y="30" width="12" height="10"></rect>
+        <rect class="silhouette" x="42" y="40" width="56" height="70" rx="14"></rect>
+        <circle class="silhouette" cx="34" cy="50" r="13"></circle>
+        <circle class="silhouette" cx="106" cy="50" r="13"></circle>
+        <rect class="silhouette" x="20" y="55" width="16" height="90" rx="8"></rect>
+        <rect class="silhouette" x="104" y="55" width="16" height="90" rx="8"></rect>
+        <rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>
+        <rect class="silhouette" x="44" y="138" width="24" height="98" rx="10"></rect>
+        <rect class="silhouette" x="72" y="138" width="24" height="98" rx="10"></rect>
+        <circle class="mensurations-repere" cx="70" cy="70" r="9"></circle>
+        <text class="mensurations-repere-num" x="70" y="74">1</text>
+        <circle class="mensurations-repere" cx="28" cy="80" r="9"></circle>
+        <text class="mensurations-repere-num" x="28" y="84">2</text>
+        <circle class="mensurations-repere" cx="70" cy="118" r="9"></circle>
+        <text class="mensurations-repere-num" x="70" y="122">3</text>
+        <circle class="mensurations-repere" cx="70" cy="140" r="9"></circle>
+        <text class="mensurations-repere-num" x="70" y="144">4</text>
+        <circle class="mensurations-repere" cx="56" cy="175" r="9"></circle>
+        <text class="mensurations-repere-num" x="56" y="179">5</text>
+        <circle class="mensurations-repere" cx="56" cy="222" r="9"></circle>
+        <text class="mensurations-repere-num" x="56" y="226">6</text>
+      </svg>
+
+      <div id="mensurations-champs" class="mensurations-champs"></div>
+    </div>
+
+    <h2 class="suivi-titre">Photo du jour</h2>
+    <div id="mensurations-photo" class="mensurations-photo"></div>
+    <input id="mensurations-photo-fichier" type="file" accept="image/*" capture="user" hidden>
+
+    <h2 class="suivi-titre">Comparer</h2>
+    <div class="mensurations-comparer-choix">
+      <select id="mensurations-avant"></select>
+      <span aria-hidden="true">&#8594;</span>
+      <select id="mensurations-apres"></select>
+    </div>
+    <div id="mensurations-slider" class="mensurations-slider" hidden>
+      <img id="mensurations-slider-avant" alt="Avant">
+      <div id="mensurations-slider-apres-bloc" class="mensurations-slider-apres-bloc">
+        <img id="mensurations-slider-apres" alt="Après">
+      </div>
+      <div id="mensurations-slider-poignee" class="mensurations-slider-poignee"></div>
+    </div>
+    <p id="mensurations-comparer-vide" class="suivi-legende">Il faut une photo à deux dates différentes pour comparer.</p>
   </main>
 </section>
 

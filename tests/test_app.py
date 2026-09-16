@@ -421,6 +421,50 @@ def test_revenir_de_l_ecran_de_fin_sur_un_footing(page):
     assert page.is_visible("#bloc-footing")
 
 
+# ----------------------------------------------------------- mensurations
+
+
+def ouvrir_mensurations(page):
+    page.evaluate("afficher('menu')")
+    page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-mensurations")
+    page.wait_for_selector("#mensurations-champs .mensurations-champ")
+
+
+def test_une_mensuration_saisie_survit_au_rechargement(page):
+    """16 septembre 2026 : la valeur se sauvegarde a la frappe (evenement
+    change), comme le reste de l'application, et doit donc se retrouver
+    apres un rechargement complet plutot que de ne vivre que dans le DOM."""
+    ouvrir_mensurations(page)
+    champ = page.locator("#mensurations-champs input[data-cle='taille']")
+    champ.fill("82")
+    champ.blur()
+    page.reload()
+    ouvrir_mensurations(page)
+    assert page.locator("#mensurations-champs input[data-cle='taille']").input_value() == "82"
+
+
+def test_le_curseur_de_comparaison_apparait_avec_deux_photos(page):
+    """L'image 5 des references envoyees par l'utilisateur montre un
+    curseur avant/apres : il ne doit s'afficher qu'a partir de deux photos
+    datees, sans quoi le message "il faut une photo a deux dates
+    differentes" reste seul visible."""
+    minuscule = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    page.evaluate(
+        """(photo) => {
+          const m = (cle) => ({ cle, poids: null, photo, poitrine: null, bras: null,
+            taille: null, hanches: null, cuisse: null, mollet: null, envoyee: true });
+          localStorage.setItem('muscu.mensurations', JSON.stringify([m('01/09/2026'), m('15/09/2026')]));
+        }""",
+        minuscule,
+    )
+    ouvrir_mensurations(page)
+    assert page.is_visible("#mensurations-slider")
+    assert not page.is_visible("#mensurations-comparer-vide")
+    assert page.locator("#mensurations-avant").input_value() == "01/09/2026"
+    assert page.locator("#mensurations-apres").input_value() == "15/09/2026"
+
+
 # --------------------------------------------------------- seance gainage
 
 

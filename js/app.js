@@ -11,6 +11,7 @@ const CLES = {
   reglages: 'muscu.reglages',
   consignes: 'muscu.consignes',
   sommeil: 'muscu.sommeil',
+  mensurations: 'muscu.mensurations',
 };
 
 const REGLAGES_PAR_DEFAUT = {
@@ -261,6 +262,8 @@ let tictacSeance = null;  // rafraîchit le chronomètre de la séance de muscul
 let verrouVeille = null;
 let audio = null;
 let nuitAffichee = null;  // clé (DD/MM/AAAA) de la nuit affichée sur l'écran Sommeil
+let mensurationAffichee = null;  // clé (DD/MM/AAAA) du jour affiché sur l'écran Mensurations
+let glisseSlider = false;  // curseur de comparaison avant/après en cours de glissement
 
 /* ---------------------------------------------------------------- stockage */
 
@@ -2397,9 +2400,29 @@ async function synchroniserConsignes() {
   }
 }
 
+/* Une mensuration à la fois, jamais l'ensemble comme les consignes : une
+   photo compressée pèse plusieurs dizaines de Ko, renvoyer tout le passé à
+   chaque synchronisation gaspillerait des données pour rien. Chaque échec
+   est isolé (try/catch par mensuration) : une photo qui échoue ne doit pas
+   empêcher les valeurs d'une autre date de partir. */
+async function synchroniserMensurations() {
+  const toutes = lireMensurations();
+  const attente = toutes.filter((m) => !m.envoyee);
+  for (const m of attente) {
+    try {
+      await envoyer({ action: 'mensuration', mensuration: m });
+      m.envoyee = true;
+    } catch (e) {
+      console.warn('Synchronisation de mensuration différée', e);
+    }
+  }
+  ecrire(CLES.mensurations, toutes);
+}
+
 async function synchroniser() {
   if (!reglages.pont) return 0;
   await synchroniserConsignes();
+  await synchroniserMensurations();
 
   const historique = lireTableau(CLES.historique);
   const attente = historique.filter((s) => s.fin && !s.envoye);
@@ -2797,6 +2820,161 @@ function rendreMoisSommeil() {
     '<div class="calendrier-entetes">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D']
       .map((j) => '<span>' + j + '</span>').join('') + '</div>' +
     '<div class="calendrier-grille">' + html + '</div>';
+}
+
+/* ------------------------------------------------------- mensurations */
+
+/* Quatrième contenu du menu Suivi, demandé le 16 septembre 2026 à partir de
+   captures d'applications tierces envoyées comme référence (silhouette à
+   points de mesure, comparaison photo avant/après par curseur) : jamais
+   recopiées telles quelles, seulement l'inspiration d'interaction. Les six
+   points numérotés correspondent aux repères posés sur le mannequin dans
+   index.html (mensurations-repere). Le poids n'a pas de repère sur le
+   corps, à part dans la liste. */
+const MENSURATION_CHAMPS = [
+  { cle: 'poitrine', num: 1, nom: 'Poitrine', unite: 'cm' },
+  { cle: 'bras', num: 2, nom: 'Bras', unite: 'cm' },
+  { cle: 'taille', num: 3, nom: 'Taille', unite: 'cm' },
+  { cle: 'hanches', num: 4, nom: 'Hanches', unite: 'cm' },
+  { cle: 'cuisse', num: 5, nom: 'Cuisse', unite: 'cm' },
+  { cle: 'mollet', num: 6, nom: 'Mollet', unite: 'cm' },
+];
+
+function cleMensurationCourante() {
+  return formatDateCourte(new Date());
+}
+
+function decalerMensurationAffichee(delta) {
+  mensurationAffichee = decalerCle(mensurationAffichee, delta);
+}
+
+function lireMensurations() {
+  return lireTableau(CLES.mensurations);
+}
+
+function mensurationPour(cle) {
+  const trouvee = lireMensurations().find((m) => m.cle === cle);
+  if (trouvee) return trouvee;
+  const vide = { cle, poids: null, photo: null, envoyee: false };
+  MENSURATION_CHAMPS.forEach((c) => { vide[c.cle] = null; });
+  return vide;
+}
+
+/* Toute modification redemande un envoi (voir synchroniserMensurations) :
+   plus simple que de suivre precisement ce qui a change, pour un volume qui
+   ne pese rien hors la photo elle-meme, deja compressee cote client. */
+function enregistrerMensuration(m) {
+  m.envoyee = false;
+  const toutes = lireMensurations().filter((x) => x.cle !== m.cle);
+  toutes.push(m);
+  ecrire(CLES.mensurations, toutes);
+}
+
+function majChampMensuration(m, cle, valeur) {
+  m[cle] = nombreOuNull(valeur);
+  enregistrerMensuration(m);
+}
+
+/* Compresse la photo côté téléphone avant de la garder (localStorage n'est
+   pas fait pour des images en pleine résolution) : redimensionnée à
+   900 px de large au plus, JPEG à qualité 0.75. Une photo de portrait
+   classique tient alors en 100 à 250 Ko plutôt que plusieurs Mo. */
+function compresserImage(fichier, suite) {
+  const lecteur = new FileReader();
+  lecteur.onload = () => {
+    const image = new Image();
+    image.onload = () => {
+      const largeurMax = 900;
+      const echelle = Math.min(1, largeurMax / image.width);
+      const canevas = document.createElement('canvas');
+      canevas.width = Math.round(image.width * echelle);
+      canevas.height = Math.round(image.height * echelle);
+      canevas.getContext('2d').drawImage(image, 0, 0, canevas.width, canevas.height);
+      suite(canevas.toDataURL('image/jpeg', 0.75));
+    };
+    image.src = lecteur.result;
+  };
+  lecteur.readAsDataURL(fichier);
+}
+
+function rendreMensurations() {
+  const m = mensurationPour(mensurationAffichee);
+
+  $('mensurations-date-titre').textContent = mensurationAffichee === cleMensurationCourante()
+    ? "Aujourd'hui, " + mensurationAffichee : mensurationAffichee;
+  $('bouton-mensurations-suivant').disabled = !cleAnterieure(mensurationAffichee, cleMensurationCourante());
+
+  $('mensurations-champs').innerHTML =
+    '<div class="mensurations-champ mensurations-poids">' +
+      '<span class="mensurations-champ-num">&#9878;</span>' +
+      '<span class="mensurations-champ-nom">Poids</span>' +
+      '<input type="text" inputmode="decimal" data-cle="poids" value="' + (m.poids != null ? m.poids : '') + '">' +
+      '<span class="mensurations-champ-unite">kg</span>' +
+    '</div>' +
+    MENSURATION_CHAMPS.map((c) => (
+      '<div class="mensurations-champ">' +
+        '<span class="mensurations-champ-num">' + c.num + '</span>' +
+        '<span class="mensurations-champ-nom">' + echapper(c.nom) + '</span>' +
+        '<input type="text" inputmode="decimal" data-cle="' + c.cle + '" value="' + (m[c.cle] != null ? m[c.cle] : '') + '">' +
+        '<span class="mensurations-champ-unite">' + c.unite + '</span>' +
+      '</div>'
+    )).join('');
+  $('mensurations-champs').querySelectorAll('input').forEach((champ) => {
+    champ.addEventListener('change', () => majChampMensuration(m, champ.dataset.cle, champ.value));
+  });
+
+  const photo = $('mensurations-photo');
+  photo.innerHTML = m.photo
+    ? '<img src="' + m.photo + '" alt="Photo du ' + mensurationAffichee + '">' +
+      '<button type="button" class="mensurations-photo-suppr" aria-label="Supprimer la photo">&times;</button>'
+    : '<span class="mensurations-photo-vide">Toucher pour ajouter une photo</span>';
+  if (!m.photo) {
+    photo.addEventListener('click', () => $('mensurations-photo-fichier').click(), { once: true });
+  } else {
+    photo.querySelector('.mensurations-photo-suppr').addEventListener('click', (evenement) => {
+      evenement.stopPropagation();
+      m.photo = null;
+      enregistrerMensuration(m);
+      rendreMensurations();
+    });
+  }
+
+  rendreComparerMensurations();
+}
+
+function rendreComparerMensurations() {
+  const avecPhoto = lireMensurations().filter((m) => m.photo)
+    .sort((a, b) => (cleAnterieure(a.cle, b.cle) ? -1 : 1));
+
+  const vide = avecPhoto.length < 2;
+  $('mensurations-comparer-vide').hidden = !vide;
+  $('mensurations-slider').hidden = vide;
+  $('mensurations-avant').closest('.mensurations-comparer-choix').hidden = vide;
+  if (vide) return;
+
+  const options = avecPhoto.map((m) => '<option value="' + m.cle + '">' + m.cle + '</option>').join('');
+  $('mensurations-avant').innerHTML = options;
+  $('mensurations-apres').innerHTML = options;
+  $('mensurations-avant').value = avecPhoto[0].cle;
+  $('mensurations-apres').value = avecPhoto[avecPhoto.length - 1].cle;
+  majPhotosComparees();
+}
+
+function majPhotosComparees() {
+  const avant = mensurationPour($('mensurations-avant').value);
+  const apres = mensurationPour($('mensurations-apres').value);
+  $('mensurations-slider-avant').src = avant.photo || '';
+  $('mensurations-slider-apres').src = apres.photo || '';
+}
+
+/* Curseur de comparaison : un clip-path sur le calque "après", dont on
+   déplace le bord gauche avec le doigt. Écouteurs posés une seule fois
+   (brancher()), la poignée n'étant jamais recréée par rendreMensurations(). */
+function deplacerSliderMensurations(x) {
+  const cadre = $('mensurations-slider').getBoundingClientRect();
+  const pourcent = Math.max(0, Math.min(100, ((x - cadre.left) / cadre.width) * 100));
+  $('mensurations-slider-apres-bloc').style.clipPath = 'inset(0 0 0 ' + pourcent + '%)';
+  $('mensurations-slider-poignee').style.left = pourcent + '%';
 }
 
 function rendreHistorique(idOuvert) {
@@ -3199,6 +3377,41 @@ function brancher() {
   $('bouton-sommeil-retour').addEventListener('click', () => afficher('suivi'));
   $('bouton-sommeil-precedent').addEventListener('click', () => { decalerNuitAffichee(-1); rendreSommeil(); });
   $('bouton-sommeil-suivant').addEventListener('click', () => { decalerNuitAffichee(1); rendreSommeil(); });
+
+  $('bouton-suivi-mensurations').addEventListener('click', () => {
+    mensurationAffichee = cleMensurationCourante();
+    rendreMensurations();
+    afficher('mensurations');
+  });
+  $('bouton-mensurations-retour').addEventListener('click', () => afficher('suivi'));
+  $('bouton-mensurations-precedent').addEventListener('click', () => { decalerMensurationAffichee(-1); rendreMensurations(); });
+  $('bouton-mensurations-suivant').addEventListener('click', () => { decalerMensurationAffichee(1); rendreMensurations(); });
+
+  $('mensurations-photo-fichier').addEventListener('change', () => {
+    const fichier = $('mensurations-photo-fichier').files[0];
+    $('mensurations-photo-fichier').value = '';
+    if (!fichier) return;
+    compresserImage(fichier, (dataUrl) => {
+      const m = mensurationPour(mensurationAffichee);
+      m.photo = dataUrl;
+      enregistrerMensuration(m);
+      rendreMensurations();
+    });
+  });
+  $('mensurations-avant').addEventListener('change', majPhotosComparees);
+  $('mensurations-apres').addEventListener('change', majPhotosComparees);
+
+  // Poignée de comparaison : souris et tactile au même endroit, plutôt que
+  // deux jeux d'écouteurs. Le déplacement suit le pointeur tant qu'il reste
+  // pressé, même hors du cadre de la poignée elle-même.
+  $('mensurations-slider-poignee').addEventListener('pointerdown', (evenement) => {
+    glisseSlider = true;
+    deplacerSliderMensurations(evenement.clientX);
+  });
+  window.addEventListener('pointermove', (evenement) => {
+    if (glisseSlider) deplacerSliderMensurations(evenement.clientX);
+  });
+  window.addEventListener('pointerup', () => { glisseSlider = false; });
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
    'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));
