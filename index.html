@@ -59,7 +59,7 @@
   </div>
 </section>
 
-<!-- Suivi : petit menu à trois entrées (16 septembre 2026, devenu trop
+<!-- Suivi : petit menu à cinq entrées (16 septembre 2026, devenu trop
      grand pour tenir empilé sur un seul écran une fois le sommeil ajouté). -->
 <section id="ecran-suivi" class="ecran">
   <header class="barre">
@@ -83,6 +83,10 @@
     <li><button id="bouton-suivi-mensurations" class="carte-menu carte-menu-petite">
       <span class="carte-menu-icone" aria-hidden="true">&#128207;</span>
       <span class="carte-menu-nom">Mensurations</span>
+    </button></li>
+    <li><button id="bouton-suivi-course" class="carte-menu carte-menu-petite">
+      <span class="carte-menu-icone" aria-hidden="true">&#127939;</span>
+      <span class="carte-menu-nom">Évolution course</span>
     </button></li>
   </ul>
 </section>
@@ -208,6 +212,21 @@
       <div id="mensurations-slider-poignee" class="mensurations-slider-poignee"></div>
     </div>
     <p id="mensurations-comparer-vide" class="suivi-legende">Il faut une photo à deux dates différentes pour comparer.</p>
+  </main>
+</section>
+
+<!-- Évolution course : allure (vitesse) et distance par type de sortie,
+     dans le temps. Voir rendreEvolutionCourse() dans js/app.js. -->
+<section id="ecran-course-evolution" class="ecran">
+  <header class="barre">
+    <button id="bouton-course-evolution-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Évolution course</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps">
+    <p class="suivi-legende">Premier passage de chaque sortie enregistrée sur le téléphone, tous jours de course confondus (J2 et J6 sont le même entraînement).</p>
+    <div id="course-evolution-types" class="footing-types"></div>
+    <div id="course-evolution-corps"></div>
   </main>
 </section>
 

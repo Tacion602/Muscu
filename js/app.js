@@ -264,6 +264,7 @@ let audio = null;
 let nuitAffichee = null;  // clé (DD/MM/AAAA) de la nuit affichée sur l'écran Sommeil
 let mensurationAffichee = null;  // clé (DD/MM/AAAA) du jour affiché sur l'écran Mensurations
 let glisseSlider = false;  // curseur de comparaison avant/après en cours de glissement
+let indexTypeEvolution = 0;  // type de course affiché sur l'écran Évolution course
 
 /* ---------------------------------------------------------------- stockage */
 
@@ -2504,6 +2505,79 @@ function rendreCalendrier() {
     '<div class="calendrier-grille">' + html + '</div>';
 }
 
+/* Évolution course, dernier contenu du menu Suivi ajouté le 16 septembre
+   2026 : les distances et durées existent déjà dans muscu.historique,
+   saisies séance après séance sur l'écran de footing, ce n'est qu'un
+   nouvel affichage. Un type à la fois (mêmes boutons .type-course que
+   l'écran de footing) : les quatre courent à des allures différentes, les
+   mélanger sur une même courbe n'aurait pas de sens. Seul le premier
+   passage de chaque sortie compte, comme pour la comparaison à la dernière
+   fois (majAllureCycle) : les passages suivants n'ont pas d'équivalent
+   fixe d'une séance à l'autre. J2 et J6 partagent déjà leurs données
+   (footingParType lit tous les jours de course confondus), rien à filtrer
+   ici par jour. */
+function rendreEvolutionCourse() {
+  const boutons = $('course-evolution-types');
+  boutons.innerHTML = '';
+  TYPES_COURSE.forEach((type, position) => {
+    const bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.className = 'type-course' + (position === indexTypeEvolution ? ' choisi' : '');
+    bouton.textContent = type.nom;
+    bouton.addEventListener('click', () => {
+      indexTypeEvolution = position;
+      rendreEvolutionCourse();
+    });
+    boutons.appendChild(bouton);
+  });
+
+  const type = TYPES_COURSE[indexTypeEvolution];
+  const sorties = lireTableau(CLES.historique)
+    .filter((s) => s.type === 'footing' && s.fin)
+    .sort((a, b) => new Date(a.fin) - new Date(b.fin))
+    .map((s) => ({ fin: s.fin, cycle: premierPassage(footingParType(s)[type.cle]) }))
+    .filter((x) => x.cycle && x.cycle.duree_min && x.cycle.distance_km);
+
+  const corps = $('course-evolution-corps');
+  if (sorties.length < 2) {
+    corps.innerHTML = '<p class="vide">Pas encore assez de sorties enregistrées en ' +
+      echapper(type.nom) + ' pour tracer une évolution (deux minimum).</p>';
+    return;
+  }
+
+  // Vitesse plutôt qu'allure pour la courbe : « plus haut = plus rapide »
+  // suit la même lecture que les autres courbes de l'application (plus
+  // haut = mieux), alors qu'une allure en minutes par km ferait descendre
+  // la ligne en progressant. Le texte, lui, reste en allure km/km,
+  // repère habituel du coureur, comme sur l'écran de footing.
+  const vitesses = sorties.map((s) => (s.cycle.distance_km / s.cycle.duree_min) * 60);
+  const distances = sorties.map((s) => s.cycle.distance_km);
+
+  const derniere = sorties[sorties.length - 1].cycle;
+  const precedente = sorties[sorties.length - 2].cycle;
+  const allure = derniere.duree_min / derniere.distance_km;
+  const minutes = Math.floor(allure);
+  const secondes = Math.round((allure - minutes) * 60);
+  const allureAvant = precedente.duree_min / precedente.distance_km;
+  const ecartSecondes = Math.round(Math.abs(allure - allureAvant) * 60);
+  const sensAllure = ecartSecondes < 3 ? '' : (allure < allureAvant ? ' hausse' : ' baisse');
+
+  const totalKm = Math.round(distances.reduce((a, b) => a + b, 0) * 10) / 10;
+
+  corps.innerHTML =
+    courbe(vitesses, 'vitesse en km/h, ' + type.nom.toLowerCase()) +
+    '<div class="courbe-legende">' +
+      'Dernière sortie : allure ' + minutes + ':' + String(secondes).padStart(2, '0') + ' / km' +
+      (sensAllure ? '<span class="compare' + sensAllure + '">' +
+        ecartSecondes + ' s/km ' + (sensAllure === ' hausse' ? 'plus rapide' : 'plus lent') +
+        ' que la précédente</span>' : '') +
+    '</div>' +
+    courbe(distances, 'distance en km, ' + type.nom.toLowerCase()) +
+    '<div class="courbe-legende">' +
+      sorties.length + ' sorties enregistrées, ' + totalKm + ' km au total' +
+    '</div>';
+}
+
 /* État musculaire, gadget du menu Suivi demandé le 16 septembre 2026 :
    indicatif, pas une mesure. Chaque zone récupère à une vitesse forfaitaire
    (48 h les petits groupes, 72 h les gros, l'utilisateur ayant lui-même
@@ -3400,6 +3474,9 @@ function brancher() {
   });
   $('mensurations-avant').addEventListener('change', majPhotosComparees);
   $('mensurations-apres').addEventListener('change', majPhotosComparees);
+
+  $('bouton-suivi-course').addEventListener('click', () => { rendreEvolutionCourse(); afficher('course-evolution'); });
+  $('bouton-course-evolution-retour').addEventListener('click', () => afficher('suivi'));
 
   // Poignée de comparaison : souris et tactile au même endroit, plutôt que
   // deux jeux d'écouteurs. Le déplacement suit le pointeur tant qu'il reste

@@ -465,6 +465,71 @@ def test_le_curseur_de_comparaison_apparait_avec_deux_photos(page):
     assert page.locator("#mensurations-apres").input_value() == "15/09/2026"
 
 
+# ------------------------------------------------------- evolution course
+
+
+def seance_footing(page, jours_avant, duree_min, distance_km, type_cle="ef"):
+    page.evaluate(
+        """([joursAvant, dureeMin, distanceKm, typeCle]) => {
+          const cle = 'muscu.historique';
+          const historique = JSON.parse(localStorage.getItem(cle) || '[]');
+          const fin = new Date(Date.now() - joursAvant * 86400000).toISOString();
+          const footing = {};
+          footing[typeCle] = [{ duree_min: dureeMin, distance_km: distanceKm }];
+          historique.push({
+            id: 'C' + joursAvant, jour: 'J2', titre: 'Footing', type: 'footing',
+            fin, envoye: true, footing,
+          });
+          localStorage.setItem(cle, JSON.stringify(historique));
+        }""",
+        [jours_avant, duree_min, distance_km, type_cle],
+    )
+
+
+def ouvrir_evolution_course(page):
+    page.evaluate("afficher('menu')")
+    page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-course")
+    page.wait_for_selector("#course-evolution-types .type-course")
+
+
+def test_l_evolution_course_trace_la_vitesse_et_la_distance(page):
+    """16 septembre 2026 : distance et duree existent deja dans l'historique,
+    saisies sur l'ecran de footing ; l'ecran d'evolution n'est qu'un nouvel
+    affichage. La vitesse (km/h) est tracee plutot que l'allure pour que
+    « plus haut = plus rapide », comme les autres courbes de l'application."""
+    seance_footing(page, 14, 31, 5)
+    seance_footing(page, 1, 27, 5)
+    page.reload()
+    ouvrir_evolution_course(page)
+    assert page.locator("#course-evolution-corps svg.courbe").count() == 2
+    legende = page.locator("#course-evolution-corps .courbe-legende").first.text_content()
+    assert "5:24" in legende
+    assert "plus rapide" in legende
+
+
+def test_l_evolution_course_affiche_un_message_sous_deux_sorties(page):
+    """Une seule sortie enregistree ne suffit pas a tracer une evolution."""
+    seance_footing(page, 1, 31, 5)
+    page.reload()
+    ouvrir_evolution_course(page)
+    assert page.locator("#course-evolution-corps svg.courbe").count() == 0
+    assert "deux minimum" in page.locator("#course-evolution-corps .vide").text_content()
+
+
+def test_l_evolution_course_change_de_type_sans_effacer_les_autres(page):
+    """Les quatre types de course restent des donnees distinctes (decision du
+    27 aout 2026, deja valable pour la saisie) : changer de type affiche ses
+    propres sorties, sans se melanger a celles d'un autre type."""
+    seance_footing(page, 14, 31, 5, type_cle="ef")
+    seance_footing(page, 1, 27, 5, type_cle="ef")
+    page.reload()
+    ouvrir_evolution_course(page)
+    assert page.locator("#course-evolution-corps svg.courbe").count() == 2
+    page.locator("#course-evolution-types .type-course", has_text="Seuil").click()
+    assert page.locator("#course-evolution-corps svg.courbe").count() == 0
+
+
 # --------------------------------------------------------- seance gainage
 
 
