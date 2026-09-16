@@ -5,3 +5,13 @@ __pycache__/
 # Copies du classeur : contiennent les onglets Remarques et Blessures, et le
 # depot est public (GitHub Pages). Elles restent sur la machine.
 sauvegardes/
+
+# Reglages Claude Code propres a cette machine (jamais partages entre postes).
+.claude/settings.local.json
+
+# impeccable.style (npx impeccable install, 16 septembre 2026) : le binaire
+# et l'index de polices sont volumineux (~16 Mo), specifiques a la plateforme
+# et regeneres par l'installateur. Seules les regles/skills en texte
+# (reference/, SKILL.md, agents/) sont versionnees.
+.claude/skills/impeccable/scripts/bin/
+.claude/skills/impeccable/scripts/data/
