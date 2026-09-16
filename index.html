@@ -427,6 +427,19 @@
      voir afficherComparaisonTonnage() dans js/app.js. -->
 <div id="comparaison-tonnage" class="comparaison-tonnage" hidden></div>
 
+<!-- Minuterie de récupération plein écran, reprise le 16 septembre 2026
+     (abandonnée le 27 août 2026 faute de tenir sous le clavier virtuel une
+     fois ouvert). Ne remplace #minuterie que sur les 80% premiers d'un
+     repos actif : le bandeau compact reprend la main dans les 20% de temps
+     restant (préparer la série suivante avant la fin, sans attendre le
+     dernier moment) et reste seul visible en transparence hors de tout
+     repos, pour garder le geste qui en lance un manuel sur un unilatéral.
+     Voir lancerMinuterie(), battre() et minuterieTerminee() dans
+     js/app.js. -->
+<div id="minuterie-plein-ecran" class="minuterie-plein-ecran" hidden>
+  <span id="minuterie-plein-ecran-chiffres" class="minuterie-plein-ecran-chiffres">0:00</span>
+</div>
+
 <!-- Fin de séance -->
 <section id="ecran-fin" class="ecran">
   <header class="barre">

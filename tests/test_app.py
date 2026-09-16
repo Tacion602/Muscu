@@ -101,6 +101,24 @@ def nombre_de_series(page):
     return page.locator(".ligne-serie").count()
 
 
+def fermer_minuterie_plein_ecran(page):
+    # La minuterie plein ecran (16 septembre 2026) bloque le reste de l'ecran
+    # sur les 80% premiers d'un repos : un test qui doit continuer a cliquer
+    # ailleurs juste apres une validation doit d'abord la fermer. Par
+    # arreterMinuterie() directement plutot que par un clic dessus : un clic
+    # sortirait aussi le champ en cours de saisie du focus (blur), qui
+    # validerait une serie pas encore confirmee avant l'heure et fausserait
+    # les tests qui verifient precisement l'ordre pointerdown/blur (voir
+    # departNavigation() dans js/app.js). Appel inconditionnel plutot que
+    # garde par `hidden` : lancerMinuterie() differe son affichage d'un tick
+    # (meme raison, un clic en cours ne doit pas se faire voler son mouseup),
+    # donc `hidden` peut encore etre vrai juste apres la validation alors que
+    # l'affichage est deja programme. arreterMinuterie() reste sans effet
+    # visible si rien n'etait actif, et son instance != minuterie annule ce
+    # qui restait en attente.
+    page.evaluate("arreterMinuterie()")
+
+
 # ------------------------------------------------------------ navigation
 
 
@@ -138,6 +156,13 @@ def test_un_appui_sur_la_fleche_n_avance_que_d_un_exercice(page):
     for rang in range(n - 1):
         saisir_serie(page, rang, 50, 10)
     saisir_serie(page, n - 1, 50, 8, confirmer=False)
+    # Chaque serie validee dans la boucle ci-dessus a rallume la minuterie
+    # plein ecran (16 septembre 2026) : celle de l'avant-derniere serie reste
+    # affichee tant que rien ne l'a fermee, et couvrirait la fleche. La
+    # fermer ici laisse le clic suivant etre ce qui declenche le blur de la
+    # derniere serie, pointerdown capturant l'index avant lui (voir
+    # departNavigation() dans js/app.js) : c'est le defaut que ce test vise.
+    fermer_minuterie_plein_ecran(page)
     page.click("#bouton-suivant")
     assert page.evaluate("seance.exercices[0].series.every(s => s.faite)"), \
         "la sortie du champ aurait du valider la derniere serie"
@@ -153,6 +178,7 @@ def test_la_fleche_arriere_recule_meme_apres_une_validation_implicite(page):
     for rang in range(n - 1):
         saisir_serie(page, rang, 50, 10)
     saisir_serie(page, n - 1, 50, 8, confirmer=False)
+    fermer_minuterie_plein_ecran(page)
     page.click("#bouton-precedent")
     assert page.evaluate("indexExo") == 0
 
@@ -280,6 +306,41 @@ def test_la_minuterie_est_visible_apres_une_validation(page):
     saisir_serie(page, 0, 40, 8)
     page.wait_for_timeout(800)
     assert page.evaluate(visible), "minuterie hors du cadre apres validation"
+
+
+def test_la_minuterie_plein_ecran_s_affiche_puis_se_retrecit(page):
+    """16 septembre 2026, repris apres l'abandon du 27 aout 2026 (le plein
+    ecran sortait du cadre sous le clavier). Cette fois le clavier est ferme
+    tant que le plein ecran est affiche, et celui-ci laisse la main dans les
+    20% de temps restant plutot que de bloquer tout le repos : sans cela,
+    impossible de preparer la serie suivante avant la fin (la minuterie
+    continue de tourner par-dessus la fiche suivante, decision du 27 aout
+    2026)."""
+    ouvrir_jour(page, "J1")
+    saisir_serie(page, 0, 40, 8)
+    plein_ecran = page.locator("#minuterie-plein-ecran")
+    plein_ecran.wait_for(state="visible", timeout=2000)
+    assert page.evaluate("document.activeElement === document.body"), \
+        "le plein ecran doit fermer le clavier en s'affichant"
+    page.evaluate("minuterie.fin = Date.now() + minuterie.duree * 0.25 * 1000")
+    page.wait_for_timeout(300)
+    assert plein_ecran.is_visible(), "encore visible au-dessus de 20% de temps restant"
+    page.evaluate("minuterie.fin = Date.now() + minuterie.duree * 0.1 * 1000")
+    page.wait_for_timeout(300)
+    assert not plein_ecran.is_visible(), "sous les 20% restant, le bandeau compact doit reprendre la main"
+    assert not page.locator("#minuterie").evaluate("el => el.classList.contains('inactif')"), \
+        "le repos continue en bandeau compact, pas arrete"
+
+
+def test_toucher_la_minuterie_plein_ecran_ferme_le_repos(page):
+    """Toute la surface ferme le repos avant la fin, comme le bandeau
+    compact (meme geste, memes coordonnees)."""
+    ouvrir_jour(page, "J1")
+    saisir_serie(page, 0, 40, 8)
+    page.locator("#minuterie-plein-ecran").wait_for(state="visible", timeout=2000)
+    page.click("#minuterie-plein-ecran")
+    assert page.evaluate("minuterie") is None
+    assert not page.locator("#minuterie-plein-ecran").is_visible()
 
 
 def test_le_developpe_machine_reprend_l_historique_de_l_unilateral(page):
@@ -717,6 +778,7 @@ def test_remarque_et_blessure_partent_avec_la_seance(page):
     mais pas la remarque (decision du 10 septembre 2026)."""
     ouvrir_jour(page, "J1")
     saisir_serie(page, 0, 45, 10)
+    fermer_minuterie_plein_ecran(page)
     page.click("#bouton-terminer")
     page.fill("#fin-remarque", "Remarque de test")
     page.fill("#fin-blessure-serie", "Dips")

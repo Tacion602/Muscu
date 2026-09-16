@@ -1086,6 +1086,42 @@ body { display: flex; flex-direction: column; }
   white-space: nowrap;
 }
 
+/* Plein écran repris le 16 septembre 2026, à la demande de l'utilisateur,
+   sur le même principe que .vague-demarrage (position:fixed, inset:0) :
+   la panne du 27 août 2026 venait du clavier virtuel qui poussait une
+   couche plein écran hors du cadre visible une fois ouvert. Cette
+   fois-ci, lancerMinuterie() ferme le clavier avant de l'afficher plutôt
+   que d'essayer de suivre sa hauteur (suivreClavier/visualViewport,
+   fragile et déjà abandonné une fois) : sans clavier ouvert, rien ne
+   pousse la couche hors du viewport. z-index au-dessus de la vague de
+   démarrage (50), qui ne peut de toute façon pas être active en même
+   temps qu'un repos.
+
+   Bloquant tout le repos, il aurait aussi empêché de travailler sur la
+   fiche suivante pendant que la minuterie tourne par-dessus (décision du
+   27 août 2026) : battre() dans js/app.js le repasse donc en `hidden` dès
+   les 20% de temps restant, le bandeau compact reprenant la main pour
+   préparer la série suivante avant la fin. */
+.minuterie-plein-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.minuterie-plein-ecran[hidden] { display: none; }
+.minuterie-plein-ecran-chiffres {
+  font-size: 96px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #fff;
+}
+
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni
    visibility:hidden. Hors flux, transparent, et hors de portée du doigt. */
 .amorce-clavier {
@@ -1149,6 +1185,7 @@ body { display: flex; flex-direction: column; }
 .principal,
 .discret,
 .minuterie,
+.minuterie-plein-ecran,
 .minuterie-ajust,
 .type-course,
 .chrono-seance,
@@ -1165,6 +1202,7 @@ body { display: flex; flex-direction: column; }
 .principal:not([disabled]):active,
 .discret:active,
 .minuterie:active,
+.minuterie-plein-ecran:active,
 .minuterie-ajust:active,
 .type-course:active,
 .chrono-seance:active,
@@ -1176,8 +1214,8 @@ body { display: flex; flex-direction: column; }
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
   .icone:active, .carte-jour:active, .carte-menu:active, .nav:active, .principal:active,
-  .discret:active, .minuterie:active, .minuterie-ajust:active, .type-course:active,
-  .chrono-seance:active, .ligne-progression:active, .ajouter:active { transform: none; }
+  .discret:active, .minuterie:active, .minuterie-plein-ecran:active, .minuterie-ajust:active,
+  .type-course:active, .chrono-seance:active, .ligne-progression:active, .ajouter:active { transform: none; }
 }
 
 /* ---------- Résumé de fin ---------- */

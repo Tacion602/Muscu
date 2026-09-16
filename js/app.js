@@ -1967,10 +1967,11 @@ function rendreJauge() {
 /* --------------------------------------------------------------- minuterie */
 
 function lancerMinuterie(secondes) {
-  minuterie = {
+  const instance = {
     fin: Date.now() + secondes * 1000,
     duree: secondes,
   };
+  minuterie = instance;
   $('minuterie').classList.remove('inactif');
   battre();
   if (tictac) clearInterval(tictac);
@@ -1983,13 +1984,31 @@ function lancerMinuterie(secondes) {
   // charge de la série suivante avant d'appeler cette fonction
   // (`focaliserProchaineSerie()`) : le clavier est déjà ouvert et connecté
   // au bon champ, prêt à remplir la charge pendant la récupération
-  // elle-même, ce que l'utilisateur a demandé. Le réglage
-  // `clavierPendantRecup` ne sert donc plus qu'à fermer volontairement ce
-  // clavier quand il n'est pas voulu pendant le repos.
-  if (!reglages.clavierPendantRecup) {
+  // elle-même, ce que l'utilisateur a demandé.
+  //
+  // Le plein écran repris le 16 septembre 2026 ferme malgré tout le clavier
+  // à chaque repos, sans regarder `clavierPendantRecup` : c'est un clavier
+  // resté ouvert qui poussait la couche plein écran d'origine hors du cadre
+  // visible (panne du 27 août 2026, voir .minuterie-plein-ecran dans
+  // css/style.css) ; le réglage n'a donc plus d'effet visible tant que le
+  // repos reste plein écran. focaliserProchaineSerie(), appelée par
+  // minuterieTerminee() à la fermeture, rouvre le clavier sur le bon champ :
+  // rien à faire ici pour le retour.
+  //
+  // Affichage différé d'un tick (setTimeout 0) : lancerMinuterie() peut
+  // être appelée en plein milieu d'un clic déjà commencé sur ← / →, la
+  // validation implicite d'une série par sortie de champ (voir
+  // departNavigation() plus bas) tombant entre son pointerdown et son
+  // mouseup. Couvrir l'écran tout de suite y volerait le mouseup/click du
+  // bouton, qui ne se terminerait jamais — la même panne que le plein écran
+  // cherche à éviter côté clavier, déplacée sur un nouveau geste. Un tick
+  // de retard laisse le clic en cours atteindre sa cible en premier.
+  setTimeout(() => {
+    if (minuterie !== instance) return;
+    $('minuterie-plein-ecran').hidden = false;
     const actif = document.activeElement;
     if (actif && actif !== document.body) actif.blur();
-  }
+  }, 0);
 }
 
 function battre() {
@@ -2004,7 +2023,21 @@ function battre() {
     return;
   }
 
-  $('minuterie-chiffres').textContent = texteDuree(restant);
+  const texte = texteDuree(restant);
+  $('minuterie-chiffres').textContent = texte;
+  $('minuterie-plein-ecran-chiffres').textContent = texte;
+
+  // Le plein écran laisse la main avant la fin, dans les 20 % de temps
+  // restant (demande de l'utilisateur le 16 septembre 2026) : bloquer tout
+  // le repos empêchait de préparer la série suivante avant qu'il ne se
+  // termine, ce que le bandeau compact permettait déjà (la minuterie
+  // continue de tourner par-dessus la fiche suivante, décision du 27 août
+  // 2026). Le clavier ne se rouvre pas de lui-même à cet instant : aucun
+  // navigateur mobile ne l'ouvre sans geste de l'utilisateur, même
+  // limitation que sur la fermeture naturelle à zéro (minuterieTerminee).
+  if (restant <= minuterie.duree * 0.2) {
+    $('minuterie-plein-ecran').hidden = true;
+  }
 }
 
 function arreterMinuterie() {
@@ -2014,6 +2047,8 @@ function arreterMinuterie() {
   tictac = null;
   $('minuterie').classList.add('inactif');
   $('minuterie-chiffres').textContent = '0:00';
+  $('minuterie-plein-ecran').hidden = true;
+  $('minuterie-plein-ecran-chiffres').textContent = '0:00';
 }
 
 /* Ferme la minuterie, à zéro comme sur un appui. Le passage à l'exercice
@@ -3514,6 +3549,10 @@ function brancher() {
       lancerMinuterie(ficheExercice().repos_s || 90);
     }
   });
+  // Toute la surface ferme le repos, comme le bandeau compact ; jamais
+  // visible en dehors d'un repos actif (voir lancerMinuterie/arreterMinuterie),
+  // donc pas de branche « lancer un repos manuel » à reprendre ici.
+  $('minuterie-plein-ecran').addEventListener('click', () => minuterieTerminee(true));
   $('gainage-chrono').addEventListener('click', appuiBandeauGainage);
 
   $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);
