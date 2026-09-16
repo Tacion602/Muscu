@@ -740,6 +740,12 @@ function lancerAnimationDemarrage(x, y, suite) {
   const vague = $('vague-demarrage');
   vague.style.setProperty('--x', x + 'px');
   vague.style.setProperty('--y', y + 'px');
+  // Force le navigateur à peindre le disque à l'échelle 0, positionné au
+  // point d'appui, avant de déclencher sa mise à l'échelle : sans ce
+  // rafraîchissement forcé, les deux changements (position, puis transform)
+  // posés dans le même tick peuvent se retrouver combinés dans la même
+  // image, et la croissance démarre alors d'un état incohérent.
+  void vague.offsetWidth;
   vague.classList.add('actif');
   setTimeout(() => {
     suite();
@@ -1600,13 +1606,6 @@ function rendreExercice() {
         : fiche.reps_min + '-' + fiche.reps_max)
     : '';
   $('exo-rir').textContent = fiche.rir && fiche.rir.length ? 'RIR ' + fiche.rir.join(' / ') : '';
-
-  const blocEchauffement = $('echauffement-jour');
-  const listeEchauffement = indexExo === 0 ? ECHAUFFEMENT_PAR_JOUR[seance.jour] : null;
-  blocEchauffement.hidden = !listeEchauffement;
-  if (listeEchauffement) {
-    $('echauffement-liste').innerHTML = listeEchauffement.map((item) => '<li>' + echapper(item) + '</li>').join('');
-  }
 
   quitterEditionConsigne();
   const texte = consigneAffichee(seance.jour, courant.nom, fiche.consigne);

@@ -699,17 +699,32 @@ body { display: flex; flex-direction: column; }
    l'utilisateur le 16 septembre 2026) : un cercle qui part du point d'appui
    (--x/--y, posés par lancerAnimationDemarrage()) et couvre tout l'écran,
    révélant la fiche du premier exercice déjà rendue dessous. `pointer-events:
-   none` : elle ne doit jamais intercepter un geste. */
+   none` : elle ne doit jamais intercepter un geste.
+
+   Redessiné le 16 septembre 2026 (signalé saccadé) : un `clip-path: circle()`
+   qui grandit oblige le navigateur à recalculer la forme du découpage à
+   chaque image, repeint par le thread principal plutôt que le compositeur —
+   coûteux sur un cercle qui finit par couvrir tout l'écran. Un disque à
+   taille fixe (300vmax, largement plus grand que n'importe quel écran dans
+   n'importe quelle orientation) positionné au point d'appui et mis à l'échelle
+   via `transform: scale()` obtient le même effet visuel en ne bougeant qu'une
+   propriété compositée, sans jamais retoucher la géométrie. */
 .vague-demarrage {
   position: fixed;
-  inset: 0;
+  top: var(--y, 50%);
+  left: var(--x, 50%);
+  width: 300vmax;
+  height: 300vmax;
+  margin: -150vmax 0 0 -150vmax;
   z-index: 50;
   pointer-events: none;
+  border-radius: 50%;
   background: var(--accent);
-  clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
-  transition: clip-path .6s ease-out;
+  transform: scale(0);
+  transition: transform .6s ease-out;
+  will-change: transform;
 }
-.vague-demarrage.actif { clip-path: circle(150% at var(--x, 50%) var(--y, 50%)); }
+.vague-demarrage.actif { transform: scale(1); }
 
 .comparaison-tonnage {
   position: fixed;
