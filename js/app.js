@@ -3032,8 +3032,11 @@ function rendreSommeil() {
     // 80px de haut, seule vraie cause de la frise débordante signalée par
     // l'utilisateur le 16 septembre 2026 — pas un problème de grille ou de
     // flexbox, malgré tout ce que ça y ressemblait à l'essai.
-    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '"></button>';
-    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '"></button>';
+    // Heure incrustee 1 case sur 2 (demande utilisateur), les index pairs
+    // tombant toujours sur l'heure pile (creneaux de 30 min depuis 22:00).
+    const heure = index % 2 === 0 ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
+    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '">' + heure + '</button>';
+    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '">' + heure + '</button>';
   }).join('');
   $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {
     bouton.addEventListener('click', () => basculerCreneauSommeil(nuit, Number(bouton.dataset.index)));

@@ -377,6 +377,9 @@ body { display: flex; flex-direction: column; }
 .sommeil-creneau {
   width: calc((100% - 36px) / 13);
   aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 4px;
   padding: 0;
@@ -386,6 +389,16 @@ body { display: flex; flex-direction: column; }
 .sommeil-creneau.libre { background: rgba(255, 255, 255, .08); }
 .sommeil-creneau.sommeil { background: #6fa8dc; }
 .sommeil-creneau.insomnie { background: var(--danger); }
+/* Heure incrustee un creneau sur deux (demande utilisateur, 16 septembre
+   2026) : blanc semi-opaque, lisible sur les trois fonds (gris translucide,
+   bleu, rouge) sans ajouter de contraste par etat. pointer-events:none pour
+   ne jamais voler le clic du bouton. */
+.sommeil-creneau-heure {
+  font-size: 8px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, .8);
+  pointer-events: none;
+}
 .sommeil-legende { font-size: 12px; color: rgba(255, 255, 255, .7); margin: 0 0 22px; }
 
 .sommeil-sous-titre {
