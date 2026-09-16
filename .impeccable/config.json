@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-09-16T05:21:07.706Z",
         "reason": "ligne-serie.courante, liseret de 3px marquant la serie en cours (premiere version du projet, avant cette session) : repere fonctionnel pour se retrouver d'un coup d'oeil pendant l'effort, pas un accent decoratif de carte."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "css/style.css"
+        ],
+        "createdAt": "2026-09-16T05:34:30.478Z",
+        "reason": "meme regle que l'ignore deja pose sur index.html : .ligne-serie.courante, liseret de 3px marquant la serie en cours (premiere version du projet, avant cette session), repere fonctionnel pendant l'effort, pas un accent decoratif de carte."
       }
     ]
   }
