@@ -205,6 +205,34 @@ body { display: flex; flex-direction: column; }
 .calendrier-num { font-size: 11px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
 .calendrier-icone { font-size: 16px; line-height: 1; }
 
+/* ---------- État musculaire (gadget indicatif du menu Suivi) ----------
+
+   Trois couleurs reprises des mêmes rôles que le tonnage (--danger fatigué,
+   --baisse en récupération, --hausse prêt) : même famille de sens dans
+   toute l'application plutôt qu'une palette à part pour ce gadget. */
+.mannequin-svg { display: block; width: 100%; max-width: 220px; margin: 0 auto 16px; }
+.mannequin-svg .silhouette { fill: var(--fond-champ); }
+.mannequin-svg .zone-fatigue { fill: var(--danger); }
+.mannequin-svg .zone-recup { fill: var(--baisse); }
+.mannequin-svg .zone-prete { fill: var(--hausse); }
+.etat-pastille.zone-fatigue { background: var(--danger); }
+.etat-pastille.zone-recup { background: var(--baisse); }
+.etat-pastille.zone-prete { background: var(--hausse); }
+
+.mannequin-liste {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.etat-pastille {
+  border-radius: var(--rayon-petit);
+  padding: 8px 10px;
+  color: #fff;
+}
+.etat-pastille-nom { display: block; font-size: 13px; font-weight: 700; }
+.etat-pastille-detail { display: block; font-size: 11px; opacity: .9; margin-top: 1px; }
+
 /* ---------- Accueil ---------- */
 
 /* Une seule colonne de bulles pleine largeur, emoji en grand sur toute la

@@ -2479,6 +2479,102 @@ function rendreCalendrier() {
     '<div class="calendrier-grille">' + html + '</div>';
 }
 
+/* État musculaire, gadget du menu Suivi demandé le 16 septembre 2026 :
+   indicatif, pas une mesure. Chaque zone récupère à une vitesse forfaitaire
+   (48 h les petits groupes, 72 h les gros, l'utilisateur ayant lui-même
+   noté que les petits groupes récupèrent plus vite) depuis la dernière
+   série validée qui l'a travaillée, tous exercices confondus. Les muscles
+   visibles de face vivent sur le mannequin ; les autres (dos, arrière
+   d'épaule, fessiers, ischio-jambiers, mollets) en liste dessous, faute
+   d'une vue de dos. Le champ `muscle` du classeur porte parfois le même
+   muscle sous deux graphies (ex. "Deltoide lateral" et "Deltoïde latéral"
+   coexistent dans le programme actuel) : la comparaison passe par
+   formeDuNom() plutôt que par égalité stricte, pour ne pas en perdre une. */
+const ZONES_MUSCULAIRES = [
+  { cle: 'pectoraux', nom: 'Pectoraux', muscles: ['pectoraux'], recuperation_h: 72, vue: 'avant' },
+  { cle: 'epaules', nom: 'Épaules', muscles: ['deltoide lateral'], recuperation_h: 48, vue: 'avant' },
+  { cle: 'biceps', nom: 'Biceps', muscles: ['biceps'], recuperation_h: 48, vue: 'avant' },
+  { cle: 'quadriceps', nom: 'Quadriceps', muscles: ['quadriceps'], recuperation_h: 72, vue: 'avant' },
+  { cle: 'dos', nom: 'Dos', muscles: ['grand dorsal'], recuperation_h: 72, vue: 'liste' },
+  { cle: 'epaules-arriere', nom: 'Épaules arrière', muscles: ['deltoide posterieur'], recuperation_h: 48, vue: 'liste' },
+  { cle: 'triceps', nom: 'Triceps', muscles: ['triceps'], recuperation_h: 48, vue: 'liste' },
+  { cle: 'fessiers', nom: 'Fessiers', muscles: ['grand fessier', 'abducteurs et moyen fessier'], recuperation_h: 72, vue: 'liste' },
+  { cle: 'ischios', nom: 'Ischio-jambiers', muscles: ['ischio-jambiers et fessiers'], recuperation_h: 72, vue: 'liste' },
+  { cle: 'mollets', nom: 'Mollets', muscles: ['mollets'], recuperation_h: 48, vue: 'liste' },
+];
+
+function derniereFoisZone(zone) {
+  let dernier = null;
+  lireTableau(CLES.historique).forEach((s) => {
+    (s.exercices || []).forEach((exo) => {
+      if (!zone.muscles.includes(formeDuNom(exo.muscle))) return;
+      (exo.series || []).forEach((serie) => {
+        if (!serie.faite || !serie.heure || serie.echauffement) return;
+        if (!dernier || serie.heure > dernier) dernier = serie.heure;
+      });
+    });
+  });
+  return dernier;
+}
+
+function etatZone(zone) {
+  const dernier = derniereFoisZone(zone);
+  if (!dernier) return { fraction: 1, texte: 'Jamais travaillée' };
+  const heures = (Date.now() - new Date(dernier).getTime()) / 3600000;
+  return { fraction: Math.max(0, Math.min(1, heures / zone.recuperation_h)), texte: 'Dernière fois : ' + ilYA(dernier) };
+}
+
+function couleurEtat(fraction) {
+  if (fraction < 0.34) return 'zone-fatigue';
+  if (fraction < 0.85) return 'zone-recup';
+  return 'zone-prete';
+}
+
+function rendreEtatMusculaire() {
+  const etats = {};
+  ZONES_MUSCULAIRES.forEach((zone) => { etats[zone.cle] = etatZone(zone); });
+  const classe = (cle) => couleurEtat(etats[cle].fraction);
+  const titreZone = (cle) => {
+    const zone = ZONES_MUSCULAIRES.find((z) => z.cle === cle);
+    return zone.nom + ' — ' + etats[cle].texte;
+  };
+
+  // Mannequin de face minimal (cercles et rectangles arrondis), silhouette
+  // neutre pour les parties non suivies (tête, avant-bras, bassin, jambes
+  // basses) et zones colorées pour les quatre groupes visibles de face.
+  $('mannequin').innerHTML =
+    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de face">' +
+      '<circle class="silhouette" cx="70" cy="18" r="14"></circle>' +
+      '<rect class="silhouette" x="64" y="30" width="12" height="10"></rect>' +
+      '<rect class="silhouette" x="18" y="108" width="14" height="45" rx="7"></rect>' +
+      '<rect class="silhouette" x="108" y="108" width="14" height="45" rx="7"></rect>' +
+      '<rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>' +
+      '<rect class="silhouette" x="46" y="198" width="20" height="38" rx="8"></rect>' +
+      '<rect class="silhouette" x="74" y="198" width="20" height="38" rx="8"></rect>' +
+      '<rect class="' + classe('pectoraux') + '" x="42" y="40" width="56" height="70" rx="14">' +
+        '<title>' + echapper(titreZone('pectoraux')) + '</title></rect>' +
+      '<circle class="' + classe('epaules') + '" cx="34" cy="50" r="13">' +
+        '<title>' + echapper(titreZone('epaules')) + '</title></circle>' +
+      '<circle class="' + classe('epaules') + '" cx="106" cy="50" r="13">' +
+        '<title>' + echapper(titreZone('epaules')) + '</title></circle>' +
+      '<rect class="' + classe('biceps') + '" x="20" y="55" width="16" height="55" rx="8">' +
+        '<title>' + echapper(titreZone('biceps')) + '</title></rect>' +
+      '<rect class="' + classe('biceps') + '" x="104" y="55" width="16" height="55" rx="8">' +
+        '<title>' + echapper(titreZone('biceps')) + '</title></rect>' +
+      '<rect class="' + classe('quadriceps') + '" x="44" y="138" width="24" height="60" rx="10">' +
+        '<title>' + echapper(titreZone('quadriceps')) + '</title></rect>' +
+      '<rect class="' + classe('quadriceps') + '" x="72" y="138" width="24" height="60" rx="10">' +
+        '<title>' + echapper(titreZone('quadriceps')) + '</title></rect>' +
+    '</svg>';
+
+  $('mannequin-liste').innerHTML = ZONES_MUSCULAIRES.filter((z) => z.vue === 'liste').map((zone) => (
+    '<div class="etat-pastille ' + classe(zone.cle) + '">' +
+      '<span class="etat-pastille-nom">' + echapper(zone.nom) + '</span>' +
+      '<span class="etat-pastille-detail">' + echapper(etats[zone.cle].texte) + '</span>' +
+    '</div>'
+  )).join('');
+}
+
 function rendreHistorique(idOuvert) {
   const cible = $('liste-historique');
   const seances = lireTableau(CLES.historique)
@@ -2863,7 +2959,11 @@ function brancher() {
     if (reglages.pont) synchroniser().then(rendreEtatSync).catch(() => {});
   });
   $('bouton-menu-sport').addEventListener('click', () => { rendreAccueil(); afficher('accueil'); });
-  $('bouton-menu-suivi').addEventListener('click', () => { rendreCalendrier(); afficher('suivi'); });
+  $('bouton-menu-suivi').addEventListener('click', () => {
+    rendreCalendrier();
+    rendreEtatMusculaire();
+    afficher('suivi');
+  });
   $('bouton-sport-retour').addEventListener('click', () => afficher('menu'));
   $('bouton-suivi-retour').addEventListener('click', () => afficher('menu'));
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',

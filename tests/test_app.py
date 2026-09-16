@@ -310,6 +310,30 @@ def test_l_historique_j6_fusionne_dans_j2_au_demarrage(page):
     assert "Durée et distance ·" in page.locator(".carte-jour").nth(5).text_content()
 
 
+def test_l_etat_musculaire_regroupe_les_graphies_du_meme_muscle(page):
+    """16 septembre 2026 : le champ muscle du classeur porte parfois le meme
+    muscle sous deux graphies (le programme actuel a "Deltoide lateral" et
+    "Deltoïde latéral" cote a cote) ; la zone Epaules doit lire les deux,
+    pas seulement celle ecrite a l'identique."""
+    page.evaluate("""() => {
+      const h = (heures) => new Date(Date.now() - heures * 3600000).toISOString();
+      const serie = (heures) => ({ charge: 40, reps: 8, faite: true, echauffement: false, heure: h(heures) });
+      const seance = {
+        id: 'T1', jour: 'J1', titre: 'Test', type: 'muscu', fin: h(1), envoye: true,
+        exercices: [
+          { nom: 'Test accent', muscle: 'Deltoïde latéral', series: [serie(2)] },
+        ],
+      };
+      localStorage.setItem('muscu.historique', JSON.stringify([seance]));
+    }""")
+    page.reload()
+    page.click("#bouton-menu-suivi")
+    page.wait_for_selector("#mannequin svg")
+    classe = page.evaluate(
+        "document.querySelector('#mannequin circle[class^=\\'zone-\\']').getAttribute('class')")
+    assert classe == "zone-fatigue", "l'orthographe accentuee n'a pas ete reconnue : " + classe
+
+
 def test_le_footing_n_a_plus_de_gainage_ni_de_farmer_walk_a_part(page):
     """11 septembre 2026 : le gainage des footings rejoint la seance de
     gainage, la rotation externe est abandonnee. 13 septembre 2026 : le
