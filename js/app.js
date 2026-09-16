@@ -2906,6 +2906,18 @@ function creneauxSommeil() {
   return creneaux;
 }
 
+/* Position du sport dans la frise (demande de l'utilisateur le
+   16 septembre 2026) : -1 si hors de la fenêtre affichée (22h-11h), le
+   sport de l'après-midi n'y ayant pas sa place. */
+function indexCreneauPourHeure(heure) {
+  if (!heure) return -1;
+  const [h, m] = heure.split(':').map(Number);
+  let minutes = h * 60 + m - SOMMEIL_DEBUT_MIN;
+  if (minutes < 0) minutes += 24 * 60;
+  if (minutes >= SOMMEIL_NB_CRENEAUX * 30) return -1;
+  return Math.floor(minutes / 30);
+}
+
 /* Cherchées en plus des cinq citées par l'utilisateur (bruit, chaleur,
    moustique, énervement, pensées) : douleur et lumière, deux causes
    d'insomnie courantes qui ne sont ni l'une ni l'autre déjà couvertes. */
@@ -2933,6 +2945,11 @@ const JOURNEE_SOMMEIL = [
   { cle: 'pipi', nom: 'Pipi nocturne', icone: '🚽', type: 'compteur' },
   { cle: 'ecranTard', nom: 'Écran tardif', icone: '📱', type: 'bascule' },
   { cle: 'repasTardif', nom: 'Repas tardif', icone: '🍽️', type: 'bascule' },
+];
+
+const SPORT_JOURNEE = [
+  { cle: 'muscu', nom: 'Muscu', icone: '🏋️' },
+  { cle: 'footing', nom: 'Footing', icone: '🏃' },
 ];
 
 function formatDateCourte(date) {
@@ -2970,7 +2987,8 @@ function lireSommeil() {
 
 function nuitPour(cle) {
   return lireSommeil().find((n) => n.cle === cle) ||
-    { cle, insomnies: [], raisons: [], alcool: false, cafe: 0, pipi: 0, ecranTard: false, repasTardif: false };
+    { cle, insomnies: [], raisons: [], alcool: false, cafe: 0, pipi: 0, ecranTard: false, repasTardif: false,
+      sportType: null, sportHeure: null };
 }
 
 function enregistrerNuit(nuit) {
@@ -3003,23 +3021,34 @@ function actionnerJourneeSommeil(nuit, item) {
   rendreSommeil();
 }
 
+/* Sport du jour saisi à la main plutôt que déduit seul de l'historique
+   (demande de l'utilisateur le 16 septembre 2026, l'ancien badge n'étant
+   pas sélectionnable) : muscu ou footing, un seul à la fois, avec l'heure
+   pour le repérer sur la frise quand elle tombe dans sa fenêtre (22h-11h). */
+function basculerSportJournee(nuit, type) {
+  nuit.sportType = nuit.sportType === type ? null : type;
+  if (!nuit.sportType) nuit.sportHeure = null;
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+function majHeureSport(nuit, heure) {
+  nuit.sportHeure = heure || null;
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
 function remettreAZeroJournee(nuit, cle) {
   nuit[cle] = 0;
   enregistrerNuit(nuit);
   rendreSommeil();
 }
 
-/* Une séance de musculation, de course ou de gainage ce jour-là (fin
-   tombant le jour de la nuit affichée) : premier de l'historique trouvé,
-   même logique que le calendrier. */
-function sportDuJour(cle) {
-  const seance = lireTableau(CLES.historique).filter((s) => s.fin).find((s) => dateCourte(s.fin) === cle);
-  return seance ? iconeJour({ type: seance.type, code: seance.jour }) : null;
-}
-
 function rendreSommeil() {
   const nuit = nuitPour(nuitAffichee);
   const creneaux = creneauxSommeil();
+  const indexSport = indexCreneauPourHeure(nuit.sportHeure);
+  const spSport = SPORT_JOURNEE.find((s) => s.cle === nuit.sportType);
 
   $('sommeil-nuit-titre').textContent = 'Nuit du ' + nuitAffichee + ' au ' + decalerCle(nuitAffichee, 1);
   $('bouton-sommeil-suivant').disabled = !cleAnterieure(nuitAffichee, cleNuitCourante());
@@ -3034,9 +3063,12 @@ function rendreSommeil() {
     // flexbox, malgré tout ce que ça y ressemblait à l'essai.
     // Heure incrustee 1 case sur 2 (demande utilisateur), les index pairs
     // tombant toujours sur l'heure pile (creneaux de 30 min depuis 22:00).
-    const heure = index % 2 === 0 ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
-    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '">' + heure + '</button>';
-    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '">' + heure + '</button>';
+    // Icône du sport (même demande) quand son heure tombe sur ce créneau,
+    // par-dessus le numéro d'heure s'ils coïncident.
+    const icone = (index === indexSport && spSport) ? '<span class="sommeil-creneau-sport" title="' + echapper(spSport.nom + ' ' + nuit.sportHeure) + '">' + spSport.icone + '</span>' : '';
+    const heure = (index % 2 === 0 && !icone) ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
+    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
+    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '">' + heure + icone + '</button>';
   }).join('');
   $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {
     bouton.addEventListener('click', () => basculerCreneauSommeil(nuit, Number(bouton.dataset.index)));
@@ -3051,9 +3083,16 @@ function rendreSommeil() {
     bouton.addEventListener('click', () => basculerRaisonSommeil(nuit, bouton.dataset.cle));
   });
 
-  const sport = sportDuJour(nuitAffichee);
+  // Sport du jour saisi à la main (16 septembre 2026, l'ancien badge auto
+  // n'était pas sélectionnable) : muscu ou footing, plus une heure une fois
+  // choisi, pour le repérer sur la frise (voir indexCreneauPourHeure).
   $('sommeil-journee').innerHTML =
-    (sport ? '<span class="journee-item journee-auto">' + sport + ' Sport</span>' : '') +
+    SPORT_JOURNEE.map((sp) => (
+      '<button type="button" class="journee-item' + (nuit.sportType === sp.cle ? ' choisi' : '') + '" data-sport="' + sp.cle + '">' +
+        sp.icone + ' ' + echapper(sp.nom) +
+      '</button>'
+    )).join('') +
+    (nuit.sportType ? '<input type="time" id="sommeil-sport-heure" class="sommeil-sport-heure" value="' + (nuit.sportHeure || '') + '">' : '') +
     JOURNEE_SOMMEIL.map((item) => {
       if (item.type === 'bascule') {
         return '<button type="button" class="journee-item' + (nuit[item.cle] ? ' choisi' : '') + '" data-cle="' + item.cle + '">' +
@@ -3065,6 +3104,16 @@ function rendreSommeil() {
         (valeur ? '<span class="journee-remise" data-remise="' + item.cle + '">&times;</span>' : '') +
       '</button>';
     }).join('');
+  $('sommeil-journee').querySelectorAll('.journee-item[data-sport]').forEach((bouton) => {
+    bouton.addEventListener('click', () => basculerSportJournee(nuit, bouton.dataset.sport));
+  });
+  // #sommeil-sport-heure n'existe que si un sport est choisi : recherché
+  // via querySelector scopé plutôt que $() (id absent d'index.html, comme
+  // les autres éléments créés dynamiquement, voir mensurations-photo-suppr).
+  const champHeureSport = $('sommeil-journee').querySelector('#sommeil-sport-heure');
+  if (champHeureSport) {
+    champHeureSport.addEventListener('change', (evenement) => majHeureSport(nuit, evenement.target.value));
+  }
   $('sommeil-journee').querySelectorAll('.journee-item[data-cle]').forEach((bouton) => {
     bouton.addEventListener('click', (evenement) => {
       const remise = evenement.target.closest('[data-remise]');

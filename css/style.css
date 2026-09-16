@@ -399,6 +399,10 @@ body { display: flex; flex-direction: column; }
   color: rgba(255, 255, 255, .8);
   pointer-events: none;
 }
+/* Icône du sport (même demande) : remplace le numéro d'heure sur son
+   créneau plutôt que de s'y superposer, voir rendreSommeil() dans
+   js/app.js. */
+.sommeil-creneau-sport { font-size: 11px; line-height: 1; pointer-events: none; }
 .sommeil-legende { font-size: 12px; color: rgba(255, 255, 255, .7); margin: 0 0 22px; }
 
 .sommeil-sous-titre {
@@ -432,8 +436,20 @@ body { display: flex; flex-direction: column; }
 }
 .raison-chip.choisi { background: var(--danger); border-color: var(--danger); }
 .journee-item.choisi { background: var(--accent-clair); border-color: var(--accent-clair); }
-.journee-item.journee-auto { cursor: default; background: rgba(255, 255, 255, .15); }
 .journee-remise { margin-left: 2px; opacity: .8; }
+/* Heure du sport (16 septembre 2026, sport devenu sélectionnable) : même
+   habillage que les puces plutôt qu'un champ nu, pour rester dans le
+   même registre visuel sombre que le reste de l'écran. */
+.sommeil-sport-heure {
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  border-radius: var(--rayon-plein);
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+}
+.sommeil-sport-heure::-webkit-calendar-picker-indicator { filter: invert(1); }
 
 #sommeil-mois .calendrier-entetes { color: rgba(255, 255, 255, .7); }
 #sommeil-mois .calendrier-case { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); }

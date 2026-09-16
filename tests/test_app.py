@@ -461,17 +461,30 @@ def test_le_compteur_cafe_du_sommeil_incremente(page):
     assert "· 2" in cafe.text_content()
 
 
-def test_le_sport_du_jour_est_derive_de_l_historique(page):
-    """Pas de saisie en plus : une seance dont la fin tombe le jour de la
-    nuit affichee (hier, par defaut) genere un repere automatique."""
-    page.evaluate("""() => {
-      const hier = new Date(Date.now() - 86400000).toISOString();
-      const seance = { id: 'S1', jour: 'J1', titre: 'Test', type: 'muscu', fin: hier, envoye: true, exercices: [] };
-      localStorage.setItem('muscu.historique', JSON.stringify([seance]));
-    }""")
-    page.reload()
+def test_le_sport_du_jour_se_choisit_a_la_main(page):
+    """16 septembre 2026 : l'ancien reperage automatique n'etait pas
+    selectionnable (signale par l'utilisateur), remplace par un choix
+    muscu/footing avec une heure, pour le retrouver sur la frise."""
     ouvrir_sommeil(page)
-    assert page.locator(".journee-auto").count() == 1
+    page.locator("#sommeil-journee .journee-item", has_text="Muscu").click()
+    assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Muscu").get_attribute("class")
+    champ_heure = page.locator("#sommeil-sport-heure")
+    assert champ_heure.count() == 1
+    champ_heure.fill("23:00")
+    champ_heure.press("Tab")
+    assert page.locator(".sommeil-creneau-sport").count() == 1
+
+
+def test_le_sport_ne_marque_pas_la_frise_hors_de_sa_fenetre(page):
+    """Le sport de l'apres-midi (hors 22h-11h) n'a pas de repere sur la
+    frise, mais reste selectionne."""
+    ouvrir_sommeil(page)
+    page.locator("#sommeil-journee .journee-item", has_text="Footing").click()
+    champ_heure = page.locator("#sommeil-sport-heure")
+    champ_heure.fill("17:00")
+    champ_heure.press("Tab")
+    assert page.locator(".sommeil-creneau-sport").count() == 0
+    assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Footing").get_attribute("class")
 
 
 def test_le_footing_n_a_plus_de_gainage_ni_de_farmer_walk_a_part(page):
