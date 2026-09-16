@@ -2674,6 +2674,119 @@ function rendreEtatMusculaire() {
   )).join('');
 }
 
+/* Tonnage par muscle, sixième et dernier contenu du menu Suivi ajouté le
+   16 septembre 2026, mannequin cliquable réclamé par l'utilisateur à partir
+   des captures d'applications tierces envoyées comme référence. Différent
+   du tonnage écarté comme indicateur de progression sur un exercice (voir
+   plus haut, "L'indicateur de progression est la première série de
+   travail") : là, le problème était de comparer deux séances entre elles,
+   le tonnage montant mécaniquement quand la charge baisse et que les
+   répétitions montent. Ici, pas de comparaison série à série : une simple
+   somme par zone sur une fenêtre glissante, pour repérer un déséquilibre de
+   volume entre groupes musculaires — usage reconnu en musculation (suivi du
+   volume hebdomadaire), qui ne prête pas à la même confusion. Réutilise
+   ZONES_MUSCULAIRES (voir État musculaire ci-dessus) plutôt qu'une table
+   muscle → exercices séparée : même simplification déjà en place, un seul
+   muscle par exercice, pas de muscles secondaires. */
+const TONNAGE_PERIODE_JOURS = 7;
+let zoneTonnageChoisie = null;
+
+function tonnageZone(zone, depuis) {
+  let total = 0;
+  lireTableau(CLES.historique).forEach((s) => {
+    if (!s.fin || new Date(s.fin) < depuis) return;
+    (s.exercices || []).forEach((exo) => {
+      if (!zone.muscles.includes(formeDuNom(exo.muscle))) return;
+      total += tonnageDesSeries(exo.series || []);
+    });
+  });
+  return total;
+}
+
+function exercicesZoneTonnage(zone, depuis) {
+  const parNom = {};
+  lireTableau(CLES.historique).forEach((s) => {
+    if (!s.fin || new Date(s.fin) < depuis) return;
+    (s.exercices || []).forEach((exo) => {
+      if (!zone.muscles.includes(formeDuNom(exo.muscle))) return;
+      const t = tonnageDesSeries(exo.series || []);
+      if (!t) return;
+      parNom[exo.nom] = (parNom[exo.nom] || 0) + t;
+    });
+  });
+  return Object.entries(parNom).sort((a, b) => b[1] - a[1]);
+}
+
+function actionnerZoneTonnage(cle) {
+  zoneTonnageChoisie = cle;
+  rendreTonnageMuscles();
+}
+
+function rendreTonnageMuscles() {
+  const depuis = new Date(Date.now() - TONNAGE_PERIODE_JOURS * 86400000);
+  const tonnages = {};
+  ZONES_MUSCULAIRES.forEach((zone) => { tonnages[zone.cle] = tonnageZone(zone, depuis); });
+  const max = Math.max(1, ...Object.values(tonnages));
+
+  const titreZone = (cle) => {
+    const zone = ZONES_MUSCULAIRES.find((z) => z.cle === cle);
+    return zone.nom + ' — ' + tonnages[cle] + ' kg';
+  };
+  // Opacité plutôt que trois couleurs discrètes (État musculaire) : le
+  // tonnage est une quantité continue, pas un état à trois paliers. 0,12
+  // minimum pour qu'une zone jamais travaillée reste repérable sur le fond
+  // clair, sans jamais se confondre avec la silhouette neutre.
+  const styleZone = (cle) => 'fill: var(--accent-clair); fill-opacity: ' +
+    (0.12 + 0.88 * (tonnages[cle] / max)).toFixed(2) + ';' +
+    (cle === zoneTonnageChoisie ? ' stroke: var(--accent); stroke-width: 2;' : '');
+  const zoneSvg = (tag, cle, attrs) => '<' + tag + ' class="zone-cliquable" data-zone="' + cle +
+    '" style="' + styleZone(cle) + '" ' + attrs + '><title>' + echapper(titreZone(cle)) + '</title></' + tag + '>';
+
+  $('tonnage-mannequin').innerHTML =
+    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de face, tonnage par zone">' +
+      '<circle class="silhouette" cx="70" cy="18" r="14"></circle>' +
+      '<rect class="silhouette" x="64" y="30" width="12" height="10"></rect>' +
+      '<rect class="silhouette" x="18" y="108" width="14" height="45" rx="7"></rect>' +
+      '<rect class="silhouette" x="108" y="108" width="14" height="45" rx="7"></rect>' +
+      '<rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>' +
+      '<rect class="silhouette" x="46" y="198" width="20" height="38" rx="8"></rect>' +
+      '<rect class="silhouette" x="74" y="198" width="20" height="38" rx="8"></rect>' +
+      zoneSvg('rect', 'pectoraux', 'x="42" y="40" width="56" height="70" rx="14"') +
+      zoneSvg('circle', 'epaules', 'cx="34" cy="50" r="13"') +
+      zoneSvg('circle', 'epaules', 'cx="106" cy="50" r="13"') +
+      zoneSvg('rect', 'biceps', 'x="20" y="55" width="16" height="55" rx="8"') +
+      zoneSvg('rect', 'biceps', 'x="104" y="55" width="16" height="55" rx="8"') +
+      zoneSvg('rect', 'quadriceps', 'x="44" y="138" width="24" height="60" rx="10"') +
+      zoneSvg('rect', 'quadriceps', 'x="72" y="138" width="24" height="60" rx="10"') +
+    '</svg>';
+
+  $('tonnage-liste').innerHTML = ZONES_MUSCULAIRES.filter((z) => z.vue === 'liste').map((zone) => (
+    '<button type="button" class="tonnage-zone' + (zone.cle === zoneTonnageChoisie ? ' choisi' : '') +
+      '" data-zone="' + zone.cle + '">' +
+      '<span class="tonnage-zone-nom">' + echapper(zone.nom) + '</span>' +
+      '<span class="tonnage-zone-barre"><span class="tonnage-zone-remplie" style="width: ' +
+        Math.round((tonnages[zone.cle] / max) * 100) + '%"></span></span>' +
+      '<span class="tonnage-zone-valeur">' + tonnages[zone.cle] + ' kg</span>' +
+    '</button>'
+  )).join('');
+
+  // La zone la plus chargée s'ouvre par défaut plutôt qu'un écran vide au
+  // premier affichage ; un choix déjà fait survit au réaffichage de l'écran
+  // (rendreTonnageMuscles est rappelée après chaque clic de zone).
+  const cles = ZONES_MUSCULAIRES.map((z) => z.cle);
+  if (!cles.includes(zoneTonnageChoisie)) {
+    zoneTonnageChoisie = cles.reduce((a, b) => (tonnages[b] > tonnages[a] ? b : a));
+  }
+  const zoneDetail = ZONES_MUSCULAIRES.find((z) => z.cle === zoneTonnageChoisie);
+  const exercices = exercicesZoneTonnage(zoneDetail, depuis);
+  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + tonnages[zoneDetail.cle] + ' kg</h3>' +
+    (exercices.length
+      ? exercices.map(([nom, t]) => (
+          '<div class="tonnage-detail-ligne"><span>' + echapper(nom) + '</span><span>' + t + ' kg</span></div>'
+        )).join('')
+      : '<p class="vide">Rien sur les ' + TONNAGE_PERIODE_JOURS + ' derniers jours.</p>');
+}
+
 /* ------------------------------------------------------------- sommeil */
 
 /* Troisième contenu du menu Suivi, demandé le 16 septembre 2026 : une
@@ -3477,6 +3590,15 @@ function brancher() {
 
   $('bouton-suivi-course').addEventListener('click', () => { rendreEvolutionCourse(); afficher('course-evolution'); });
   $('bouton-course-evolution-retour').addEventListener('click', () => afficher('suivi'));
+
+  $('bouton-suivi-tonnage').addEventListener('click', () => { rendreTonnageMuscles(); afficher('tonnage-muscles'); });
+  $('bouton-tonnage-muscles-retour').addEventListener('click', () => afficher('suivi'));
+  ['tonnage-mannequin', 'tonnage-liste'].forEach((id) => {
+    $(id).addEventListener('click', (evenement) => {
+      const cible = evenement.target.closest('[data-zone]');
+      if (cible) actionnerZoneTonnage(cible.dataset.zone);
+    });
+  });
 
   // Poignée de comparaison : souris et tactile au même endroit, plutôt que
   // deux jeux d'écouteurs. Le déplacement suit le pointeur tant qu'il reste

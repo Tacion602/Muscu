@@ -269,6 +269,49 @@ body { display: flex; flex-direction: column; }
 .etat-pastille-nom { display: block; font-size: 13px; font-weight: 700; }
 .etat-pastille-detail { display: block; font-size: 11px; opacity: .9; margin-top: 1px; }
 
+/* ---------- Tonnage par muscle (mannequin cliquable) ----------
+
+   Même mannequin que l'État musculaire ci-dessus, mais une quantité
+   continue (fill-opacity posée en ligne par zoneSvg() dans js/app.js)
+   plutôt que trois couleurs à paliers : pas de classe de couleur ici, le
+   dégradé vient de la variable --accent-clair déjà utilisée pour le bouton
+   de récupération et le chronomètre en marche, sur le principe déjà établi
+   de réutiliser une même teinte plutôt que d'en ajouter une. La liste
+   reprend une barre de remplissage plutôt que le fond plein des pastilles
+   d'État musculaire, pour ne pas avoir à vérifier un contraste texte blanc
+   sur une couleur dont l'opacité varie. */
+.mannequin-svg .zone-cliquable { cursor: pointer; }
+.tonnage-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: var(--rayon-petit);
+  border: 1px solid var(--trait);
+  background: var(--fond-carte);
+  font: inherit;
+  color: var(--texte);
+  text-align: left;
+  cursor: pointer;
+}
+.tonnage-zone.choisi { border-color: var(--accent); }
+.tonnage-zone-nom { font-size: 13px; font-weight: 700; }
+.tonnage-zone-barre { height: 5px; border-radius: 3px; background: var(--fond-champ); overflow: hidden; }
+.tonnage-zone-remplie { display: block; height: 100%; background: var(--accent-clair); border-radius: 3px; }
+.tonnage-zone-valeur { font-size: 11px; color: var(--texte-faible); }
+
+.tonnage-detail { margin-top: 8px; }
+.tonnage-detail h3 { font-size: 16px; margin: 0 0 8px; }
+.tonnage-detail-ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--trait);
+}
+.tonnage-detail-ligne:last-child { border-bottom: none; }
+
 /* ---------- Sommeil ----------
 
    Seul écran de l'application à s'écarter du fond clair général (demande

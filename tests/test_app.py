@@ -530,6 +530,71 @@ def test_l_evolution_course_change_de_type_sans_effacer_les_autres(page):
     assert page.locator("#course-evolution-corps svg.courbe").count() == 0
 
 
+# ------------------------------------------------------- tonnage muscles
+
+
+def seance_muscu_zone(page, heures_avant, nom_exo, muscle, charge, reps, series=1):
+    page.evaluate(
+        """([heuresAvant, nomExo, muscle, charge, reps, nbSeries]) => {
+          const cle = 'muscu.historique';
+          const historique = JSON.parse(localStorage.getItem(cle) || '[]');
+          const fin = new Date(Date.now() - heuresAvant * 3600000).toISOString();
+          const serie = { charge, reps, faite: true, echauffement: false, heure: fin };
+          historique.push({
+            id: 'M' + heuresAvant + nomExo, jour: 'J1', titre: 'Test', type: 'muscu',
+            fin, envoye: true,
+            exercices: [{ nom: nomExo, muscle, series: Array(nbSeries).fill(serie) }],
+          });
+          localStorage.setItem(cle, JSON.stringify(historique));
+        }""",
+        [heures_avant, nom_exo, muscle, charge, reps, series],
+    )
+
+
+def ouvrir_tonnage_muscles(page):
+    page.evaluate("afficher('menu')")
+    page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-tonnage")
+    page.wait_for_selector("#tonnage-mannequin svg")
+
+
+def test_le_tonnage_par_muscle_ouvre_sur_la_zone_la_plus_chargee(page):
+    """16 septembre 2026, mannequin cliquable demande a partir des captures
+    envoyees comme reference : au premier affichage, pas d'ecran vide, la
+    zone qui a le plus de tonnage sur les 7 derniers jours s'ouvre seule."""
+    seance_muscu_zone(page, 2, "Developpe couche", "Pectoraux", 80, 8, series=3)
+    seance_muscu_zone(page, 2, "Curl biceps", "Biceps", 20, 10, series=2)
+    page.reload()
+    ouvrir_tonnage_muscles(page)
+    detail = page.locator("#tonnage-detail")
+    assert "Pectoraux" in detail.locator("h3").text_content()
+    assert "1920 kg" in detail.locator("h3").text_content()
+
+
+def test_toucher_une_zone_change_le_detail(page):
+    """Le mannequin et la liste partagent le meme comportement : toucher une
+    zone quelconque affiche son detail par exercice, sans recharger la
+    page ni perdre les autres zones."""
+    seance_muscu_zone(page, 2, "Developpe couche", "Pectoraux", 80, 8, series=3)
+    seance_muscu_zone(page, 2, "Tirage vertical", "Grand dorsal", 60, 10, series=1)
+    page.reload()
+    ouvrir_tonnage_muscles(page)
+    page.locator("#tonnage-liste .tonnage-zone", has_text="Dos").click()
+    detail = page.locator("#tonnage-detail")
+    assert "Dos" in detail.locator("h3").text_content()
+    assert "Tirage vertical" in detail.text_content()
+    assert "600 kg" in detail.text_content()
+
+
+def test_une_zone_sans_tonnage_affiche_un_message(page):
+    """Une zone jamais travaillee sur la periode n'a rien a lister."""
+    seance_muscu_zone(page, 2, "Developpe couche", "Pectoraux", 80, 8, series=3)
+    page.reload()
+    ouvrir_tonnage_muscles(page)
+    page.locator("#tonnage-liste .tonnage-zone", has_text="Mollets").click()
+    assert "7 derniers jours" in page.locator("#tonnage-detail .vide").text_content()
+
+
 # --------------------------------------------------------- seance gainage
 
 
