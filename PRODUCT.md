@@ -71,8 +71,18 @@ Android sur l'écran d'accueil, jamais via un store.
 
 ## Brand Commitments
 
-Aucune identité de marque formelle : outil personnel, pas de logo ni de
-charte au-delà du nom du dépôt (« Muscu ») et de l'intitulé « Suivi de
+Direction visuelle tranchée le 16 septembre 2026 : sortie standard prise
+comme engagement plutôt que comme défaut par timidité (protocole
+impeccable.style) — moderne, fluide, épuré, exécuté au niveau de finition de
+**Strava** comme référence de barre de qualité. Concrètement : data en
+premier mais chaleureux, cartes bien hiérarchisées (grand chiffre + petit
+libellé), un accent vif unique sur fond clair, typographie confiante plutôt
+que timide. Remplace le mode sombre (voir Accessibility & Inclusion) ; le
+teal déjà en place dans l'application (`--accent`/`--accent-clair`) reste
+l'accent de marque plutôt que d'en adopter un nouveau.
+
+Aucune autre identité de marque formelle au-delà de ça : outil personnel,
+pas de logo ni de charte au-delà du nom du dépôt (« Muscu ») et de l'intitulé « Suivi de
 musculation ». Pas de public externe à satisfaire.
 
 ## Evidence on Hand
