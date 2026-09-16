@@ -59,25 +59,86 @@
   </div>
 </section>
 
-<!-- Suivi : calendrier d'activité, premier contenu de ce sous-menu (les
-     autres sous-écrans de la feuille de route viendront s'y ajouter). -->
+<!-- Suivi : petit menu à trois entrées (16 septembre 2026, devenu trop
+     grand pour tenir empilé sur un seul écran une fois le sommeil ajouté). -->
 <section id="ecran-suivi" class="ecran">
   <header class="barre">
     <button id="bouton-suivi-retour" class="icone" aria-label="Retour">&#8592;</button>
     <div class="barre-titre"><span>Suivi</span></div>
     <span class="icone" aria-hidden="true"></span>
   </header>
+  <ul class="liste-menu liste-menu-petite">
+    <li><button id="bouton-suivi-calendrier" class="carte-menu carte-menu-petite">
+      <span class="carte-menu-icone" aria-hidden="true">&#128197;</span>
+      <span class="carte-menu-nom">Calendrier</span>
+    </button></li>
+    <li><button id="bouton-suivi-etat" class="carte-menu carte-menu-petite">
+      <span class="carte-menu-icone" aria-hidden="true">&#128170;</span>
+      <span class="carte-menu-nom">État musculaire</span>
+    </button></li>
+    <li><button id="bouton-suivi-sommeil" class="carte-menu carte-menu-petite">
+      <span class="carte-menu-icone" aria-hidden="true">&#127769;</span>
+      <span class="carte-menu-nom">Sommeil</span>
+    </button></li>
+  </ul>
+</section>
+
+<!-- Calendrier : voir rendreCalendrier() dans js/app.js. -->
+<section id="ecran-calendrier" class="ecran">
+  <header class="barre">
+    <button id="bouton-calendrier-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Calendrier</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
   <main class="corps">
-    <h2 class="suivi-titre">Calendrier</h2>
     <p class="suivi-legende">Type de la première séance enregistrée ce jour-là.</p>
     <div id="calendrier"></div>
+  </main>
+</section>
 
-    <!-- État musculaire, gadget indicatif (pas une mesure) : voir
-         rendreEtatMusculaire() dans js/app.js. -->
-    <h2 class="suivi-titre">État musculaire</h2>
+<!-- État musculaire, gadget indicatif (pas une mesure) : voir
+     rendreEtatMusculaire() dans js/app.js. -->
+<section id="ecran-etat-musculaire" class="ecran">
+  <header class="barre">
+    <button id="bouton-etat-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>État musculaire</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps">
     <p class="suivi-legende">Indicatif : récupération forfaitaire depuis la dernière série, pas une mesure.</p>
     <div id="mannequin"></div>
     <div id="mannequin-liste" class="mannequin-liste"></div>
+  </main>
+</section>
+
+<!-- Sommeil : frise de la nuit en cours de saisie, raisons d'insomnie,
+     repères de la journée, vue du mois. Voir rendreSommeil() dans
+     js/app.js. Fond dégradé jour (haut) / nuit (bas) propre à cet écran,
+     seul endroit de l'appli à s'écarter du fond clair général. -->
+<section id="ecran-sommeil" class="ecran">
+  <header class="barre barre-sommeil">
+    <button id="bouton-sommeil-retour" class="icone icone-sommeil" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre barre-titre-sommeil"><span>Sommeil</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps corps-sommeil">
+    <div class="sommeil-nuit-nav">
+      <button id="bouton-sommeil-precedent" class="icone icone-sommeil" aria-label="Nuit précédente">&#8592;</button>
+      <span id="sommeil-nuit-titre" class="sommeil-nuit-titre"></span>
+      <button id="bouton-sommeil-suivant" class="icone icone-sommeil" aria-label="Nuit suivante">&#8594;</button>
+    </div>
+
+    <div id="sommeil-frise" class="sommeil-frise"></div>
+    <p class="sommeil-legende">Bleu : sommeil. Toucher un créneau bascule en rouge (insomnie).</p>
+
+    <h3 class="sommeil-sous-titre">Raisons, si insomnie</h3>
+    <div id="sommeil-raisons" class="sommeil-raisons"></div>
+
+    <h3 class="sommeil-sous-titre">La journée</h3>
+    <div id="sommeil-journee" class="sommeil-journee"></div>
+
+    <h3 class="sommeil-sous-titre">Le mois</h3>
+    <div id="sommeil-mois" class="calendrier"></div>
   </main>
 </section>
 

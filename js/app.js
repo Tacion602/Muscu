@@ -10,6 +10,7 @@ const CLES = {
   historique: 'muscu.historique',
   reglages: 'muscu.reglages',
   consignes: 'muscu.consignes',
+  sommeil: 'muscu.sommeil',
 };
 
 const REGLAGES_PAR_DEFAUT = {
@@ -259,6 +260,7 @@ let tictac = null;
 let tictacSeance = null;  // rafraîchit le chronomètre de la séance de musculation
 let verrouVeille = null;
 let audio = null;
+let nuitAffichee = null;  // clé (DD/MM/AAAA) de la nuit affichée sur l'écran Sommeil
 
 /* ---------------------------------------------------------------- stockage */
 
@@ -2575,6 +2577,228 @@ function rendreEtatMusculaire() {
   )).join('');
 }
 
+/* ------------------------------------------------------------- sommeil */
+
+/* Troisième contenu du menu Suivi, demandé le 16 septembre 2026 : une
+   frise centrée sur la nuit plutôt qu'un formulaire, pour rester un geste
+   rapide au réveil. La fenêtre va de 22h à 11h le lendemain (13 h, 26
+   créneaux de 30 min) ; le cœur, 23h30 à 8h, est bleu (sommeil) par
+   défaut, sans qu'il y ait rien à saisir pour une nuit ordinaire. Toucher
+   un créneau bleu le bascule en rouge (insomnie) ; en dehors du cœur,
+   aucun créneau n'existe tant qu'on n'y touche pas — l'apparition marque
+   un coucher tardif ou un réveil précoce, hors du cadre habituel. Un seul
+   état à retenir par créneau (dans ou hors insomnie) suffit aux deux cas. */
+const SOMMEIL_DEBUT_MIN = 22 * 60;
+const SOMMEIL_NB_CRENEAUX = 26;
+const SOMMEIL_COEUR_DEBUT = 3;   // 23:30
+const SOMMEIL_COEUR_FIN = 19;    // 07:30, dernier créneau du cœur (se termine à 8h)
+
+function creneauxSommeil() {
+  const creneaux = [];
+  for (let i = 0; i < SOMMEIL_NB_CRENEAUX; i++) {
+    const minutes = (SOMMEIL_DEBUT_MIN + i * 30) % (24 * 60);
+    creneaux.push(String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0'));
+  }
+  return creneaux;
+}
+
+/* Cherchées en plus des cinq citées par l'utilisateur (bruit, chaleur,
+   moustique, énervement, pensées) : douleur et lumière, deux causes
+   d'insomnie courantes qui ne sont ni l'une ni l'autre déjà couvertes. */
+const RAISONS_INSOMNIE = [
+  { cle: 'bruit', nom: 'Bruit', icone: '🔊' },
+  { cle: 'chaleur', nom: 'Chaleur', icone: '🥵' },
+  { cle: 'froid', nom: 'Froid', icone: '🥶' },
+  { cle: 'moustique', nom: 'Moustique', icone: '🦟' },
+  { cle: 'enervement', nom: 'Énervement', icone: '😤' },
+  { cle: 'pensees', nom: 'Pensées', icone: '💭' },
+  { cle: 'douleur', nom: 'Douleur', icone: '🤕' },
+  { cle: 'lumiere', nom: 'Lumière', icone: '💡' },
+];
+
+/* Le sport du jour n'est pas ressaisi : dérivé de l'historique existant
+   (une séance dont la fin tombe le jour de la nuit affichée) plutôt que
+   d'un geste en plus. Alcool, écran tardif et repas tardif se valident
+   d'un geste ; café et pipi nocturne, qui peuvent survenir plusieurs fois,
+   comptent (appuyer incrémente, la croix remet à zéro). Écran tardif et
+   repas tardif sont les deux ajoutés à la demande de l'utilisateur d'en
+   chercher d'autres. */
+const JOURNEE_SOMMEIL = [
+  { cle: 'alcool', nom: 'Alcool', icone: '🍺', type: 'bascule' },
+  { cle: 'cafe', nom: 'Café', icone: '☕', type: 'compteur' },
+  { cle: 'pipi', nom: 'Pipi nocturne', icone: '🚽', type: 'compteur' },
+  { cle: 'ecranTard', nom: 'Écran tardif', icone: '📱', type: 'bascule' },
+  { cle: 'repasTardif', nom: 'Repas tardif', icone: '🍽️', type: 'bascule' },
+];
+
+function formatDateCourte(date) {
+  return String(date.getDate()).padStart(2, '0') + '/' +
+    String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
+}
+
+/* La nuit qui s'ouvre par défaut est celle d'hier à aujourd'hui : au
+   réveil, c'est celle qui vient de se terminer. */
+function cleNuitCourante() {
+  return formatDateCourte(new Date(Date.now() - 86400000));
+}
+
+function decalerCle(cle, delta) {
+  const [jour, mois, annee] = cle.split('/').map(Number);
+  return formatDateCourte(new Date(annee, mois - 1, jour + delta));
+}
+
+function decalerNuitAffichee(delta) {
+  nuitAffichee = decalerCle(nuitAffichee, delta);
+}
+
+/* Comparaison de deux clés DD/MM/AAAA : la comparaison de chaînes ferait
+   passer "01/10/2026" avant "25/09/2026", les jours et mois n'étant pas
+   alignés à gauche par année. */
+function cleAnterieure(a, b) {
+  const [ja, ma, aa] = a.split('/').map(Number);
+  const [jb, mb, ab] = b.split('/').map(Number);
+  return new Date(aa, ma - 1, ja).getTime() < new Date(ab, mb - 1, jb).getTime();
+}
+
+function lireSommeil() {
+  return lireTableau(CLES.sommeil);
+}
+
+function nuitPour(cle) {
+  return lireSommeil().find((n) => n.cle === cle) ||
+    { cle, insomnies: [], raisons: [], alcool: false, cafe: 0, pipi: 0, ecranTard: false, repasTardif: false };
+}
+
+function enregistrerNuit(nuit) {
+  const toutes = lireSommeil().filter((n) => n.cle !== nuit.cle);
+  toutes.push(nuit);
+  ecrire(CLES.sommeil, toutes);
+}
+
+function basculerCreneauSommeil(nuit, index) {
+  const creneau = creneauxSommeil()[index];
+  const position = nuit.insomnies.indexOf(creneau);
+  if (position >= 0) nuit.insomnies.splice(position, 1);
+  else nuit.insomnies.push(creneau);
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+function basculerRaisonSommeil(nuit, cle) {
+  const position = nuit.raisons.indexOf(cle);
+  if (position >= 0) nuit.raisons.splice(position, 1);
+  else nuit.raisons.push(cle);
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+function actionnerJourneeSommeil(nuit, item) {
+  if (item.type === 'bascule') nuit[item.cle] = !nuit[item.cle];
+  else nuit[item.cle] = (nuit[item.cle] || 0) + 1;
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+function remettreAZeroJournee(nuit, cle) {
+  nuit[cle] = 0;
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+/* Une séance de musculation, de course ou de gainage ce jour-là (fin
+   tombant le jour de la nuit affichée) : premier de l'historique trouvé,
+   même logique que le calendrier. */
+function sportDuJour(cle) {
+  const seance = lireTableau(CLES.historique).filter((s) => s.fin).find((s) => dateCourte(s.fin) === cle);
+  return seance ? iconeJour({ type: seance.type, code: seance.jour }) : null;
+}
+
+function rendreSommeil() {
+  const nuit = nuitPour(nuitAffichee);
+  const creneaux = creneauxSommeil();
+
+  $('sommeil-nuit-titre').textContent = 'Nuit du ' + nuitAffichee + ' au ' + decalerCle(nuitAffichee, 1);
+  $('bouton-sommeil-suivant').disabled = !cleAnterieure(nuitAffichee, cleNuitCourante());
+
+  $('sommeil-frise').innerHTML = creneaux.map((creneau, index) => {
+    const enInsomnie = nuit.insomnies.includes(creneau);
+    const dansLeCoeur = index >= SOMMEIL_COEUR_DEBUT && index <= SOMMEIL_COEUR_FIN;
+    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau vide" data-index="' + index + '" aria-label="Ajouter ' + creneau + '"></button>';
+    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '"></button>';
+  }).join('');
+  $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {
+    bouton.addEventListener('click', () => basculerCreneauSommeil(nuit, Number(bouton.dataset.index)));
+  });
+
+  $('sommeil-raisons').innerHTML = RAISONS_INSOMNIE.map((raison) => (
+    '<button type="button" class="raison-chip' + (nuit.raisons.includes(raison.cle) ? ' choisi' : '') + '" data-cle="' + raison.cle + '">' +
+      raison.icone + ' ' + echapper(raison.nom) +
+    '</button>'
+  )).join('');
+  $('sommeil-raisons').querySelectorAll('.raison-chip').forEach((bouton) => {
+    bouton.addEventListener('click', () => basculerRaisonSommeil(nuit, bouton.dataset.cle));
+  });
+
+  const sport = sportDuJour(nuitAffichee);
+  $('sommeil-journee').innerHTML =
+    (sport ? '<span class="journee-item journee-auto">' + sport + ' Sport</span>' : '') +
+    JOURNEE_SOMMEIL.map((item) => {
+      if (item.type === 'bascule') {
+        return '<button type="button" class="journee-item' + (nuit[item.cle] ? ' choisi' : '') + '" data-cle="' + item.cle + '">' +
+          item.icone + ' ' + echapper(item.nom) + '</button>';
+      }
+      const valeur = nuit[item.cle] || 0;
+      return '<button type="button" class="journee-item' + (valeur ? ' choisi' : '') + '" data-cle="' + item.cle + '">' +
+        item.icone + ' ' + echapper(item.nom) + (valeur ? ' · ' + valeur : '') +
+        (valeur ? '<span class="journee-remise" data-remise="' + item.cle + '">&times;</span>' : '') +
+      '</button>';
+    }).join('');
+  $('sommeil-journee').querySelectorAll('.journee-item[data-cle]').forEach((bouton) => {
+    bouton.addEventListener('click', (evenement) => {
+      const remise = evenement.target.closest('[data-remise]');
+      if (remise) { remettreAZeroJournee(nuit, remise.dataset.remise); return; }
+      actionnerJourneeSommeil(nuit, JOURNEE_SOMMEIL.find((i) => i.cle === bouton.dataset.cle));
+    });
+  });
+
+  rendreMoisSommeil();
+}
+
+/* Vue du mois, même grille que le calendrier de séances : une case par
+   jour, colorée selon le nombre de créneaux d'insomnie de la nuit qui
+   commence ce jour-là (repère de tendance, pas un chiffre affiché). */
+function rendreMoisSommeil() {
+  const toutes = lireSommeil();
+  const parNuit = {};
+  toutes.forEach((n) => { parNuit[n.cle] = n; });
+
+  const maintenant = new Date();
+  const annee = maintenant.getFullYear();
+  const mois = maintenant.getMonth();
+  const nbJours = new Date(annee, mois + 1, 0).getDate();
+  const decalage = (new Date(annee, mois, 1).getDay() + 6) % 7;
+
+  let html = '';
+  for (let i = 0; i < decalage; i++) html += '<span class="calendrier-case vide"></span>';
+  for (let jour = 1; jour <= nbJours; jour++) {
+    const cle = String(jour).padStart(2, '0') + '/' + String(mois + 1).padStart(2, '0') + '/' + annee;
+    const nuit = parNuit[cle];
+    const aujourdhui = jour === maintenant.getDate();
+    let classeNuit = '';
+    if (nuit && nuit.insomnies.length) {
+      classeNuit = nuit.insomnies.length >= 4 ? ' zone-fatigue' : ' zone-recup';
+    } else if (nuit) {
+      classeNuit = ' zone-prete';
+    }
+    html += '<span class="calendrier-case' + (aujourdhui ? ' aujourdhui' : '') + classeNuit + '">' +
+      '<span class="calendrier-num">' + jour + '</span></span>';
+  }
+  $('sommeil-mois').innerHTML =
+    '<div class="calendrier-entetes">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+      .map((j) => '<span>' + j + '</span>').join('') + '</div>' +
+    '<div class="calendrier-grille">' + html + '</div>';
+}
+
 function rendreHistorique(idOuvert) {
   const cible = $('liste-historique');
   const seances = lireTableau(CLES.historique)
@@ -2959,13 +3183,22 @@ function brancher() {
     if (reglages.pont) synchroniser().then(rendreEtatSync).catch(() => {});
   });
   $('bouton-menu-sport').addEventListener('click', () => { rendreAccueil(); afficher('accueil'); });
-  $('bouton-menu-suivi').addEventListener('click', () => {
-    rendreCalendrier();
-    rendreEtatMusculaire();
-    afficher('suivi');
-  });
+  $('bouton-menu-suivi').addEventListener('click', () => afficher('suivi'));
   $('bouton-sport-retour').addEventListener('click', () => afficher('menu'));
   $('bouton-suivi-retour').addEventListener('click', () => afficher('menu'));
+
+  $('bouton-suivi-calendrier').addEventListener('click', () => { rendreCalendrier(); afficher('calendrier'); });
+  $('bouton-calendrier-retour').addEventListener('click', () => afficher('suivi'));
+  $('bouton-suivi-etat').addEventListener('click', () => { rendreEtatMusculaire(); afficher('etat-musculaire'); });
+  $('bouton-etat-retour').addEventListener('click', () => afficher('suivi'));
+  $('bouton-suivi-sommeil').addEventListener('click', () => {
+    nuitAffichee = cleNuitCourante();
+    rendreSommeil();
+    afficher('sommeil');
+  });
+  $('bouton-sommeil-retour').addEventListener('click', () => afficher('suivi'));
+  $('bouton-sommeil-precedent').addEventListener('click', () => { decalerNuitAffichee(-1); rendreSommeil(); });
+  $('bouton-sommeil-suivant').addEventListener('click', () => { decalerNuitAffichee(1); rendreSommeil(); });
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
    'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));

@@ -328,10 +328,73 @@ def test_l_etat_musculaire_regroupe_les_graphies_du_meme_muscle(page):
     }""")
     page.reload()
     page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-etat")
     page.wait_for_selector("#mannequin svg")
     classe = page.evaluate(
         "document.querySelector('#mannequin circle[class^=\\'zone-\\']').getAttribute('class')")
     assert classe == "zone-fatigue", "l'orthographe accentuee n'a pas ete reconnue : " + classe
+
+
+def ouvrir_sommeil(page):
+    # La fixture laisse la page sur Sport (via "Sport" pour le temoin des
+    # cartes de jour) : revenir au menu par script plutot que de supposer
+    # quel bouton "retour" est visible selon l'ecran de depart.
+    page.evaluate("afficher('menu')")
+    page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-sommeil")
+    page.wait_for_selector(".sommeil-frise")
+
+
+def test_le_coeur_de_la_frise_de_sommeil_est_bleu_par_defaut(page):
+    """16 septembre 2026 : 23h30 a 8h est suppose du sommeil sans rien a
+    saisir pour une nuit ordinaire ; en dehors, rien ne s'affiche tant
+    qu'on n'y touche pas."""
+    ouvrir_sommeil(page)
+    creneaux = page.locator(".sommeil-creneau")
+    assert creneaux.count() == 26
+    assert "sommeil" in creneaux.nth(3).get_attribute("class")    # 23:30
+    assert "sommeil" in creneaux.nth(19).get_attribute("class")   # 07:30, dernier du coeur
+    assert "vide" in creneaux.nth(0).get_attribute("class")       # 22:00
+    assert "vide" in creneaux.nth(20).get_attribute("class")      # 08:00
+
+
+def test_toucher_un_creneau_de_sommeil_bascule_en_insomnie(page):
+    """Meme demande : un appui sur un creneau bleu le passe en rouge, un
+    second l'y ramene. Sur un creneau vide, l'appui en cree un rouge."""
+    ouvrir_sommeil(page)
+    coeur = page.locator(".sommeil-creneau").nth(3)
+    coeur.click()
+    assert "insomnie" in coeur.get_attribute("class")
+    coeur.click()
+    assert "sommeil" in coeur.get_attribute("class")
+
+    hors_coeur = page.locator(".sommeil-creneau").nth(0)
+    hors_coeur.click()
+    assert "insomnie" in hors_coeur.get_attribute("class")
+
+
+def test_le_compteur_cafe_du_sommeil_incremente(page):
+    """Cafe et pipi nocturne comptent (appui = +1) plutot que basculent,
+    contrairement a alcool/ecran tardif/repas tardif."""
+    ouvrir_sommeil(page)
+    cafe = page.locator("#sommeil-journee .journee-item", has_text="Café")
+    cafe.click()
+    assert "· 1" in cafe.text_content()
+    cafe.click()
+    assert "· 2" in cafe.text_content()
+
+
+def test_le_sport_du_jour_est_derive_de_l_historique(page):
+    """Pas de saisie en plus : une seance dont la fin tombe le jour de la
+    nuit affichee (hier, par defaut) genere un repere automatique."""
+    page.evaluate("""() => {
+      const hier = new Date(Date.now() - 86400000).toISOString();
+      const seance = { id: 'S1', jour: 'J1', titre: 'Test', type: 'muscu', fin: hier, envoye: true, exercices: [] };
+      localStorage.setItem('muscu.historique', JSON.stringify([seance]));
+    }""")
+    page.reload()
+    ouvrir_sommeil(page)
+    assert page.locator(".journee-auto").count() == 1
 
 
 def test_le_footing_n_a_plus_de_gainage_ni_de_farmer_walk_a_part(page):

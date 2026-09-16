@@ -171,6 +171,19 @@ body { display: flex; flex-direction: column; }
 .carte-menu-nom { font-size: 22px; font-weight: 700; }
 .carte-menu-detail { font-size: 13.5px; color: var(--texte-faible); }
 
+/* Menu Suivi : mêmes cartes, plus basses, sans détail (trois entrées,
+   16 septembre 2026). */
+.liste-menu-petite { padding: var(--marge); gap: 8px; }
+.carte-menu-petite {
+  min-height: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+.carte-menu-petite .carte-menu-icone { font-size: 28px; margin-bottom: 0; }
+.carte-menu-petite .carte-menu-nom { font-size: 17px; }
+
 /* ---------- Suivi ---------- */
 
 .suivi-titre { font-size: 20px; margin: 0 0 4px; }
@@ -204,6 +217,15 @@ body { display: flex; flex-direction: column; }
 .calendrier-case.aujourdhui { border-color: var(--accent); border-width: 2px; }
 .calendrier-num { font-size: 11px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
 .calendrier-icone { font-size: 16px; line-height: 1; }
+/* Réutilisées par la vue mensuelle du sommeil (rendreMoisSommeil) : mêmes
+   trois couleurs que l'état musculaire, sur le fond de la case plutôt que
+   le texte. */
+.calendrier-case.zone-fatigue { background: var(--danger); border-color: var(--danger); }
+.calendrier-case.zone-recup { background: var(--baisse); border-color: var(--baisse); }
+.calendrier-case.zone-prete { background: var(--hausse); border-color: var(--hausse); }
+.calendrier-case.zone-fatigue .calendrier-num,
+.calendrier-case.zone-recup .calendrier-num,
+.calendrier-case.zone-prete .calendrier-num { color: #fff; }
 
 /* ---------- État musculaire (gadget indicatif du menu Suivi) ----------
 
@@ -232,6 +254,91 @@ body { display: flex; flex-direction: column; }
 }
 .etat-pastille-nom { display: block; font-size: 13px; font-weight: 700; }
 .etat-pastille-detail { display: block; font-size: 11px; opacity: .9; margin-top: 1px; }
+
+/* ---------- Sommeil ----------
+
+   Seul écran de l'application à s'écarter du fond clair général (demande
+   de l'utilisateur le 16 septembre 2026, « fond dégradé jour/nuit ») :
+   dégradé de crépuscule en haut vers la nuit profonde en bas, assez sombre
+   sur toute sa hauteur pour qu'un seul jeu de couleurs de texte (blanc)
+   reste lisible partout, sans avoir à recalculer un contraste par zone. */
+.barre-sommeil {
+  background: #17213b;
+  border-bottom-color: #2a3a5c;
+}
+.barre-titre-sommeil span { color: #fff; }
+.icone-sommeil { color: #fff; }
+.icone-sommeil:active { background: rgba(255, 255, 255, .12); }
+.icone-sommeil[disabled] { opacity: .35; }
+.corps-sommeil {
+  background: linear-gradient(180deg, #4c6a94 0%, #2c3e6b 45%, #17213b 75%, #0f1729 100%);
+  color: #fff;
+}
+.sommeil-nuit-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.sommeil-nuit-titre { font-size: 15px; font-weight: 600; }
+
+.sommeil-frise {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.sommeil-creneau {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.sommeil-creneau.vide { background: rgba(255, 255, 255, .08); }
+.sommeil-creneau.sommeil { background: #6fa8dc; }
+.sommeil-creneau.insomnie { background: var(--danger); }
+.sommeil-legende { font-size: 12px; color: rgba(255, 255, 255, .7); margin: 0 0 22px; }
+
+.sommeil-sous-titre {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: rgba(255, 255, 255, .7);
+  margin: 0 0 8px;
+}
+
+.sommeil-raisons, .sommeil-journee {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.raison-chip, .journee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  border-radius: var(--rayon-plein);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.raison-chip.choisi { background: var(--danger); border-color: var(--danger); }
+.journee-item.choisi { background: var(--accent-clair); border-color: var(--accent-clair); }
+.journee-item.journee-auto { cursor: default; background: rgba(255, 255, 255, .15); }
+.journee-remise { margin-left: 2px; opacity: .8; }
+
+#sommeil-mois .calendrier-entetes { color: rgba(255, 255, 255, .7); }
+#sommeil-mois .calendrier-case { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); }
+#sommeil-mois .calendrier-num { color: rgba(255, 255, 255, .7); }
+#sommeil-mois .calendrier-case.aujourdhui { border-color: #fff; }
 
 /* ---------- Accueil ---------- */
 
