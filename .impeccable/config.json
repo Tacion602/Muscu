@@ -38,6 +38,15 @@
         ],
         "createdAt": "2026-09-16T06:27:50.670Z",
         "reason": "Agent: #mensurations-slider-avant/-apres n'ont pas de src statique (rempli par majPhotosComparees()) ; ils vivent dans #mensurations-slider, cache par defaut, et rendreComparerMensurations() pose les deux src et retire le hidden dans le meme appel synchrone -- l'etat sans src ne s'affiche jamais."
+      },
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "css/style.css"
+        ],
+        "createdAt": "2026-09-16T10:22:50.282Z",
+        "reason": "meme regle que l'ignore deja pose sur index.html : #jauge-remplie, 3px de hauteur, transition de largeur d'origine (premiere version du projet, avant cette session), cout de reflow negligeable sur un element isole aussi petit, pas le panneau large que la regle vise."
       }
     ]
   }
