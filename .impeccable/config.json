@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-16T05:20:59.955Z",
+        "reason": "jauge de progression (#jauge-remplie), 3px de hauteur, transition de largeur d'origine (premiere version du projet, avant cette session) : cout de reflow negligeable sur un element isole aussi petit, pas le panneau large que la regle vise."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-16T05:21:07.706Z",
+        "reason": "ligne-serie.courante, liseret de 3px marquant la serie en cours (premiere version du projet, avant cette session) : repere fonctionnel pour se retrouver d'un coup d'oeil pendant l'effort, pas un accent decoratif de carte."
+      }
+    ]
+  }
+}
