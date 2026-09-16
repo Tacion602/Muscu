@@ -689,18 +689,59 @@ function commencer(code) {
   indexExo = reprise ? positionDeReprise() : 0;
   enregistrerSeance();
   demanderVeille();
-  afficher('seance');
 
   if (jour.type === 'footing') {
+    afficher('seance');
     rendreFooting();
   } else if (jour.type === 'gainage') {
+    afficher('seance');
     rendreSeanceGainage();
   } else {
     // Ouvrir un jour de musculation démarre le chronomètre de séance : sans
     // ce geste dédié, il fallait y penser soi-même en plein échauffement.
     demarrerChronoSeance();
-    rendreExercice();
+    // Une séance neuve passe par l'écran d'échauffement (demande de
+    // l'utilisateur le 16 septembre 2026) ; une séance reprise retourne
+    // directement où la saisie s'était arrêtée, sans repasser par cet écran.
+    if (reprise) {
+      afficher('seance');
+      rendreExercice();
+    } else {
+      rendreDemarrage(jour);
+      afficher('demarrage');
+    }
   }
+}
+
+function rendreDemarrage(jour) {
+  $('demarrage-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
+  $('demarrage-nom').textContent = nomDuJour(jour.titre);
+  const liste = ECHAUFFEMENT_PAR_JOUR[jour.code] || [];
+  $('demarrage-echauffement').hidden = !liste.length;
+  $('demarrage-echauffement-liste').innerHTML =
+    liste.map((item) => '<li>' + echapper(item) + '</li>').join('');
+}
+
+/* Vague de couleur qui part du point d'appui et envahit l'écran (demande de
+   l'utilisateur le 16 septembre 2026), avant de révéler la fiche du premier
+   exercice déjà rendue dessous. Le filet `setTimeout` couvre le cas où
+   `transitionend` ne se déclenche pas (onglet en arrière-plan, ou coupé par
+   prefers-reduced-motion, dont la transition quasi instantanée peut passer
+   entre deux images). */
+function lancerAnimationDemarrage(x, y, suite) {
+  const vague = $('vague-demarrage');
+  vague.style.setProperty('--x', x + 'px');
+  vague.style.setProperty('--y', y + 'px');
+  let faite = false;
+  const terminer = () => {
+    if (faite) return;
+    faite = true;
+    vague.classList.remove('actif');
+    suite();
+  };
+  vague.addEventListener('transitionend', terminer, { once: true });
+  requestAnimationFrame(() => requestAnimationFrame(() => vague.classList.add('actif')));
+  setTimeout(terminer, 700);
 }
 
 function nouvelleSeance(jour) {
@@ -767,6 +808,41 @@ function ficheExercice() {
   const jour = jourDe(seance.jour);
   const courant = seance.exercices[indexExo];
   return jour.exercices.find((e) => e.nom === courant.nom) || {};
+}
+
+/* Classement des exercices actuels du programme pour l'estimation grossière
+   du temps de séance (demande de l'utilisateur le 16 septembre 2026) :
+   convention d'usage courante (poly-articulaire vs isolation), le classeur
+   ne portant pas cette information. À revoir si un classement surprend, et
+   à mettre à jour si le programme change. */
+const EXERCICES_POLYARTICULAIRES = new Set([
+  'Developpe incline machine', 'Dips buste penche',
+  'Tirage vertical prise large', 'Rowing unilateral machine ou haltere',
+  'PRESSE A CUISSE / HACK SQUAT', 'SOULEVE DE TERRE ROUMAIN',
+  'Traction prise neutre machine assistee', 'Developpe machine',
+  'Lat pull-in unilateral poulie a genoux',
+]);
+
+/* Temps de travail estimé d'une série, hors repos : 75 s pour un exercice
+   poly-articulaire, 60 ou 80 s pour un exercice d'isolation selon que sa
+   fourchette de répétitions atteint 15 ou non (chiffres donnés par
+   l'utilisateur le 16 septembre 2026 : 10 reps poly 75 s, 10 reps isolation
+   60 s, 15-20 reps isolation 80 s). Grossier par construction. */
+function dureeEstimeeSerie(exo) {
+  if (EXERCICES_POLYARTICULAIRES.has(exo.nom)) return 75;
+  return (exo.reps_max || 0) >= 15 ? 80 : 60;
+}
+
+/* Durée totale estimée de la séance de musculation du jour, exercices et
+   séries du programme (pas de la séance en cours, qui peut en avoir moins
+   si des séries ont été retirées) : repos compris, temps de travail estimé
+   par dureeEstimeeSerie(). */
+function dureeTotaleEstimeeS() {
+  const jour = jourDe(seance.jour);
+  return jour.exercices.reduce((somme, exo) => {
+    const parSerie = dureeEstimeeSerie(exo) + (exo.repos_s || 0);
+    return somme + parSerie * (exo.series || 0);
+  }, 0);
 }
 
 /* --------------------------------------------------------------- footing */
@@ -864,6 +940,7 @@ function rendreFooting() {
 
   $('seance-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
   $('seance-progression').textContent = '';
+  $('ligne-progression').hidden = true;
 
   const type = TYPES_COURSE[indexExo];
   $('footing-nom').textContent = type.complet;
@@ -976,6 +1053,7 @@ function rendreSeanceGainage() {
   $('bouton-suivant').hidden = true;
   $('seance-jour').textContent = 'Gainage';
   $('seance-progression').textContent = '';
+  $('ligne-progression').hidden = true;
   rendreCategoriesGainage();
 }
 
@@ -1430,6 +1508,24 @@ function majChronoSeance() {
   demarrer.classList.toggle('tourne', !!chrono.demarre);
   $('chrono-seance-temps').textContent = ecoule ? texteDuree(ecoule / 1000) : '';
   demarrer.querySelector('.chrono-seance-icone').innerHTML = chrono.demarre ? '&#10073;&#10073;' : '&#9654;';
+
+  majLigneProgression(ecoule);
+}
+
+/* Estimation grossière du temps restant, à côté de la jauge : temps total
+   estimé (dureeTotaleEstimeeS, fixe pour la séance) moins le temps
+   réellement écoulé (le même chrono que #chrono-seance-demarrer), pas une
+   somme des séries déjà faites — ça la fait défiler seule à chaque
+   battement de majChronoSeance(), sans recalcul dédié. */
+function majLigneProgression(ecouleMs) {
+  const ligne = $('ligne-progression');
+  if (!seance || seance.type !== 'muscu') { ligne.hidden = true; return; }
+  ligne.hidden = false;
+  const restant = dureeTotaleEstimeeS() - (ecouleMs || 0) / 1000;
+  $('jauge-restant').textContent = restant > 0
+    ? '~' + texteDuree(restant) + ' restant'
+    : 'Estimation dépassée';
+  $('jauge-chrono').textContent = (ecouleMs || 0) ? texteDuree(ecouleMs / 1000) : '0:00';
 }
 
 /* Démarre le chronomètre s'il ne tourne pas déjà, sans jamais le mettre en
@@ -2566,6 +2662,21 @@ function brancher() {
     seance = null;
     rendreAccueil();
     afficher('accueil');
+  });
+
+  // Même geste que « quitter » depuis la fiche d'exercice : la séance déjà
+  // créée (et son chrono déjà démarré) reste ouverte, à reprendre plus tard.
+  $('bouton-demarrage-retour').addEventListener('click', () => {
+    relacherVeille();
+    seance = null;
+    rendreAccueil();
+    afficher('accueil');
+  });
+  $('bouton-demarrage-commencer').addEventListener('click', (evenement) => {
+    lancerAnimationDemarrage(evenement.clientX, evenement.clientY, () => {
+      afficher('seance');
+      rendreExercice();
+    });
   });
 
   $('bouton-terminer').addEventListener('click', terminer);

@@ -72,7 +72,17 @@ def page(navigateur, adresse):
 
 
 def ouvrir_jour(page, code):
+    # Une seance de musculation neuve passe par l'ecran d'echauffement
+    # (16 septembre 2026) avant la fiche du premier exercice ; une reprise,
+    # ou un jour de footing, n'a pas cet ecran intermediaire.
     page.locator(".carte-jour").nth(int(code[1]) - 1).click()
+    bouton = page.locator("#bouton-demarrage-commencer")
+    if bouton.is_visible():
+        bouton.click()
+        # La vague de couleur retarde l'affichage de la fiche d'un exercice
+        # (transition CSS de 0.6 s avant rendreExercice()) : attendre l'ecran
+        # plutot que de lire l'etat trop tot.
+        page.wait_for_selector("#ecran-seance.actif")
 
 
 def saisir_serie(page, rang, charge, reps, confirmer=True):

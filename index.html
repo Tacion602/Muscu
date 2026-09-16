@@ -36,6 +36,28 @@
   </div>
 </section>
 
+<!-- Écran d'ouverture d'une séance de musculation neuve : échauffement et
+     conseils avant d'entrer dans le premier exercice (demande de
+     l'utilisateur le 16 septembre 2026). Le chrono de séance démarre déjà en
+     arrière-plan (demarrerChronoSeance, appelée par commencer()) mais n'est
+     pas affiché ici. Sauté à la reprise d'une séance déjà commencée : voir
+     commencer() dans js/app.js. -->
+<section id="ecran-demarrage" class="ecran">
+  <header class="barre">
+    <button id="bouton-demarrage-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span id="demarrage-jour"></span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps">
+    <h2 id="demarrage-nom" class="demarrage-nom"></h2>
+    <div id="demarrage-echauffement" class="echauffement-jour">
+      <p class="echauffement-titre">Échauffement, environ 5 min</p>
+      <ol id="demarrage-echauffement-liste"></ol>
+    </div>
+    <button id="bouton-demarrage-commencer" class="principal grand">Commencer</button>
+  </main>
+</section>
+
 <!-- Séance : un exercice, plein écran -->
 <section id="ecran-seance" class="ecran">
   <header class="barre">
@@ -48,6 +70,15 @@
   </header>
 
   <div id="jauge" class="jauge"><div id="jauge-remplie"></div></div>
+  <!-- Estimation grossière du temps restant de la séance, à côté d'un petit
+       chrono de séance (demande de l'utilisateur le 16 septembre 2026) :
+       voir dureeTotaleEstimeeS() et majLigneProgression() dans js/app.js.
+       Masquée hors musculation (footing, gainage), où l'estimation n'a pas
+       de sens. -->
+  <div id="ligne-progression" class="ligne-progression" hidden>
+    <span id="jauge-restant"></span>
+    <span id="jauge-chrono"></span>
+  </div>
 
   <main class="corps">
     <!-- Minuteur de la séance de gainage et du farmer walk des footings : il
@@ -164,6 +195,10 @@
 -->
 <input id="amorce-clavier" class="amorce-clavier" type="text"
        inputmode="decimal" tabindex="-1" aria-hidden="true">
+
+<!-- Vague de couleur au démarrage d'une séance, demande de l'utilisateur le
+     16 septembre 2026 : voir lancerAnimationDemarrage() dans js/app.js. -->
+<div id="vague-demarrage" class="vague-demarrage" aria-hidden="true"></div>
 
 <!-- Fin de séance -->
 <section id="ecran-fin" class="ecran">
