@@ -19,6 +19,10 @@
   --hausse: #1f7a34;
   --baisse: #a35a12;
   --danger: #b3271e;
+  /* Troisième couleur des repères de mensurations (16 septembre 2026,
+     bras — torse et jambes réutilisent --accent et --baisse) : contraste
+     7,1:1 sur --fond-carte, calculé comme le reste de la palette. */
+  --mesure-bras: #6d28d9;
   /* Fond des champs d'une série, selon son tonnage face à la même série la
      semaine passée (voir appliquerCouleurTonnage). Le vert reprend --hausse,
      le rouge --baisse, en lavis pâle : le texte assombri au-dessus reste le
@@ -417,8 +421,21 @@ body { display: flex; flex-direction: column; }
 
 .mensurations-corps { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
 .mensurations-silhouette { max-width: 130px; margin: 0; flex: none; }
-.mensurations-repere { fill: var(--accent); }
-.mensurations-repere-num { fill: #fff; font-size: 11px; font-weight: 700; text-anchor: middle; }
+
+/* Repères en lignes pointillées par paire plutôt qu'en cercles numérotés
+   (16 septembre 2026, sur le modèle d'une référence envoyée par
+   l'utilisateur) : chaque mesure est une circonférence, la ligne entre deux
+   points en donne une lecture plus proche du geste du mètre ruban qu'un
+   simple numéro. Trois couleurs par région du corps plutôt qu'une par
+   mesure — la position sur le mannequin suffit à distinguer poitrine de
+   taille, toutes deux couleur torse — en réutilisant deux teintes déjà
+   posées ailleurs dans l'application (--accent, --baisse) et une seule
+   couleur neuve pour les bras (calculée pour un contraste d'au moins 4,5:1
+   sur fond clair, comme le reste de la palette). */
+.mensurations-ligne { stroke-width: 2; stroke-dasharray: 3 3; }
+.mensurations-mesure-torse .mensurations-ligne, .mensurations-mesure-torse .mensurations-point { stroke: var(--accent); fill: var(--accent); }
+.mensurations-mesure-bras .mensurations-ligne, .mensurations-mesure-bras .mensurations-point { stroke: var(--mesure-bras); fill: var(--mesure-bras); }
+.mensurations-mesure-jambe .mensurations-ligne, .mensurations-mesure-jambe .mensurations-point { stroke: var(--baisse); fill: var(--baisse); }
 
 .mensurations-champs { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .mensurations-champ {
@@ -430,15 +447,21 @@ body { display: flex; flex-direction: column; }
   padding: 6px 10px;
   background: var(--fond-carte);
 }
-.mensurations-champ-num {
+.mensurations-champ-puce { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.mensurations-champ-puce-torse { background: var(--accent); }
+.mensurations-champ-puce-bras { background: var(--mesure-bras); }
+.mensurations-champ-puce-jambe { background: var(--baisse); }
+/* Le poids n'a pas de repère sur le mannequin (voir MENSURATION_CHAMPS dans
+   js/app.js) : une puce à part, assez grande pour porter le symbole ⚖,
+   plutôt que la pastille de couleur nue des six mesures ci-dessus. */
+.mensurations-champ-symbole {
   flex: none;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-clair);
   color: #fff;
   font-size: 11px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,7 +480,6 @@ body { display: flex; flex-direction: column; }
   font-variant-numeric: tabular-nums;
 }
 .mensurations-champ-unite { flex: none; font-size: 12px; color: var(--texte-faible); }
-.mensurations-champ.mensurations-poids .mensurations-champ-num { background: var(--accent-clair); }
 
 .mensurations-photo {
   width: 100%;
@@ -543,6 +565,25 @@ body { display: flex; flex-direction: column; }
   box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
   transform: translate(-50%, -50%);
 }
+
+/* Écarts chiffrés en bas du curseur (16 septembre 2026, référence). Scrim
+   sombre fixe plutôt qu'un fond clair de l'application : la photo dessous
+   peut être de n'importe quelle couleur, seul un fond assombri garantit le
+   contraste du texte blanc quel que soit le cliché. */
+.mensurations-slider-stats {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 16px;
+  padding: 10px 14px;
+  background: linear-gradient(to top, rgba(0, 0, 0, .65), rgba(0, 0, 0, 0));
+}
+.mensurations-slider-stats[hidden] { display: none; }
+.mensurations-slider-stat { display: flex; flex-direction: column; gap: 1px; }
+.mensurations-slider-stat span { font-size: 11px; color: rgba(255, 255, 255, .8); }
+.mensurations-slider-stat b { font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
 
 /* ---------- Accueil ---------- */
 

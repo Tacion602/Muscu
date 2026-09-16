@@ -3108,18 +3108,22 @@ function rendreMoisSommeil() {
 
 /* Quatrième contenu du menu Suivi, demandé le 16 septembre 2026 à partir de
    captures d'applications tierces envoyées comme référence (silhouette à
-   points de mesure, comparaison photo avant/après par curseur) : jamais
-   recopiées telles quelles, seulement l'inspiration d'interaction. Les six
-   points numérotés correspondent aux repères posés sur le mannequin dans
-   index.html (mensurations-repere). Le poids n'a pas de repère sur le
-   corps, à part dans la liste. */
+   repères de mesure, comparaison photo avant/après par curseur) : jamais
+   recopiées telles quelles, seulement l'inspiration d'interaction. Repris
+   une seconde fois le même jour, sur des captures renvoyées en clair après
+   une perte à la compaction du contexte : repères en lignes pointillées par
+   paire plutôt qu'en cercles numérotés (mensurations-mesure-* dans
+   index.html), et écarts chiffrés sous le curseur de comparaison (voir
+   majPhotosComparees). `categorie` associe chaque mesure à l'une des trois
+   couleurs posées sur le mannequin (torse/bras/jambe) ; le poids n'a pas de
+   repère sur le corps, à part dans la liste. */
 const MENSURATION_CHAMPS = [
-  { cle: 'poitrine', num: 1, nom: 'Poitrine', unite: 'cm' },
-  { cle: 'bras', num: 2, nom: 'Bras', unite: 'cm' },
-  { cle: 'taille', num: 3, nom: 'Taille', unite: 'cm' },
-  { cle: 'hanches', num: 4, nom: 'Hanches', unite: 'cm' },
-  { cle: 'cuisse', num: 5, nom: 'Cuisse', unite: 'cm' },
-  { cle: 'mollet', num: 6, nom: 'Mollet', unite: 'cm' },
+  { cle: 'poitrine', nom: 'Poitrine', unite: 'cm', categorie: 'torse' },
+  { cle: 'bras', nom: 'Bras', unite: 'cm', categorie: 'bras' },
+  { cle: 'taille', nom: 'Taille', unite: 'cm', categorie: 'torse' },
+  { cle: 'hanches', nom: 'Hanches', unite: 'cm', categorie: 'jambe' },
+  { cle: 'cuisse', nom: 'Cuisse', unite: 'cm', categorie: 'jambe' },
+  { cle: 'mollet', nom: 'Mollet', unite: 'cm', categorie: 'jambe' },
 ];
 
 function cleMensurationCourante() {
@@ -3188,14 +3192,14 @@ function rendreMensurations() {
 
   $('mensurations-champs').innerHTML =
     '<div class="mensurations-champ mensurations-poids">' +
-      '<span class="mensurations-champ-num">&#9878;</span>' +
+      '<span class="mensurations-champ-symbole">&#9878;</span>' +
       '<span class="mensurations-champ-nom">Poids</span>' +
       '<input type="text" inputmode="decimal" data-cle="poids" value="' + (m.poids != null ? m.poids : '') + '">' +
       '<span class="mensurations-champ-unite">kg</span>' +
     '</div>' +
     MENSURATION_CHAMPS.map((c) => (
       '<div class="mensurations-champ">' +
-        '<span class="mensurations-champ-num">' + c.num + '</span>' +
+        '<span class="mensurations-champ-puce mensurations-champ-puce-' + c.categorie + '"></span>' +
         '<span class="mensurations-champ-nom">' + echapper(c.nom) + '</span>' +
         '<input type="text" inputmode="decimal" data-cle="' + c.cle + '" value="' + (m[c.cle] != null ? m[c.cle] : '') + '">' +
         '<span class="mensurations-champ-unite">' + c.unite + '</span>' +
@@ -3242,11 +3246,28 @@ function rendreComparerMensurations() {
   majPhotosComparees();
 }
 
+/* Écarts chiffrés sous le curseur (16 septembre 2026, référence renvoyée
+   après une perte à la compaction) : poids et taille, les deux mesures
+   montrées dans la capture d'origine. Seulement celles où les deux dates
+   ont une valeur, plutôt qu'un "→" à côté d'un champ resté vide. */
 function majPhotosComparees() {
   const avant = mensurationPour($('mensurations-avant').value);
   const apres = mensurationPour($('mensurations-apres').value);
   $('mensurations-slider-avant').src = avant.photo || '';
   $('mensurations-slider-apres').src = apres.photo || '';
+
+  const ecart = (valeurAvant, valeurApres, unite) => (valeurAvant != null && valeurApres != null)
+    ? valeurAvant + ' → ' + valeurApres + ' ' + unite
+    : null;
+  const stats = [
+    ['Poids corporel', ecart(avant.poids, apres.poids, 'kg')],
+    ['Taille', ecart(avant.taille, apres.taille, 'cm')],
+  ].filter(([, texte]) => texte);
+
+  $('mensurations-slider-stats').hidden = stats.length === 0;
+  $('mensurations-slider-stats').innerHTML = stats.map(([nom, texte]) => (
+    '<div class="mensurations-slider-stat"><span>' + echapper(nom) + '</span><b>' + echapper(texte) + '</b></div>'
+  )).join('');
 }
 
 /* Curseur de comparaison : un clip-path sur le calque "après", dont on

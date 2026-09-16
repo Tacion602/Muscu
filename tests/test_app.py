@@ -542,6 +542,46 @@ def test_le_curseur_de_comparaison_apparait_avec_deux_photos(page):
     assert page.locator("#mensurations-apres").input_value() == "15/09/2026"
 
 
+def test_les_ecarts_de_poids_et_taille_s_affichent_sous_le_curseur(page):
+    """16 septembre 2026 : l'image 4 des references montre le poids et la
+    taille avant/apres directement sous la photo comparee. Une mesure sans
+    valeur aux deux dates ne s'affiche pas (pas de "None -> None")."""
+    minuscule = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    page.evaluate(
+        """(photo) => {
+          const m = (cle, poids, taille) => ({ cle, poids, taille, photo, poitrine: null, bras: null,
+            hanches: null, cuisse: null, mollet: null, envoyee: true });
+          localStorage.setItem('muscu.mensurations', JSON.stringify([
+            m('01/09/2026', 88, 91), m('15/09/2026', 80, 83),
+          ]));
+        }""",
+        minuscule,
+    )
+    ouvrir_mensurations(page)
+    stats = page.locator("#mensurations-slider-stats")
+    assert stats.is_visible()
+    texte = stats.text_content()
+    assert "88" in texte and "80" in texte and "kg" in texte
+    assert "91" in texte and "83" in texte and "cm" in texte
+
+
+def test_les_mesures_du_mannequin_sont_groupees_par_couleur(page):
+    """16 septembre 2026, references renvoyees apres une perte a la
+    compaction : repere en ligne pointillee par paire plutot qu'en cercle
+    numerote, une couleur par region du corps (torse/bras/jambe)."""
+    ouvrir_mensurations(page)
+    groupes = page.locator(
+        ".mensurations-mesure-torse, .mensurations-mesure-bras, .mensurations-mesure-jambe")
+    assert groupes.count() == 6, "poitrine, taille, bras, hanches, cuisse, mollet"
+    couleur_torse = page.evaluate(
+        "getComputedStyle(document.querySelector('.mensurations-mesure-torse line')).stroke")
+    couleur_bras = page.evaluate(
+        "getComputedStyle(document.querySelector('.mensurations-mesure-bras line')).stroke")
+    couleur_jambe = page.evaluate(
+        "getComputedStyle(document.querySelector('.mensurations-mesure-jambe line')).stroke")
+    assert len({couleur_torse, couleur_bras, couleur_jambe}) == 3, "trois couleurs distinctes"
+
+
 # ------------------------------------------------------- evolution course
 
 

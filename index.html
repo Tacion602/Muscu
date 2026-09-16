@@ -181,18 +181,52 @@
         <rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>
         <rect class="silhouette" x="44" y="138" width="24" height="98" rx="10"></rect>
         <rect class="silhouette" x="72" y="138" width="24" height="98" rx="10"></rect>
-        <circle class="mensurations-repere" cx="70" cy="70" r="9"></circle>
-        <text class="mensurations-repere-num" x="70" y="74">1</text>
-        <circle class="mensurations-repere" cx="28" cy="80" r="9"></circle>
-        <text class="mensurations-repere-num" x="28" y="84">2</text>
-        <circle class="mensurations-repere" cx="70" cy="118" r="9"></circle>
-        <text class="mensurations-repere-num" x="70" y="122">3</text>
-        <circle class="mensurations-repere" cx="70" cy="140" r="9"></circle>
-        <text class="mensurations-repere-num" x="70" y="144">4</text>
-        <circle class="mensurations-repere" cx="56" cy="175" r="9"></circle>
-        <text class="mensurations-repere-num" x="56" y="179">5</text>
-        <circle class="mensurations-repere" cx="56" cy="222" r="9"></circle>
-        <text class="mensurations-repere-num" x="56" y="226">6</text>
+
+        <!-- Poitrine (torse) -->
+        <g class="mensurations-mesure-torse">
+          <line class="mensurations-ligne" x1="34" y1="70" x2="106" y2="70"></line>
+          <circle class="mensurations-point" cx="34" cy="70" r="5"></circle>
+          <circle class="mensurations-point" cx="106" cy="70" r="5"></circle>
+        </g>
+        <!-- Taille (torse) -->
+        <g class="mensurations-mesure-torse">
+          <line class="mensurations-ligne" x1="40" y1="118" x2="100" y2="118"></line>
+          <circle class="mensurations-point" cx="40" cy="118" r="5"></circle>
+          <circle class="mensurations-point" cx="100" cy="118" r="5"></circle>
+        </g>
+        <!-- Bras (une paire par bras, meme mesure) -->
+        <g class="mensurations-mesure-bras">
+          <line class="mensurations-ligne" x1="14" y1="80" x2="34" y2="80"></line>
+          <circle class="mensurations-point" cx="14" cy="80" r="5"></circle>
+          <circle class="mensurations-point" cx="34" cy="80" r="5"></circle>
+          <line class="mensurations-ligne" x1="106" y1="80" x2="126" y2="80"></line>
+          <circle class="mensurations-point" cx="106" cy="80" r="5"></circle>
+          <circle class="mensurations-point" cx="126" cy="80" r="5"></circle>
+        </g>
+        <!-- Hanches (jambe) -->
+        <g class="mensurations-mesure-jambe">
+          <line class="mensurations-ligne" x1="36" y1="140" x2="104" y2="140"></line>
+          <circle class="mensurations-point" cx="36" cy="140" r="5"></circle>
+          <circle class="mensurations-point" cx="104" cy="140" r="5"></circle>
+        </g>
+        <!-- Cuisse (une paire par cuisse, meme mesure) -->
+        <g class="mensurations-mesure-jambe">
+          <line class="mensurations-ligne" x1="40" y1="175" x2="70" y2="175"></line>
+          <circle class="mensurations-point" cx="40" cy="175" r="5"></circle>
+          <circle class="mensurations-point" cx="70" cy="175" r="5"></circle>
+          <line class="mensurations-ligne" x1="70" y1="175" x2="100" y2="175"></line>
+          <circle class="mensurations-point" cx="70" cy="175" r="5"></circle>
+          <circle class="mensurations-point" cx="100" cy="175" r="5"></circle>
+        </g>
+        <!-- Mollet (une paire par mollet, meme mesure) -->
+        <g class="mensurations-mesure-jambe">
+          <line class="mensurations-ligne" x1="40" y1="222" x2="70" y2="222"></line>
+          <circle class="mensurations-point" cx="40" cy="222" r="5"></circle>
+          <circle class="mensurations-point" cx="70" cy="222" r="5"></circle>
+          <line class="mensurations-ligne" x1="70" y1="222" x2="100" y2="222"></line>
+          <circle class="mensurations-point" cx="70" cy="222" r="5"></circle>
+          <circle class="mensurations-point" cx="100" cy="222" r="5"></circle>
+        </g>
       </svg>
 
       <div id="mensurations-champs" class="mensurations-champs"></div>
@@ -214,6 +248,7 @@
         <img id="mensurations-slider-apres" alt="Après">
       </div>
       <div id="mensurations-slider-poignee" class="mensurations-slider-poignee"></div>
+      <div id="mensurations-slider-stats" class="mensurations-slider-stats" hidden></div>
     </div>
     <p id="mensurations-comparer-vide" class="suivi-legende">Il faut une photo à deux dates différentes pour comparer.</p>
   </main>
