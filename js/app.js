@@ -2710,7 +2710,10 @@ function brancher() {
   });
 
   $('bouton-terminer').addEventListener('click', terminer);
-  $('chrono-seance-demarrer').addEventListener('click', basculerChronoSeance);
+  // Le bouton vert d'origine est masqué (voir index.html) : c'est cette
+  // ligne, qui affiche déjà le même chiffre, qui reprend le geste
+  // pause/reprise.
+  $('ligne-progression').addEventListener('click', basculerChronoSeance);
   $('bouton-consigne-modifier').addEventListener('click', modifierConsigne);
   $('bouton-consigne-annuler').addEventListener('click', annulerEditionConsigne);
   $('exo-consigne-champ').addEventListener('input', saisirConsigne);

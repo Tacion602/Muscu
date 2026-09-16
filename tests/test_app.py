@@ -265,10 +265,13 @@ def test_la_minuterie_est_visible_apres_une_validation(page):
     page.evaluate("document.querySelectorAll('.ligne-serie')[2].scrollIntoView({block: 'end'})")
     # La fiche defile dans .corps, sous la barre du haut : la visibilite se
     # mesure par rapport a ce conteneur, pas a la fenetre.
+    # Tolerance de 1px : les bordures des lignes ajoutees au-dessus de .corps
+    # (ligne-progression) introduisent un arrondi sous-pixel (ex. 98.5 vs 99)
+    # qui n'a rien d'une vraie question de visibilite.
     visible = (
         "(() => { const m = document.getElementById('minuterie').getBoundingClientRect();"
         " const c = document.getElementById('minuterie').closest('.corps').getBoundingClientRect();"
-        " return m.top >= c.top && m.bottom <= c.bottom; })()")
+        " return m.top >= c.top - 1 && m.bottom <= c.bottom + 1; })()")
     assert not page.evaluate(visible), "precondition : minuterie deja visible avant validation"
     saisir_serie(page, 0, 40, 8)
     page.wait_for_timeout(800)

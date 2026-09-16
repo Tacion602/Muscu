@@ -90,9 +90,16 @@
     </div>
 
     <div id="bloc-muscu">
+      <!-- Le bouton vert d'origine reste dans le DOM (majChronoSeance() le
+           tient encore à jour) mais masqué depuis le 16 septembre 2026,
+           demande de l'utilisateur : son chiffre fait doublon avec
+           #jauge-chrono, qui l'affiche déjà juste au-dessus. Le geste
+           pause/reprise (basculerChronoSeance) est repris par
+           #ligne-progression, voir plus haut et brancher() dans js/app.js. -->
       <div class="ligne-titre">
         <h2 id="exo-nom"></h2>
-        <button id="chrono-seance-demarrer" class="chrono-seance vert" type="button" aria-label="Démarrer le chronomètre de séance">
+        <button id="chrono-seance-demarrer" class="chrono-seance vert" type="button"
+                aria-label="Démarrer le chronomètre de séance" hidden>
           <span class="chrono-seance-icone">&#9654;</span>
           <span id="chrono-seance-temps" class="chrono-seance-temps"></span>
         </button>
