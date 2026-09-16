@@ -108,6 +108,22 @@ def test_la_derniere_serie_fait_passer_a_l_exercice_suivant(page):
     assert page.evaluate("indexExo") == 1
 
 
+def test_la_comparaison_de_tonnage_s_affiche_puis_disparait(page):
+    """Demande de l'utilisateur le 16 septembre 2026 : l'ecart de tonnage
+    avec la meme serie la semaine passee, visible 2 s apres validation. La
+    reference de la premiere serie de J1 est 40 x 8 (voir programme.json) ;
+    45 x 8 est une hausse (+12 %, au-dessus du seuil de 6 %)."""
+    ouvrir_jour(page, "J1")
+    bandeau = page.locator("#comparaison-tonnage")
+    assert not bandeau.evaluate("el => el.classList.contains('visible')")
+    saisir_serie(page, 0, 45, 8)
+    assert bandeau.evaluate("el => el.classList.contains('visible')")
+    assert bandeau.evaluate("el => el.classList.contains('hausse')")
+    assert "+13" in bandeau.text_content() or "+12" in bandeau.text_content()
+    page.wait_for_timeout(2300)
+    assert not bandeau.evaluate("el => el.classList.contains('visible')")
+
+
 def test_un_appui_sur_la_fleche_n_avance_que_d_un_exercice(page):
     """Defaut du 10 septembre 2026. La derniere serie saisie mais non
     confirmee etait validee par la sortie du champ, qui faisait deja changer

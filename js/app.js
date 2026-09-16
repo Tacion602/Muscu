@@ -724,24 +724,21 @@ function rendreDemarrage(jour) {
 
 /* Vague de couleur qui part du point d'appui et envahit l'écran (demande de
    l'utilisateur le 16 septembre 2026), avant de révéler la fiche du premier
-   exercice déjà rendue dessous. Le filet `setTimeout` couvre le cas où
-   `transitionend` ne se déclenche pas (onglet en arrière-plan, ou coupé par
-   prefers-reduced-motion, dont la transition quasi instantanée peut passer
-   entre deux images). */
+   exercice déjà rendue dessous. Calée sur un délai fixe (durée de la
+   transition CSS, voir .vague-demarrage) plutôt que sur `transitionend` :
+   ce dernier se redéclenche quand la classe est retirée (la vague reflue
+   aussi en transition), et un `{ once: true }` posé avant le premier
+   déclenchement peut alors manquer la fin de la croissance et laisser
+   l'écran couvert. Un délai fixe n'a pas cette ambiguïté. */
 function lancerAnimationDemarrage(x, y, suite) {
   const vague = $('vague-demarrage');
   vague.style.setProperty('--x', x + 'px');
   vague.style.setProperty('--y', y + 'px');
-  let faite = false;
-  const terminer = () => {
-    if (faite) return;
-    faite = true;
-    vague.classList.remove('actif');
+  vague.classList.add('actif');
+  setTimeout(() => {
     suite();
-  };
-  vague.addEventListener('transitionend', terminer, { once: true });
-  requestAnimationFrame(() => requestAnimationFrame(() => vague.classList.add('actif')));
-  setTimeout(terminer, 700);
+    vague.classList.remove('actif');
+  }, 600);
 }
 
 function nouvelleSeance(jour) {
@@ -1686,6 +1683,39 @@ function appliquerCouleurTonnage(ligne, serie, reference) {
   else if (ecart >= 6) ligne.classList.add('tonnage-hausse');
 }
 
+/* Bandeau temporaire (2 s) donnant en chiffres l'écart de tonnage avec la
+   même série la semaine passée (demande de l'utilisateur le 16 septembre
+   2026) : la couleur des champs (appliquerCouleurTonnage) reste en place
+   après, mais rien n'y disait jusque-là l'écart réel. Mêmes seuils
+   d'affichage (±5 %) que la couleur, pour rester cohérent avec elle. Un
+   élément fixe plutôt que posé sur la ligne : la dernière série d'un
+   exercice change d'écran avant que les 2 s ne soient passées. */
+let toastTonnage = null;
+function afficherComparaisonTonnage(serie, reference) {
+  if (serie.echauffement || !reference) return;
+  const tonnageAvant = (reference.charge || 0) * (reference.reps || 0);
+  if (!tonnageAvant) return;
+  const tonnageMaintenant = (serie.charge || 0) * (serie.reps || 0);
+  const ecart = Math.round(((tonnageMaintenant - tonnageAvant) / tonnageAvant) * 100);
+
+  const bandeau = $('comparaison-tonnage');
+  bandeau.textContent = (ecart > 0 ? '+' : '') + ecart + ' % vs la semaine dernière';
+  bandeau.classList.remove('hausse', 'baisse');
+  if (ecart <= -5) bandeau.classList.add('baisse');
+  else if (ecart >= 6) bandeau.classList.add('hausse');
+
+  bandeau.hidden = false;
+  // Repart de zéro à chaque appel, même si le bandeau est déjà visible
+  // (deux séries validées coup sur coup) : reflow forcé pour relancer la
+  // transition d'apparition plutôt que de rester sur l'état "visible".
+  bandeau.classList.remove('visible');
+  void bandeau.offsetWidth;
+  bandeau.classList.add('visible');
+
+  if (toastTonnage) clearTimeout(toastTonnage);
+  toastTonnage = setTimeout(() => { bandeau.classList.remove('visible'); }, 2000);
+}
+
 function proportionFaite() {
   let total = 0;
   let faites = 0;
@@ -1867,21 +1897,21 @@ function majTonnage(avantConnu) {
    passée du RIR aux répétitions le 6 septembre 2026, le RIR n'étant
    qu'indicatif. Décisions de l'utilisateur. */
 function validerSerie(exercice, serie, index) {
+  const avant = derniereFois(exercice.nom);
+  const rang = exercice.series.slice(0, index).filter((s) => !s.echauffement).length;
+  const reference = avant && !serie.echauffement ? avant.series[rang] : null;
+
   // Une série validée sans chiffres n'apprend rien : on reprend ceux de la
   // dernière fois, affichés en filigrane, plutôt que d'enregistrer un vide.
-  if (serie.charge == null || serie.reps == null) {
-    const avant = derniereFois(exercice.nom);
-    const rang = exercice.series.slice(0, index).filter((s) => !s.echauffement).length;
-    const reference = avant && !serie.echauffement ? avant.series[rang] : null;
-    if (reference) {
-      if (serie.charge == null) serie.charge = reference.charge;
-      if (serie.reps == null) serie.reps = reference.reps;
-    }
+  if (reference && (serie.charge == null || serie.reps == null)) {
+    if (serie.charge == null) serie.charge = reference.charge;
+    if (serie.reps == null) serie.reps = reference.reps;
   }
 
   serie.faite = true;
   serie.heure = new Date().toISOString();
   enregistrerSeance();
+  afficherComparaisonTonnage(serie, reference);
 
   // Amorcer le clavier avant tout changement de DOM (voir amorcerClavier) :
   // le geste (Entrée ou la sortie du champ) est encore "chaud" à cet instant
