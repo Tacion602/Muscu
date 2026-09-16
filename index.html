@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#f6f5f2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Séance</title>
@@ -14,11 +14,34 @@
 </head>
 <body>
 
-<!-- Accueil : choix du jour -->
-<section id="ecran-accueil" class="ecran actif">
+<!-- Menu principal : Sport ou Suivi (demande de l'utilisateur le
+     16 septembre 2026). Réglages y vit désormais, accessible d'un geste
+     quel que soit le sous-menu ensuite ouvert. -->
+<section id="ecran-menu" class="ecran actif">
   <header class="entete-accueil">
-    <h1>Séance</h1>
+    <h1>Muscu</h1>
     <button id="bouton-reglages" class="icone" aria-label="Réglages">&#9881;</button>
+  </header>
+  <ul class="liste-menu">
+    <li><button id="bouton-menu-sport" class="carte-menu">
+      <span class="carte-menu-icone" aria-hidden="true">&#127947;&#65039;</span>
+      <span class="carte-menu-nom">Sport</span>
+      <span class="carte-menu-detail">Musculation et course, séance par séance</span>
+    </button></li>
+    <li><button id="bouton-menu-suivi" class="carte-menu">
+      <span class="carte-menu-icone" aria-hidden="true">&#128197;</span>
+      <span class="carte-menu-nom">Suivi</span>
+      <span class="carte-menu-detail">Calendrier d'activité</span>
+    </button></li>
+  </ul>
+</section>
+
+<!-- Sport : choix du jour (ancien accueil, devenu sous-menu) -->
+<section id="ecran-accueil" class="ecran">
+  <header class="barre">
+    <button id="bouton-sport-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Sport</span></div>
+    <span class="icone" aria-hidden="true"></span>
   </header>
 
   <!-- Séances en cours : une ligne par jour commencé, chacune avec son propre
@@ -34,6 +57,21 @@
     <p id="etat-sync" class="etat-sync"></p>
     <button id="bouton-historique" class="discret">Séances enregistrées</button>
   </div>
+</section>
+
+<!-- Suivi : calendrier d'activité, premier contenu de ce sous-menu (les
+     autres sous-écrans de la feuille de route viendront s'y ajouter). -->
+<section id="ecran-suivi" class="ecran">
+  <header class="barre">
+    <button id="bouton-suivi-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Suivi</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps">
+    <h2 class="suivi-titre">Calendrier</h2>
+    <p class="suivi-legende">Type de la première séance enregistrée ce jour-là.</p>
+    <div id="calendrier"></div>
+  </main>
 </section>
 
 <!-- Écran d'ouverture d'une séance de musculation neuve : échauffement et

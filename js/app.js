@@ -2443,6 +2443,42 @@ function sauverReglages() {
   ecrire(CLES.reglages, reglages);
 }
 
+/* Vue d'ensemble mensuelle du menu Suivi (demande de l'utilisateur le
+   16 septembre 2026), premier contenu de ce sous-menu : les cases du mois
+   en cours, avec l'icône du type de la première séance enregistrée ce
+   jour-là (muscu, footing ou gainage). Ne distingue pas J1 de J3 : ce
+   niveau de détail vit dans l'historique, ici c'est un coup d'œil. */
+function rendreCalendrier() {
+  const parJour = {};
+  lireTableau(CLES.historique).filter((s) => s.fin).forEach((s) => {
+    const cle = dateCourte(s.fin);
+    if (!parJour[cle]) parJour[cle] = s;
+  });
+
+  const maintenant = new Date();
+  const annee = maintenant.getFullYear();
+  const mois = maintenant.getMonth();
+  const nbJours = new Date(annee, mois + 1, 0).getDate();
+  // Lundi en premier plutôt que dimanche (getDay() renvoie 0 pour dimanche).
+  const decalage = (new Date(annee, mois, 1).getDay() + 6) % 7;
+
+  let html = '';
+  for (let i = 0; i < decalage; i++) html += '<span class="calendrier-case vide"></span>';
+  for (let jour = 1; jour <= nbJours; jour++) {
+    const cle = String(jour).padStart(2, '0') + '/' + String(mois + 1).padStart(2, '0') + '/' + annee;
+    const seance = parJour[cle];
+    const aujourdhui = jour === maintenant.getDate();
+    html += '<span class="calendrier-case' + (aujourdhui ? ' aujourdhui' : '') + '">' +
+      '<span class="calendrier-num">' + jour + '</span>' +
+      (seance ? '<span class="calendrier-icone">' + iconeJour({ type: seance.type, code: seance.jour }) + '</span>' : '') +
+      '</span>';
+  }
+  $('calendrier').innerHTML =
+    '<div class="calendrier-entetes">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+      .map((j) => '<span>' + j + '</span>').join('') + '</div>' +
+    '<div class="calendrier-grille">' + html + '</div>';
+}
+
 function rendreHistorique(idOuvert) {
   const cible = $('liste-historique');
   const seances = lireTableau(CLES.historique)
@@ -2814,15 +2850,22 @@ function brancher() {
     });
   });
 
+  // Réglages vit sur le menu principal (Sport/Suivi), accessible d'un geste
+  // quel que soit le sous-menu ensuite ouvert (demande de l'utilisateur le
+  // 16 septembre 2026).
   $('bouton-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });
   $('bouton-reglages-retour').addEventListener('click', () => {
     sauverReglages();
     rendreAccueil();
-    afficher('accueil');
+    afficher('menu');
     // Quitter les réglages après y avoir renseigné le pont doit suffire à
     // vider ce qui attendait, sans obliger à passer par "Tester le pont".
     if (reglages.pont) synchroniser().then(rendreEtatSync).catch(() => {});
   });
+  $('bouton-menu-sport').addEventListener('click', () => { rendreAccueil(); afficher('accueil'); });
+  $('bouton-menu-suivi').addEventListener('click', () => { rendreCalendrier(); afficher('suivi'); });
+  $('bouton-sport-retour').addEventListener('click', () => afficher('menu'));
+  $('bouton-suivi-retour').addEventListener('click', () => afficher('menu'));
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
    'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));
@@ -2901,7 +2944,7 @@ async function demarrer() {
   fusionnerJ6DansJ2();
   brancher();
   rendreAccueil();
-  afficher('accueil');
+  afficher('menu');
 
   if (navigator.onLine) synchroniser().catch(() => {});
   if ('serviceWorker' in navigator) {

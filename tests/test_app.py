@@ -58,6 +58,10 @@ def page(navigateur, adresse):
     erreurs = []
     onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
     onglet.goto(adresse)
+    # Le menu principal (Sport/Suivi, 16 septembre 2026) s'ouvre en premier
+    # depuis cette date : les cartes de jour vivent maintenant derriere
+    # "Sport", plus directement sur l'ecran de depart.
+    onglet.click("#bouton-menu-sport")
     onglet.wait_for_selector(".carte-jour")
     # La carte de gainage affiche "Bonus" plutot que son code "G" depuis le
     # 13 septembre 2026 (demande de l'utilisateur, d'abord "Option" puis
@@ -298,6 +302,7 @@ def test_l_historique_j6_fusionne_dans_j2_au_demarrage(page):
     }]
     page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", ancien)
     page.reload()
+    page.click("#bouton-menu-sport")
     page.wait_for_selector(".carte-jour")
     historique = page.evaluate("JSON.parse(localStorage.getItem('muscu.historique'))")
     assert historique[0]["jour"] == "J2"
@@ -517,6 +522,8 @@ def test_les_consignes_sont_sauvegardees_a_la_synchronisation(page):
                       body='{"ok": true, "classeur": "Test"}')
 
     page.route("https://exemple-test.invalid/pont", intercepter)
+    # Reglages vit sur le menu principal (16 septembre 2026), pas sur Sport.
+    page.click("#bouton-sport-retour")
     page.click("#bouton-reglages")
     page.fill("#reglage-pont", "https://exemple-test.invalid/pont")
     page.click("#bouton-tester-pont")

@@ -139,6 +139,72 @@ body { display: flex; flex-direction: column; }
   -webkit-overflow-scrolling: touch;
 }
 
+/* ---------- Menu principal (Sport / Suivi) ---------- */
+
+.liste-menu {
+  list-style: none;
+  margin: 0;
+  padding: var(--marge);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.carte-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 140px;
+  padding: 22px 20px;
+  text-align: left;
+  background: var(--fond-carte);
+  box-shadow: 0 1px 2px rgba(20, 32, 29, .06);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  color: var(--texte);
+  font: inherit;
+  cursor: pointer;
+}
+.carte-menu-icone { font-size: 40px; line-height: 1; margin-bottom: 6px; }
+.carte-menu-nom { font-size: 22px; font-weight: 700; }
+.carte-menu-detail { font-size: 13.5px; color: var(--texte-faible); }
+
+/* ---------- Suivi ---------- */
+
+.suivi-titre { font-size: 20px; margin: 0 0 4px; }
+.suivi-legende { font-size: 12.5px; color: var(--texte-faible); margin: 0 0 16px; }
+
+.calendrier-entetes, .calendrier-grille {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendrier-entetes {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--texte-faible);
+  text-align: center;
+}
+.calendrier-case {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--rayon-petit);
+  background: var(--fond-carte);
+  border: 1px solid var(--trait);
+}
+.calendrier-case.vide { visibility: hidden; }
+.calendrier-case.aujourdhui { border-color: var(--accent); border-width: 2px; }
+.calendrier-num { font-size: 11px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
+.calendrier-icone { font-size: 16px; line-height: 1; }
+
 /* ---------- Accueil ---------- */
 
 /* Une seule colonne de bulles pleine largeur, emoji en grand sur toute la
@@ -755,6 +821,7 @@ body { display: flex; flex-direction: column; }
 
 .icone,
 .carte-jour,
+.carte-menu,
 .nav,
 .principal,
 .discret,
@@ -770,6 +837,7 @@ body { display: flex; flex-direction: column; }
 
 .icone:active,
 .carte-jour:not([disabled]):active,
+.carte-menu:active,
 .nav:not([disabled]):active,
 .principal:not([disabled]):active,
 .discret:active,
@@ -784,7 +852,7 @@ body { display: flex; flex-direction: column; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-  .icone:active, .carte-jour:active, .nav:active, .principal:active,
+  .icone:active, .carte-jour:active, .carte-menu:active, .nav:active, .principal:active,
   .discret:active, .minuterie:active, .minuterie-ajust:active, .type-course:active,
   .chrono-seance:active, .ligne-progression:active, .ajouter:active { transform: none; }
 }
