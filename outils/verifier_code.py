@@ -43,6 +43,7 @@ SOURCES = ['js/app.js', 'sw.js', 'index.html', 'css/style.css', 'appsscript/Code
 NOMS_HISTORIQUES = {
     'basculerSerie',     # remplace par validerSerie, 27 aout 2026
     'validerParRir',     # renomme validerSerie, 6 septembre 2026
+    'sportDuJour',       # remplace par la selection manuelle, 16 septembre 2026
 }
 
 

@@ -9,6 +9,14 @@ de programme.
 Porteur du projet : le même que sur l'agenda culturel géolocalisé, projet
 voisin sans rapport de contenu. Phase de démarrage.
 
+**Grosse session de travail le 16 septembre 2026** : refonte visuelle
+complète (mode clair, voir plus bas), menu Sport/Suivi, et cinq nouveaux
+contenus du menu Suivi (État musculaire, Sommeil, Mensurations, Évolution
+course, Tonnage par muscle, en plus du Calendrier déjà prévu). Documenté au
+fil du texte ci-dessous plutôt que dans une section à part : les décisions
+de ce jour-là suivent les mêmes règles que celles d'avant, pas un régime
+spécial.
+
 **Ce dépôt vit dans `C:\Users\Utilisateur\Musculation`** depuis le
 13 septembre 2026, sorti de `C:\Users\Utilisateur\.claude\MUSCU` (voir
 l'ancien chantier « Sortir ce dépôt de `.claude` », résolu ci-dessous). Une
@@ -34,6 +42,14 @@ saisie, et ne parle au classeur qu'à la fin, via un bouton explicite. Un envoi
 qui échoue laisse la séance en attente ; elle repart au prochain lancement en
 ligne ou au prochain essai manuel. Rien ne dépend du réseau pendant l'effort.
 
+**« Pas de build » reste vrai pour l'application livrée**, malgré l'arrivée
+d'`impeccable.style` le 16 septembre 2026 (outillage Claude Code pour la
+refonte visuelle, voir plus bas) : c'est un outil de conception, jamais une
+dépendance d'exécution. `index.html`/`css/style.css`/`js/app.js` restent trois
+fichiers servis tels quels, sans étape de compilation. `.impeccable/` (config,
+ignores) et `PRODUCT.md` (contexte produit pour cet outil) sont versionnés
+mais ne participent à rien côté téléphone.
+
 ## Architecture
 
 - `index.html`, `css/style.css`, `js/app.js` : l'application elle-même, un
@@ -52,6 +68,12 @@ ligne ou au prochain essai manuel. Rien ne dépend du réseau pendant l'effort.
   page ne supporte pas un flux automatique.
 - `sw.js`, `manifest.webmanifest`, `icones/` : rendent l'application
   installable et utilisable hors ligne.
+- `PRODUCT.md`, `.impeccable/` : contexte et configuration d'`impeccable.style`
+  (outillage de conception, voir « Décision de départ » ci-dessus), pas de
+  l'application. `.impeccable/config.json` porte aussi les exceptions
+  (`ignoreValues`) aux vérifications automatiques de design de cet outil,
+  chacune avec sa raison — à tenir à jour plutôt qu'à désactiver la règle
+  entière si un futur signalement ne s'applique pas.
 
 ## Le classeur
 
@@ -97,8 +119,10 @@ mémoire, le modifier ne change rien.
 **C'est le seul onglet en entrée. Tous les autres sont des sorties**, écrites
 par le pont et jamais relues pour alimenter l'application : les grilles de
 jour `J1`, `J3`, `J4`, `J5`, la page `Course`, les pages plates
-`Exercices (app)` et `Séances (app)`, et les pages `Remarques` et
-`Blessures`. Y modifier quoi que ce soit ne change rien dans l'application, et
+`Exercices (app)` et `Séances (app)`, les pages `Remarques`, `Blessures`,
+`Gainage`, `Consignes` et `Mensurations` (ces trois dernières en attente du
+redéploiement du pont, voir « Chantiers ouverts »). Y modifier quoi que ce
+soit ne change rien dans l'application, et
 peut au contraire casser l'écriture suivante : les grilles de jour attendent
 un bloc d'exercice **toutes les 6 lignes à partir de la ligne 4**
 (`ligneBlocExercice`), et un déplacement de lignes y fait perdre cet
@@ -325,16 +349,19 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   écrêtage du haut-parleur du téléphone.
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
-- **La minuterie n'est plus une couche plein écran depuis le 27 août 2026**,
-  mais un bandeau compact (60px, `.minuterie` dans `css/style.css`). Elle a
-  changé de place le jour même : d'abord posée sous le chrono de séance, tout
+- **La minuterie a un bandeau compact depuis le 27 août 2026** (60px,
+  `.minuterie` dans `css/style.css`), **et de nouveau un plein écran depuis
+  le 16 septembre 2026** (voir la puce dédiée plus bas) : le bandeau reste
+  seul visible en transparence hors de tout repos actif, le plein écran
+  prenant le relais dès qu'un repos démarre. Le bandeau a changé de place
+  le 27 août : d'abord posée sous le chrono de séance, tout
   en haut de la page, elle y restait invisible sur mobile une fois le clavier
   ouvert et la page défilée pour atteindre le champ en cours de saisie —
   `hidden` ne devenait jamais vrai, mais le bandeau sortait du cadre visible.
-  **Elle vit maintenant à côté de la consigne technique** (`.ligne-consigne`
-  dans `index.html`, un flex qui met les deux côte à côte) : masquée
-  (`[hidden]`), elle sort du flux flex et la consigne reprend toute la
-  largeur ; active, elle prend 128px fixes sur la droite. Aucun repère fixe
+  **Il vit depuis à côté de la consigne technique** (`.ligne-consigne`
+  dans `index.html`, un flex qui met les deux côte à côte) : masqué
+  (`[hidden]`), il sort du flux flex et la consigne reprend toute la
+  largeur ; actif, il prend 128px fixes sur la droite. Aucun repère fixe
   n'est garanti à 100 % sur toutes les hauteurs d'écran une fois le clavier
   ouvert, mais une position au fil du texte plutôt qu'en tête de page limite
   le risque de scroll qui l'emporte hors champ.
@@ -343,6 +370,33 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     l'utilisateur le 7 septembre 2026 : la minuterie doit se voir de loin, un
     seul gros chiffre en gras remplissant tout le cadre plutôt qu'un petit
     compteur secondaire à côté d'un libellé.
+  - **Plein écran repris le 16 septembre 2026** (`#minuterie-plein-ecran`
+    dans `index.html`, `position:fixed; inset:0`, même principe que
+    `.vague-demarrage`), demande de l'utilisateur, après l'avoir vu abandonné
+    le 27 août faute de tenir sous le clavier virtuel une fois ouvert.
+    Résolu cette fois en **fermant le clavier à chaque repos** plutôt qu'en
+    suivant sa hauteur (`suivreClavier`/`visualViewport`, fragile, déjà
+    abandonné une fois) : sans clavier ouvert, rien ne pousse la couche hors
+    du viewport. Le réglage `clavierPendantRecup` (voir plus bas) n'a donc
+    plus d'effet visible tant que le repos reste plein écran.
+    - **Ne bloque que les 80 % premiers du repos.** Tout bloquer aurait
+      aussi empêché de travailler sur la fiche suivante pendant que la
+      minuterie tourne par-dessus (décision du 27 août 2026, voir plus bas),
+      demande explicite de l'utilisateur après l'avoir vu tout bloquer une
+      première fois. `battre()` repasse `#minuterie-plein-ecran` en `hidden`
+      dès les 20 % de temps restant, le bandeau compact reprenant la main
+      pour préparer la série suivante avant la fin.
+    - **Bug trouvé en testant, pas en salle** : `lancerMinuterie()` peut
+      tomber en plein milieu d'un clic déjà commencé sur une flèche
+      d'exercice — la validation implicite d'une série par sortie de champ
+      arrive entre le `pointerdown` et le `mouseup` du bouton (voir plus
+      bas, « Les flèches d'exercice comptent leur pas... »). Afficher le
+      plein écran tout de suite y volait le `mouseup`/`click` de la cible,
+      qui ne se terminait jamais — la même panne que le plein écran cherche
+      à éviter côté clavier, déplacée sur un nouveau geste. Corrigé en
+      différant l'affichage d'un tick (`setTimeout(fn, 0)`, gardé par une
+      comparaison d'instance pour ignorer un affichage devenu obsolète), le
+      temps que le clic en cours atteigne sa cible en premier.
 - **La minuterie se ferme d'elle-même à zéro**, sans afficher de temps
   écoulé en trop-plein (décision de l'utilisateur le 26 août 2026). Fermeture
   naturelle et appui sur le bandeau partagent `minuterieTerminee()` : si la
@@ -416,12 +470,38 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   et du chronomètre de séance en marche), désaturé et transparent plutôt
   qu'un vert franc : décision de l'utilisateur le 26 août 2026 pour que
   les trois se lisent comme une même famille de couleur.
-- **Un échauffement de 5 minutes s'affiche une seule fois**, au-dessus de la
-  consigne technique du premier exercice de la séance (`ECHAUFFEMENT_PAR_JOUR`
-  dans `js/app.js`). Rédigé à la main pour les zones travaillées ce jour-là,
-  pas généré à partir du champ `muscle` : chaque jour suit la même trame,
-  mobilité de l'articulation la plus sollicitée, activation des
+- **L'échauffement (`ECHAUFFEMENT_PAR_JOUR` dans `js/app.js`) vit sur un écran
+  à part avant la séance depuis le 16 septembre 2026** (`#ecran-demarrage`,
+  `rendreDemarrage()`), demande de l'utilisateur. Jusque-là il s'affichait au-
+  dessus de la consigne technique du premier exercice ; cet ancien
+  emplacement (`echauffement-jour`/`echauffement-liste` dans `index.html`,
+  la branche `indexExo === 0` de `rendreExercice()`) a été **retiré en
+  doublon** le même jour, signalé par l'utilisateur après avoir vu
+  l'échauffement deux fois. Rédigé à la main pour les zones travaillées ce
+  jour-là, pas généré à partir du champ `muscle` : chaque jour suit la même
+  trame, mobilité de l'articulation la plus sollicitée, activation des
   stabilisateurs, puis montée en charge sur le geste du premier exercice.
+  Le chrono de séance démarre déjà en arrière-plan à ce stade
+  (`demarrerChronoSeance()`, appelée par `commencer()`) mais n'est pas
+  affiché sur cet écran. Sauté à la reprise d'une séance déjà commencée.
+  - **Vague de couleur au démarrage** (`#vague-demarrage`,
+    `lancerAnimationDemarrage()`) : part du point d'appui du bouton et
+    couvre l'écran avant de révéler la fiche du premier exercice, déjà
+    rendue dessous. Calée sur un délai fixe (600 ms, durée de la transition
+    CSS) plutôt que sur l'événement `transitionend`, qui se redéclenche
+    quand la classe est retirée (la vague reflue aussi en transition) et
+    peut alors manquer la fin de la croissance avec un `{ once: true }` posé
+    avant le premier déclenchement, laissant l'écran couvert. Signalée
+    saccadée par l'utilisateur le même jour et corrigée aussitôt :
+    `clip-path: circle()` oblige le navigateur à recalculer la forme du
+    découpage à chaque image (repaint du thread principal) ; remplacé par un
+    disque à taille fixe (300vmax, couvre l'écran dans n'importe quelle
+    orientation) positionné au point d'appui et mis à l'échelle via
+    `transform: scale()`, seule propriété garantie de ne jamais déclencher
+    de repaint. Un rafraîchissement forcé (`void vague.offsetWidth`) sépare
+    la pose de la position de son déclenchement, sans quoi les deux
+    changements posés dans le même tick peuvent se combiner dans la même
+    image.
 - **La touche Entrée sur le RIR valide directement la série** (appelle
   `.click()` sur le bouton plutôt que de se contenter du focus) : un clavier
   virtuel ne renvoie pas de second appui sur Entrée une fois le focus déplacé
@@ -755,6 +835,185 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   2026 pour nettoyer les séances de test accumulées pendant le
   développement. Ne touche jamais au classeur, qui a ses propres pages.
 
+## Menu Sport/Suivi (16 septembre 2026)
+
+**Écran d'accueil scindé en deux** (`#ecran-menu`, deux cartes), demande de
+l'utilisateur : « Sport » ouvre l'ancien accueil (les sept bulles J1-J6 et
+Bonus, inchangé) ; « Suivi » ouvre un sous-menu à six contenus, détaillés
+ci-dessous. `Réglages` vit sur ce premier écran, accessible d'un geste quel
+que soit le sous-menu ensuite ouvert.
+
+- **Les deux cartes du premier écran sont centrées, largeur resserrée à
+  300px**, pas étalées sur toute la hauteur disponible (signalé par
+  l'utilisateur : `.liste-menu { flex: 1 }` étirait le conteneur, mais les
+  cartes elles-mêmes restaient collées en haut faute de `flex-grow`,
+  laissant un grand vide en dessous). Centrage horizontal par
+  `margin-inline: auto` sur chaque carte plutôt que par `align-items:
+  center` sur le conteneur : ce dernier casse la largeur en pourcentage des
+  cartes dans ce navigateur (chacune retombe à sa largeur de contenu au lieu
+  de 100 %, inégale entre « Sport » et « Suivi ») — constaté à l'essai, pas
+  une règle générale à appliquer ailleurs sans revérifier. Scopé à
+  `#ecran-menu` : le sous-menu Suivi (cinq puis six entrées, pleine largeur)
+  n'est pas concerné.
+- **Direction visuelle : mode clair, référence Strava**, choisi via
+  `impeccable.style` (outillage de conception introduit ce jour-là, voir
+  « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
+  Brand Commitments). Toute la palette de `css/style.css` est calculée
+  (contraste WCAG) plutôt qu'estimée à l'œil, contre les trois fonds de
+  l'application (voir l'en-tête du fichier). Remplace un mode sombre qui
+  faisait référence jusque-là ; aucune bascule automatique, un seul thème
+  livré.
+
+L'écran de séance et le pont Apps Script ne sont pas concernés par ce
+chantier : tout ce qui suit vit dans le sous-menu Suivi, jamais relu par
+l'import ni par `ecrireSeance()`.
+
+### Suivi : six contenus
+
+Chaque écran a sa propre fonction de rendu (`rendreCalendrier()`,
+`rendreEtatMusculaire()`, `rendreSommeil()`, `rendreMensurations()`,
+`rendreEvolutionCourse()`, `rendreTonnageMuscles()`) et son `<section>`
+dédiée dans `index.html`, ouverts et refermés comme les autres sous-écrans
+via `afficher()`.
+
+- **Calendrier** : une case par jour du mois en cours, l'icône du type de la
+  première séance enregistrée ce jour-là (`iconeJour()`, déjà utilisée pour
+  les bulles de l'accueil). Ne distingue pas J1 de J3, ce niveau de détail
+  vivant dans l'historique.
+- **État musculaire**, gadget **indicatif, pas une mesure** : chaque zone
+  récupère à une vitesse forfaitaire (`ZONES_MUSCULAIRES` dans `js/app.js`,
+  48 h les petits groupes, 72 h les gros) depuis la dernière série validée
+  qui l'a travaillée, tous exercices confondus, coloré du rouge (fatigué) au
+  vert (prêt) en passant par l'amber. Le champ `muscle` du classeur porte
+  parfois le même muscle sous deux graphies (« Deltoide lateral » et
+  « Deltoïde latéral » coexistent dans le programme actuel) : la
+  comparaison passe par `formeDuNom()`, pas par égalité stricte, pour ne pas
+  en perdre une — testé avec une paire fabriquée exprès.
+  - **Mannequin de dos ajouté le 16 septembre 2026** (`FORMES_MANNEQUIN_
+    ARRIERE`, à côté du mannequin de face) : les six zones qui n'avaient
+    jusque-là qu'une liste de texte (dos, épaules arrière, triceps,
+    fessiers, ischio-jambiers, mollets, faute d'une vue de dos) ont
+    maintenant aussi un repère visuel. La liste de texte reste en dessous
+    des deux mannequins : le nom d'une zone ne doit pas dépendre d'un
+    survol ou d'un appui long sur mobile. Même mannequin de dos réutilisé
+    par Tonnage par muscle (voir plus bas).
+- **Sommeil**, écran neuf sans lien avec le programme : une frise de la
+  nuit en cases de 30 min (22h-11h, 26 créneaux, `creneauxSommeil()`), le
+  cœur (23h30-8h) bleu par défaut sans rien à saisir pour une nuit
+  ordinaire, un appui bascule un créneau en rouge (insomnie). Raisons
+  d'insomnie, repères de la journée (alcool, café, pipi nocturne, écran
+  tardif, repas tardif), vue du mois. Page classeur dédiée côté pont, à
+  déployer (voir « Chantiers ouverts »).
+  - **La frise débordait de l'écran**, signalé par l'utilisateur.
+    Longtemps pris pour un problème de mise en page (grille CSS, puis
+    flexbox, puis `aspect-ratio` lui-même — plusieurs pistes essayées puis
+    écartées) avant de trouver la vraie cause, sans rapport : les créneaux
+    « pas encore marqués » portaient la classe `vide`, qui existe déjà
+    ailleurs dans l'application pour les messages d'état vide (`<p
+    class="vide">`, `padding: 40px 0`) et leur imposait donc 80px de haut.
+    **Renommée `.sommeil-creneau.libre`** plutôt que réutilisée : deux sens
+    différents de « vide » n'avaient pas à partager la même classe. Retenir
+    la leçon : un nom de classe générique et court (`vide`, `actif`,
+    `choisi`...) posé sur un nouveau composant mérite une vérification
+    qu'il n'est pas déjà pris ailleurs pour un sens différent.
+  - **Heure incrustée un créneau sur deux** dans la frise (demande de
+    l'utilisateur), les index pairs tombant toujours sur l'heure pile
+    (créneaux de 30 min depuis 22h).
+  - **Sport du jour choisi à la main, pas déduit seul de l'historique**
+    (demande de l'utilisateur le 16 septembre 2026 : l'ancien badge auto,
+    `sportDuJour()`, n'était qu'un texte fixe, pas sélectionnable). Deux
+    puces muscu/footing (`SPORT_JOURNEE`), un seul à la fois, avec une heure
+    une fois choisi (`<input type="time">`) pour le retrouver sur la frise :
+    l'icône y **remplace le numéro d'heure** sur son créneau
+    (`indexCreneauPourHeure()`), seulement si l'heure tombe dans la fenêtre
+    affichée (22h-11h) — un sport d'après-midi reste sélectionné sans repère
+    sur la frise, la fenêtre ne pouvant pas l'accueillir.
+- **Mensurations**, à partir de captures d'applications tierces envoyées
+  comme référence par l'utilisateur (silhouette à repères de mesure,
+  comparaison photo avant/après par curseur) — jamais recopiées telles
+  quelles, l'inspiration d'interaction seulement, puis affinées une seconde
+  fois sur les mêmes captures renvoyées en clair après une perte à la
+  compaction du contexte plus tôt dans la session.
+  - **Six mesures (`MENSURATION_CHAMPS`) plus le poids**, chacune associée à
+    une catégorie de couleur (torse, bras, jambe) réutilisant deux teintes
+    déjà posées ailleurs dans l'application (`--accent`, `--baisse`) et une
+    seule couleur neuve pour les bras (`--mesure-bras`, contraste calculé
+    comme le reste de la palette). Le mannequin porte un repère par mesure
+    en **ligne pointillée reliant deux points**, pas un cercle numéroté :
+    une mesure est une circonférence, la ligne s'en rapproche plus qu'un
+    numéro arbitraire. La liste de champs en dessous reprend cette même
+    couleur en pastille.
+  - **Photo du jour, compressée côté client** (`compresserImage()`, 900px
+    de large au plus, JPEG qualité 0.75) avant d'être gardée : `localStorage`
+    n'est pas fait pour des images en pleine résolution.
+  - **Stockage des photos résolu via le pont existant**, comme les
+    consignes techniques, plutôt qu'un service tiers : `ecrireMensuration()`
+    dans `appsscript/Code.gs` décode la data URL reçue et la dépose dans un
+    dossier Drive dédié (`Muscu - Mensurations`), le lien seul rejoignant la
+    feuille `Mensurations`. Un échec de la photo (Drive pas encore autorisé,
+    par exemple) n'empêche pas l'écriture des valeurs. **Nécessite une
+    autorisation Drive en plus de celle déjà accordée pour Sheets**,
+    redemandée au premier appel qui suivra le redéploiement (voir
+    « Chantiers ouverts »).
+  - **Curseur de comparaison avant/après**, à partir de deux photos datées
+    minimum (sinon un message dit qu'il en manque). Affiche depuis le
+    16 septembre 2026 les écarts chiffrés en bas de la photo comparée
+    (poids, taille, ex. « 88 → 80 kg »), sur un scrim sombre fixe pour
+    rester lisible quelle que soit la photo dessous — n'apparaît que si les
+    deux dates comparées portent une valeur pour la mesure concernée.
+- **Évolution course** : distance et durée existaient déjà dans
+  `muscu.historique` (saisies sur l'écran de footing), cet écran n'est
+  qu'un nouvel affichage. Un type de course à la fois (mêmes boutons
+  `.type-course` que l'écran de footing), seul le premier passage de chaque
+  sortie comptant, comme pour la comparaison à la dernière fois
+  (`majAllureCycle`). J2 et J6 partagent déjà leurs données via
+  `footingParType()`, rien à filtrer ici par jour.
+  - **La courbe trace la vitesse (km/h), pas l'allure** : « plus haut =
+    plus rapide » suit la même lecture que les autres courbes de
+    l'application (plus haut = mieux), là où l'allure en minutes par km
+    ferait descendre la ligne en progressant. Le texte sous la courbe reste
+    en allure, repère habituel du coureur, avec le même écart en s/km et la
+    même coloration hausse/baisse que l'écran de footing.
+- **Tonnage par muscle, mannequin cliquable**, à partir des mêmes captures
+  de référence. Réutilise `ZONES_MUSCULAIRES` plutôt qu'une table
+  muscle → exercices séparée : même simplification déjà en place pour
+  l'État musculaire, un seul muscle par exercice. **Différent du tonnage
+  écarté comme indicateur de progression sur un exercice** (voir plus haut,
+  « L'indicateur de progression est la première série de travail ») : là,
+  le problème était de comparer deux séances entre elles, le tonnage
+  montant mécaniquement quand la charge baisse et que les répétitions
+  montent. Ici, pas de comparaison série à série : une simple somme par
+  zone sur une fenêtre glissante de 7 jours (`TONNAGE_PERIODE_JOURS`), pour
+  repérer un déséquilibre de volume entre groupes musculaires — usage
+  reconnu (suivi du volume hebdomadaire) qui ne prête pas à la même
+  confusion.
+  - Coloré en continu (`fill-opacity` proportionnelle au tonnage, pas trois
+    paliers comme l'État musculaire) plutôt que par état de récupération.
+    Chaque zone (sur le mannequin ou dans la liste, dos compris depuis le
+    même mannequin de dos que l'État musculaire) est cliquable et ouvre le
+    détail par exercice en dessous ; la zone la plus chargée s'ouvre par
+    défaut.
+
+### Chantiers évalués et écartés ce jour-là
+
+- **Icônes des cartes de jour → silhouettes de muscles travaillés** :
+  envisagé une fois le mannequin de dos disponible (aurait couvert les dix
+  zones), mais évalué et **volontairement écarté** : à la taille réelle de
+  l'icône d'une carte (34px), un mannequin — face ou dos — serait trop
+  exigu pour se lire, moins clair que l'émoji actuel. Pas un blocage
+  d'outillage, un choix de qualité : forcer cette icône aurait dégradé
+  l'écran plutôt que l'améliorer.
+- **Image par exercice** (illustration des 26 exercices du programme
+  actuel) : reste hors de portée, aucun outil de génération d'image
+  disponible dans cette session. Le mannequin dessiné à la main (cercles et
+  rectangles arrondis) reste la seule option réaliste pour ce genre de
+  visuel dans ce projet.
+- **Lien Garmin Connect** : API officielle fermée à candidature (Garmin
+  Connect Developer Program), pas un accès libre. Rien à construire tant
+  que l'accès n'est pas accordé ; en attendant, le champ de remarque libre
+  existant (voir plus haut) couvre déjà le repli (coller un lien d'activité
+  ou ressaisir les chiffres à la main).
+
 ## Vérifications
 
 Quatre outils, nés le 10 septembre 2026 d'une série d'incidents que les
@@ -825,19 +1084,27 @@ un bug si le sujet revient.
 1. **Redéployer `appsscript/Code.gs`** (nouvelle version du déploiement
    existant, coller le code ne suffit pas). Le pont a déjà été déployé et
    utilisé avec succès par le passé (séances reçues dans le classeur) :
-   ce qui est en attente aujourd'hui, ce sont **trois évolutions écrites
+   ce qui est en attente aujourd'hui, ce sont **quatre évolutions écrites
    depuis mais jamais mises en ligne** : le garde-fou anti-doublon devenu
    sectionné par page plutôt qu'unique pour la séance entière, l'écriture de
-   la séance de gainage dans une page `Gainage`, et la sauvegarde des
-   consignes techniques dans une page `Consignes`. Rien de tout ça n'atteint
-   le classeur tant que le redéploiement n'est pas fait ; l'application
-   reste par ailleurs utilisable en local sans cette étape, l'adresse et le
-   secret du pont restant ceux déjà en place dans les réglages.
+   la séance de gainage dans une page `Gainage`, la sauvegarde des
+   consignes techniques dans une page `Consignes`, et l'écriture des
+   mensurations (valeurs et photo Drive) dans une page `Mensurations`
+   (ajoutée le 16 septembre 2026, voir « Menu Sport/Suivi » plus haut).
+   Cette dernière **redemandera aussi une autorisation Drive**, en plus de
+   celle déjà accordée pour Sheets. Rien de tout ça n'atteint le classeur
+   tant que le redéploiement n'est pas fait ; l'application reste par
+   ailleurs utilisable en local sans cette étape, l'adresse et le secret du
+   pont restant ceux déjà en place dans les réglages.
 2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
    accumulées. Côté application, c'est fait depuis le 10 septembre 2026 : la
    fiche d'une séance enregistrée porte la courbe de chaque exercice
    (`progressionPremiereSerie()`).
-3. **Mensurations et poids de corps**, non retenus au démarrage.
+3. ~~Mensurations et poids de corps~~ **Fait le 16 septembre 2026** (voir
+   « Menu Sport/Suivi » plus haut) : valeurs, photo comparée par curseur,
+   sauvegarde Drive via le pont. Reste bloqué sur le redéploiement du pont
+   (point 1 ci-dessus) pour que les valeurs et la photo atteignent
+   réellement le classeur.
 4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
    basculer vers un autre bloc d'entraînement demandera de relancer l'import
    sur un autre onglet, geste manuel pour l'instant.
@@ -854,10 +1121,10 @@ un bug si le sujet revient.
      vérifier), et recopier la mémoire de travail liée à ce projet, encore
      rangée sous la clé de session de l'autre projet (`.claude\APPLI`) faute
      d'avoir pu être déplacée par un outil de fichiers.
-   - Ce `CLAUDE.md` n'est **toujours pas chargé automatiquement** : il ne le
-     sera que dans une session Claude Code ouverte directement sur
-     `C:\Users\Utilisateur\Musculation`, ce que ce déplacement permet
-     maintenant sans risque de confusion avec l'autre projet.
+   - Ce `CLAUDE.md` **se charge automatiquement** depuis qu'une session
+     Claude Code s'ouvre directement sur `C:\Users\Utilisateur\Musculation`,
+     ce que ce déplacement permet sans risque de confusion avec l'autre
+     projet — vérifié en pratique le 16 septembre 2026.
 6. **Trois consignes techniques restent vides dans « semaine 1 »**, jamais
    remplies côté classeur : `Ecarté poulie horizontale hauteur poitrine` et
    `Elévation latérale poulie unilatérale` en J1, `Leg curl allongé
@@ -865,6 +1132,10 @@ un bug si le sujet revient.
    sur demande, sans l'inventer sans le dire) ; `outils/verifier_import.py`
    ne le détecte pas, une consigne vide n'étant pas une anomalie qu'il sache
    reconnaître.
+7. **Image par exercice**, bloqué faute d'outil de génération d'image (voir
+   « Menu Sport/Suivi » plus haut, « Chantiers évalués et écartés »).
+8. **Lien Garmin Connect**, bloqué sur l'accès à leur API officielle,
+   fermée à candidature (même section).
 
 ## Posture sur les questions d'entraînement
 
