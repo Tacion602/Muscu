@@ -150,6 +150,20 @@ body { display: flex; flex-direction: column; }
   flex-direction: column;
   gap: 12px;
 }
+/* Les deux cartes du tout premier écran (Sport / Suivi) flottaient en haut
+   de tout l'espace disponible, tenu à bout de bras par `.liste-menu { flex:
+   1 }` : une fois posées, il ne restait qu'un grand vide en dessous plutôt
+   qu'une composition centrée. Repéré par l'utilisateur le 16 septembre
+   2026. Centré sur les deux axes et resserré (300px) pour ne plus courir
+   bord à bord de l'écran, plus proche des menus d'app type Strava demandés
+   comme référence ; scopé à #ecran-menu pour ne pas toucher le sous-menu
+   Suivi (.liste-menu-petite), qui garde volontairement sa pleine largeur.
+   Centrage horizontal par marges (`margin-inline: auto`) plutôt que par
+   `align-items: center` sur `.liste-menu` : à l'essai, ce dernier casse la
+   largeur en pourcentage des cartes (chacune revient à sa largeur de
+   contenu au lieu de 100 %, inégale entre « Sport » et « Suivi »). */
+#ecran-menu .liste-menu { justify-content: center; }
+#ecran-menu .carte-menu { max-width: 300px; margin-inline: auto; }
 .carte-menu {
   display: flex;
   flex-direction: column;
