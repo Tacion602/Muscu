@@ -247,6 +247,22 @@ body { display: flex; flex-direction: column; }
    --baisse en récupération, --hausse prêt) : même famille de sens dans
    toute l'application plutôt qu'une palette à part pour ce gadget. */
 .mannequin-svg { display: block; width: 100%; max-width: 220px; margin: 0 auto 16px; }
+/* Deux mannequins côte à côte (avant/arrière, 16 septembre 2026) : chacun
+   perd son max-width propre au profit de la largeur de sa moitié de
+   .mannequin-paire, sur les mêmes écrans (État musculaire, Tonnage par
+   muscle) qui utilisaient jusque-là .mannequin-svg seule. */
+.mannequin-paire { display: flex; gap: 10px; justify-content: center; }
+.mannequin-vue { flex: 1; max-width: 160px; }
+.mannequin-vue .mannequin-svg { max-width: 100%; margin-bottom: 4px; }
+.mannequin-vue-titre {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--texte-faible);
+  text-align: center;
+}
 .mannequin-svg .silhouette { fill: var(--fond-champ); }
 .mannequin-svg .zone-fatigue { fill: var(--danger); }
 .mannequin-svg .zone-recup { fill: var(--baisse); }

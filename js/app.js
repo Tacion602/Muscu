@@ -2637,6 +2637,37 @@ const ZONES_MUSCULAIRES = [
   { cle: 'mollets', nom: 'Mollets', muscles: ['mollets'], recuperation_h: 48, vue: 'liste' },
 ];
 
+/* Mannequin de dos ajouté le 16 septembre 2026 (demande de l'utilisateur,
+   « poursuivre jusqu'au bout de la feuille de route » ; référence Strava
+   pour le style des deux tiers du chantier Images, l'autre tiers — une
+   image par exercice — restant hors de portée sans outil de génération
+   d'image). Les six zones vue:'liste' ci-dessus n'avaient jusque-là qu'une
+   liste de texte, faute d'une vue de dos : ce mannequin la leur donne,
+   dans le même repère (140 x 240) que le mannequin de face pour rester
+   visuellement cohérent à côté de lui. Les mollets sont ici la zone
+   colorée (contrairement au mannequin de face, où ils ne sont qu'une
+   silhouette neutre) : c'est le dos qui les représente, pas l'avant. */
+const FORMES_MANNEQUIN_ARRIERE = [
+  { tag: 'rect', zone: 'dos', attrs: 'x="42" y="40" width="56" height="70" rx="14"' },
+  { tag: 'circle', zone: 'epaules-arriere', attrs: 'cx="34" cy="50" r="13"' },
+  { tag: 'circle', zone: 'epaules-arriere', attrs: 'cx="106" cy="50" r="13"' },
+  { tag: 'rect', zone: 'triceps', attrs: 'x="20" y="55" width="16" height="55" rx="8"' },
+  { tag: 'rect', zone: 'triceps', attrs: 'x="104" y="55" width="16" height="55" rx="8"' },
+  { tag: 'rect', zone: 'fessiers', attrs: 'x="40" y="118" width="60" height="28" rx="14"' },
+  { tag: 'rect', zone: 'ischios', attrs: 'x="44" y="148" width="24" height="48" rx="10"' },
+  { tag: 'rect', zone: 'ischios', attrs: 'x="72" y="148" width="24" height="48" rx="10"' },
+  { tag: 'rect', zone: 'mollets', attrs: 'x="46" y="198" width="20" height="38" rx="8"' },
+  { tag: 'rect', zone: 'mollets', attrs: 'x="74" y="198" width="20" height="38" rx="8"' },
+];
+
+/* Silhouette neutre commune aux deux vues (tête, cou, avant-bras) : les
+   parties jamais suivies, ni de face ni de dos. */
+const SILHOUETTE_MANNEQUIN =
+  '<circle class="silhouette" cx="70" cy="18" r="14"></circle>' +
+  '<rect class="silhouette" x="64" y="30" width="12" height="10"></rect>' +
+  '<rect class="silhouette" x="18" y="108" width="14" height="45" rx="7"></rect>' +
+  '<rect class="silhouette" x="108" y="108" width="14" height="45" rx="7"></rect>';
+
 function derniereFoisZone(zone) {
   let dernier = null;
   lireTableau(CLES.historique).forEach((s) => {
@@ -2676,12 +2707,9 @@ function rendreEtatMusculaire() {
   // Mannequin de face minimal (cercles et rectangles arrondis), silhouette
   // neutre pour les parties non suivies (tête, avant-bras, bassin, jambes
   // basses) et zones colorées pour les quatre groupes visibles de face.
-  $('mannequin').innerHTML =
+  const avant =
     '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de face">' +
-      '<circle class="silhouette" cx="70" cy="18" r="14"></circle>' +
-      '<rect class="silhouette" x="64" y="30" width="12" height="10"></rect>' +
-      '<rect class="silhouette" x="18" y="108" width="14" height="45" rx="7"></rect>' +
-      '<rect class="silhouette" x="108" y="108" width="14" height="45" rx="7"></rect>' +
+      SILHOUETTE_MANNEQUIN +
       '<rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>' +
       '<rect class="silhouette" x="46" y="198" width="20" height="38" rx="8"></rect>' +
       '<rect class="silhouette" x="74" y="198" width="20" height="38" rx="8"></rect>' +
@@ -2700,6 +2728,26 @@ function rendreEtatMusculaire() {
       '<rect class="' + classe('quadriceps') + '" x="72" y="138" width="24" height="60" rx="10">' +
         '<title>' + echapper(titreZone('quadriceps')) + '</title></rect>' +
     '</svg>';
+
+  // Mannequin de dos (16 septembre 2026, voir FORMES_MANNEQUIN_ARRIERE) :
+  // les six zones jusque-là listées en texte seulement ont maintenant
+  // aussi leur repère visuel, à côté du mannequin de face plutôt qu'à sa
+  // place — la liste en dessous reste la source la plus lisible (le nom de
+  // la zone ne dépend pas d'un survol ou d'un appui long sur mobile).
+  const arriere =
+    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de dos">' +
+      SILHOUETTE_MANNEQUIN +
+      FORMES_MANNEQUIN_ARRIERE.map((f) => (
+        '<' + f.tag + ' class="' + classe(f.zone) + '" ' + f.attrs + '>' +
+          '<title>' + echapper(titreZone(f.zone)) + '</title></' + f.tag + '>'
+      )).join('') +
+    '</svg>';
+
+  $('mannequin').innerHTML =
+    '<div class="mannequin-paire">' +
+      '<div class="mannequin-vue"><p class="mannequin-vue-titre">Avant</p>' + avant + '</div>' +
+      '<div class="mannequin-vue"><p class="mannequin-vue-titre">Arrière</p>' + arriere + '</div>' +
+    '</div>';
 
   $('mannequin-liste').innerHTML = ZONES_MUSCULAIRES.filter((z) => z.vue === 'liste').map((zone) => (
     '<div class="etat-pastille ' + classe(zone.cle) + '">' +
@@ -2777,12 +2825,9 @@ function rendreTonnageMuscles() {
   const zoneSvg = (tag, cle, attrs) => '<' + tag + ' class="zone-cliquable" data-zone="' + cle +
     '" style="' + styleZone(cle) + '" ' + attrs + '><title>' + echapper(titreZone(cle)) + '</title></' + tag + '>';
 
-  $('tonnage-mannequin').innerHTML =
+  const avant =
     '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de face, tonnage par zone">' +
-      '<circle class="silhouette" cx="70" cy="18" r="14"></circle>' +
-      '<rect class="silhouette" x="64" y="30" width="12" height="10"></rect>' +
-      '<rect class="silhouette" x="18" y="108" width="14" height="45" rx="7"></rect>' +
-      '<rect class="silhouette" x="108" y="108" width="14" height="45" rx="7"></rect>' +
+      SILHOUETTE_MANNEQUIN +
       '<rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>' +
       '<rect class="silhouette" x="46" y="198" width="20" height="38" rx="8"></rect>' +
       '<rect class="silhouette" x="74" y="198" width="20" height="38" rx="8"></rect>' +
@@ -2794,6 +2839,21 @@ function rendreTonnageMuscles() {
       zoneSvg('rect', 'quadriceps', 'x="44" y="138" width="24" height="60" rx="10"') +
       zoneSvg('rect', 'quadriceps', 'x="72" y="138" width="24" height="60" rx="10"') +
     '</svg>';
+
+  // Mannequin de dos (16 septembre 2026, voir FORMES_MANNEQUIN_ARRIERE dans
+  // le bloc État musculaire ci-dessus) : les six zones jusque-là dans la
+  // seule liste ont maintenant aussi leur repère cliquable ici.
+  const arriere =
+    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de dos, tonnage par zone">' +
+      SILHOUETTE_MANNEQUIN +
+      FORMES_MANNEQUIN_ARRIERE.map((f) => zoneSvg(f.tag, f.zone, f.attrs)).join('') +
+    '</svg>';
+
+  $('tonnage-mannequin').innerHTML =
+    '<div class="mannequin-paire">' +
+      '<div class="mannequin-vue"><p class="mannequin-vue-titre">Avant</p>' + avant + '</div>' +
+      '<div class="mannequin-vue"><p class="mannequin-vue-titre">Arrière</p>' + arriere + '</div>' +
+    '</div>';
 
   $('tonnage-liste').innerHTML = ZONES_MUSCULAIRES.filter((z) => z.vue === 'liste').map((zone) => (
     '<button type="button" class="tonnage-zone' + (zone.cle === zoneTonnageChoisie ? ' choisi' : '') +

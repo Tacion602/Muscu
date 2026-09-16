@@ -396,6 +396,22 @@ def test_l_etat_musculaire_regroupe_les_graphies_du_meme_muscle(page):
     assert classe == "zone-fatigue", "l'orthographe accentuee n'a pas ete reconnue : " + classe
 
 
+def test_le_mannequin_de_dos_couvre_les_six_zones_de_la_liste(page):
+    """16 septembre 2026 : les six zones jusque-la seulement en liste (dos,
+    epaules arriere, triceps, fessiers, ischios, mollets) ont maintenant
+    aussi un repere sur un second mannequin, a cote de celui de face."""
+    page.evaluate("afficher('menu')")
+    page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-etat")
+    page.wait_for_selector("#mannequin svg")
+    titres = page.evaluate(
+        "[...document.querySelectorAll('.mannequin-vue-titre')].map(t => t.textContent)")
+    assert titres == ["Avant", "Arrière"]
+    zones_dos = page.evaluate(
+        "document.querySelectorAll('#mannequin svg')[1].querySelectorAll('.zone-fatigue, .zone-recup, .zone-prete').length")
+    assert zones_dos == 10, "dos, epaules arriere (x2), triceps (x2), fessiers, ischios (x2), mollets (x2)"
+
+
 def ouvrir_sommeil(page):
     # La fixture laisse la page sur Sport (via "Sport" pour le temoin des
     # cartes de jour) : revenir au menu par script plutot que de supposer
@@ -654,6 +670,19 @@ def test_une_zone_sans_tonnage_affiche_un_message(page):
     ouvrir_tonnage_muscles(page)
     page.locator("#tonnage-liste .tonnage-zone", has_text="Mollets").click()
     assert "7 derniers jours" in page.locator("#tonnage-detail .vide").text_content()
+
+
+def test_le_mannequin_de_dos_est_aussi_cliquable(page):
+    """16 septembre 2026 : les six zones sans vue de face ont maintenant un
+    repere sur un second mannequin, cliquable au meme titre que le premier
+    (meme delegation d'evenement sur #tonnage-mannequin)."""
+    seance_muscu_zone(page, 2, "Tirage vertical", "Grand dorsal", 60, 10, series=1)
+    page.reload()
+    ouvrir_tonnage_muscles(page)
+    page.locator("#tonnage-mannequin svg[aria-label*='dos'] [data-zone='dos']").click()
+    detail = page.locator("#tonnage-detail")
+    assert "Dos" in detail.locator("h3").text_content()
+    assert "600 kg" in detail.text_content()
 
 
 # --------------------------------------------------------- seance gainage
