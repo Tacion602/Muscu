@@ -132,6 +132,12 @@ body { display: flex; flex-direction: column; }
 }
 .ligne-progression[hidden] { display: none; }
 #jauge-chrono { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--texte); }
+/* Étiquette ajoutée le 17 septembre 2026 (remarque de l'utilisateur) : ce
+   chiffre compte la séance entière depuis son début, pas le repos --
+   confusion plausible depuis que le repos a perdu son propre chiffre au
+   profit d'une jauge (voir .jauge-pilule) : ce chrono-ci devenait le seul
+   nombre visible sur l'écran d'exercice. */
+.jauge-chrono-label { font-weight: 400; color: var(--texte-faible); }
 
 /* ---------- Corps défilant ---------- */
 
@@ -355,26 +361,46 @@ body { display: flex; flex-direction: column; }
    sur toute sa hauteur pour qu'un seul jeu de couleurs de texte (blanc)
    reste lisible partout, sans avoir à recalculer un contraste par zone.
 
-   Porté sur #ecran-sommeil (l'écran entier, header compris) plutôt que sur
-   .corps-sommeil seul, corrigé le même jour : la barre gardait un fond uni
-   (#17213b) au-dessus du dégradé du corps, qui reprenait alors une teinte
-   plus claire juste en dessous — une bande plate visible à la jonction. Un
-   seul dégradé continu sur toute la hauteur de l'écran (100%, jamais plus)
-   supprime la coupure sans rien faire déborder hors du cadre. */
+   Porté sur #ecran-sommeil (l'écran entier, plus de barre depuis le
+   17 septembre 2026) plutôt que sur .corps-sommeil seul : un seul dégradé
+   continu sur toute la hauteur de l'écran (100%, jamais plus) évite toute
+   coupure sans rien faire déborder hors du cadre.
+
+   Intensifié le 17 septembre 2026 (remarque de l'utilisateur, « plus
+   foncé et plus clair aux extrémités ») : l'extrémité haute est éclaircie
+   (#4c6a94 -> #5a7aa8) juste assez pour rester au-dessus de 4,3:1 de
+   contraste avec le texte blanc au pire point (voir le calcul WCAG posé en
+   commentaire au moment du choix), la bascule vers les tons sombres du
+   milieu se faisant avant que le premier texte (le titre de la nuit)
+   n'apparaisse. L'extrémité basse, jamais sous du texte critique, est
+   poussée bien plus loin (#0f1729 -> #060a14, quasi noir). */
 #ecran-sommeil {
-  background: linear-gradient(180deg, #4c6a94 0%, #2c3e6b 45%, #17213b 75%, #0f1729 100%);
+  background: linear-gradient(180deg, #5a7aa8 0%, #2c3e6b 45%, #131b33 75%, #060a14 100%);
+  position: relative;
 }
-.barre-sommeil {
-  background: transparent;
-  border-bottom-color: transparent;
+/* Plus de barre ni de titre depuis le 17 septembre 2026 (remarque de
+   l'utilisateur) : seul le retour reste, flottant tout en haut de l'écran
+   (niveau caméra selfie), un peu plus grand que .icone ailleurs (52px
+   contre 44px) pour rester facile à toucher sans le confort d'une barre
+   pleine largeur autour de lui. */
+.icone-sommeil-flottant {
+  position: absolute;
+  top: max(env(safe-area-inset-top), 6px);
+  left: 8px;
+  z-index: 5;
+  width: 52px;
+  height: 52px;
+  font-size: 26px;
 }
-.barre-titre-sommeil span { color: #fff; }
 .icone-sommeil { color: #fff; }
 .icone-sommeil:active { background: rgba(255, 255, 255, .12); }
 .icone-sommeil[disabled] { opacity: .35; }
 .corps-sommeil {
   background: transparent;
   color: #fff;
+  /* Compense l'absence de barre : espace pour ne pas passer sous le
+     retour flottant, plus large que .corps par défaut. */
+  padding-top: calc(env(safe-area-inset-top) + 64px);
 }
 .sommeil-nuit-nav {
   display: flex;
@@ -421,6 +447,17 @@ body { display: flex; flex-direction: column; }
 .sommeil-creneau.libre { background: rgba(255, 255, 255, .08); }
 .sommeil-creneau.sommeil { background: #6fa8dc; }
 .sommeil-creneau.insomnie { background: var(--danger); }
+/* Cœur de nuit agrandi (23h30-8h, demande de l'utilisateur le
+   17 septembre 2026) : plus haut que large plutôt que plus large, pour ne
+   pas changer le nombre de créneaux par ligne (20, voir plus haut) qui
+   garantit que 00h-8h tient sur une seule ligne. */
+.sommeil-creneau.coeur { aspect-ratio: 1 / 1.35; }
+.sommeil-creneau.coeur .sommeil-creneau-heure { font-size: 9px; }
+.sommeil-creneau.coeur .sommeil-creneau-sport { font-size: 13px; }
+/* Cible d'un repère en cours de glissement (voir .repere-fantome plus
+   bas) : contour blanc plutôt qu'un changement de fond, visible sur les
+   trois états (libre, sommeil, insomnie). */
+.sommeil-creneau.cible-glissement { outline: 2px solid #fff; outline-offset: 1px; }
 /* Heure incrustee un creneau sur deux (demande utilisateur, 16 septembre
    2026) : blanc semi-opaque, lisible sur les trois fonds (gris translucide,
    bleu, rouge) sans ajouter de contraste par etat. pointer-events:none pour
@@ -435,6 +472,26 @@ body { display: flex; flex-direction: column; }
    créneau plutôt que de s'y superposer, voir rendreSommeil() dans
    js/app.js. */
 .sommeil-creneau-sport { font-size: 11px; line-height: 1; pointer-events: none; }
+
+/* Icône suivant le doigt pendant le glissement d'un repère (17 septembre
+   2026) : pointer-events:none, sans quoi document.elementFromPoint()
+   (voir deplacerGlissementRepere() dans js/app.js) trouverait le fantôme
+   lui-même plutôt que le créneau dessous. Discret tant que le seuil de
+   déplacement n'est pas franchi (`.actif`), pour ne pas gêner la lecture
+   d'un simple appui qui n'ira nulle part. */
+.repere-fantome {
+  position: fixed;
+  z-index: 70;
+  transform: translate(-50%, -50%) scale(.9);
+  font-size: 20px;
+  line-height: 1;
+  pointer-events: none;
+  opacity: .55;
+}
+.repere-fantome.actif {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.3);
+}
 .sommeil-legende { font-size: 12px; color: rgba(255, 255, 255, .7); margin: 0 0 22px; }
 
 .sommeil-sous-titre {
@@ -504,8 +561,14 @@ body { display: flex; flex-direction: column; }
 
 /* ---------- Mensurations ---------- */
 
-.mensurations-corps { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
-.mensurations-silhouette { max-width: 130px; margin: 0; flex: none; }
+/* Mannequin passé aux polygones réalistes le 17 septembre 2026 (voir
+   MANNEQUIN_AVANT/ARRIERE dans js/app.js), avant+arrière côte à côte
+   (.mannequin-paire, réutilisée telle quelle depuis État musculaire /
+   Tonnage par muscle) plutôt que la seule silhouette de face 140x240
+   d'origine posée à côté de la liste des champs : la liste passe donc en
+   dessous, pleine largeur, plutôt qu'à côté d'un mannequin désormais deux
+   fois plus large. */
+.mensurations-corps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 18px; }
 
 /* Repères en lignes pointillées par paire plutôt qu'en cercles numérotés
    (16 septembre 2026, sur le modèle d'une référence envoyée par
@@ -516,13 +579,17 @@ body { display: flex; flex-direction: column; }
    taille, toutes deux couleur torse — en réutilisant deux teintes déjà
    posées ailleurs dans l'application (--accent, --baisse) et une seule
    couleur neuve pour les bras (calculée pour un contraste d'au moins 4,5:1
-   sur fond clair, comme le reste de la palette). */
-.mensurations-ligne { stroke-width: 2; stroke-dasharray: 3 3; }
+   sur fond clair, comme le reste de la palette). Valeurs à l'échelle du
+   repère 1000x2000 du mannequin réaliste (était 140x240, facteur ~7) :
+   stroke-width et dasharray mis à l'échelle en même temps que les
+   coordonnées des repères eux-mêmes (voir reperesMensurations() dans
+   js/app.js). */
+.mensurations-ligne { stroke-width: 14; stroke-dasharray: 20 16; }
 .mensurations-mesure-torse .mensurations-ligne, .mensurations-mesure-torse .mensurations-point { stroke: var(--accent); fill: var(--accent); }
 .mensurations-mesure-bras .mensurations-ligne, .mensurations-mesure-bras .mensurations-point { stroke: var(--mesure-bras); fill: var(--mesure-bras); }
 .mensurations-mesure-jambe .mensurations-ligne, .mensurations-mesure-jambe .mensurations-point { stroke: var(--baisse); fill: var(--baisse); }
 
-.mensurations-champs { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.mensurations-champs { display: flex; flex-direction: column; gap: 8px; }
 .mensurations-champ {
   display: flex;
   align-items: center;
@@ -885,7 +952,34 @@ body { display: flex; flex-direction: column; }
 .chrono-seance-icone { font-size: 12px; line-height: 1; }
 .chrono-seance-temps:empty { display: none; }
 
-.etiquettes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+/* Illustration par exercice (17 septembre 2026) : photos d'une base libre
+   (free-exercise-db, Unlicense), telechargees en local dans
+   images-exercices/ plutot qu'hotlinkees, l'application devant rester
+   utilisable hors ligne. La pastille "Photo générique" marque les
+   exercices sans variante fidèle dans la base (poulie unilatérale, machine
+   précise) : le mouvement est juste, l'appareil ou la prise sur la photo
+   pas forcément le bon. */
+.exo-image-bloc {
+  position: relative;
+  margin-bottom: 10px;
+  border-radius: var(--rayon);
+  overflow: hidden;
+  background: var(--fond-champ);
+}
+.exo-image { display: block; width: 100%; height: 160px; object-fit: cover; }
+.exo-image-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(20, 32, 29, .72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: var(--rayon-plein);
+}
+
+.etiquettes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .etiquette {
   font-size: 12px;
   font-weight: 600;
@@ -1314,8 +1408,20 @@ body { display: flex; flex-direction: column; }
    code couleur hausse/baisse habituel : sur le fond teal plein écran,
    `--hausse`/`--baisse` (pensées pour un fond clair) manqueraient de
    contraste, et le signe du pourcentage suffit à lire le sens. */
-.minuterie-bilan { text-align: center; color: #fff; }
+.minuterie-bilan { text-align: center; color: #fff; padding: 0 24px; max-width: 340px; }
 .minuterie-bilan[hidden] { display: none; }
+/* Chiffre repris le 17 septembre 2026 (demande de l'utilisateur), mais
+   seulement ici : le temps exact compte pour ce dernier repos, où il
+   sert à savoir combien de temps reste pour régler la machine suivante
+   (voir battre() dans js/app.js). Ailleurs, .jauge-pilule seule suffit. */
+.minuterie-bilan-chiffres {
+  margin: 0 0 4px;
+  font-size: 48px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.minuterie-bilan-chiffres[hidden] { display: none; }
 .minuterie-bilan-tonnage {
   margin: 0;
   font-size: 17px;
@@ -1329,6 +1435,17 @@ body { display: flex; flex-direction: column; }
   color: rgba(255, 255, 255, .72);
 }
 .minuterie-bilan-suivant[hidden] { display: none; }
+/* Remarques (consigne technique) du prochain exercice, ajoutées le
+   17 septembre 2026 : pour préparer la machine ou la position pendant ce
+   dernier repos plutôt que de le découvrir une fois l'écran suivant
+   affiché. */
+.minuterie-bilan-consigne {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, .85);
+}
+.minuterie-bilan-consigne[hidden] { display: none; }
 
 /* Amorce du clavier virtuel : doit rester focusable, donc ni display:none ni
    visibility:hidden. Hors flux, transparent, et hors de portée du doigt. */

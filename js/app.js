@@ -265,6 +265,7 @@ let audio = null;
 let nuitAffichee = null;  // clé (DD/MM/AAAA) de la nuit affichée sur l'écran Sommeil
 let mensurationAffichee = null;  // clé (DD/MM/AAAA) du jour affiché sur l'écran Mensurations
 let glisseSlider = false;  // curseur de comparaison avant/après en cours de glissement
+let glissementRepere = null;    // repère de journée en cours de glissement vers la frise (voir demarrerGlissementRepere)
 let indexTypeEvolution = 0;  // type de course affiché sur l'écran Évolution course
 
 /* ---------------------------------------------------------------- stockage */
@@ -477,6 +478,58 @@ const ANCIENS_NOMS = {
   // devient bilatéral, et garde les valeurs de la version unilatérale.
   'developpe machine': ['developpe machine unilateral'],
 };
+
+/* Illustrations par exercice, ajoutées le 17 septembre 2026 (chantier
+   « image par exercice » débloqué : une base libre existe, pas besoin d'un
+   outil de génération d'image). Photos de `free-exercise-db` (licence
+   Unlicense, domaine public), téléchargées en local dans
+   `images-exercices/` plutôt qu'hotlinkées : l'application doit rester
+   utilisable hors ligne. Clé = nom exact de l'exercice dans le programme
+   courant, même fragilité que `ANCIENS_NOMS` ci-dessus : un exercice
+   renommé au prochain import perd son image tant que cette table n'est pas
+   mise à jour à la main, aucune vérification automatique ne le signale.
+   `generique: true` marque les six exercices sans variante fidèle dans la
+   base (poulie unilatérale, machine précise, prise neutre) : la photo
+   montre le même mouvement sur un autre appareil, étiquetée pour ne pas
+   laisser croire que c'est le bon (voir `.exo-image-badge` dans
+   css/style.css). */
+const IMAGES_EXERCICES = {
+  'Abduction de hanche machine': { fichier: 'abduction-de-hanche-machine.jpg' },
+  'Curl incline halteres': { fichier: 'curl-incline-halteres.jpg' },
+  'Curl marteau': { fichier: 'curl-marteau.jpg' },
+  'Curl pupitre': { fichier: 'curl-pupitre.jpg' },
+  'Developpe incline machine': { fichier: 'developpe-incline-machine.jpg' },
+  'Developpe machine': { fichier: 'developpe-machine.jpg' },
+  'Dips buste penche': { fichier: 'dips-buste-penche.jpg' },
+  'Ecarte poulie horizontale hauteur poitrine': { fichier: 'ecarte-poulie-horizontale-hauteur-poitrine.jpg' },
+  'Elevation laterale halteres': { fichier: 'elevation-laterale-halteres.jpg' },
+  'Elevation laterale poulie unilaterale': { fichier: 'elevation-laterale-poulie-unilaterale.jpg', generique: true },
+  'Extension de hanche machine': { fichier: 'extension-de-hanche-machine.jpg', generique: true },
+  'Extension jambes unilatéral': { fichier: 'extension-jambes-unilateral.jpg' },
+  'Extension triceps overhead corde': { fichier: 'extension-triceps-overhead-corde.jpg' },
+  'Extension triceps poulie barre': { fichier: 'extension-triceps-poulie-barre.jpg' },
+  'Extension triceps unilaterale poulie': { fichier: 'extension-triceps-unilaterale-poulie.jpg', generique: true },
+  'FACE PULL': { fichier: 'face-pull.jpg' },
+  'LEG CURL ALLONGE UNILATERAL': { fichier: 'leg-curl-allonge-unilateral.jpg' },
+  'Lat pull-in unilateral poulie a genoux': { fichier: 'lat-pull-in-unilateral-poulie-a-genoux.jpg', generique: true },
+  'Mollets debout unilatéral': { fichier: 'mollets-debout-unilateral.jpg' },
+  'Oiseau inverse machine': { fichier: 'oiseau-inverse-machine.jpg', generique: true },
+  'PRESSE A CUISSE / HACK SQUAT': { fichier: 'presse-a-cuisse-hack-squat.jpg' },
+  'Rowing unilateral machine ou haltere': { fichier: 'rowing-unilateral-machine-ou-haltere.jpg' },
+  'SOULEVE DE TERRE ROUMAIN': { fichier: 'souleve-de-terre-roumain.jpg' },
+  'Tirage vertical prise large': { fichier: 'tirage-vertical-prise-large.jpg' },
+  'Traction prise neutre machine assistee': { fichier: 'traction-prise-neutre-machine-assistee.jpg', generique: true },
+};
+
+function rendreImageExercice(nom) {
+  const info = IMAGES_EXERCICES[nom];
+  const bloc = $('exo-image-bloc');
+  if (!info) { bloc.hidden = true; return; }
+  bloc.hidden = false;
+  $('exo-image').src = 'images-exercices/' + info.fichier;
+  $('exo-image').alt = nom;
+  $('exo-image-generique').hidden = !info.generique;
+}
 
 function formeDuNom(nom) {
   return String(nom || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -1600,6 +1653,7 @@ function rendreExercice() {
   }
 
   $('exo-nom').textContent = courant.nom;
+  rendreImageExercice(courant.nom);
   $('exo-muscle').textContent = fiche.muscle || '';
   $('exo-prescription').textContent = fiche.series
     ? fiche.series + ' × ' + (fiche.reps_min === fiche.reps_max
@@ -1952,6 +2006,10 @@ function validerSerie(exercice, serie, index) {
     indexExo++;
     rendreExercice();
     bilan.nomSuivant = seance.exercices[indexExo].nom;
+    // Remarques du prochain exercice (demande de l'utilisateur le
+    // 17 septembre 2026, « pour pouvoir préparer la machine, position
+    // etc ») : ficheExercice() lit déjà indexExo, qui vient d'avancer.
+    bilan.consigneSuivante = consigneAffichee(seance.jour, bilan.nomSuivant, ficheExercice().consigne);
   } else {
     rendreSeries();
     rendreJauge();
@@ -1977,6 +2035,7 @@ function lancerMinuterie(secondes, bilan) {
   const instance = {
     fin: Date.now() + secondes * 1000,
     duree: secondes,
+    bilan: bilan || null,
   };
   minuterie = instance;
   $('minuterie').classList.remove('inactif');
@@ -2043,6 +2102,13 @@ function battre() {
   $('minuterie').setAttribute('aria-label', libelle);
   $('minuterie-plein-ecran').setAttribute('aria-label', libelle);
 
+  // Chiffre repris le 17 septembre 2026, mais seulement sur le dernier
+  // repos d'un exercice (demande de l'utilisateur) : le temps exact compte
+  // ici pour savoir combien de temps reste pour régler la machine
+  // suivante, ce qui ne vaut pas pour un repos ordinaire (voir .jauge-pilule
+  // plus haut, qui reste seule ailleurs).
+  if (minuterie.bilan) $('minuterie-bilan-chiffres').textContent = texteDuree(restant);
+
   // Le plein écran laisse la main avant la fin, dans les 20 % de temps
   // restant (demande de l'utilisateur le 16 septembre 2026) : bloquer tout
   // le repos empêchait de préparer la série suivante avant qu'il ne se
@@ -2075,22 +2141,41 @@ function arreterMinuterie() {
    de tous les exercices). Voir validerSerie(). */
 function rendreBilanMinuterie(bilan) {
   const bloc = $('minuterie-plein-ecran-bilan');
+  const ligneChiffres = $('minuterie-bilan-chiffres');
   const ligneTonnage = $('minuterie-bilan-tonnage');
   const ligneSuivant = $('minuterie-bilan-suivant');
+  const ligneConsigne = $('minuterie-bilan-consigne');
 
+  ligneChiffres.hidden = true;
   ligneTonnage.hidden = true;
   ligneSuivant.hidden = true;
+  ligneConsigne.hidden = true;
 
-  if (bilan && bilan.tonnageAvant) {
+  if (!bilan) { bloc.hidden = true; return; }
+
+  // Chiffre exact (demande de l'utilisateur le 17 septembre 2026) : réservé
+  // à ce bilan, voir battre() plus haut qui le tient à jour tant qu'il est
+  // affiché. Toujours affiché dès qu'un bilan existe : c'est justement le
+  // temps dont on dispose pour régler la machine suivante.
+  ligneChiffres.textContent = texteDuree(minuterie ? (minuterie.fin - Date.now()) / 1000 : 0);
+  ligneChiffres.hidden = false;
+
+  if (bilan.tonnageAvant) {
     const ecart = Math.round(((bilan.tonnageActuel - bilan.tonnageAvant) / bilan.tonnageAvant) * 100);
     ligneTonnage.textContent = 'Tonnage exercice ' + (ecart > 0 ? '+' : '') + ecart + ' % vs la semaine dernière';
     ligneTonnage.hidden = false;
   }
-  if (bilan && bilan.nomSuivant) {
+  if (bilan.nomSuivant) {
     ligneSuivant.textContent = 'Ensuite : ' + bilan.nomSuivant;
     ligneSuivant.hidden = false;
   }
-  bloc.hidden = ligneTonnage.hidden && ligneSuivant.hidden;
+  // Remarques (consigne technique) du prochain exercice, pour préparer la
+  // machine ou la position pendant ce dernier repos (même demande).
+  if (bilan.consigneSuivante) {
+    ligneConsigne.textContent = bilan.consigneSuivante;
+    ligneConsigne.hidden = false;
+  }
+  bloc.hidden = false;
 }
 
 /* Ferme la minuterie, à zéro comme sur un appui. Le passage à l'exercice
@@ -2521,10 +2606,36 @@ async function synchroniserMensurations() {
   ecrire(CLES.mensurations, toutes);
 }
 
+/* Le sommeil n'avait jusqu'au 16 septembre 2026 aucune sauvegarde classeur,
+   contrairement aux consignes et aux mensurations : repéré en relisant le
+   pont, pas demandé par l'utilisateur. Même principe que les consignes,
+   pour la même raison (une nuit se corrige après coup — insomnie ajoutée
+   le lendemain, raison oubliée — l'envoi une fois pour toutes des
+   mensurations ne conviendrait pas) : l'ensemble courant repart à chaque
+   synchronisation, `ecrireSommeil` (appsscript/Code.gs) met à jour la ligne
+   de chaque nuit plutôt que d'en ajouter une. Les libellés des raisons
+   d'insomnie sont traduits ici (RAISONS_INSOMNIE) : le classeur ne connaît
+   que les clés brutes sans cette table.
+   Nécessite le redéploiement du pont pour atteindre réellement le classeur,
+   comme les trois autres évolutions du 16 septembre 2026. */
+async function synchroniserSommeil() {
+  const nuits = lireSommeil();
+  if (!nuits.length) return;
+  const version = nuits.map((n) => Object.assign({}, n, {
+    raisons: (n.raisons || []).map((cle) => (RAISONS_INSOMNIE.find((r) => r.cle === cle) || {}).nom || cle),
+  }));
+  try {
+    await envoyer({ action: 'sommeil', nuits: version });
+  } catch (e) {
+    console.warn('Sauvegarde du sommeil différée', e);
+  }
+}
+
 async function synchroniser() {
   if (!reglages.pont) return 0;
   await synchroniserConsignes();
   await synchroniserMensurations();
+  await synchroniserSommeil();
 
   const historique = lireTableau(CLES.historique);
   const attente = historique.filter((s) => s.fin && !s.envoye);
@@ -2706,36 +2817,74 @@ const ZONES_MUSCULAIRES = [
   { cle: 'mollets', nom: 'Mollets', muscles: ['mollets'], recuperation_h: 48, vue: 'liste' },
 ];
 
-/* Mannequin de dos ajouté le 16 septembre 2026 (demande de l'utilisateur,
-   « poursuivre jusqu'au bout de la feuille de route » ; référence Strava
-   pour le style des deux tiers du chantier Images, l'autre tiers — une
-   image par exercice — restant hors de portée sans outil de génération
-   d'image). Les six zones vue:'liste' ci-dessus n'avaient jusque-là qu'une
-   liste de texte, faute d'une vue de dos : ce mannequin la leur donne,
-   dans le même repère (140 x 240) que le mannequin de face pour rester
-   visuellement cohérent à côté de lui. Les mollets sont ici la zone
-   colorée (contrairement au mannequin de face, où ils ne sont qu'une
-   silhouette neutre) : c'est le dos qui les représente, pas l'avant. */
-const FORMES_MANNEQUIN_ARRIERE = [
-  { tag: 'rect', zone: 'dos', attrs: 'x="42" y="40" width="56" height="70" rx="14"' },
-  { tag: 'circle', zone: 'epaules-arriere', attrs: 'cx="34" cy="50" r="13"' },
-  { tag: 'circle', zone: 'epaules-arriere', attrs: 'cx="106" cy="50" r="13"' },
-  { tag: 'rect', zone: 'triceps', attrs: 'x="20" y="55" width="16" height="55" rx="8"' },
-  { tag: 'rect', zone: 'triceps', attrs: 'x="104" y="55" width="16" height="55" rx="8"' },
-  { tag: 'rect', zone: 'fessiers', attrs: 'x="40" y="118" width="60" height="28" rx="14"' },
-  { tag: 'rect', zone: 'ischios', attrs: 'x="44" y="148" width="24" height="48" rx="10"' },
-  { tag: 'rect', zone: 'ischios', attrs: 'x="72" y="148" width="24" height="48" rx="10"' },
-  { tag: 'rect', zone: 'mollets', attrs: 'x="46" y="198" width="20" height="38" rx="8"' },
-  { tag: 'rect', zone: 'mollets', attrs: 'x="74" y="198" width="20" height="38" rx="8"' },
+/* Mannequin réaliste (17 septembre 2026, chantier débloqué : une base
+   libre existait, pas besoin d'un outil de génération d'image), remplace
+   les cercles et rectangles dessinés à la main des deux mannequins
+   ci-dessous et de celui de Mensurations (plus bas dans ce fichier).
+   Polygones repris de `react-body-highlighter`
+   (github.com/giavinh79/react-body-highlighter, licence MIT), repère
+   1000 x 2000. `zone` vaut une clé de ZONES_MUSCULAIRES quand le polygone
+   est suivi par l'application, `null` sinon (tête, cou, avant-bras, abdos,
+   obliques, adducteurs/abducteurs, genoux, soléaires) : ces derniers
+   restent en silhouette neutre par `rendreMannequinPolygones()` plutôt que
+   de laisser un trou dans le corps. Triceps et mollets ont un polygone sur
+   les deux vues (visibles de face comme de dos dans la source), plus
+   fidèle qu'un seul côté choisi arbitrairement. `dos` regroupe trapèze,
+   haut et bas du dos (trois paires de la source) sous une seule couleur :
+   même simplification qu'avant, un seul muscle suivi par zone. */
+const MANNEQUIN_AVANT = [
+  { zone: 'pectoraux', points: ['518 416 510 551 580 580 678 555 706 473 620 416', '298 465 314 555 408 580 482 551 478 420 376 420'] },
+  { zone: null, points: ['686 633 673 571 588 596 600 641 604 833 657 788 665 698', '339 784 331 718 310 633 322 571 408 592 392 633 392 837'] },
+  { zone: null, points: ['563 592 580 641 584 780 584 927 563 984 551 1041 514 1078 510 845 506 673 510 571', '437 588 486 571 490 673 486 845 482 1073 445 1037 408 914 408 784 412 645'] },
+  { zone: 'biceps', points: ['167 682 180 714 229 661 290 539 278 494 204 559', '714 494 702 547 763 661 816 718 829 690 788 555'] },
+  { zone: 'triceps', points: ['694 555 694 616 759 727 776 702 755 673', '224 694 298 555 298 608 229 731'] },
+  { zone: null, points: ['555 237 506 335 506 392 616 400 706 449 694 367 633 351 584 306', '290 449 302 371 363 351 412 302 445 245 490 339 486 392 380 396'] },
+  { zone: 'epaules', points: ['784 531 796 478 792 412 759 380 710 363 722 429 714 473', '282 473 212 531 200 478 204 408 245 371 286 371 269 433'] },
+  { zone: null, points: ['424 29 400 118 420 196 461 233 498 253 547 224 576 192 592 102 571 24 498 0'] },
+  { zone: null, points: ['527 1102 543 1249 600 1102 620 1000 649 943 600 927 567 1045', '478 1106 449 1253 420 1159 404 1131 396 1073 380 1024 347 939 396 922 416 992 437 1053'] },
+  { zone: 'quadriceps', points: ['347 988 371 1082 371 1278 343 1371 310 1327 294 1200 282 1114 294 1008 322 947', '633 1057 645 1000 669 947 702 1012 710 1118 682 1331 653 1376 624 1286 620 1114', '388 1294 384 1122 412 1184 445 1294 429 1351 400 1461 363 1465 355 1400', '596 1457 555 1290 608 1139 612 1302 641 1396 629 1465', '327 1384 265 1457 257 1367 257 1273 269 1143 294 1335', '718 1131 739 1241 739 1404 727 1457 665 1384 702 1335'] },
+  { zone: null, points: ['339 1400 347 1433 355 1473 363 1510 351 1567 298 1567 273 1527 273 1473 302 1441', '657 1400 722 1478 722 1522 698 1571 649 1567 629 1510'] },
+  { zone: 'mollets', points: ['714 1604 735 1535 767 1612 796 1678 784 1878 796 1955 747 1955', '249 1947 278 1649 282 1604 261 1543 249 1576 224 1616 208 1678 220 1882 208 1955', '727 1951 698 1592 653 1584 641 1624 641 1653 657 1771', '355 1584 359 1624 359 1669 351 1722 351 1767 322 1820 306 1873 269 1947 273 1878 282 1804 286 1755 290 1698 298 1641 302 1588'] },
+  { zone: null, points: ['61 886 102 751 147 702 163 743 192 735 45 976 0 1000', '845 698 833 735 800 731 951 984 1000 1004 935 894 898 763', '776 722 776 776 804 841 853 898 922 1012 947 996', '69 1012 135 906 188 841 216 771 212 718 49 988'] },
 ];
 
-/* Silhouette neutre commune aux deux vues (tête, cou, avant-bras) : les
-   parties jamais suivies, ni de face ni de dos. */
-const SILHOUETTE_MANNEQUIN =
-  '<circle class="silhouette" cx="70" cy="18" r="14"></circle>' +
-  '<rect class="silhouette" x="64" y="30" width="12" height="10"></rect>' +
-  '<rect class="silhouette" x="18" y="108" width="14" height="45" rx="7"></rect>' +
-  '<rect class="silhouette" x="108" y="108" width="14" height="45" rx="7"></rect>';
+const MANNEQUIN_ARRIERE = [
+  { zone: null, points: ['506 0 460 9 409 55 404 128 451 200 557 200 591 136 596 47 557 13'] },
+  { zone: 'dos', points: ['447 217 477 217 472 383 477 647 383 532 353 409 311 366 391 332 438 272', '523 217 557 217 566 272 609 328 689 366 647 404 617 532 523 647 532 383'] },
+  { zone: 'epaules-arriere', points: ['294 370 230 391 174 443 183 536 243 494 272 464', '711 370 783 396 826 447 817 536 749 489 723 451'] },
+  { zone: 'dos', points: ['311 387 281 489 285 553 340 753 472 711 472 664 366 540 336 413', '689 387 719 494 715 562 660 753 528 711 528 664 634 545 664 417'] },
+  { zone: 'triceps', points: ['268 498 179 557 145 723 166 817 217 638 268 557', '736 502 821 557 860 732 834 821 779 630 732 557', '268 583 268 685 230 753 191 774 226 655', '728 583 770 647 804 774 766 753 728 689'] },
+  { zone: 'dos', points: ['477 728 345 770 353 834 494 1021 468 830', '523 728 655 770 647 834 506 1021 532 838'] },
+  { zone: null, points: ['864 757 911 834 932 940 1000 1064 962 1043 881 894 843 838', '136 757 89 838 68 936 0 1064 38 1043 123 885 157 830', '813 796 774 779 791 847 911 1038 932 1089 945 1047', '187 796 221 779 209 843 94 1030 68 1085 51 1047'] },
+  { zone: 'fessiers', points: ['447 996 302 1085 298 1187 315 1260 472 1213 494 1149', '553 991 511 1145 523 1209 681 1260 698 1191 694 1085'] },
+  { zone: null, points: ['481 1230 447 1230 413 1255 451 1443 485 1357 489 1294', '519 1226 557 1234 591 1260 549 1443 519 1362 511 1294'] },
+  { zone: 'ischios', points: ['289 1221 311 1294 366 1260 353 1353 345 1502 294 1583 289 1468 277 1413 272 1315', '715 1217 694 1289 638 1260 655 1366 664 1502 711 1583 715 1477 728 1421 736 1319', '387 1255 443 1460 404 1668 362 1528 370 1353', '617 1255 634 1362 643 1532 600 1668 562 1464'] },
+  { zone: null, points: ['345 1532 311 1591 336 1664 374 1626', '664 1536 630 1630 668 1664 694 1591'] },
+  { zone: 'mollets', points: ['294 1604 285 1672 247 1796 238 1928 255 1970 285 1932 298 1800 319 1711 319 1668', '374 1651 353 1677 332 1719 311 1804 302 1919 340 2000 387 1906 391 1689', '630 1651 613 1685 617 1906 664 1996 706 1919 689 1796 668 1702', '706 1604 723 1685 757 1791 766 1928 745 1966 723 1936 706 1796 681 1681'] },
+  { zone: null, points: ['285 1957 302 1957 336 2017 306 2200 285 2136 268 1983'] },
+  { zone: null, points: ['698 1957 719 1957 736 1983 719 2132 702 2196 672 2021'] },
+];
+
+/* Rendu commun aux trois mannequins de l'application (État musculaire,
+   Tonnage par muscle, Mensurations) : un polygone par entrée de
+   MANNEQUIN_AVANT/MANNEQUIN_ARRIERE, `zoneAttrs(cle)` fournissant les
+   attributs (classe, style, data-zone…) des zones suivies. Sans
+   `zoneAttrs` (Mensurations, qui ne suit aucun état), tout le corps
+   — zones suivies comprises — reste en silhouette neutre : ce mannequin-là
+   ne sert que de fond aux repères de mesure. */
+function rendreMannequinPolygones(donnees, libelleVue, zoneAttrs, titreZone, contenuSupplementaire) {
+  const polys = donnees.map((entree) => {
+    if (!entree.zone || !zoneAttrs) {
+      return entree.points.map((p) => '<polygon class="silhouette" points="' + p + '"></polygon>').join('');
+    }
+    const titre = titreZone ? '<title>' + echapper(titreZone(entree.zone)) + '</title>' : '';
+    return entree.points.map((p) => (
+      '<polygon ' + zoneAttrs(entree.zone) + ' points="' + p + '">' + titre + '</polygon>'
+    )).join('');
+  }).join('');
+  return '<svg viewBox="0 0 1000 2000" class="mannequin-svg" role="img" aria-label="Mannequin, ' +
+    libelleVue + '">' + polys + (contenuSupplementaire || '') + '</svg>';
+}
 
 function derniereFoisZone(zone) {
   let dernier = null;
@@ -2773,44 +2922,16 @@ function rendreEtatMusculaire() {
     return zone.nom + ' — ' + etats[cle].texte;
   };
 
-  // Mannequin de face minimal (cercles et rectangles arrondis), silhouette
-  // neutre pour les parties non suivies (tête, avant-bras, bassin, jambes
-  // basses) et zones colorées pour les quatre groupes visibles de face.
-  const avant =
-    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de face">' +
-      SILHOUETTE_MANNEQUIN +
-      '<rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>' +
-      '<rect class="silhouette" x="46" y="198" width="20" height="38" rx="8"></rect>' +
-      '<rect class="silhouette" x="74" y="198" width="20" height="38" rx="8"></rect>' +
-      '<rect class="' + classe('pectoraux') + '" x="42" y="40" width="56" height="70" rx="14">' +
-        '<title>' + echapper(titreZone('pectoraux')) + '</title></rect>' +
-      '<circle class="' + classe('epaules') + '" cx="34" cy="50" r="13">' +
-        '<title>' + echapper(titreZone('epaules')) + '</title></circle>' +
-      '<circle class="' + classe('epaules') + '" cx="106" cy="50" r="13">' +
-        '<title>' + echapper(titreZone('epaules')) + '</title></circle>' +
-      '<rect class="' + classe('biceps') + '" x="20" y="55" width="16" height="55" rx="8">' +
-        '<title>' + echapper(titreZone('biceps')) + '</title></rect>' +
-      '<rect class="' + classe('biceps') + '" x="104" y="55" width="16" height="55" rx="8">' +
-        '<title>' + echapper(titreZone('biceps')) + '</title></rect>' +
-      '<rect class="' + classe('quadriceps') + '" x="44" y="138" width="24" height="60" rx="10">' +
-        '<title>' + echapper(titreZone('quadriceps')) + '</title></rect>' +
-      '<rect class="' + classe('quadriceps') + '" x="72" y="138" width="24" height="60" rx="10">' +
-        '<title>' + echapper(titreZone('quadriceps')) + '</title></rect>' +
-    '</svg>';
-
-  // Mannequin de dos (16 septembre 2026, voir FORMES_MANNEQUIN_ARRIERE) :
-  // les six zones jusque-là listées en texte seulement ont maintenant
-  // aussi leur repère visuel, à côté du mannequin de face plutôt qu'à sa
-  // place — la liste en dessous reste la source la plus lisible (le nom de
-  // la zone ne dépend pas d'un survol ou d'un appui long sur mobile).
-  const arriere =
-    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de dos">' +
-      SILHOUETTE_MANNEQUIN +
-      FORMES_MANNEQUIN_ARRIERE.map((f) => (
-        '<' + f.tag + ' class="' + classe(f.zone) + '" ' + f.attrs + '>' +
-          '<title>' + echapper(titreZone(f.zone)) + '</title></' + f.tag + '>'
-      )).join('') +
-    '</svg>';
+  // Mannequin réaliste (17 septembre 2026, voir MANNEQUIN_AVANT/ARRIERE et
+  // rendreMannequinPolygones() plus haut) : silhouette neutre pour les
+  // parties non suivies, couleur d'état (fatigue/récup/prête) pour les dix
+  // zones. La liste en dessous du mannequin reste la source la plus
+  // lisible pour les zones vues de dos (le nom d'une zone ne doit pas
+  // dépendre d'un survol ou d'un appui long sur mobile), inchangé depuis
+  // le 16 septembre 2026.
+  const zoneAttrs = (cle) => 'class="' + classe(cle) + '" data-zone="' + cle + '"';
+  const avant = rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face', zoneAttrs, titreZone);
+  const arriere = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos', zoneAttrs, titreZone);
 
   $('mannequin').innerHTML =
     '<div class="mannequin-paire">' +
@@ -2891,32 +3012,13 @@ function rendreTonnageMuscles() {
   const styleZone = (cle) => 'fill: var(--accent-clair); fill-opacity: ' +
     (0.12 + 0.88 * (tonnages[cle] / max)).toFixed(2) + ';' +
     (cle === zoneTonnageChoisie ? ' stroke: var(--accent); stroke-width: 2;' : '');
-  const zoneSvg = (tag, cle, attrs) => '<' + tag + ' class="zone-cliquable" data-zone="' + cle +
-    '" style="' + styleZone(cle) + '" ' + attrs + '><title>' + echapper(titreZone(cle)) + '</title></' + tag + '>';
-
-  const avant =
-    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de face, tonnage par zone">' +
-      SILHOUETTE_MANNEQUIN +
-      '<rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>' +
-      '<rect class="silhouette" x="46" y="198" width="20" height="38" rx="8"></rect>' +
-      '<rect class="silhouette" x="74" y="198" width="20" height="38" rx="8"></rect>' +
-      zoneSvg('rect', 'pectoraux', 'x="42" y="40" width="56" height="70" rx="14"') +
-      zoneSvg('circle', 'epaules', 'cx="34" cy="50" r="13"') +
-      zoneSvg('circle', 'epaules', 'cx="106" cy="50" r="13"') +
-      zoneSvg('rect', 'biceps', 'x="20" y="55" width="16" height="55" rx="8"') +
-      zoneSvg('rect', 'biceps', 'x="104" y="55" width="16" height="55" rx="8"') +
-      zoneSvg('rect', 'quadriceps', 'x="44" y="138" width="24" height="60" rx="10"') +
-      zoneSvg('rect', 'quadriceps', 'x="72" y="138" width="24" height="60" rx="10"') +
-    '</svg>';
-
-  // Mannequin de dos (16 septembre 2026, voir FORMES_MANNEQUIN_ARRIERE dans
-  // le bloc État musculaire ci-dessus) : les six zones jusque-là dans la
-  // seule liste ont maintenant aussi leur repère cliquable ici.
-  const arriere =
-    '<svg viewBox="0 0 140 240" class="mannequin-svg" role="img" aria-label="Mannequin de dos, tonnage par zone">' +
-      SILHOUETTE_MANNEQUIN +
-      FORMES_MANNEQUIN_ARRIERE.map((f) => zoneSvg(f.tag, f.zone, f.attrs)).join('') +
-    '</svg>';
+  // Mannequin réaliste (17 septembre 2026, voir MANNEQUIN_AVANT/ARRIERE et
+  // rendreMannequinPolygones() plus haut) : les dix zones sont désormais
+  // toutes cliquables sur l'une des deux vues (certaines sur les deux,
+  // triceps et mollets), silhouette neutre pour le reste.
+  const zoneAttrs = (cle) => 'class="zone-cliquable" data-zone="' + cle + '" style="' + styleZone(cle) + '"';
+  const avant = rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face, tonnage par zone', zoneAttrs, titreZone);
+  const arriere = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos, tonnage par zone', zoneAttrs, titreZone);
 
   $('tonnage-mannequin').innerHTML =
     '<div class="mannequin-paire">' +
@@ -3079,7 +3181,7 @@ function lireSommeil() {
 function nuitPour(cle) {
   return lireSommeil().find((n) => n.cle === cle) ||
     { cle, insomnies: [], raisons: [], alcool: false, cafe: 0, pipi: 0, ecranTard: false, repasTardif: false,
-      sports: {} };
+      sports: {}, reperesFrise: [] };
 }
 
 function enregistrerNuit(nuit) {
@@ -3110,6 +3212,91 @@ function actionnerJourneeSommeil(nuit, item) {
   else nuit[item.cle] = (nuit[item.cle] || 0) + 1;
   enregistrerNuit(nuit);
   rendreSommeil();
+}
+
+/* Repères de journée placés directement sur la frise par appui-glissé
+   (demande de l'utilisateur le 17 septembre 2026), en plus des puces
+   « La journée » qui restent le geste rapide sans heure précise : les deux
+   cohabitent, l'un n'annule pas l'autre. Plusieurs occurrences du même type
+   peuvent être placées (café à 1h puis à 3h) ; `reperesFrise` est une liste
+   à part plutôt qu'une carte par type, pour ça. Trois appuis distincts sur
+   la frise (remarque de l'utilisateur) : un appui simple bascule
+   l'insomnie (basculerCreneauSommeil, inchangé), l'appui-glissé depuis une
+   puce crée un repère, l'appui long sur un créneau qui en porte un le
+   supprime (voir departGlissementRepere/appuiLongCreneau plus bas). */
+function placerRepereFrise(nuit, type, index) {
+  nuit.reperesFrise = nuit.reperesFrise || [];
+  nuit.reperesFrise.push({ type, index });
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+function supprimerRepereFrise(nuit, index) {
+  nuit.reperesFrise = (nuit.reperesFrise || []).filter((r) => r.index !== index);
+  enregistrerNuit(nuit);
+  rendreSommeil();
+}
+
+/* Glissement d'une puce « La journée » vers la frise, pour y poser un
+   repère à une heure précise (voir placerRepereFrise). Un simple appui
+   sans déplacement (`seuilFranchi` jamais vrai) ne fait rien ici : le
+   `click` natif qui suit se charge alors normalement du comportement
+   existant de la puce (bascule ou compteur). document.elementFromPoint
+   plutôt qu'un calcul de grille : la frise passe de 13 à 20 colonnes selon
+   la largeur d'écran (voir .sommeil-creneau dans css/style.css), la
+   trouver par élément sous le doigt évite de dupliquer cette mise en page
+   en JavaScript. */
+function demarrerGlissementRepere(nuit, type, x, y) {
+  const item = JOURNEE_SOMMEIL.find((i) => i.cle === type);
+  if (!item) return;
+  const fantome = document.createElement('div');
+  fantome.className = 'repere-fantome';
+  fantome.textContent = item.icone;
+  fantome.style.left = x + 'px';
+  fantome.style.top = y + 'px';
+  document.body.appendChild(fantome);
+  glissementRepere = { nuit, type, fantome, depart: { x, y }, seuilFranchi: false, indexSurvole: -1 };
+}
+
+function deplacerGlissementRepere(x, y) {
+  const g = glissementRepere;
+  if (!g) return;
+  g.fantome.style.left = x + 'px';
+  g.fantome.style.top = y + 'px';
+  const dx = x - g.depart.x;
+  const dy = y - g.depart.y;
+  if (!g.seuilFranchi && (dx * dx + dy * dy) > 36) {
+    g.seuilFranchi = true;
+    g.fantome.classList.add('actif');
+  }
+  const cible = document.elementFromPoint(x, y);
+  const creneau = cible && cible.closest ? cible.closest('.sommeil-creneau') : null;
+  const index = creneau ? Number(creneau.dataset.index) : -1;
+  if (index !== g.indexSurvole) {
+    document.querySelectorAll('.sommeil-creneau.cible-glissement').forEach((el) => el.classList.remove('cible-glissement'));
+    if (creneau) creneau.classList.add('cible-glissement');
+    g.indexSurvole = index;
+  }
+}
+
+/* Aucun `click` natif ne suit un vrai glissement (mousedown/pointerdown sur
+   un élément puis pointerup sur un autre, après un déplacement) : c'est le
+   comportement standard des navigateurs (identique en tactile, où un
+   déplacement au-delà du seuil de scroll supprime aussi le clic de
+   synthèse), vérifié ici avant d'écrire cette fonction — un bouton
+   `venDeDeposerRepere` avait d'abord été posé pour s'en prémunir "au cas
+   où", mais restait vrai indéfiniment (le clic censé le consommer
+   n'arrivant jamais) et avalait alors le clic tout à fait normal de
+   l'interaction suivante sur un créneau. Le dépôt peut donc être immédiat,
+   sans détour par un tick. */
+function deposerGlissementRepere(x, y) {
+  const g = glissementRepere;
+  if (!g) return;
+  g.fantome.remove();
+  document.querySelectorAll('.sommeil-creneau.cible-glissement').forEach((el) => el.classList.remove('cible-glissement'));
+  glissementRepere = null;
+  if (!g.seuilFranchi || g.indexSurvole < 0) return;
+  placerRepereFrise(g.nuit, g.type, g.indexSurvole);
 }
 
 /* Sport du jour saisi à la main plutôt que déduit seul de l'historique
@@ -3152,6 +3339,11 @@ function rendreSommeil() {
   const sportsChoisis = SPORT_JOURNEE
     .filter((sp) => nuit.sports && nuit.sports[sp.cle] != null)
     .map((sp) => ({ sp, heure: nuit.sports[sp.cle], index: indexCreneauPourHeure(nuit.sports[sp.cle]) }));
+  // Repères posés par appui-glissé (voir placerRepereFrise) : même règle
+  // qu'un sport en collision, une seule icône par créneau, le sport
+  // l'emportant s'ils tombent au même endroit.
+  const reperesParIndex = {};
+  (nuit.reperesFrise || []).forEach((r) => { reperesParIndex[r.index] = r; });
 
   $('sommeil-nuit-titre').textContent = 'Nuit du ' + nuitAffichee + ' au ' + decalerCle(nuitAffichee, 1);
   $('bouton-sommeil-suivant').disabled = !cleAnterieure(nuitAffichee, cleNuitCourante());
@@ -3169,13 +3361,50 @@ function rendreSommeil() {
     // Icône du sport (même demande) quand son heure tombe sur ce créneau,
     // par-dessus le numéro d'heure s'ils coïncident.
     const sportIci = sportsChoisis.find((s) => s.index === index);
-    const icone = sportIci ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure) + '">' + sportIci.sp.icone + '</span>' : '';
+    const repereIci = !sportIci ? reperesParIndex[index] : null;
+    const repereItem = repereIci ? JOURNEE_SOMMEIL.find((i) => i.cle === repereIci.type) : null;
+    const icone = sportIci
+      ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure) + '">' + sportIci.sp.icone + '</span>'
+      : (repereItem ? '<span class="sommeil-creneau-sport" title="' + echapper(repereItem.nom + ', ' + creneau + ' — appui long pour retirer') + '">' + repereItem.icone + '</span>' : '');
     const heure = (index % 2 === 0 && !icone) ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
-    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '" aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
-    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + '" data-index="' + index + '" aria-label="' + creneau + '">' + heure + icone + '</button>';
+    const donneeRepere = repereItem ? ' data-repere="1"' : '';
+    // Cases du cœur agrandies (demande de l'utilisateur le 17 septembre
+    // 2026) : une classe à part de l'état sommeil/insomnie/libre, un
+    // créneau d'insomnie dans le cœur devant rester agrandi lui aussi.
+    const classeCoeur = dansLeCoeur ? ' coeur' : '';
+    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '"' + donneeRepere + ' aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
+    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + classeCoeur + '" data-index="' + index + '"' + donneeRepere + ' aria-label="' + creneau + '">' + heure + icone + '</button>';
   }).join('');
+  // Appui simple = bascule l'insomnie (inchangé). Appui long (550 ms) sur un
+  // créneau qui porte un repère = le supprime. La suppression elle-même
+  // n'a lieu que dans le `click` qui suit le relâchement, jamais dans le
+  // minuteur pendant que le doigt est encore posé : rendreSommeil()
+  // remplace tous les boutons de la frise, et un remplacement en plein
+  // geste ferait retomber le click final sur un bouton neuf, à la
+  // fermeture différente (voir lancerMinuterie() plus haut pour le même
+  // principe, un affichage différé d'un tick pour ne pas voler un clic en
+  // cours). Une variable locale par bouton (pas partagée entre eux) suffit
+  // : chaque fermeture ne survit qu'à son propre geste.
   $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {
-    bouton.addEventListener('click', () => basculerCreneauSommeil(nuit, Number(bouton.dataset.index)));
+    let minuteurAppuiLong = null;
+    let appuiLongDeclenche = false;
+    bouton.addEventListener('pointerdown', () => {
+      appuiLongDeclenche = false;
+      if (bouton.dataset.repere !== '1') return;
+      minuteurAppuiLong = setTimeout(() => {
+        minuteurAppuiLong = null;
+        appuiLongDeclenche = true;
+      }, 550);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => {
+      bouton.addEventListener(type, () => {
+        if (minuteurAppuiLong) { clearTimeout(minuteurAppuiLong); minuteurAppuiLong = null; }
+      });
+    });
+    bouton.addEventListener('click', () => {
+      if (appuiLongDeclenche) { supprimerRepereFrise(nuit, Number(bouton.dataset.index)); return; }
+      basculerCreneauSommeil(nuit, Number(bouton.dataset.index));
+    });
   });
 
   $('sommeil-raisons').innerHTML = RAISONS_INSOMNIE.map((raison) => (
@@ -3225,6 +3454,14 @@ function rendreSommeil() {
       const remise = evenement.target.closest('[data-remise]');
       if (remise) { remettreAZeroJournee(nuit, remise.dataset.remise); return; }
       actionnerJourneeSommeil(nuit, JOURNEE_SOMMEIL.find((i) => i.cle === bouton.dataset.cle));
+    });
+    // Appui-glissé vers la frise (demande de l'utilisateur le
+    // 17 septembre 2026) : y pose un repère à l'heure visée, en plus du
+    // geste ci-dessus qui reste le raccourci sans heure précise. Départ
+    // ignoré depuis la croix de remise, qui a son propre geste.
+    bouton.addEventListener('pointerdown', (evenement) => {
+      if (evenement.target.closest('[data-remise]')) return;
+      demarrerGlissementRepere(nuit, bouton.dataset.cle, evenement.clientX, evenement.clientY);
     });
   });
 
@@ -3345,8 +3582,43 @@ function compresserImage(fichier, suite) {
   lecteur.readAsDataURL(fichier);
 }
 
+/* Repères de mesure superposés au mannequin de face (17 septembre 2026,
+   coordonnées recalculées pour le repère 1000x2000 du mannequin réaliste :
+   voir MANNEQUIN_AVANT plus haut). Chaque paire de points reprend le bord
+   du polygone concerné à sa hauteur représentative (largeur du pectoral
+   pour la poitrine, des obliques pour la taille, etc.), lu directement
+   dans les coordonnées de la source plutôt qu'estimé à l'œil. Rayon des
+   points et épaisseur des lignes à la même échelle (~7x) que l'ancien
+   repère 140x240 (voir .mensurations-ligne dans css/style.css). */
+function reperesMensurations() {
+  // Un groupe par mesure, pas par ligne : bras/cuisse/mollet portent chacun
+  // deux paires (gauche+droite) dans le même <g>, comme l'ancien repère
+  // 140x240 (une seule mesure, prise des deux côtés du corps).
+  const groupe = (categorie, paires) => (
+    '<g class="mensurations-mesure-' + categorie + '">' +
+      paires.map(([x1, y1, x2, y2]) => (
+        '<line class="mensurations-ligne" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"></line>' +
+        '<circle class="mensurations-point" cx="' + x1 + '" cy="' + y1 + '" r="30"></circle>' +
+        '<circle class="mensurations-point" cx="' + x2 + '" cy="' + y2 + '" r="30"></circle>'
+      )).join('') +
+    '</g>'
+  );
+  return (
+    groupe('torse', [[298, 500, 706, 500]]) +                           // poitrine
+    groupe('torse', [[310, 700, 686, 700]]) +                           // taille
+    groupe('bras', [[167, 604, 290, 604], [702, 606, 829, 606]]) +      // bras
+    groupe('jambe', [[347, 1088, 649, 1088]]) +                         // hanches
+    groupe('jambe', [[257, 1200, 445, 1200], [555, 1200, 739, 1200]]) + // cuisse
+    groupe('jambe', [[208, 1751, 359, 1751], [641, 1756, 796, 1756]])   // mollet
+  );
+}
+
 function rendreMensurations() {
   const m = mensurationPour(mensurationAffichee);
+
+  $('mensurations-mannequin-avant').innerHTML =
+    rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face', null, null, reperesMensurations());
+  $('mensurations-mannequin-arriere').innerHTML = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos');
 
   $('mensurations-date-titre').textContent = mensurationAffichee === cleMensurationCourante()
     ? "Aujourd'hui, " + mensurationAffichee : mensurationAffichee;
@@ -3919,6 +4191,17 @@ function brancher() {
     if (glisseSlider) deplacerSliderMensurations(evenement.clientX);
   });
   window.addEventListener('pointerup', () => { glisseSlider = false; });
+
+  // Glissement d'un repère de journée vers la frise du sommeil, même
+  // principe que la poignée ci-dessus (écouteurs posés une fois ici,
+  // l'état glissementRepere décide s'il y a quelque chose à faire) : voir
+  // demarrerGlissementRepere() dans rendreSommeil().
+  window.addEventListener('pointermove', (evenement) => {
+    if (glissementRepere) deplacerGlissementRepere(evenement.clientX, evenement.clientY);
+  });
+  window.addEventListener('pointerup', (evenement) => {
+    if (glissementRepere) deposerGlissementRepere(evenement.clientX, evenement.clientY);
+  });
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
    'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));

@@ -41,9 +41,11 @@ SOURCES = ['js/app.js', 'sw.js', 'index.html', 'css/style.css', 'appsscript/Code
 # l'historique git. Ajouter un nom ici doit rester un geste delibere ; sans
 # cette liste, le controle se contenterait de bruire.
 NOMS_HISTORIQUES = {
-    'basculerSerie',     # remplace par validerSerie, 27 aout 2026
-    'validerParRir',     # renomme validerSerie, 6 septembre 2026
-    'sportDuJour',       # remplace par la selection manuelle, 16 septembre 2026
+    'basculerSerie',           # remplace par validerSerie, 27 aout 2026
+    'validerParRir',           # renomme validerSerie, 6 septembre 2026
+    'sportDuJour',             # remplace par la selection manuelle, 16 septembre 2026
+    'FORMES_MANNEQUIN_ARRIERE',  # remplace par MANNEQUIN_AVANT/ARRIERE, 17 septembre 2026
+    'SILHOUETTE_MANNEQUIN',      # remplace par MANNEQUIN_AVANT/ARRIERE, 17 septembre 2026
 }
 
 

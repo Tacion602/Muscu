@@ -18,6 +18,7 @@ Prealable, une fois : python -m playwright install chromium
 
 import functools
 import http.server
+import re
 import threading
 from pathlib import Path
 
@@ -144,6 +145,25 @@ def test_la_comparaison_de_tonnage_s_affiche_puis_disparait(page):
     assert "+13" in bandeau.text_content() or "+12" in bandeau.text_content()
     page.wait_for_timeout(2300)
     assert not bandeau.evaluate("el => el.classList.contains('visible')")
+
+
+def test_l_illustration_d_exercice_suit_la_table_locale(page):
+    """17 septembre 2026 : chantier debloque via une base libre
+    (free-exercise-db, licence Unlicense), telechargee en local
+    (images-exercices/) plutot qu'hotlinkee. IMAGES_EXERCICES est une table
+    a part (comme ANCIENS_NOMS), aucun nom d'exercice n'est donc suppose
+    ici : seul le suivi de la table est verifie, quel que soit l'exercice
+    reellement rencontre dans le programme du classeur."""
+    ouvrir_jour(page, "J1")
+    a_une_image = page.evaluate("!!IMAGES_EXERCICES[seance.exercices[0].nom]")
+    bloc = page.locator("#exo-image-bloc")
+    assert bloc.is_visible() == a_une_image
+    if a_une_image:
+        page.wait_for_function("document.getElementById('exo-image').complete")
+        assert page.evaluate("document.getElementById('exo-image').naturalWidth") > 0, \
+            "l'image ne doit pas etre un lien casse"
+        est_generique = page.evaluate("!!(IMAGES_EXERCICES[seance.exercices[0].nom].generique)")
+        assert page.locator("#exo-image-generique").is_visible() == est_generique
 
 
 def test_un_appui_sur_la_fleche_n_avance_que_d_un_exercice(page):
@@ -348,7 +368,15 @@ def test_le_bilan_du_dernier_repos_annonce_l_exercice_suivant(page):
     exercice affiche, en plus de la jauge habituelle, le tonnage total de
     l'exercice qui vient de se terminer face a la semaine derniere (silencieux
     sans reference, comme le reste des comparaisons de l'appli) et le nom du
-    prochain exercice, toujours present des qu'il y en a un."""
+    prochain exercice, toujours present des qu'il y en a un.
+
+    17 septembre 2026, memes demandes : un chiffre exact (reserve a ce
+    bilan, la jauge seule suffit ailleurs) pour savoir combien de temps
+    reste pour regler la machine suivante, et les remarques (consigne
+    technique) du prochain exercice pour pouvoir la preparer pendant ce
+    repos. Aucun nom d'exercice ni de consigne n'est suppose : le texte
+    attendu vient du programme et de consigneAffichee(), pas d'une valeur
+    fixee ici."""
     ouvrir_jour(page, "J1")
     nom_suivant = page.evaluate("seance.exercices[1].nom")
     for rang in range(nombre_de_series(page)):
@@ -356,6 +384,20 @@ def test_le_bilan_du_dernier_repos_annonce_l_exercice_suivant(page):
     bilan = page.locator("#minuterie-plein-ecran-bilan")
     bilan.wait_for(state="visible", timeout=2000)
     assert nom_suivant in page.locator("#minuterie-bilan-suivant").text_content()
+
+    chiffres = page.locator("#minuterie-bilan-chiffres")
+    assert chiffres.is_visible()
+    assert re.match(r"^\d+:\d{2}$", chiffres.text_content()), \
+        "le chiffre doit ressembler à un temps restant (ex. 2:30)"
+
+    consigne_attendue = page.evaluate(
+        "consigneAffichee(seance.jour, seance.exercices[indexExo].nom, ficheExercice().consigne)"
+    )
+    ligne_consigne = page.locator("#minuterie-bilan-consigne")
+    if consigne_attendue:
+        assert ligne_consigne.text_content() == consigne_attendue
+    else:
+        assert ligne_consigne.is_hidden()
 
 
 def test_le_bilan_ne_s_affiche_pas_sur_un_repos_ordinaire(page):
@@ -415,8 +457,11 @@ def test_l_etat_musculaire_regroupe_les_graphies_du_meme_muscle(page):
     page.click("#bouton-menu-suivi")
     page.click("#bouton-suivi-etat")
     page.wait_for_selector("#mannequin svg")
+    # data-zone plutot que le premier polygone venu : le mannequin realiste
+    # colore les dix zones sur le mannequin de face (17 septembre 2026),
+    # pas seulement "epaules" comme l'ancien mannequin a quatre formes.
     classe = page.evaluate(
-        "document.querySelector('#mannequin circle[class^=\\'zone-\\']').getAttribute('class')")
+        "document.querySelector('#mannequin polygon[data-zone=\\'epaules\\']').getAttribute('class')")
     assert classe == "zone-fatigue", "l'orthographe accentuee n'a pas ete reconnue : " + classe
 
 
@@ -428,12 +473,19 @@ def test_le_mannequin_de_dos_couvre_les_six_zones_de_la_liste(page):
     page.click("#bouton-menu-suivi")
     page.click("#bouton-suivi-etat")
     page.wait_for_selector("#mannequin svg")
+    # Scope a #mannequin : Mensurations porte la meme paire avant/arriere
+    # statique dans index.html (17 septembre 2026), une recherche globale
+    # la compterait aussi meme non rendue.
     titres = page.evaluate(
-        "[...document.querySelectorAll('.mannequin-vue-titre')].map(t => t.textContent)")
+        "[...document.querySelectorAll('#mannequin .mannequin-vue-titre')].map(t => t.textContent)")
     assert titres == ["Avant", "Arrière"]
     zones_dos = page.evaluate(
         "document.querySelectorAll('#mannequin svg')[1].querySelectorAll('.zone-fatigue, .zone-recup, .zone-prete').length")
-    assert zones_dos == 10, "dos, epaules arriere (x2), triceps (x2), fessiers, ischios (x2), mollets (x2)"
+    # 22 polygones, pas 10 : le mannequin realiste du 17 septembre 2026
+    # decoupe chaque zone plus finement que l'ancien FORMES_MANNEQUIN_ARRIERE
+    # (dos = trapeze x2 + haut du dos x2 + bas du dos x2 = 6, epaules
+    # arriere x2, triceps x4, fessiers x2, ischios x4, mollets x4).
+    assert zones_dos == 22, "dos (x6), epaules arriere (x2), triceps (x4), fessiers (x2), ischios (x4), mollets (x4)"
 
 
 def ouvrir_sommeil(page):
@@ -541,6 +593,69 @@ def test_le_sport_de_l_apres_midi_a_desormais_un_repere_sur_la_frise(page):
     champ_heure.press("Tab")
     assert page.locator(".sommeil-creneau-sport").count() == 1
     assert "choisi" in page.locator("#sommeil-journee .journee-item", has_text="Footing").get_attribute("class")
+
+
+def test_sommeil_sans_barre_ni_titre(page):
+    """17 septembre 2026, remarque de l'utilisateur : plus de barre ni de
+    titre "Sommeil", seul le retour reste, remonte tout en haut de l'ecran
+    (niveau camera selfie)."""
+    ouvrir_sommeil(page)
+    assert page.locator(".barre-sommeil, .barre-titre-sommeil").count() == 0, \
+        "plus de barre ni de titre sur cet ecran depuis le 17 septembre 2026"
+    retour = page.locator("#bouton-sommeil-retour")
+    assert retour.is_visible()
+    assert retour.bounding_box()["y"] < 20
+
+
+def test_glisser_une_puce_journee_pose_un_repere_sur_la_frise(page):
+    """17 septembre 2026, demande de l'utilisateur : appui-glisse depuis une
+    puce "La journee" vers un creneau pour y poser un repere a une heure
+    precise, en plus du geste existant (tap = compteur/bascule, inchange,
+    verifie ici absent de tout effet de bord)."""
+    ouvrir_sommeil(page)
+    puce = page.locator("#sommeil-journee .journee-item", has_text="Café")
+    creneau_cible = page.locator(".sommeil-creneau").nth(10)
+    boite_puce = puce.bounding_box()
+    boite_cible = creneau_cible.bounding_box()
+
+    page.mouse.move(boite_puce["x"] + boite_puce["width"] / 2, boite_puce["y"] + boite_puce["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(boite_cible["x"] + boite_cible["width"] / 2, boite_cible["y"] + boite_cible["height"] / 2, steps=10)
+    page.mouse.up()
+    # Le depot (placerRepereFrise) est differe d'un tick cote application
+    # (voir deposerGlissementRepere dans js/app.js), pour laisser le click
+    # natif qui suit le relachement trouver le bon bouton avant le
+    # redessin : le laisser passer avant de lire le DOM.
+    page.wait_for_timeout(100)
+
+    assert creneau_cible.locator(".sommeil-creneau-sport").count() == 1
+    assert "· 1" not in puce.text_content(), "le tap normal (compteur) n'a pas a s'ajouter au glissement"
+
+
+def test_appui_long_sur_un_repere_le_supprime(page):
+    """Troisieme geste demande le meme jour : appui simple = bascule
+    l'insomnie (inchange), glissement = pose un repere (test precedent),
+    appui long sur un creneau qui en porte un = le retire, sans basculer
+    l'insomnie en plus."""
+    ouvrir_sommeil(page)
+    puce = page.locator("#sommeil-journee .journee-item", has_text="Café")
+    creneau_cible = page.locator(".sommeil-creneau").nth(10)
+    boite_puce = puce.bounding_box()
+    boite_cible = creneau_cible.bounding_box()
+    page.mouse.move(boite_puce["x"] + boite_puce["width"] / 2, boite_puce["y"] + boite_puce["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(boite_cible["x"] + boite_cible["width"] / 2, boite_cible["y"] + boite_cible["height"] / 2, steps=10)
+    page.mouse.up()
+    page.wait_for_timeout(100)
+    assert creneau_cible.locator(".sommeil-creneau-sport").count() == 1
+
+    creneau_cible.hover()
+    page.mouse.down()
+    page.wait_for_timeout(650)
+    page.mouse.up()
+
+    assert creneau_cible.locator(".sommeil-creneau-sport").count() == 0
+    assert "insomnie" not in creneau_cible.get_attribute("class")
 
 
 def test_le_footing_n_a_plus_de_gainage_ni_de_farmer_walk_a_part(page):
@@ -788,7 +903,10 @@ def test_le_mannequin_de_dos_est_aussi_cliquable(page):
     seance_muscu_zone(page, 2, "Tirage vertical", "Grand dorsal", 60, 10, series=1)
     page.reload()
     ouvrir_tonnage_muscles(page)
-    page.locator("#tonnage-mannequin svg[aria-label*='dos'] [data-zone='dos']").click()
+    # .first : "dos" regroupe plusieurs polygones (trapeze, haut et bas du
+    # dos, voir MANNEQUIN_ARRIERE) depuis le mannequin realiste du
+    # 17 septembre 2026, n'importe lequel declenche la meme zone.
+    page.locator("#tonnage-mannequin svg[aria-label*='dos'] [data-zone='dos']").first.click()
     detail = page.locator("#tonnage-detail")
     assert "Dos" in detail.locator("h3").text_content()
     assert "600 kg" in detail.text_content()
@@ -993,6 +1111,43 @@ def test_les_consignes_sont_sauvegardees_a_la_synchronisation(page):
     consignes_envoyees = [r["consignes"] for r in requetes if r.get("action") == "consignes"]
     assert consignes_envoyees, "aucune synchronisation de consignes n'a ete envoyee"
     assert consignes_envoyees[0].get("J1|" + nom) == "Note a sauvegarder"
+
+
+def test_le_sommeil_est_sauvegarde_a_la_synchronisation(page):
+    """Ajoute le 16 septembre 2026, repere en relisant le pont : le sommeil
+    ne vivait que dans le stockage du telephone (muscu.sommeil), sans
+    aucune sauvegarde si l'appareil etait perdu, contrairement aux
+    consignes et aux mensurations. Meme principe que les consignes :
+    l'ensemble courant part a chaque synchronisation, les raisons
+    traduites en libelles avant l'envoi (le classeur ne connait pas leurs
+    cles)."""
+    nuit = {
+        "cle": "01/09/2026", "insomnies": ["23:30"], "raisons": ["bruit"],
+        "alcool": True, "cafe": 2, "pipi": 0, "ecranTard": False, "repasTardif": False,
+        "sports": {"muscu": "19:00"},
+    }
+    page.evaluate("n => localStorage.setItem('muscu.sommeil', JSON.stringify([n]))", nuit)
+    page.reload()
+
+    requetes = []
+
+    def intercepter(route):
+        requetes.append(route.request.post_data_json)
+        route.fulfill(status=200, content_type="application/json",
+                      body='{"ok": true, "classeur": "Test"}')
+
+    page.route("https://exemple-test.invalid/pont", intercepter)
+    page.click("#bouton-reglages")
+    page.fill("#reglage-pont", "https://exemple-test.invalid/pont")
+    page.click("#bouton-tester-pont")
+    page.wait_for_selector("#reglages-message.ok", timeout=8000)
+
+    sommeil_envoye = [r["nuits"] for r in requetes if r.get("action") == "sommeil"]
+    assert sommeil_envoye, "aucune synchronisation de sommeil n'a ete envoyee"
+    envoyee = sommeil_envoye[0][0]
+    assert envoyee["cle"] == "01/09/2026"
+    assert envoyee["raisons"] == ["Bruit"]
+    assert envoyee["sports"]["muscu"] == "19:00"
 
 
 def test_quitter_une_seance_arrete_le_chronometre(page):

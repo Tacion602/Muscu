@@ -93,6 +93,18 @@ function doPost(requete) {
     }
   }
 
+  // Sauvegarde du sommeil (voir feuilleSommeil), ajoutee le 16 septembre
+  // 2026 : le telephone envoie l'ensemble courant a chaque synchronisation,
+  // comme les consignes.
+  if (corps.action === 'sommeil') {
+    try {
+      ecrireSommeil(SpreadsheetApp.getActiveSpreadsheet(), corps.nuits);
+      return reponse({ ok: true });
+    } catch (e) {
+      return reponse({ ok: false, erreur: String(e) });
+    }
+  }
+
   return reponse({ ok: false, erreur: 'action inconnue' });
 }
 
@@ -668,6 +680,66 @@ function ecrireMensuration(classeur, m) {
   } else {
     feuille.appendRow(valeurs);
   }
+}
+
+/**
+ * Sommeil, ajoute le 16 septembre 2026 : repere en relisant le pont, sans
+ * sauvegarde classeur jusque-la contrairement aux consignes et aux
+ * mensurations (localStorage seul cote telephone, tout partait avec un
+ * appareil perdu). Meme principe que Consignes plutot que Mensurations :
+ * une nuit se corrige apres coup (insomnie ajoutee le lendemain, raison
+ * oubliee), le telephone renvoie donc l'ensemble courant a chaque
+ * synchronisation et cette page met a jour la ligne de chaque nuit plutot
+ * que d'en ajouter une. Les raisons arrivent deja traduites en libelles
+ * (synchroniserSommeil cote js/app.js) : cette page ne connait pas leurs
+ * cles.
+ */
+function feuilleSommeil(classeur) {
+  let feuille = classeur.getSheetByName('Sommeil');
+  if (feuille) return feuille;
+  feuille = classeur.insertSheet('Sommeil');
+  const entetes = ['Nuit du', 'Insomnie (creneaux)', 'Insomnie (heures)', 'Raisons',
+    'Alcool', 'Cafe', 'Pipi nocturne', 'Ecran tardif', 'Repas tardif', 'Muscu', 'Footing'];
+  feuille.getRange(1, 1, 1, entetes.length).setValues([entetes]).setFontWeight('bold');
+  feuille.setFrozenRows(1);
+  return feuille;
+}
+
+function ecrireSommeil(classeur, nuits) {
+  const entrees = (nuits || []).filter(function (n) { return n && n.cle; });
+  if (!entrees.length) return;
+
+  const feuille = feuilleSommeil(classeur);
+  const derniere = feuille.getLastRow();
+  const ligneDeLaDate = {};
+  if (derniere > 1) {
+    feuille.getRange(2, 1, derniere - 1, 1).getValues().forEach(function (valeurs, i) {
+      ligneDeLaDate[valeurs[0]] = 2 + i;
+    });
+  }
+
+  entrees.forEach(function (n) {
+    const sports = n.sports || {};
+    const valeurs = [
+      n.cle,
+      (n.insomnies || []).length,
+      (n.insomnies || []).join(', '),
+      (n.raisons || []).join(', '),
+      !!n.alcool,
+      n.cafe || 0,
+      n.pipi || 0,
+      !!n.ecranTard,
+      !!n.repasTardif,
+      sports.muscu || '',
+      sports.footing || '',
+    ];
+    const ligne = ligneDeLaDate[n.cle];
+    if (ligne) {
+      feuille.getRange(ligne, 1, 1, valeurs.length).setValues([valeurs]);
+    } else {
+      feuille.appendRow(valeurs);
+    }
+  });
 }
 
 /**

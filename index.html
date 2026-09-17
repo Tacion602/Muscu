@@ -128,11 +128,12 @@
      js/app.js. Fond dégradé jour (haut) / nuit (bas) propre à cet écran,
      seul endroit de l'appli à s'écarter du fond clair général. -->
 <section id="ecran-sommeil" class="ecran">
-  <header class="barre barre-sommeil">
-    <button id="bouton-sommeil-retour" class="icone icone-sommeil" aria-label="Retour">&#8592;</button>
-    <div class="barre-titre barre-titre-sommeil"><span>Sommeil</span></div>
-    <span class="icone" aria-hidden="true"></span>
-  </header>
+  <!-- Sans barre ni titre depuis le 17 septembre 2026 (remarque de
+       l'utilisateur) : juste le retour, remonté au plus haut de l'écran
+       (niveau caméra selfie) et un peu plus grand que .icone ailleurs dans
+       l'application (52px contre 44px), flottant sur le dégradé plutôt que
+       dans une barre opaque qui aurait coupé le fond en haut. -->
+  <button id="bouton-sommeil-retour" class="icone icone-sommeil icone-sommeil-flottant" aria-label="Retour">&#8592;</button>
   <main class="corps corps-sommeil">
     <div class="sommeil-nuit-nav">
       <button id="bouton-sommeil-precedent" class="icone icone-sommeil" aria-label="Nuit précédente">&#8592;</button>
@@ -170,64 +171,20 @@
     </div>
 
     <div class="mensurations-corps">
-      <svg viewBox="0 0 140 240" class="mannequin-svg mensurations-silhouette" role="img" aria-hidden="true">
-        <circle class="silhouette" cx="70" cy="18" r="14"></circle>
-        <rect class="silhouette" x="64" y="30" width="12" height="10"></rect>
-        <rect class="silhouette" x="42" y="40" width="56" height="70" rx="14"></rect>
-        <circle class="silhouette" cx="34" cy="50" r="13"></circle>
-        <circle class="silhouette" cx="106" cy="50" r="13"></circle>
-        <rect class="silhouette" x="20" y="55" width="16" height="90" rx="8"></rect>
-        <rect class="silhouette" x="104" y="55" width="16" height="90" rx="8"></rect>
-        <rect class="silhouette" x="46" y="108" width="48" height="30" rx="10"></rect>
-        <rect class="silhouette" x="44" y="138" width="24" height="98" rx="10"></rect>
-        <rect class="silhouette" x="72" y="138" width="24" height="98" rx="10"></rect>
-
-        <!-- Poitrine (torse) -->
-        <g class="mensurations-mesure-torse">
-          <line class="mensurations-ligne" x1="34" y1="70" x2="106" y2="70"></line>
-          <circle class="mensurations-point" cx="34" cy="70" r="5"></circle>
-          <circle class="mensurations-point" cx="106" cy="70" r="5"></circle>
-        </g>
-        <!-- Taille (torse) -->
-        <g class="mensurations-mesure-torse">
-          <line class="mensurations-ligne" x1="40" y1="118" x2="100" y2="118"></line>
-          <circle class="mensurations-point" cx="40" cy="118" r="5"></circle>
-          <circle class="mensurations-point" cx="100" cy="118" r="5"></circle>
-        </g>
-        <!-- Bras (une paire par bras, meme mesure) -->
-        <g class="mensurations-mesure-bras">
-          <line class="mensurations-ligne" x1="14" y1="80" x2="34" y2="80"></line>
-          <circle class="mensurations-point" cx="14" cy="80" r="5"></circle>
-          <circle class="mensurations-point" cx="34" cy="80" r="5"></circle>
-          <line class="mensurations-ligne" x1="106" y1="80" x2="126" y2="80"></line>
-          <circle class="mensurations-point" cx="106" cy="80" r="5"></circle>
-          <circle class="mensurations-point" cx="126" cy="80" r="5"></circle>
-        </g>
-        <!-- Hanches (jambe) -->
-        <g class="mensurations-mesure-jambe">
-          <line class="mensurations-ligne" x1="36" y1="140" x2="104" y2="140"></line>
-          <circle class="mensurations-point" cx="36" cy="140" r="5"></circle>
-          <circle class="mensurations-point" cx="104" cy="140" r="5"></circle>
-        </g>
-        <!-- Cuisse (une paire par cuisse, meme mesure) -->
-        <g class="mensurations-mesure-jambe">
-          <line class="mensurations-ligne" x1="40" y1="175" x2="70" y2="175"></line>
-          <circle class="mensurations-point" cx="40" cy="175" r="5"></circle>
-          <circle class="mensurations-point" cx="70" cy="175" r="5"></circle>
-          <line class="mensurations-ligne" x1="70" y1="175" x2="100" y2="175"></line>
-          <circle class="mensurations-point" cx="70" cy="175" r="5"></circle>
-          <circle class="mensurations-point" cx="100" cy="175" r="5"></circle>
-        </g>
-        <!-- Mollet (une paire par mollet, meme mesure) -->
-        <g class="mensurations-mesure-jambe">
-          <line class="mensurations-ligne" x1="40" y1="222" x2="70" y2="222"></line>
-          <circle class="mensurations-point" cx="40" cy="222" r="5"></circle>
-          <circle class="mensurations-point" cx="70" cy="222" r="5"></circle>
-          <line class="mensurations-ligne" x1="70" y1="222" x2="100" y2="222"></line>
-          <circle class="mensurations-point" cx="70" cy="222" r="5"></circle>
-          <circle class="mensurations-point" cx="100" cy="222" r="5"></circle>
-        </g>
-      </svg>
+      <!-- Mannequin réaliste (17 septembre 2026, voir MANNEQUIN_AVANT/ARRIERE
+           dans js/app.js), avant (repères de mesure) et arrière (silhouette
+           seule, la vue de dos demandée par l'utilisateur n'ayant pas de
+           mesure qui lui soit propre) rempli par rendreMensurations(). -->
+      <div class="mannequin-paire">
+        <div class="mannequin-vue">
+          <p class="mannequin-vue-titre">Avant</p>
+          <div id="mensurations-mannequin-avant"></div>
+        </div>
+        <div class="mannequin-vue">
+          <p class="mannequin-vue-titre">Arrière</p>
+          <div id="mensurations-mannequin-arriere"></div>
+        </div>
+      </div>
 
       <div id="mensurations-champs" class="mensurations-champs"></div>
     </div>
@@ -327,7 +284,7 @@
        de sens. -->
   <div id="ligne-progression" class="ligne-progression" hidden>
     <span id="jauge-restant"></span>
-    <span id="jauge-chrono"></span>
+    <span><span class="jauge-chrono-label">Séance</span> <span id="jauge-chrono"></span></span>
   </div>
 
   <main class="corps">
@@ -353,6 +310,14 @@
           <span class="chrono-seance-icone">&#9654;</span>
           <span id="chrono-seance-temps" class="chrono-seance-temps"></span>
         </button>
+      </div>
+
+      <!-- Illustration par exercice (17 septembre 2026), voir
+           rendreImageExercice() dans js/app.js : masquée quand l'exercice
+           n'a pas d'entrée dans IMAGES_EXERCICES. -->
+      <div id="exo-image-bloc" class="exo-image-bloc" hidden>
+        <img id="exo-image" class="exo-image" alt="">
+        <span id="exo-image-generique" class="exo-image-badge" hidden>Photo générique</span>
       </div>
 
       <div class="etiquettes">
@@ -473,8 +438,10 @@
     <div id="minuterie-plein-ecran-jauge-remplissage" class="jauge-pilule-remplissage"></div>
   </div>
   <div id="minuterie-plein-ecran-bilan" class="minuterie-bilan" hidden>
+    <p id="minuterie-bilan-chiffres" class="minuterie-bilan-chiffres" hidden></p>
     <p id="minuterie-bilan-tonnage" class="minuterie-bilan-tonnage" hidden></p>
     <p id="minuterie-bilan-suivant" class="minuterie-bilan-suivant" hidden></p>
+    <p id="minuterie-bilan-consigne" class="minuterie-bilan-consigne" hidden></p>
   </div>
 </div>
 

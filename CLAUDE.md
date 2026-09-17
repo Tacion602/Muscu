@@ -897,13 +897,48 @@ via `afficher()`.
     des deux mannequins : le nom d'une zone ne doit pas dépendre d'un
     survol ou d'un appui long sur mobile. Même mannequin de dos réutilisé
     par Tonnage par muscle (voir plus bas).
+  - **Mannequin réaliste depuis le 17 septembre 2026**, à la demande de
+    l'utilisateur (« cherche un corps avec tous les muscles, schéma
+    réaliste ») : les cercles et rectangles dessinés à la main cèdent la
+    place à des polygones anatomiques repris de `react-body-highlighter`
+    (github.com/giavinh79/react-body-highlighter, licence MIT),
+    `MANNEQUIN_AVANT`/`MANNEQUIN_ARRIERE` dans `js/app.js`, repère
+    1000 x 2000. Rendus par une fonction commune aux trois mannequins de
+    l'application, `rendreMannequinPolygones()` : silhouette neutre pour
+    les polygones sans zone suivie (tête, cou, avant-bras, abdos,
+    obliques, adducteurs/abducteurs, genoux, soléaires), couleur d'état
+    pour les dix zones de `ZONES_MUSCULAIRES`. Triceps et mollets ont un
+    polygone sur les deux vues (visibles de face comme de dos dans la
+    source) : les deux sont colorés, plus fidèle qu'un seul côté choisi
+    arbitrairement. `dos` regroupe trois paires de la source (trapèze,
+    haut et bas du dos) sous une seule couleur, même simplification
+    qu'avant. `FORMES_MANNEQUIN_ARRIERE` et `SILHOUETTE_MANNEQUIN`
+    (ci-dessus) sont retirés, remplacés par ces deux tables.
 - **Sommeil**, écran neuf sans lien avec le programme : une frise de la
-  nuit en cases de 30 min (22h-11h, 26 créneaux, `creneauxSommeil()`), le
-  cœur (23h30-8h) bleu par défaut sans rien à saisir pour une nuit
-  ordinaire, un appui bascule un créneau en rouge (insomnie). Raisons
-  d'insomnie, repères de la journée (alcool, café, pipi nocturne, écran
-  tardif, repas tardif), vue du mois. Page classeur dédiée côté pont, à
-  déployer (voir « Chantiers ouverts »).
+  nuit en cases de 30 min, le cœur (23h30-8h) bleu par défaut sans rien à
+  saisir pour une nuit ordinaire, un appui bascule un créneau en rouge
+  (insomnie). Raisons d'insomnie, repères de la journée (alcool, café,
+  pipi nocturne, écran tardif, repas tardif), vue du mois.
+  - **Étendue à 24h le 16 septembre 2026** (48 créneaux, `creneauxSommeil()`),
+    demande de l'utilisateur : la fenêtre d'origine (22h-11h, 26 créneaux)
+    n'avait pas de place pour un sport ou un repère de l'après-midi
+    (`indexCreneauPourHeure` renvoyait -1). 20 créneaux par ligne plutôt que
+    13 : la première ligne couvre alors 22h-7h30 pile
+    (`SOMMEIL_COEUR_FIN`), si bien que la session de sommeil 00h-8h tient
+    entière dessus, jamais coupée par un retour à la ligne.
+  - **Muscu et footing dissociés le même jour** (même date), autre demande
+    du même soir : un seul `sportType` empêchait de noter les deux (ex.
+    J2/J6 avec du gainage, ou une sortie en plus d'une séance). `nuit.sports`
+    est désormais une carte par type (`{ muscu: '23:00', footing: '' }`).
+  - **Sauvegarde classeur écrite le 16 septembre 2026** (`ecrireSommeil`,
+    page `Sommeil`), repérée en relisant le pont qu'aucune page ne la
+    couvrait jusque-là — contrairement aux consignes et aux mensurations,
+    qui ont eu ce filet dès leur ajout. Même principe que les consignes,
+    pas que les mensurations : une nuit se corrige après coup (insomnie
+    ajoutée le lendemain, raison oubliée), le téléphone renvoie donc
+    l'ensemble courant à chaque synchronisation plutôt qu'un envoi une fois
+    pour toutes par nuit. En attente du prochain redéploiement du pont
+    (voir « Chantiers ouverts »).
   - **La frise débordait de l'écran**, signalé par l'utilisateur.
     Longtemps pris pour un problème de mise en page (grille CSS, puis
     flexbox, puis `aspect-ratio` lui-même — plusieurs pistes essayées puis
@@ -943,6 +978,22 @@ via `afficher()`.
     une mesure est une circonférence, la ligne s'en rapproche plus qu'un
     numéro arbitraire. La liste de champs en dessous reprend cette même
     couleur en pastille.
+  - **Mannequin réaliste et vue de dos ajoutés le 17 septembre 2026**,
+    demande de l'utilisateur : la silhouette de face dessinée à la main
+    (140x240, coordonnées de repères fixées à l'œil) cède la place au même
+    mannequin polygonal que l'État musculaire et le Tonnage par muscle
+    (`MANNEQUIN_AVANT`/`ARRIERE`, 1000x2000, voir plus haut), en silhouette
+    neutre partout — cet écran ne suit aucun état, seulement des mesures.
+    Avant et arrière côte à côte (`.mannequin-paire`, réutilisée telle
+    quelle), l'arrière restant sans repère : aucune des six mesures ne lui
+    est propre, il ne sert qu'à compléter la vue demandée. Les coordonnées
+    des repères de mesure (`reperesMensurations()`) sont recalculées à
+    partir des mêmes polygones (bord du pectoral pour la poitrine, des
+    obliques pour la taille…), pas ré-estimées à l'œil sur le nouveau
+    corps : lues directement dans les coordonnées de la source à la
+    hauteur voulue. Un `<g>` par mesure, pas par ligne : bras, cuisse et
+    mollet portent chacun deux paires (gauche + droite) dans le même
+    groupe, comme l'ancien repère.
   - **Photo du jour, compressée côté client** (`compresserImage()`, 900px
     de large au plus, JPEG qualité 0.75) avant d'être gardée : `localStorage`
     n'est pas fait pour des images en pleine résolution.
@@ -975,7 +1026,10 @@ via `afficher()`.
     en allure, repère habituel du coureur, avec le même écart en s/km et la
     même coloration hausse/baisse que l'écran de footing.
 - **Tonnage par muscle, mannequin cliquable**, à partir des mêmes captures
-  de référence. Réutilise `ZONES_MUSCULAIRES` plutôt qu'une table
+  de référence, passé aux mêmes polygones réalistes que l'État musculaire
+  le 17 septembre 2026 (voir la puce dédiée plus haut) : les dix zones y
+  sont désormais toutes cliquables, sur l'une des deux vues ou les deux
+  (triceps, mollets). Réutilise `ZONES_MUSCULAIRES` plutôt qu'une table
   muscle → exercices séparée : même simplification déjà en place pour
   l'État musculaire, un seul muscle par exercice. **Différent du tonnage
   écarté comme indicateur de progression sur un exercice** (voir plus haut,
@@ -1081,19 +1135,18 @@ un bug si le sujet revient.
 
 ## Chantiers ouverts
 
-1. **Redéployer `appsscript/Code.gs`** (nouvelle version du déploiement
-   existant, coller le code ne suffit pas). Le pont a déjà été déployé et
-   utilisé avec succès par le passé (séances reçues dans le classeur) :
-   ce qui est en attente aujourd'hui, ce sont **quatre évolutions écrites
-   depuis mais jamais mises en ligne** : le garde-fou anti-doublon devenu
-   sectionné par page plutôt qu'unique pour la séance entière, l'écriture de
-   la séance de gainage dans une page `Gainage`, la sauvegarde des
-   consignes techniques dans une page `Consignes`, et l'écriture des
-   mensurations (valeurs et photo Drive) dans une page `Mensurations`
-   (ajoutée le 16 septembre 2026, voir « Menu Sport/Suivi » plus haut).
-   Cette dernière **redemandera aussi une autorisation Drive**, en plus de
-   celle déjà accordée pour Sheets. Rien de tout ça n'atteint le classeur
-   tant que le redéploiement n'est pas fait ; l'application reste par
+1. ~~Redéployer `appsscript/Code.gs`~~ **Fait par l'utilisateur le
+   16 septembre 2026, en soirée** : les quatre évolutions qui étaient en
+   attente (garde-fou anti-doublon sectionné par page, écriture de la
+   séance de gainage dans une page `Gainage`, sauvegarde des consignes
+   techniques dans une page `Consignes`, écriture des mensurations valeurs
+   et photo Drive dans une page `Mensurations`) sont désormais en ligne.
+   **Une cinquième évolution attend maintenant son tour** : la sauvegarde
+   du sommeil dans une page `Sommeil` (`ecrireSommeil`), écrite dans la
+   foulée du redéploiement — repérée en relisant le pont qu'aucune page ne
+   couvrait le sommeil jusque-là, contrairement aux consignes et aux
+   mensurations (voir « Sommeil » plus haut). Un nouveau redéploiement sera
+   nécessaire pour qu'elle atteigne le classeur ; l'application reste par
    ailleurs utilisable en local sans cette étape, l'adresse et le secret du
    pont restant ceux déjà en place dans les réglages.
 2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
@@ -1102,9 +1155,9 @@ un bug si le sujet revient.
    (`progressionPremiereSerie()`).
 3. ~~Mensurations et poids de corps~~ **Fait le 16 septembre 2026** (voir
    « Menu Sport/Suivi » plus haut) : valeurs, photo comparée par curseur,
-   sauvegarde Drive via le pont. Reste bloqué sur le redéploiement du pont
-   (point 1 ci-dessus) pour que les valeurs et la photo atteignent
-   réellement le classeur.
+   sauvegarde Drive via le pont, dont le redéploiement (point 1 ci-dessus)
+   a eu lieu le même jour en soirée — à vérifier à l'usage que les valeurs
+   et la photo atteignent réellement le classeur.
 4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
    basculer vers un autre bloc d'entraînement demandera de relancer l'import
    sur un autre onglet, geste manuel pour l'instant.
@@ -1132,8 +1185,18 @@ un bug si le sujet revient.
    sur demande, sans l'inventer sans le dire) ; `outils/verifier_import.py`
    ne le détecte pas, une consigne vide n'étant pas une anomalie qu'il sache
    reconnaître.
-7. **Image par exercice**, bloqué faute d'outil de génération d'image (voir
-   « Menu Sport/Suivi » plus haut, « Chantiers évalués et écartés »).
+7. ~~Image par exercice~~ **Fait le 17 septembre 2026**, débloqué autrement
+   que prévu le 16 (voir « Menu Sport/Suivi » plus haut, « Chantiers évalués
+   et écartés ») : pas de génération d'image, mais une base libre
+   (`free-exercise-db`, licence Unlicense) dont les photos couvrent 25 des
+   26 exercices du programme, avec une correspondance d'appareil fidèle
+   pour 19 d'entre eux — les 6 autres (variantes poulie unilatérale, machine
+   précise, prise neutre, absentes de la base) affichent quand même une
+   photo générique, étiquetée comme telle plutôt que rien. `IMAGES_EXERCICES`
+   dans `js/app.js` fait la correspondance nom exact → fichier local
+   (`images-exercices/`, téléchargé une fois, jamais hotlinké), même
+   fragilité qu'`ANCIENS_NOMS` : un exercice renommé au prochain import perd
+   son image tant que la table n'est pas mise à jour à la main.
 8. **Lien Garmin Connect**, bloqué sur l'accès à leur API officielle,
    fermée à candidature (même section).
 
