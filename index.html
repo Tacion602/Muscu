@@ -92,6 +92,14 @@
       <span class="carte-menu-icone" aria-hidden="true">&#128202;</span>
       <span class="carte-menu-nom">Tonnage par muscle</span>
     </button></li>
+    <!-- Septième entrée, ajoutée le 17 septembre 2026 (demande de
+         l'utilisateur) : envoyer une remarque libre sans passer par un
+         exercice ou une fin de séance, seuls endroits qui le permettaient
+         jusque-là. Voir #ecran-remarque plus bas. -->
+    <li><button id="bouton-suivi-remarque" class="carte-menu carte-menu-petite">
+      <span class="carte-menu-icone" aria-hidden="true">&#128172;</span>
+      <span class="carte-menu-nom">Remarque</span>
+    </button></li>
   </ul>
 </section>
 
@@ -236,10 +244,48 @@
     <span class="icone" aria-hidden="true"></span>
   </header>
   <main class="corps">
-    <p class="suivi-legende">Charge × répétitions cumulées sur les 7 derniers jours, toutes séances confondues. Toucher une zone pour le détail par exercice.</p>
+    <p class="suivi-legende">Charge × répétitions cumulées, toutes séances confondues. Toucher une zone pour le détail par exercice.</p>
+    <!-- Fenêtre choisie plutôt que fixée à 7 jours (demande de l'utilisateur
+         le 17 septembre 2026) : sur un programme hebdomadaire, une zone
+         entraînée une fois par semaine (jambes) tombait souvent hors d'une
+         fenêtre de 7 jours pile et s'affichait à tort comme jamais
+         travaillée. Voir tonnagePeriodeJours dans js/app.js. Classe dédiée
+         plutôt que .type-course/.footing-types (même style, voir
+         .periode-toggle dans style.css) : statiques dès le chargement de la
+         page contrairement aux .type-course des écrans de footing/évolution
+         course (peuplés par JS au premier rendu de leur écran), les
+         partager aurait décalé l'index de tout sélecteur global
+         `.type-course` déjà écrit dans tests/test_app.py. -->
+    <div id="tonnage-periode" class="periode-toggle" role="group" aria-label="Période">
+      <button type="button" class="periode-bouton" data-jours="30">1 mois</button>
+      <button type="button" class="periode-bouton" data-jours="182">6 mois</button>
+    </div>
     <div id="tonnage-mannequin"></div>
     <div id="tonnage-liste" class="mannequin-liste"></div>
     <div id="tonnage-detail"></div>
+  </main>
+</section>
+
+<!-- Remarque libre depuis le menu Suivi, ajoutée le 17 septembre 2026
+     (demande de l'utilisateur) : mêmes destination (onglet Remarques du
+     classeur) et lecture (outils/lire_remarques.py) que la remarque de fin
+     de séance (#fin-remarque), mais sans passer par un exercice ni une
+     séance entière. Voir rendreRemarque()/envoyerRemarqueSuivi() dans
+     js/app.js. -->
+<section id="ecran-remarque" class="ecran">
+  <header class="barre">
+    <button id="bouton-remarque-retour" class="icone" aria-label="Retour">&#8592;</button>
+    <div class="barre-titre"><span>Remarque</span></div>
+    <span class="icone" aria-hidden="true"></span>
+  </header>
+  <main class="corps">
+    <p class="suivi-legende">Une question, une gêne, une idée pour la prochaine mise à jour : à envoyer directement, sans attendre une séance.</p>
+    <label class="champ-large">
+      <span>Remarque</span>
+      <textarea id="remarque-suivi-champ" class="consigne-champ" rows="5" placeholder="Ce que vous voulez signaler."></textarea>
+    </label>
+    <button id="bouton-remarque-suivi-envoyer" class="principal grand">Envoyer</button>
+    <p id="remarque-suivi-statut" class="message"></p>
   </main>
 </section>
 
@@ -277,13 +323,19 @@
   </header>
 
   <div id="jauge" class="jauge"><div id="jauge-remplie"></div></div>
-  <!-- Estimation grossière du temps restant de la séance, à côté d'un petit
-       chrono de séance (demande de l'utilisateur le 16 septembre 2026) :
-       voir dureeTotaleEstimeeS() et majLigneProgression() dans js/app.js.
-       Masquée hors musculation (footing, gainage), où l'estimation n'a pas
-       de sens. -->
+  <!-- L'estimation grossière du temps restant ("~Xmin restant", texte) a cédé
+       la place le 17 septembre 2026 (demande de l'utilisateur) à une jauge
+       pilule : même composant que celle de la minuterie de repos
+       (.jauge-pilule), mais ici c'est la progression totale de la séance
+       (proportionFaite(), la même valeur que #jauge-remplie juste au-dessus,
+       en plus visible) — pas le temps de repos, précision explicite de
+       l'utilisateur pour ne pas confondre les deux jauges pilule de l'écran.
+       Voir rendreJauge() dans js/app.js. Masquée hors musculation (footing,
+       gainage), où la notion de séries totales n'a pas de sens. -->
   <div id="ligne-progression" class="ligne-progression" hidden>
-    <span id="jauge-restant"></span>
+    <span class="jauge-pilule jauge-pilule-seance" aria-hidden="true">
+      <span id="jauge-seance-remplissage" class="jauge-pilule-remplissage jauge-pilule-remplissage-accent"></span>
+    </span>
     <span><span class="jauge-chrono-label">Séance</span> <span id="jauge-chrono"></span></span>
   </div>
 

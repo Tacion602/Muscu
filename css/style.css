@@ -14,23 +14,35 @@
   --trait: #dde3e0;
   --texte: #14201d;
   --texte-faible: #55625f;
-  --accent: #155e56;
-  --accent-clair: #0f766e;
-  --hausse: #1f7a34;
-  --baisse: #a35a12;
-  --danger: #b3271e;
+  /* Palette d'accent retouchée le 17 septembre 2026 (demande de l'utilisateur,
+     "plus clair, moins saturé", déclenchée par l'État musculaire mais
+     appliquée à l'ensemble : toutes les couleurs vives ci-dessous passent par
+     les mêmes variables). Saturation -16, luminosité +1,5 à +6 selon la marge
+     disponible sur chacune : au-delà, au moins une des trois teintes tombait
+     sous le seuil WCAG AA (4,5:1) contre l'un des trois fonds de
+     l'application (--fond, --fond-carte, --fond-champ, le plus sombre des
+     trois et donc le plus contraignant) — la palette d'origine était déjà
+     calculée au plus juste, tout adoucissement supplémentaire s'y heurte.
+     Marge de sécurité gardée : ≥ 4,55:1 partout, pas seulement ≥ 4,5. */
+  --accent: #226059;
+  --accent-clair: #1d7871;
+  --hausse: #307940;
+  --baisse: #9b5e22;
+  --danger: #ba3e36;
   /* Troisième couleur des repères de mensurations (16 septembre 2026,
      bras — torse et jambes réutilisent --accent et --baisse) : contraste
-     7,1:1 sur --fond-carte, calculé comme le reste de la palette. */
-  --mesure-bras: #6d28d9;
+     recalculé comme le reste de la palette le 17 septembre 2026. */
+  --mesure-bras: #8050cb;
   /* Fond des champs d'une série, selon son tonnage face à la même série la
      semaine passée (voir appliquerCouleurTonnage). Le vert reprend --hausse,
      le rouge --baisse, en lavis pâle : le texte assombri au-dessus reste le
-     porteur du contraste, ce fond n'est qu'un repère visuel. */
-  --tonnage-hausse-fond: rgba(31, 122, 52, .14);
-  --tonnage-hausse-bord: rgba(31, 122, 52, .45);
-  --tonnage-baisse-fond: rgba(163, 90, 18, .14);
-  --tonnage-baisse-bord: rgba(163, 90, 18, .45);
+     porteur du contraste, ce fond n'est qu'un repère visuel. RGB à la main
+     (pas de rgb() imbriquant une var() dans ce moteur CSS) : à retoucher au
+     prochain ajustement de --hausse/--baisse. */
+  --tonnage-hausse-fond: rgba(48, 121, 64, .14);
+  --tonnage-hausse-bord: rgba(48, 121, 64, .45);
+  --tonnage-baisse-fond: rgba(155, 94, 34, .14);
+  --tonnage-baisse-bord: rgba(155, 94, 34, .45);
   --marge: 16px;
   /* Échelle de rayons plutôt que des valeurs au cas par cas : la feuille
      mélangeait 4, 9, 12 et 20px sans logique. Angles adoucis au passage,
@@ -116,7 +128,7 @@ body { display: flex; flex-direction: column; }
 .ligne-progression {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   padding: 6px var(--marge) 8px;
   background: var(--fond-carte);
@@ -172,8 +184,31 @@ body { display: flex; flex-direction: column; }
    `align-items: center` sur `.liste-menu` : à l'essai, ce dernier casse la
    largeur en pourcentage des cartes (chacune revient à sa largeur de
    contenu au lieu de 100 %, inégale entre « Sport » et « Suivi »). */
+/* Dégradé dynamique de la page d'accueil (demande de l'utilisateur le
+   17 septembre 2026) : un dérivé très doux de --fond, jamais assez marqué
+   pour gêner la lecture du texte posé dessus (les cartes elles-mêmes restent
+   sur --fond-carte, opaque), qui dérive lentement plutôt qu'un fond figé.
+   Coupé sous prefers-reduced-motion, comme le reste des animations de
+   l'application. */
+#ecran-menu {
+  background: linear-gradient(-45deg, var(--fond), #eef4f1, var(--fond), #f6f1e8);
+  background-size: 300% 300%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  #ecran-menu { animation: degrade-accueil 20s ease infinite; }
+}
+@keyframes degrade-accueil {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 #ecran-menu .liste-menu { justify-content: center; }
 #ecran-menu .carte-menu { max-width: 300px; margin-inline: auto; }
+/* Contenu centré sur l'icône plutôt qu'aligné à gauche (demande de
+   l'utilisateur le 17 septembre 2026, "centré sur la bulle") : seules les
+   deux grandes cartes du tout premier écran sont concernées, la variante
+   .carte-menu-petite du sous-menu Suivi garde sa mise en page en ligne. */
+#ecran-menu .carte-menu { align-items: center; text-align: center; }
 .carte-menu {
   display: flex;
   flex-direction: column;
@@ -382,10 +417,12 @@ body { display: flex; flex-direction: column; }
    l'utilisateur) : seul le retour reste, flottant tout en haut de l'écran
    (niveau caméra selfie), un peu plus grand que .icone ailleurs (52px
    contre 44px) pour rester facile à toucher sans le confort d'une barre
-   pleine largeur autour de lui. */
+   pleine largeur autour de lui. Remonté une seconde fois le même jour
+   ("encore plus haut") : le plancher hors encoche passe de 6 à 2px, au plus
+   près du bord sans coller le bouton dessus. */
 .icone-sommeil-flottant {
   position: absolute;
-  top: max(env(safe-area-inset-top), 6px);
+  top: max(env(safe-area-inset-top), 2px);
   left: 8px;
   z-index: 5;
   width: 52px;
@@ -425,15 +462,16 @@ body { display: flex; flex-direction: column; }
   gap: 3px;
   margin-bottom: 8px;
 }
-/* 20 par ligne pour les 48 créneaux (24h, demande de l'utilisateur le
-   16 septembre 2026) : la première ligne couvre alors 22h-7h30 pile
-   (SOMMEIL_COEUR_FIN, dernier créneau du cœur de nuit), si bien que la
-   session de sommeil 00h-8h tient entière dessus, jamais coupée par un
-   retour à la ligne (autre demande du même jour) — 20 est le plus petit pas
-   qui le garantisse tout en gardant les créneaux aussi grands que possible
-   (24 par ligne, essayé d'abord, les aurait inutilement rétrécis). */
+/* 17 par ligne (three de moins que les 20 du 16 septembre 2026, demande de
+   l'utilisateur le 17 septembre 2026, « le plus grand possible ») : les
+   créneaux gagnent en taille, au prix de la garantie précédente (00h-8h sur
+   une seule ligne pile à 20/ligne) qui ne tient plus à ce pas — 00h-8h
+   déborde désormais sur la deuxième ligne. Choix assumé : l'utilisateur a
+   demandé cette réduction en connaissance du compromis, la taille du
+   créneau important plus ici que la continuité visuelle du bloc de
+   sommeil. */
 .sommeil-creneau {
-  width: calc((100% - 57px) / 20);
+  width: calc((100% - 48px) / 17);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -989,14 +1027,14 @@ body { display: flex; flex-direction: column; }
   color: var(--texte-faible);
 }
 .etiquette:empty { display: none; }
-#exo-muscle { background: rgba(21, 94, 86, .16); color: var(--accent-clair); }
+#exo-muscle { background: rgba(34, 96, 89, .16); color: var(--accent-clair); }
 
 .echauffement-jour {
   margin-bottom: 14px;
   padding: 10px 12px;
   border: 1px solid var(--accent);
   border-radius: var(--rayon);
-  background: rgba(21, 94, 86, .08);
+  background: rgba(34, 96, 89, .08);
 }
 .echauffement-jour[hidden] { display: none; }
 .echauffement-titre {
@@ -1015,6 +1053,28 @@ body { display: flex; flex-direction: column; }
 
 #bloc-footing[hidden], #bloc-muscu[hidden] { display: none; }
 #footing-nom { font-size: 22px; margin: 0 0 12px; }
+
+/* Même style que .footing-types/.type-course (sélecteur dédié, voir
+   index.html : ces boutons sont statiques dès le chargement de la page,
+   contrairement aux .type-course des écrans de footing/évolution course,
+   peuplés par JS au premier rendu — les partager aurait décalé l'index de
+   tout sélecteur global .type-course déjà écrit dans les tests). */
+.periode-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.periode-bouton {
+  flex: 1 1 auto;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  background: var(--fond-champ);
+  color: var(--texte-faible);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.periode-bouton.choisi { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 .footing-types { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .type-course {
@@ -1186,7 +1246,7 @@ body { display: flex; flex-direction: column; }
   padding: 6px 2px;
   border-bottom: 1px solid var(--trait);
 }
-.ligne-serie.faite { background: rgba(21, 94, 86, .1); }
+.ligne-serie.faite { background: rgba(34, 96, 89, .1); }
 .ligne-serie.courante { box-shadow: inset 3px 0 0 var(--accent-clair); }
 .ligne-serie.tonnage-hausse input { background: var(--tonnage-hausse-fond); border-color: var(--tonnage-hausse-bord); }
 .ligne-serie.tonnage-baisse input { background: var(--tonnage-baisse-fond); border-color: var(--tonnage-baisse-bord); }
@@ -1299,13 +1359,16 @@ body { display: flex; flex-direction: column; }
    le 7 septembre 2026 : le repos doit se voir de loin, pas se fondre dans la
    carte comme un simple compteur secondaire. Fond passé du rouge (alerte) au
    teal `--accent` le 16 septembre 2026 (demande de l'utilisateur, "pas fond
-   rouge sur blanc") : c'est la même famille de couleur que le bouton de
-   récupération et le tonnage en hausse (voir plus bas, `--accent-clair`
-   côté `appliquerCouleurTonnage`), le rouge restant réservé aux vraies
-   alertes (`--danger`, blessure, suppression). Le chiffre a cédé la place
-   le même jour à une jauge (voir .jauge-pilule) : jugé peu fiable en fond
-   de tâche par l'utilisateur, remplacé par un repère visuel de
-   progression plutôt qu'un compte à rebours exact à lire. */
+   rouge sur blanc"), puis revenu à une teinte proche du rouge le 17 septembre
+   2026 (nouvelle demande de l'utilisateur, "remets le chrono visible") :
+   `--danger`, déjà adouci le même jour (palette générale plus claire, moins
+   saturée), plutôt qu'un rouge dédié — la minuterie de repos reste la seule
+   à s'en servir hors alerte réelle (blessure, suppression), mais évite de
+   faire cohabiter deux rouges différents dans l'application. Le chiffre a
+   cédé la place le 16 septembre à une jauge (voir .jauge-pilule) : jugé peu
+   fiable en fond de tâche par l'utilisateur, remplacé par un repère visuel de
+   progression plutôt qu'un compte à rebours exact à lire — non repris cette
+   fois, la demande du 17 portant sur la teinte, pas sur le chiffre. */
 .minuterie {
   flex: 0 0 128px;
   display: flex;
@@ -1315,7 +1378,7 @@ body { display: flex; flex-direction: column; }
   padding: 0;
   border: 0;
   border-radius: var(--rayon);
-  background: var(--accent);
+  background: var(--danger);
   text-align: center;
   cursor: pointer;
   touch-action: manipulation;
@@ -1363,6 +1426,18 @@ body { display: flex; flex-direction: column; }
   .jauge-pilule-remplissage { transition: width .2s linear; }
 }
 
+/* Même pilule, en tête d'écran depuis le 17 septembre 2026 (demande de
+   l'utilisateur), à la place du texte "~Xmin restant" : la progression
+   totale de la séance (proportionFaite(), voir #jauge-remplie juste
+   au-dessus, en plus visible), pas le temps de repos — d'où un remplissage
+   teal (--accent-clair, même couleur que #jauge-remplie) plutôt que le vert
+   de la minuterie de repos, pour ne pas laisser croire à un second
+   décompte. Cadre légèrement plus bas que celui de la minuterie de repos
+   (18px contre 22px) : cette ligne est plus étroite que la fiche d'exercice
+   qui accueille la minuterie. */
+.jauge-pilule-seance { width: 64px; height: 18px; flex: none; }
+.jauge-pilule-remplissage-accent { background: var(--accent-clair); }
+
 /* Plein écran repris le 16 septembre 2026, à la demande de l'utilisateur,
    sur le même principe que .vague-demarrage (position:fixed, inset:0) :
    la panne du 27 août 2026 venait du clavier virtuel qui poussait une
@@ -1388,7 +1463,7 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   justify-content: center;
   gap: 24px;
-  background: var(--accent);
+  background: var(--danger);
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -1634,7 +1709,7 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
   padding: 10px 12px;
   border: 1px solid var(--baisse);
   border-radius: var(--rayon-petit);
-  background: rgba(163, 90, 18, .1);
+  background: rgba(155, 94, 34, .1);
   color: var(--baisse);
   font-size: 13px;
   line-height: 1.5;
@@ -1643,8 +1718,8 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 .supprimer-seance { margin-top: 6px; }
 .supprimer-seance:active { color: var(--danger); }
 .badge { font-size: 11px; padding: 2px 7px; border-radius: var(--rayon-plein); flex: none; }
-.badge.envoye { background: rgba(31, 122, 52, .14); color: var(--hausse); }
-.badge.attente { background: rgba(163, 90, 18, .14); color: var(--baisse); }
+.badge.envoye { background: rgba(48, 121, 64, .14); color: var(--hausse); }
+.badge.attente { background: rgba(155, 94, 34, .14); color: var(--baisse); }
 
 .vide { color: var(--texte-faible); text-align: center; padding: 40px 0; font-size: 14px; }
 

@@ -105,6 +105,21 @@ function doPost(requete) {
     }
   }
 
+  // Remarque libre depuis le menu Suivi, ajoutee le 17 septembre 2026 : meme
+  // onglet Remarques que la remarque de fin de seance, ecrireRemarque ne
+  // regardant que seance.remarque/jour/id. "(Suivi)" comme jour de
+  // convention pour la distinguer d'un coup d'oeil dans la feuille.
+  if (corps.action === 'remarque') {
+    try {
+      ecrireRemarque(SpreadsheetApp.getActiveSpreadsheet(),
+        { id: corps.remarque.id, jour: '(Suivi)', remarque: corps.remarque.texte },
+        new Date(corps.remarque.date));
+      return reponse({ ok: true });
+    } catch (e) {
+      return reponse({ ok: false, erreur: String(e) });
+    }
+  }
+
   return reponse({ ok: false, erreur: 'action inconnue' });
 }
 

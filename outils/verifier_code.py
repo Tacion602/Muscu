@@ -46,6 +46,7 @@ NOMS_HISTORIQUES = {
     'sportDuJour',             # remplace par la selection manuelle, 16 septembre 2026
     'FORMES_MANNEQUIN_ARRIERE',  # remplace par MANNEQUIN_AVANT/ARRIERE, 17 septembre 2026
     'SILHOUETTE_MANNEQUIN',      # remplace par MANNEQUIN_AVANT/ARRIERE, 17 septembre 2026
+    'TONNAGE_PERIODE_JOURS',     # remplace par TONNAGE_PERIODES/tonnagePeriodeJours, 17 septembre 2026
 }
 
 

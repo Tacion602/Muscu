@@ -370,6 +370,24 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     l'utilisateur le 7 septembre 2026 : la minuterie doit se voir de loin, un
     seul gros chiffre en gras remplissant tout le cadre plutôt qu'un petit
     compteur secondaire à côté d'un libellé.
+    - **Le chiffre a cédé la place à une jauge le 16 septembre 2026**
+      (`.jauge-pilule`, pilule blanche à contour noir, remplissage `--hausse`
+      qui grandit avec le temps écoulé) : jugé peu fiable en fond de tâche
+      par l'utilisateur, remplacé par un repère visuel de progression plutôt
+      qu'un compte à rebours exact à lire. Repris (le chiffre exact, pas la
+      jauge) le 17 septembre 2026, mais seulement sur le dernier repos d'un
+      exercice (`minuterie.bilan`, voir « bilan du dernier repos » plus
+      bas) : là, le temps exact compte pour régler la machine suivante, ce
+      qui ne vaut pas pour un repos ordinaire.
+    - **Fond repassé du teal (`--accent`) à une teinte proche du rouge le
+      17 septembre 2026** (demande de l'utilisateur, « remets le chrono
+      visible ») : le fond avait pourtant été changé en sens inverse le
+      16 septembre à la demande explicite de l'utilisateur (« pas fond
+      rouge sur blanc »). `--danger`, déjà adouci le même jour (palette
+      générale plus claire, moins saturée, voir « Direction visuelle »),
+      plutôt qu'un rouge dédié : la minuterie de repos reste la seule à
+      s'en servir hors alerte réelle (blessure, suppression), mais évite de
+      faire cohabiter deux rouges différents dans l'application.
   - **Plein écran repris le 16 septembre 2026** (`#minuterie-plein-ecran`
     dans `index.html`, `position:fixed; inset:0`, même principe que
     `.vague-demarrage`), demande de l'utilisateur, après l'avoir vu abandonné
@@ -793,6 +811,22 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   bouton. Ne joue pas à la reprise d'une séance déjà en cours (`reprendre()`)
   : un chronomètre qu'on a arrêté volontairement ne doit pas repartir tout
   seul.
+- **Une jauge pilule en tête d'écran affiche la progression totale de la
+  séance depuis le 17 septembre 2026** (demande de l'utilisateur : « le
+  curseur de progression n'est pas le chrono de repos mais la progression
+  totale de la séance ») : `#jauge-seance-remplissage`, dans
+  `#ligne-progression`, tenue à jour par `rendreJauge()` avec la même
+  valeur que la fine ligne `#jauge-remplie` juste au-dessus
+  (`proportionFaite()`, la fraction de séries validées sur l'ensemble de la
+  séance, pas seulement l'exercice affiché) — la même pilule que la
+  minuterie de repos (`.jauge-pilule`), remplie en teal (`--accent-clair`)
+  plutôt qu'en vert pour ne pas laisser croire à un second décompte de
+  repos. Remplace le texte d'estimation « ~Xmin restant » qui vivait au
+  même endroit depuis le 16 septembre 2026 (temps total estimé de la
+  séance moins le temps écoulé) : `dureeTotaleEstimeeS()`,
+  `dureeEstimeeSerie()` et `EXERCICES_POLYARTICULAIRES`, qui ne servaient
+  qu'à ce calcul, ont été retirés avec lui plutôt que laissés morts dans le
+  fichier.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
@@ -853,8 +887,19 @@ que soit le sous-menu ensuite ouvert.
   cartes dans ce navigateur (chacune retombe à sa largeur de contenu au lieu
   de 100 %, inégale entre « Sport » et « Suivi ») — constaté à l'essai, pas
   une règle générale à appliquer ailleurs sans revérifier. Scopé à
-  `#ecran-menu` : le sous-menu Suivi (cinq puis six entrées, pleine largeur)
-  n'est pas concerné.
+  `#ecran-menu` : le sous-menu Suivi (cinq puis six puis sept entrées,
+  pleine largeur) n'est pas concerné.
+  - **Contenu centré sur l'icône depuis le 17 septembre 2026** (demande de
+    l'utilisateur, « centré sur la bulle ») : `align-items` et `text-align`
+    passés à `center` sur ces deux grandes cartes (`#ecran-menu .carte-menu`
+    uniquement), qui étaient alignées à gauche depuis leur création. La
+    variante `.carte-menu-petite` du sous-menu Suivi, déjà en ligne
+    icône-puis-texte, n'est pas concernée.
+  - **Dégradé dynamique le 17 septembre 2026** (même demande) : un dérivé
+    très doux de `--fond` qui dérive lentement (`background-position`
+    animé, `background-size: 300%`), coupé sous `prefers-reduced-motion`
+    comme le reste des animations de l'application. Les cartes restent sur
+    `--fond-carte`, opaque, la lisibilité du texte n'est pas concernée.
 - **Direction visuelle : mode clair, référence Strava**, choisi via
   `impeccable.style` (outillage de conception introduit ce jour-là, voir
   « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
@@ -863,18 +908,31 @@ que soit le sous-menu ensuite ouvert.
   l'application (voir l'en-tête du fichier). Remplace un mode sombre qui
   faisait référence jusque-là ; aucune bascule automatique, un seul thème
   livré.
+  - **Palette retouchée le 17 septembre 2026** (demande de l'utilisateur,
+    « plus clair, moins saturé », déclenchée par l'État musculaire mais
+    étendue à toute l'application puisque les six couleurs vives
+    (`--accent`, `--accent-clair`, `--hausse`, `--baisse`, `--danger`,
+    `--mesure-bras`) sont des variables CSS partagées) : saturation -16,
+    luminosité +1,5 à +6 selon la marge disponible sur chacune, calculée
+    pour rester ≥ 4,55:1 (WCAG AA avec une petite marge, pas seulement
+    ≥ 4,5) contre les trois fonds de l'application — la palette d'origine
+    étant déjà au plus juste, l'assouplir davantage aurait fait tomber au
+    moins une teinte sous le seuil contre le plus sombre des trois
+    (`--fond-champ`). Les valeurs `rgba()` à la main qui reprenaient les
+    anciens RGB de `--accent`/`--hausse`/`--baisse` (fonds teintés d'un
+    badge, d'une ligne validée...) ont été mises à jour avec.
 
 L'écran de séance et le pont Apps Script ne sont pas concernés par ce
 chantier : tout ce qui suit vit dans le sous-menu Suivi, jamais relu par
 l'import ni par `ecrireSeance()`.
 
-### Suivi : six contenus
+### Suivi : sept contenus
 
 Chaque écran a sa propre fonction de rendu (`rendreCalendrier()`,
 `rendreEtatMusculaire()`, `rendreSommeil()`, `rendreMensurations()`,
-`rendreEvolutionCourse()`, `rendreTonnageMuscles()`) et son `<section>`
-dédiée dans `index.html`, ouverts et refermés comme les autres sous-écrans
-via `afficher()`.
+`rendreEvolutionCourse()`, `rendreTonnageMuscles()`, `rendreRemarque()`) et
+son `<section>` dédiée dans `index.html`, ouverts et refermés comme les
+autres sous-écrans via `afficher()`.
 
 - **Calendrier** : une case par jour du mois en cours, l'icône du type de la
   première séance enregistrée ce jour-là (`iconeJour()`, déjà utilisée pour
@@ -905,15 +963,49 @@ via `afficher()`.
     `MANNEQUIN_AVANT`/`MANNEQUIN_ARRIERE` dans `js/app.js`, repère
     1000 x 2000. Rendus par une fonction commune aux trois mannequins de
     l'application, `rendreMannequinPolygones()` : silhouette neutre pour
-    les polygones sans zone suivie (tête, cou, avant-bras, abdos,
-    obliques, adducteurs/abducteurs, genoux, soléaires), couleur d'état
-    pour les dix zones de `ZONES_MUSCULAIRES`. Triceps et mollets ont un
-    polygone sur les deux vues (visibles de face comme de dos dans la
-    source) : les deux sont colorés, plus fidèle qu'un seul côté choisi
-    arbitrairement. `dos` regroupe trois paires de la source (trapèze,
-    haut et bas du dos) sous une seule couleur, même simplification
-    qu'avant. `FORMES_MANNEQUIN_ARRIERE` et `SILHOUETTE_MANNEQUIN`
-    (ci-dessus) sont retirés, remplacés par ces deux tables.
+    les polygones sans zone suivie, couleur d'état pour les zones de
+    `ZONES_MUSCULAIRES` (voir la puce suivante pour leur liste à jour).
+    Triceps et mollets ont un polygone sur les deux vues (visibles de face
+    comme de dos dans la source) : les deux sont colorés, plus fidèle qu'un
+    seul côté choisi arbitrairement. `dos` regroupe trois paires de la
+    source (trapèze, haut et bas du dos) sous une seule couleur, même
+    simplification qu'avant. `FORMES_MANNEQUIN_ARRIERE` et
+    `SILHOUETTE_MANNEQUIN` (ci-dessus) sont retirés, remplacés par ces deux
+    tables.
+  - **Treize zones depuis le 17 septembre 2026** (« il manque de nombreux
+    muscles », dix jusque-là) : le mannequin réaliste laissait de larges
+    pans du corps en silhouette neutre en permanence, faute d'exercice du
+    programme ciblant ces polygones-là. Deux causes distinctes, deux
+    corrections différentes :
+    - **Trois polygones existants portaient une donnée déjà suivie sous une
+      autre zone**, jamais reliée à eux : les deux polygones LEFT_SOLEUS/
+      RIGHT_SOLEUS de la source (mollet au sens courant du terme) rejoignent
+      `mollets`, et le polygone ABDUCTORS côté face (qui, malgré son nom
+      côté source, correspond à l'abducteur/moyen fessier, pas à
+      l'adducteur) rejoint `fessiers`, qui suit déjà `Abducteurs et moyen
+      fessier`. Aucune zone créée, juste un polygone de plus coloré par une
+      zone existante.
+    - **Trois zones neuves, sourcées du gainage plutôt que du champ
+      `muscle`** : `abdominaux` (catégories `anti_extension` +
+      `flexion_chargee`, dead bug/planche/crunch inversé/relevé de genoux),
+      `obliques` (`anti_rotation` + `anti_lateroflexion`, pallof press/bird
+      dog/marche de l'ours/planche latérale), `avant-bras` (farmer walk
+      seul, footings compris via `derniereFoisMouvement`). `ZONES_MUSCULAIRES`
+      porte pour elles un champ `mouvements` au lieu de `muscles` ;
+      `derniereFoisZone()` bascule vers `derniereFoisZoneGainage()`, qui lit
+      `s.fin` faute d'un horodatage par mouvement (`seance.mouvements` ne
+      garde qu'un tableau de valeurs, pas de série individuelle comme en
+      musculation). Ces trois zones n'ont pas de tonnage kg : exclues du
+      mannequin de Tonnage par muscle (voir plus bas), qui ne suit que les
+      dix zones adossées à `muscle`. Restent en silhouette neutre, faute de
+      donnée : tête, cou, genoux, adducteurs (vrai sens anatomique, aucun
+      exercice du programme ne les cible).
+  - **Palette plus claire et moins saturée le 17 septembre 2026** (demande
+    de l'utilisateur, déclenchée par cet écran mais appliquée à
+    l'ensemble) : voir « Direction visuelle » plus haut, la retouche vit
+    dans les variables CSS (`--accent`, `--accent-clair`, `--hausse`,
+    `--baisse`, `--danger`, `--mesure-bras`) et cascade donc à toute
+    l'application sans logique dédiée ici.
 - **Sommeil**, écran neuf sans lien avec le programme : une frise de la
   nuit en cases de 30 min, le cœur (23h30-8h) bleu par défaut sans rien à
   saisir pour une nuit ordinaire, un appui bascule un créneau en rouge
@@ -926,6 +1018,54 @@ via `afficher()`.
     13 : la première ligne couvre alors 22h-7h30 pile
     (`SOMMEIL_COEUR_FIN`), si bien que la session de sommeil 00h-8h tient
     entière dessus, jamais coupée par un retour à la ligne.
+    - **Réduit à 17 par ligne le 17 septembre 2026** (demande de
+      l'utilisateur, « le plus grand possible »), au prix de cette garantie :
+      00h-8h peut désormais déborder sur la deuxième ligne. Compromis
+      assumé par l'utilisateur, la taille du créneau comptant plus ici que
+      la continuité visuelle du bloc de sommeil.
+  - **Sans barre ni titre depuis le 17 septembre 2026** (remarque de
+    l'utilisateur) : seul le retour reste, `.icone-sommeil-flottant`,
+    flottant tout en haut de l'écran (niveau caméra selfie, `position:
+    absolute` sur `#ecran-sommeil`) plutôt que dans une barre opaque qui
+    aurait coupé le dégradé de fond en haut, et un peu plus grand que
+    `.icone` ailleurs (52px contre 44px) pour rester facile à toucher sans
+    le confort d'une barre pleine largeur autour de lui. Remonté une
+    seconde fois le même jour (« encore plus haut ») : le plancher hors
+    encoche passe de 6 à 2px.
+  - **Dégradé de fond intensifié le 17 septembre 2026** (remarque de
+    l'utilisateur, « plus foncé et plus clair aux extrémités ») :
+    l'extrémité haute est éclaircie juste assez pour rester au-dessus de
+    4,3:1 de contraste avec le texte blanc au pire point, la bascule vers
+    les tons sombres du milieu se faisant avant que le premier texte (le
+    titre de la nuit) n'apparaisse ; l'extrémité basse, jamais sous du texte
+    critique, est poussée bien plus loin (quasi noir).
+  - **Cœur de nuit (23h30-8h) agrandi le 17 septembre 2026** (`.sommeil-
+    creneau.coeur`, `aspect-ratio: 1 / 1.35`) : plus haut que large plutôt
+    que plus large, pour ne pas changer le nombre de créneaux par ligne.
+  - **Trois appuis distincts sur la frise, ajoutés le 17 septembre 2026**
+    (remarque de l'utilisateur) : un appui simple bascule l'insomnie
+    (inchangé), un appui-glissé depuis une puce « La journée » (ou, depuis
+    le même jour, une puce de sport) pose un repère à l'heure visée sur la
+    frise, un appui long (550 ms) sur un créneau qui en porte un le
+    retire. Les trois se répartissent le même geste tactile sans se
+    marcher dessus : voir `demarrerGlissementRepere()`,
+    `deposerGlissementRepere()` et le minuteur d'appui long dans
+    `rendreSommeil()`, `js/app.js`.
+    - Les repères de `JOURNEE_SOMMEIL` (café, alcool, pipi nocturne, écran
+      tardif, repas tardif) tolèrent plusieurs occurrences (café à 1h puis
+      à 3h) et vivent dans `nuit.reperesFrise`, une liste plutôt qu'une
+      carte par type.
+    - **Les puces de sport (`SPORT_JOURNEE`) glissent aussi vers la frise
+      depuis le 17 septembre 2026** (« possible appuyé glisser pour placer
+      tous les icônes de journée », jusque-là réservé aux cinq puces
+      ci-dessus) : `itemJourneeParCle()` cherche dans les deux tables, et
+      déposer un sport pose directement son heure dans `nuit.sports` (une
+      seule occurrence par type, voir la puce suivante) plutôt que dans
+      `reperesFrise`. Le champ `<input type="time">` à côté de la puce
+      reste disponible pour une saisie manuelle précise ; les deux
+      cohabitent, l'un n'annule pas l'autre. L'appui long retire aussi un
+      sport posé sur la frise (`supprimerSportFrise()`), même geste que
+      pour les autres repères.
   - **Muscu et footing dissociés le même jour** (même date), autre demande
     du même soir : un seul `sportType` empêchait de noter les deux (ex.
     J2/J6 avec du gainage, ou une sortie en plus d'une séance). `nuit.sports`
@@ -958,11 +1098,11 @@ via `afficher()`.
     (demande de l'utilisateur le 16 septembre 2026 : l'ancien badge auto,
     `sportDuJour()`, n'était qu'un texte fixe, pas sélectionnable). Deux
     puces muscu/footing (`SPORT_JOURNEE`), un seul à la fois, avec une heure
-    une fois choisi (`<input type="time">`) pour le retrouver sur la frise :
-    l'icône y **remplace le numéro d'heure** sur son créneau
-    (`indexCreneauPourHeure()`), seulement si l'heure tombe dans la fenêtre
-    affichée (22h-11h) — un sport d'après-midi reste sélectionné sans repère
-    sur la frise, la fenêtre ne pouvant pas l'accueillir.
+    une fois choisi (`<input type="time">`, ou par glissement de la puce
+    depuis le 17 septembre 2026, voir plus haut) pour le retrouver sur la
+    frise : l'icône y **remplace le numéro d'heure** sur son créneau
+    (`indexCreneauPourHeure()`), la fenêtre affichée couvrant les 24h depuis
+    le 16 septembre 2026 (voir plus haut).
 - **Mensurations**, à partir de captures d'applications tierces envoyées
   comme référence par l'utilisateur (silhouette à repères de mesure,
   comparaison photo avant/après par curseur) — jamais recopiées telles
@@ -1027,8 +1167,9 @@ via `afficher()`.
     même coloration hausse/baisse que l'écran de footing.
 - **Tonnage par muscle, mannequin cliquable**, à partir des mêmes captures
   de référence, passé aux mêmes polygones réalistes que l'État musculaire
-  le 17 septembre 2026 (voir la puce dédiée plus haut) : les dix zones y
-  sont désormais toutes cliquables, sur l'une des deux vues ou les deux
+  le 17 septembre 2026 (voir la puce dédiée plus haut) : les dix zones à
+  tonnage (celles adossées au champ `muscle`, `ZONES_MUSCULAIRES.filter(z =>
+  z.muscles)`) y sont cliquables, sur l'une des deux vues ou les deux
   (triceps, mollets). Réutilise `ZONES_MUSCULAIRES` plutôt qu'une table
   muscle → exercices séparée : même simplification déjà en place pour
   l'État musculaire, un seul muscle par exercice. **Différent du tonnage
@@ -1037,16 +1178,49 @@ via `afficher()`.
   le problème était de comparer deux séances entre elles, le tonnage
   montant mécaniquement quand la charge baisse et que les répétitions
   montent. Ici, pas de comparaison série à série : une simple somme par
-  zone sur une fenêtre glissante de 7 jours (`TONNAGE_PERIODE_JOURS`), pour
-  repérer un déséquilibre de volume entre groupes musculaires — usage
-  reconnu (suivi du volume hebdomadaire) qui ne prête pas à la même
-  confusion.
+  zone sur une fenêtre choisie, pour repérer un déséquilibre de volume entre
+  groupes musculaires — usage reconnu (suivi du volume hebdomadaire) qui ne
+  prête pas à la même confusion.
   - Coloré en continu (`fill-opacity` proportionnelle au tonnage, pas trois
     paliers comme l'État musculaire) plutôt que par état de récupération.
     Chaque zone (sur le mannequin ou dans la liste, dos compris depuis le
     même mannequin de dos que l'État musculaire) est cliquable et ouvre le
     détail par exercice en dessous ; la zone la plus chargée s'ouvre par
-    défaut.
+    défaut. Les trois zones sourcées du gainage (`abdominaux`, `obliques`,
+    `avant-bras`, voir État musculaire) n'ont pas de tonnage kg à sommer :
+    exclues de ce mannequin-ci, en silhouette neutre, plutôt qu'un chiffre
+    inventé.
+  - **Fenêtre choisie (1 mois / 6 mois) plutôt que fixée à 7 jours**,
+    changé le 17 septembre 2026 : sur un programme où chaque jour ne revient
+    qu'une fois par semaine, un léger décalage (jambes faites 8 jours plus
+    tôt plutôt que 7) suffisait à faire disparaître toute la zone de l'écran
+    (« Rien sur les 7 derniers jours »), alors qu'elle avait bien été
+    travaillée — signalé par l'utilisateur comme un bogue, c'était en
+    réalité la fenêtre trop étroite pour un programme hebdomadaire. Deux
+    boutons (`TONNAGE_PERIODES`, variable `tonnagePeriodeJours`, 30 ou 182
+    jours) remplacent l'ancienne constante `TONNAGE_PERIODE_JOURS`. Une
+    fenêtre plus large laisse aussi apparaître une vraie courbe de
+    progression par exercice (voir la puce précédente) là où 7 jours ne
+    contenaient souvent qu'une seule séance — c'est cette courbe par
+    exercice, déjà en place depuis le 16 septembre, qui porte la
+    « surcharge progressive » demandée sur cet écran, pas un nouveau
+    chiffre : le tonnage y reste une somme de volume, pas un indicateur de
+    performance (voir la mise en garde plus haut).
+- **Remarque**, septième et dernier contenu, ajouté le 17 septembre 2026
+  (demande de l'utilisateur) : envoyer une remarque libre au développeur
+  sans passer par un exercice ni une fin de séance, seuls chemins qui le
+  permettaient jusque-là (`#fin-remarque`). Même destination (l'onglet
+  `Remarques` du classeur) et même lecture (`outils/lire_remarques.py`),
+  aucun second système : `envoyerRemarqueSuivi()` construit un objet
+  `{id, texte, date}` et réutilise `ecrireRemarque()` côté
+  `appsscript/Code.gs` (qui ne regarde que `seance.remarque`/`jour`/`id`),
+  avec `jour: '(Suivi)'` pour distinguer ces lignes des remarques de fin de
+  séance dans la feuille. File d'attente locale (`CLES.remarques`, un
+  tableau `{id, texte, date, envoyee}`) sur le même principe que les
+  mensurations : hors ligne d'abord, un échec d'envoi n'efface rien, la
+  remarque repart au prochain appel de `synchroniser()`. **Nécessite le
+  redéploiement du pont** (nouvelle action `remarque` dans `doPost`), comme
+  les évolutions précédentes de cette liste — voir « Chantiers ouverts ».
 
 ### Chantiers évalués et écartés ce jour-là
 
@@ -1141,14 +1315,17 @@ un bug si le sujet revient.
    séance de gainage dans une page `Gainage`, sauvegarde des consignes
    techniques dans une page `Consignes`, écriture des mensurations valeurs
    et photo Drive dans une page `Mensurations`) sont désormais en ligne.
-   **Une cinquième évolution attend maintenant son tour** : la sauvegarde
-   du sommeil dans une page `Sommeil` (`ecrireSommeil`), écrite dans la
-   foulée du redéploiement — repérée en relisant le pont qu'aucune page ne
+   **Deux évolutions attendent maintenant leur tour** : la sauvegarde du
+   sommeil dans une page `Sommeil` (`ecrireSommeil`), écrite dans la foulée
+   du redéploiement du 16 — repérée en relisant le pont qu'aucune page ne
    couvrait le sommeil jusque-là, contrairement aux consignes et aux
-   mensurations (voir « Sommeil » plus haut). Un nouveau redéploiement sera
-   nécessaire pour qu'elle atteigne le classeur ; l'application reste par
-   ailleurs utilisable en local sans cette étape, l'adresse et le secret du
-   pont restant ceux déjà en place dans les réglages.
+   mensurations (voir « Sommeil » plus haut) — et, depuis le 17 septembre
+   2026, l'action `remarque` de `doPost` pour la remarque libre du menu
+   Suivi (voir « Remarque » plus haut), qui réutilise l'onglet `Remarques`
+   existant. Un nouveau redéploiement sera nécessaire pour que les deux
+   atteignent le classeur ; l'application reste par ailleurs utilisable en
+   local sans cette étape, l'adresse et le secret du pont restant ceux déjà
+   en place dans les réglages.
 2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
    accumulées. Côté application, c'est fait depuis le 10 septembre 2026 : la
    fiche d'une séance enregistrée porte la courbe de chaque exercice

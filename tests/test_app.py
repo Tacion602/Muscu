@@ -481,11 +481,15 @@ def test_le_mannequin_de_dos_couvre_les_six_zones_de_la_liste(page):
     assert titres == ["Avant", "Arrière"]
     zones_dos = page.evaluate(
         "document.querySelectorAll('#mannequin svg')[1].querySelectorAll('.zone-fatigue, .zone-recup, .zone-prete').length")
-    # 22 polygones, pas 10 : le mannequin realiste du 17 septembre 2026
+    # 28 polygones, pas 10 : le mannequin realiste du 17 septembre 2026
     # decoupe chaque zone plus finement que l'ancien FORMES_MANNEQUIN_ARRIERE
     # (dos = trapeze x2 + haut du dos x2 + bas du dos x2 = 6, epaules
-    # arriere x2, triceps x4, fessiers x2, ischios x4, mollets x4).
-    assert zones_dos == 22, "dos (x6), epaules arriere (x2), triceps (x4), fessiers (x2), ischios (x4), mollets (x4)"
+    # arriere x2, triceps x4, fessiers x2, ischios x4, mollets x6 dont les
+    # deux soleaires ajoutes le 17 septembre 2026, avant-bras x4 ajoute le
+    # meme jour).
+    assert zones_dos == 28, (
+        "dos (x6), epaules arriere (x2), triceps (x4), fessiers (x2), "
+        "ischios (x4), mollets (x6), avant-bras (x4)")
 
 
 def ouvrir_sommeil(page):
@@ -511,18 +515,21 @@ def test_le_coeur_de_la_frise_de_sommeil_est_bleu_par_defaut(page):
     assert "libre" in creneaux.nth(20).get_attribute("class")     # 08:00
 
 
-def test_la_session_de_sommeil_tient_sur_une_seule_ligne_de_frise(page):
+def test_la_frise_de_sommeil_tient_dix_sept_creneaux_par_ligne(page):
     """16 septembre 2026 : 20 creneaux par ligne (voir .sommeil-creneau dans
     css/style.css), choisis pour que 22h-7h30 (le coeur de nuit, indices 0 a
-    19) tombe entierement sur la premiere ligne. Verifie par la position
-    verticale plutot que par un nombre par ligne, la mise en page n'exposant
-    rien d'autre a lire."""
+    19) tombe entierement sur la premiere ligne. Reduit a 17 le 17 septembre
+    2026 (demande de l'utilisateur, creneaux "le plus grand possible") :
+    compromis assume, 22h-7h30 peut desormais deborder sur la deuxieme ligne
+    (verifie plus bas), au profit de creneaux plus grands. Verifie par la
+    position verticale plutot que par un nombre par ligne, la mise en page
+    n'exposant rien d'autre a lire."""
     ouvrir_sommeil(page)
     creneaux = page.locator(".sommeil-creneau")
     haut_premiere_ligne = creneaux.nth(0).bounding_box()["y"]
-    for i in (3, 19):   # 23:30 et 07:30, les bornes du coeur de nuit
-        assert creneaux.nth(i).bounding_box()["y"] == haut_premiere_ligne
-    assert creneaux.nth(20).bounding_box()["y"] > haut_premiere_ligne   # 08:00, ligne suivante
+    assert creneaux.nth(16).bounding_box()["y"] == haut_premiere_ligne     # dernier de la premiere ligne
+    assert creneaux.nth(17).bounding_box()["y"] > haut_premiere_ligne      # premier de la deuxieme ligne
+    assert creneaux.nth(19).bounding_box()["y"] > haut_premiere_ligne      # 07:30 : le coeur deborde desormais
 
 
 def test_toucher_un_creneau_de_sommeil_bascule_en_insomnie(page):
@@ -893,7 +900,7 @@ def test_une_zone_sans_tonnage_affiche_un_message(page):
     page.reload()
     ouvrir_tonnage_muscles(page)
     page.locator("#tonnage-liste .tonnage-zone", has_text="Mollets").click()
-    assert "7 derniers jours" in page.locator("#tonnage-detail .vide").text_content()
+    assert "Rien sur 1 mois" in page.locator("#tonnage-detail .vide").text_content()
 
 
 def test_le_mannequin_de_dos_est_aussi_cliquable(page):

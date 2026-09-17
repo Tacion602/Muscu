@@ -12,6 +12,7 @@ const CLES = {
   consignes: 'muscu.consignes',
   sommeil: 'muscu.sommeil',
   mensurations: 'muscu.mensurations',
+  remarques: 'muscu.remarques',
 };
 
 const REGLAGES_PAR_DEFAUT = {
@@ -873,41 +874,6 @@ function ficheExercice() {
   return jour.exercices.find((e) => e.nom === courant.nom) || {};
 }
 
-/* Classement des exercices actuels du programme pour l'estimation grossière
-   du temps de séance (demande de l'utilisateur le 16 septembre 2026) :
-   convention d'usage courante (poly-articulaire vs isolation), le classeur
-   ne portant pas cette information. À revoir si un classement surprend, et
-   à mettre à jour si le programme change. */
-const EXERCICES_POLYARTICULAIRES = new Set([
-  'Developpe incline machine', 'Dips buste penche',
-  'Tirage vertical prise large', 'Rowing unilateral machine ou haltere',
-  'PRESSE A CUISSE / HACK SQUAT', 'SOULEVE DE TERRE ROUMAIN',
-  'Traction prise neutre machine assistee', 'Developpe machine',
-  'Lat pull-in unilateral poulie a genoux',
-]);
-
-/* Temps de travail estimé d'une série, hors repos : 75 s pour un exercice
-   poly-articulaire, 60 ou 80 s pour un exercice d'isolation selon que sa
-   fourchette de répétitions atteint 15 ou non (chiffres donnés par
-   l'utilisateur le 16 septembre 2026 : 10 reps poly 75 s, 10 reps isolation
-   60 s, 15-20 reps isolation 80 s). Grossier par construction. */
-function dureeEstimeeSerie(exo) {
-  if (EXERCICES_POLYARTICULAIRES.has(exo.nom)) return 75;
-  return (exo.reps_max || 0) >= 15 ? 80 : 60;
-}
-
-/* Durée totale estimée de la séance de musculation du jour, exercices et
-   séries du programme (pas de la séance en cours, qui peut en avoir moins
-   si des séries ont été retirées) : repos compris, temps de travail estimé
-   par dureeEstimeeSerie(). */
-function dureeTotaleEstimeeS() {
-  const jour = jourDe(seance.jour);
-  return jour.exercices.reduce((somme, exo) => {
-    const parSerie = dureeEstimeeSerie(exo) + (exo.repos_s || 0);
-    return somme + parSerie * (exo.series || 0);
-  }, 0);
-}
-
 /* --------------------------------------------------------------- footing */
 
 function estFooting() {
@@ -1575,19 +1541,18 @@ function majChronoSeance() {
   majLigneProgression(ecoule);
 }
 
-/* Estimation grossière du temps restant, à côté de la jauge : temps total
-   estimé (dureeTotaleEstimeeS, fixe pour la séance) moins le temps
-   réellement écoulé (le même chrono que #chrono-seance-demarrer), pas une
-   somme des séries déjà faites — ça la fait défiler seule à chaque
-   battement de majChronoSeance(), sans recalcul dédié. */
+/* Ligne sous la barre de titre : chrono de séance à droite (inchangé), jauge
+   pilule de progression totale à gauche depuis le 17 septembre 2026 (demande
+   de l'utilisateur, remplace le texte d'estimation "~Xmin restant" —
+   dureeTotaleEstimeeS/dureeEstimeeSerie/EXERCICES_POLYARTICULAIRES ont
+   disparu avec lui, plus aucun appelant). La jauge elle-même est tenue à
+   jour par rendreJauge(), appelée à chaque mutation des séries ; cette
+   fonction ne s'occupe que du chrono, rappelée à chaque battement de
+   majChronoSeance(). */
 function majLigneProgression(ecouleMs) {
   const ligne = $('ligne-progression');
   if (!seance || seance.type !== 'muscu') { ligne.hidden = true; return; }
   ligne.hidden = false;
-  const restant = dureeTotaleEstimeeS() - (ecouleMs || 0) / 1000;
-  $('jauge-restant').textContent = restant > 0
-    ? '~' + texteDuree(restant) + ' restant'
-    : 'Estimation dépassée';
   $('jauge-chrono').textContent = (ecouleMs || 0) ? texteDuree(ecouleMs / 1000) : '0:00';
 }
 
@@ -1645,7 +1610,7 @@ function rendreExercice() {
 
   $('seance-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
   $('seance-progression').textContent = (indexExo + 1) + '/' + seance.exercices.length;
-  $('jauge-remplie').style.width = (100 * proportionFaite()) + '%';
+  rendreJauge();
 
   majChronoSeance();
   if (chronoSeance().demarre && !tictacSeance) {
@@ -2026,7 +1991,13 @@ function validerSerie(exercice, serie, index) {
 }
 
 function rendreJauge() {
-  $('jauge-remplie').style.width = (100 * proportionFaite()) + '%';
+  const pourcent = (100 * proportionFaite()) + '%';
+  $('jauge-remplie').style.width = pourcent;
+  // Même valeur, en pilule bien visible en tête d'écran (voir
+  // #jauge-seance-remplissage dans index.html, demande de l'utilisateur le
+  // 17 septembre 2026) : la fine ligne ci-dessus reste, discrète, pour qui
+  // la regarde déjà.
+  $('jauge-seance-remplissage').style.width = pourcent;
 }
 
 /* --------------------------------------------------------------- minuterie */
@@ -2631,11 +2602,70 @@ async function synchroniserSommeil() {
   }
 }
 
+/* Remarque libre depuis le menu Suivi, ajoutée le 17 septembre 2026 (demande
+   de l'utilisateur) : même destination que la remarque de fin de séance
+   (#fin-remarque, onglet Remarques du classeur), mais sans passer par un
+   exercice ni une séance entière. File d'attente locale (CLES.remarques) sur
+   le même principe que les mensurations : hors ligne d'abord, un échec
+   d'envoi n'efface rien, la remarque repart au prochain essai. Réutilise
+   ecrireRemarque côté appsscript/Code.gs (une remarque reste une remarque,
+   quelle que soit son origine) avec un `jour` de convention, "(Suivi)", pour
+   la distinguer d'un coup d'œil des remarques de fin de séance dans la
+   feuille. */
+function lireRemarquesSuivi() {
+  return lireTableau(CLES.remarques);
+}
+
+async function synchroniserRemarques() {
+  const toutes = lireRemarquesSuivi();
+  const attente = toutes.filter((r) => !r.envoyee);
+  for (const r of attente) {
+    try {
+      await envoyer({ action: 'remarque', remarque: r });
+      r.envoyee = true;
+    } catch (e) {
+      console.warn('Envoi de remarque différé', e);
+    }
+  }
+  ecrire(CLES.remarques, toutes);
+}
+
+function rendreRemarque() {
+  const enAttente = lireRemarquesSuivi().filter((r) => !r.envoyee).length;
+  $('remarque-suivi-champ').value = '';
+  $('remarque-suivi-statut').textContent = enAttente
+    ? enAttente + (enAttente > 1 ? ' remarques en attente d’envoi.' : ' remarque en attente d’envoi.')
+    : '';
+  $('remarque-suivi-statut').className = 'message';
+}
+
+async function envoyerRemarqueSuivi() {
+  const champ = $('remarque-suivi-champ');
+  const texte = champ.value.trim();
+  if (!texte) return;
+  const remarque = { id: 'R' + Date.now(), texte, date: new Date().toISOString(), envoyee: false };
+  const toutes = lireRemarquesSuivi();
+  toutes.push(remarque);
+  ecrire(CLES.remarques, toutes);
+  champ.value = '';
+  $('remarque-suivi-statut').textContent = 'Envoi…';
+  await synchroniserRemarques();
+  const a_jour = lireRemarquesSuivi().find((r) => r.id === remarque.id);
+  if (a_jour && a_jour.envoyee) {
+    $('remarque-suivi-statut').textContent = 'Envoyée, merci.';
+    $('remarque-suivi-statut').className = 'message ok';
+  } else {
+    $('remarque-suivi-statut').textContent = 'Enregistrée sur le téléphone, sera renvoyée dès que possible.';
+    $('remarque-suivi-statut').className = 'message';
+  }
+}
+
 async function synchroniser() {
   if (!reglages.pont) return 0;
   await synchroniserConsignes();
   await synchroniserMensurations();
   await synchroniserSommeil();
+  await synchroniserRemarques();
 
   const historique = lireTableau(CLES.historique);
   const attente = historique.filter((s) => s.fin && !s.envoye);
@@ -2815,6 +2845,23 @@ const ZONES_MUSCULAIRES = [
   { cle: 'fessiers', nom: 'Fessiers', muscles: ['grand fessier', 'abducteurs et moyen fessier'], recuperation_h: 72, vue: 'liste' },
   { cle: 'ischios', nom: 'Ischio-jambiers', muscles: ['ischio-jambiers et fessiers'], recuperation_h: 72, vue: 'liste' },
   { cle: 'mollets', nom: 'Mollets', muscles: ['mollets'], recuperation_h: 48, vue: 'liste' },
+  /* Trois zones ajoutées le 17 septembre 2026 (« il manque de nombreux
+     muscles ») : le programme de musculation ne charge ni les abdominaux, ni
+     les obliques, ni les avant-bras au sens de `muscle` (colonne B du
+     classeur), si bien que ces polygones du mannequin réaliste restaient en
+     silhouette neutre en permanence, quelle que soit l'activité. La séance de
+     gainage (voir CATEGORIES_GAINAGE) travaille pourtant ces zones-là ; `
+     mouvements` (au lieu de `muscles`) fait lire `derniereFoisZone` dans
+     `seance.mouvements` plutôt que dans `exercices[].muscle`. Regroupement
+     par mécanique plutôt que par mouvement précis : anti-extension et flexion
+     chargée sollicitent le grand droit (abdominaux), anti-rotation et
+     anti-latéroflexion les obliques. Le farmer walk est la seule prise sur
+     l'avant-bras (grip) dans tout le programme, footings compris (voir
+     derniereFoisMouvement, qui lit déjà footing et gainage confondus pour ce
+     mouvement) — son propre repos (60 s) sert de vitesse de récupération. */
+  { cle: 'abdominaux', nom: 'Abdominaux', mouvements: ['dead_bug', 'planche', 'crunch_inverse', 'releve_genoux'], recuperation_h: 48, vue: 'avant' },
+  { cle: 'obliques', nom: 'Obliques', mouvements: ['pallof_press', 'bird_dog', 'marche_ours', 'planche_laterale'], recuperation_h: 48, vue: 'avant' },
+  { cle: 'avant-bras', nom: 'Avant-bras', mouvements: ['farmer_walk'], recuperation_h: 48, vue: 'liste' },
 ];
 
 /* Mannequin réaliste (17 septembre 2026, chantier débloqué : une base
@@ -2824,28 +2871,38 @@ const ZONES_MUSCULAIRES = [
    Polygones repris de `react-body-highlighter`
    (github.com/giavinh79/react-body-highlighter, licence MIT), repère
    1000 x 2000. `zone` vaut une clé de ZONES_MUSCULAIRES quand le polygone
-   est suivi par l'application, `null` sinon (tête, cou, avant-bras, abdos,
-   obliques, adducteurs/abducteurs, genoux, soléaires) : ces derniers
-   restent en silhouette neutre par `rendreMannequinPolygones()` plutôt que
-   de laisser un trou dans le corps. Triceps et mollets ont un polygone sur
-   les deux vues (visibles de face comme de dos dans la source), plus
-   fidèle qu'un seul côté choisi arbitrairement. `dos` regroupe trapèze,
-   haut et bas du dos (trois paires de la source) sous une seule couleur :
-   même simplification qu'avant, un seul muscle suivi par zone. */
+   est suivi par l'application, `null` sinon : tête, cou, genoux et
+   adducteurs (source : ADDUCTOR côté dos) restent en silhouette neutre par
+   `rendreMannequinPolygones()`, faute de tout exercice du programme qui les
+   cible spécifiquement — plutôt que d'inventer une donnée, ou de laisser un
+   trou dans le corps. Triceps et mollets ont un polygone sur les deux vues
+   (visibles de face comme de dos dans la source), plus fidèle qu'un seul
+   côté choisi arbitrairement ; `avant-bras` de même depuis le 17 septembre
+   2026 (voir ZONES_MUSCULAIRES). `dos` regroupe trapèze, haut et bas du dos
+   (trois paires de la source) sous une seule couleur : même simplification
+   qu'avant, un seul muscle suivi par zone. Les deux polygones LEFT_SOLEUS /
+   RIGHT_SOLEUS de la source rejoignent `mollets` (même muscle au sens
+   courant du terme), et ADDUCTORS (vue de face uniquement dans la source,
+   malgré son nom trompeur côté avant : c'est en fait l'abducteur/moyen
+   fessier) rejoint `fessiers`, qui suit déjà `Abducteurs et moyen fessier`
+   — ajouts du 17 septembre 2026, aucune zone nouvelle créée pour eux, la
+   donnée existait déjà sous un autre polygone. `abdominaux` et `obliques`
+   sont les deux seules zones sourcées du gainage plutôt que du champ
+   `muscle` (voir ZONES_MUSCULAIRES, `mouvements` au lieu de `muscles`). */
 const MANNEQUIN_AVANT = [
   { zone: 'pectoraux', points: ['518 416 510 551 580 580 678 555 706 473 620 416', '298 465 314 555 408 580 482 551 478 420 376 420'] },
-  { zone: null, points: ['686 633 673 571 588 596 600 641 604 833 657 788 665 698', '339 784 331 718 310 633 322 571 408 592 392 633 392 837'] },
-  { zone: null, points: ['563 592 580 641 584 780 584 927 563 984 551 1041 514 1078 510 845 506 673 510 571', '437 588 486 571 490 673 486 845 482 1073 445 1037 408 914 408 784 412 645'] },
+  { zone: 'obliques', points: ['686 633 673 571 588 596 600 641 604 833 657 788 665 698', '339 784 331 718 310 633 322 571 408 592 392 633 392 837'] },
+  { zone: 'abdominaux', points: ['563 592 580 641 584 780 584 927 563 984 551 1041 514 1078 510 845 506 673 510 571', '437 588 486 571 490 673 486 845 482 1073 445 1037 408 914 408 784 412 645'] },
   { zone: 'biceps', points: ['167 682 180 714 229 661 290 539 278 494 204 559', '714 494 702 547 763 661 816 718 829 690 788 555'] },
   { zone: 'triceps', points: ['694 555 694 616 759 727 776 702 755 673', '224 694 298 555 298 608 229 731'] },
   { zone: null, points: ['555 237 506 335 506 392 616 400 706 449 694 367 633 351 584 306', '290 449 302 371 363 351 412 302 445 245 490 339 486 392 380 396'] },
   { zone: 'epaules', points: ['784 531 796 478 792 412 759 380 710 363 722 429 714 473', '282 473 212 531 200 478 204 408 245 371 286 371 269 433'] },
   { zone: null, points: ['424 29 400 118 420 196 461 233 498 253 547 224 576 192 592 102 571 24 498 0'] },
-  { zone: null, points: ['527 1102 543 1249 600 1102 620 1000 649 943 600 927 567 1045', '478 1106 449 1253 420 1159 404 1131 396 1073 380 1024 347 939 396 922 416 992 437 1053'] },
+  { zone: 'fessiers', points: ['527 1102 543 1249 600 1102 620 1000 649 943 600 927 567 1045', '478 1106 449 1253 420 1159 404 1131 396 1073 380 1024 347 939 396 922 416 992 437 1053'] },
   { zone: 'quadriceps', points: ['347 988 371 1082 371 1278 343 1371 310 1327 294 1200 282 1114 294 1008 322 947', '633 1057 645 1000 669 947 702 1012 710 1118 682 1331 653 1376 624 1286 620 1114', '388 1294 384 1122 412 1184 445 1294 429 1351 400 1461 363 1465 355 1400', '596 1457 555 1290 608 1139 612 1302 641 1396 629 1465', '327 1384 265 1457 257 1367 257 1273 269 1143 294 1335', '718 1131 739 1241 739 1404 727 1457 665 1384 702 1335'] },
   { zone: null, points: ['339 1400 347 1433 355 1473 363 1510 351 1567 298 1567 273 1527 273 1473 302 1441', '657 1400 722 1478 722 1522 698 1571 649 1567 629 1510'] },
   { zone: 'mollets', points: ['714 1604 735 1535 767 1612 796 1678 784 1878 796 1955 747 1955', '249 1947 278 1649 282 1604 261 1543 249 1576 224 1616 208 1678 220 1882 208 1955', '727 1951 698 1592 653 1584 641 1624 641 1653 657 1771', '355 1584 359 1624 359 1669 351 1722 351 1767 322 1820 306 1873 269 1947 273 1878 282 1804 286 1755 290 1698 298 1641 302 1588'] },
-  { zone: null, points: ['61 886 102 751 147 702 163 743 192 735 45 976 0 1000', '845 698 833 735 800 731 951 984 1000 1004 935 894 898 763', '776 722 776 776 804 841 853 898 922 1012 947 996', '69 1012 135 906 188 841 216 771 212 718 49 988'] },
+  { zone: 'avant-bras', points: ['61 886 102 751 147 702 163 743 192 735 45 976 0 1000', '845 698 833 735 800 731 951 984 1000 1004 935 894 898 763', '776 722 776 776 804 841 853 898 922 1012 947 996', '69 1012 135 906 188 841 216 771 212 718 49 988'] },
 ];
 
 const MANNEQUIN_ARRIERE = [
@@ -2855,14 +2912,14 @@ const MANNEQUIN_ARRIERE = [
   { zone: 'dos', points: ['311 387 281 489 285 553 340 753 472 711 472 664 366 540 336 413', '689 387 719 494 715 562 660 753 528 711 528 664 634 545 664 417'] },
   { zone: 'triceps', points: ['268 498 179 557 145 723 166 817 217 638 268 557', '736 502 821 557 860 732 834 821 779 630 732 557', '268 583 268 685 230 753 191 774 226 655', '728 583 770 647 804 774 766 753 728 689'] },
   { zone: 'dos', points: ['477 728 345 770 353 834 494 1021 468 830', '523 728 655 770 647 834 506 1021 532 838'] },
-  { zone: null, points: ['864 757 911 834 932 940 1000 1064 962 1043 881 894 843 838', '136 757 89 838 68 936 0 1064 38 1043 123 885 157 830', '813 796 774 779 791 847 911 1038 932 1089 945 1047', '187 796 221 779 209 843 94 1030 68 1085 51 1047'] },
+  { zone: 'avant-bras', points: ['864 757 911 834 932 940 1000 1064 962 1043 881 894 843 838', '136 757 89 838 68 936 0 1064 38 1043 123 885 157 830', '813 796 774 779 791 847 911 1038 932 1089 945 1047', '187 796 221 779 209 843 94 1030 68 1085 51 1047'] },
   { zone: 'fessiers', points: ['447 996 302 1085 298 1187 315 1260 472 1213 494 1149', '553 991 511 1145 523 1209 681 1260 698 1191 694 1085'] },
   { zone: null, points: ['481 1230 447 1230 413 1255 451 1443 485 1357 489 1294', '519 1226 557 1234 591 1260 549 1443 519 1362 511 1294'] },
   { zone: 'ischios', points: ['289 1221 311 1294 366 1260 353 1353 345 1502 294 1583 289 1468 277 1413 272 1315', '715 1217 694 1289 638 1260 655 1366 664 1502 711 1583 715 1477 728 1421 736 1319', '387 1255 443 1460 404 1668 362 1528 370 1353', '617 1255 634 1362 643 1532 600 1668 562 1464'] },
   { zone: null, points: ['345 1532 311 1591 336 1664 374 1626', '664 1536 630 1630 668 1664 694 1591'] },
   { zone: 'mollets', points: ['294 1604 285 1672 247 1796 238 1928 255 1970 285 1932 298 1800 319 1711 319 1668', '374 1651 353 1677 332 1719 311 1804 302 1919 340 2000 387 1906 391 1689', '630 1651 613 1685 617 1906 664 1996 706 1919 689 1796 668 1702', '706 1604 723 1685 757 1791 766 1928 745 1966 723 1936 706 1796 681 1681'] },
-  { zone: null, points: ['285 1957 302 1957 336 2017 306 2200 285 2136 268 1983'] },
-  { zone: null, points: ['698 1957 719 1957 736 1983 719 2132 702 2196 672 2021'] },
+  { zone: 'mollets', points: ['285 1957 302 1957 336 2017 306 2200 285 2136 268 1983'] },
+  { zone: 'mollets', points: ['698 1957 719 1957 736 1983 719 2132 702 2196 672 2021'] },
 ];
 
 /* Rendu commun aux trois mannequins de l'application (État musculaire,
@@ -2886,7 +2943,22 @@ function rendreMannequinPolygones(donnees, libelleVue, zoneAttrs, titreZone, con
     libelleVue + '">' + polys + (contenuSupplementaire || '') + '</svg>';
 }
 
+/* Zone sourcée du gainage (voir `mouvements` dans ZONES_MUSCULAIRES) : pas de
+   `serie.heure` individuelle comme en musculation (seance.mouvements ne garde
+   qu'un tableau de valeurs par mouvement, voir valeursMouvement()), la fin de
+   séance (`s.fin`) sert donc de repère, suffisant pour un gadget indicatif. */
+function derniereFoisZoneGainage(zone) {
+  let dernier = null;
+  lireTableau(CLES.historique).forEach((s) => {
+    if (!s.fin) return;
+    const touche = zone.mouvements.some((cle) => ((s.mouvements || {})[cle] || []).some(valeurRenseignee));
+    if (touche && (!dernier || s.fin > dernier)) dernier = s.fin;
+  });
+  return dernier;
+}
+
 function derniereFoisZone(zone) {
+  if (zone.mouvements) return derniereFoisZoneGainage(zone);
   let dernier = null;
   lireTableau(CLES.historique).forEach((s) => {
     (s.exercices || []).forEach((exo) => {
@@ -2924,11 +2996,12 @@ function rendreEtatMusculaire() {
 
   // Mannequin réaliste (17 septembre 2026, voir MANNEQUIN_AVANT/ARRIERE et
   // rendreMannequinPolygones() plus haut) : silhouette neutre pour les
-  // parties non suivies, couleur d'état (fatigue/récup/prête) pour les dix
-  // zones. La liste en dessous du mannequin reste la source la plus
-  // lisible pour les zones vues de dos (le nom d'une zone ne doit pas
-  // dépendre d'un survol ou d'un appui long sur mobile), inchangé depuis
-  // le 16 septembre 2026.
+  // parties non suivies, couleur d'état (fatigue/récup/prête) pour les
+  // treize zones de ZONES_MUSCULAIRES (dix sourcées du champ `muscle`, trois
+  // du gainage depuis le même jour). La liste en dessous du mannequin reste
+  // la source la plus lisible pour les zones vues de dos (le nom d'une zone
+  // ne doit pas dépendre d'un survol ou d'un appui long sur mobile),
+  // inchangé depuis le 16 septembre 2026.
   const zoneAttrs = (cle) => 'class="' + classe(cle) + '" data-zone="' + cle + '"';
   const avant = rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face', zoneAttrs, titreZone);
   const arriere = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos', zoneAttrs, titreZone);
@@ -2960,8 +3033,21 @@ function rendreEtatMusculaire() {
    volume hebdomadaire), qui ne prête pas à la même confusion. Réutilise
    ZONES_MUSCULAIRES (voir État musculaire ci-dessus) plutôt qu'une table
    muscle → exercices séparée : même simplification déjà en place, un seul
-   muscle par exercice, pas de muscles secondaires. */
-const TONNAGE_PERIODE_JOURS = 7;
+   muscle par exercice, pas de muscles secondaires.
+
+   Fenêtre choisie (1 mois / 6 mois) plutôt que fixée à 7 jours depuis le
+   17 septembre 2026, demande de l'utilisateur : sur un programme où chaque
+   jour ne revient qu'une fois par semaine, un léger décalage (jambes faites
+   8 jours plus tôt plutôt que 7) suffisait à faire disparaître toute la zone
+   de l'écran ("Rien sur les 7 derniers jours"), alors que la zone avait bien
+   été travaillée. Une fenêtre plus large laisse aussi apparaître une vraie
+   courbe de progression par exercice (voir plus bas) là où 7 jours ne
+   contenaient souvent qu'une seule séance. */
+const TONNAGE_PERIODES = [
+  { jours: 30, nom: '1 mois' },
+  { jours: 182, nom: '6 mois' },
+];
+let tonnagePeriodeJours = TONNAGE_PERIODES[0].jours;
 let zoneTonnageChoisie = null;
 
 function tonnageZone(zone, depuis) {
@@ -2996,14 +3082,26 @@ function actionnerZoneTonnage(cle) {
 }
 
 function rendreTonnageMuscles() {
-  const depuis = new Date(Date.now() - TONNAGE_PERIODE_JOURS * 86400000);
+  // Boutons de période (1 mois / 6 mois) : voir TONNAGE_PERIODES plus haut.
+  $('tonnage-periode').querySelectorAll('.periode-bouton').forEach((bouton) => {
+    const jours = Number(bouton.dataset.jours);
+    bouton.classList.toggle('choisi', jours === tonnagePeriodeJours);
+    bouton.onclick = () => { tonnagePeriodeJours = jours; rendreTonnageMuscles(); };
+  });
+
+  const depuis = new Date(Date.now() - tonnagePeriodeJours * 86400000);
+  // Seules les zones adossées à un exercice chargé (barre, machine...) ont un
+  // tonnage kg à sommer ; les zones sourcées du gainage (obliques, abdominaux,
+  // avant-bras, voir ZONES_MUSCULAIRES) n'ont pas d'équivalent kg et restent
+  // en silhouette neutre sur cet écran plutôt qu'un chiffre inventé.
+  const zonesTonnage = ZONES_MUSCULAIRES.filter((z) => z.muscles);
   const tonnages = {};
-  ZONES_MUSCULAIRES.forEach((zone) => { tonnages[zone.cle] = tonnageZone(zone, depuis); });
+  zonesTonnage.forEach((zone) => { tonnages[zone.cle] = tonnageZone(zone, depuis); });
   const max = Math.max(1, ...Object.values(tonnages));
 
   const titreZone = (cle) => {
-    const zone = ZONES_MUSCULAIRES.find((z) => z.cle === cle);
-    return zone.nom + ' — ' + tonnages[cle] + ' kg';
+    const zone = zonesTonnage.find((z) => z.cle === cle);
+    return zone ? zone.nom + ' — ' + tonnages[cle] + ' kg' : '';
   };
   // Opacité plutôt que trois couleurs discrètes (État musculaire) : le
   // tonnage est une quantité continue, pas un état à trois paliers. 0,12
@@ -3013,10 +3111,12 @@ function rendreTonnageMuscles() {
     (0.12 + 0.88 * (tonnages[cle] / max)).toFixed(2) + ';' +
     (cle === zoneTonnageChoisie ? ' stroke: var(--accent); stroke-width: 2;' : '');
   // Mannequin réaliste (17 septembre 2026, voir MANNEQUIN_AVANT/ARRIERE et
-  // rendreMannequinPolygones() plus haut) : les dix zones sont désormais
-  // toutes cliquables sur l'une des deux vues (certaines sur les deux,
-  // triceps et mollets), silhouette neutre pour le reste.
-  const zoneAttrs = (cle) => 'class="zone-cliquable" data-zone="' + cle + '" style="' + styleZone(cle) + '"';
+  // rendreMannequinPolygones() plus haut) : seules les zones à tonnage sont
+  // cliquables ici, le reste (gainage, silhouette anatomique non suivie)
+  // reste neutre.
+  const zoneAttrs = (cle) => (cle in tonnages)
+    ? 'class="zone-cliquable" data-zone="' + cle + '" style="' + styleZone(cle) + '"'
+    : 'class="silhouette"';
   const avant = rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face, tonnage par zone', zoneAttrs, titreZone);
   const arriere = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos, tonnage par zone', zoneAttrs, titreZone);
 
@@ -3026,7 +3126,7 @@ function rendreTonnageMuscles() {
       '<div class="mannequin-vue"><p class="mannequin-vue-titre">Arrière</p>' + arriere + '</div>' +
     '</div>';
 
-  $('tonnage-liste').innerHTML = ZONES_MUSCULAIRES.filter((z) => z.vue === 'liste').map((zone) => (
+  $('tonnage-liste').innerHTML = zonesTonnage.filter((z) => z.vue === 'liste').map((zone) => (
     '<button type="button" class="tonnage-zone' + (zone.cle === zoneTonnageChoisie ? ' choisi' : '') +
       '" data-zone="' + zone.cle + '">' +
       '<span class="tonnage-zone-nom">' + echapper(zone.nom) + '</span>' +
@@ -3039,11 +3139,11 @@ function rendreTonnageMuscles() {
   // La zone la plus chargée s'ouvre par défaut plutôt qu'un écran vide au
   // premier affichage ; un choix déjà fait survit au réaffichage de l'écran
   // (rendreTonnageMuscles est rappelée après chaque clic de zone).
-  const cles = ZONES_MUSCULAIRES.map((z) => z.cle);
+  const cles = zonesTonnage.map((z) => z.cle);
   if (!cles.includes(zoneTonnageChoisie)) {
     zoneTonnageChoisie = cles.reduce((a, b) => (tonnages[b] > tonnages[a] ? b : a));
   }
-  const zoneDetail = ZONES_MUSCULAIRES.find((z) => z.cle === zoneTonnageChoisie);
+  const zoneDetail = zonesTonnage.find((z) => z.cle === zoneTonnageChoisie);
   const exercices = exercicesZoneTonnage(zoneDetail, depuis);
   // Une simple liste chiffrée jugée peu parlante par l'utilisateur le
   // 16 septembre 2026 : chaque exercice dédié à la zone (2-3 en général,
@@ -3055,7 +3155,8 @@ function rendreTonnageMuscles() {
   // veut tout l'historique jusqu'à maintenant, d'où cette séance fictive
   // qui ne porte qu'un `fin` égal à l'instant présent.
   const jusquaMaintenant = { fin: new Date().toISOString() };
-  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + tonnages[zoneDetail.cle] + ' kg sur 7 jours</h3>' +
+  const nomPeriode = TONNAGE_PERIODES.find((p) => p.jours === tonnagePeriodeJours).nom;
+  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + tonnages[zoneDetail.cle] + ' kg sur ' + nomPeriode + '</h3>' +
     (exercices.length
       ? exercices.map(([nom, t]) => {
           const courbeHtml = progressionPremiereSerie(jusquaMaintenant, nom, false);
@@ -3064,7 +3165,7 @@ function rendreTonnageMuscles() {
             (courbeHtml || '<p class="vide">Pas encore assez de séances pour une courbe.</p>') +
           '</div>';
         }).join('')
-      : '<p class="vide">Rien sur les ' + TONNAGE_PERIODE_JOURS + ' derniers jours.</p>');
+      : '<p class="vide">Rien sur ' + nomPeriode + '.</p>');
 }
 
 /* ------------------------------------------------------------- sommeil */
@@ -3082,9 +3183,10 @@ const SOMMEIL_DEBUT_MIN = 22 * 60;
 // 48 créneaux (24h) depuis le 16 septembre 2026, demande de l'utilisateur :
 // la frise ne couvrait jusque-là que 22h-11h (26 créneaux), sans place pour
 // un sport ou un repère de l'après-midi (indexCreneauPourHeure renvoyait
-// -1). 24 créneaux par ligne (voir .sommeil-frise dans css/style.css) pour
-// que la session de sommeil 00h-8h, qui tombe entièrement dans la première
-// ligne (22h-9h30), ne soit jamais coupée par un retour à la ligne.
+// -1). 17 créneaux par ligne depuis le 17 septembre 2026 (voir
+// .sommeil-creneau dans css/style.css, réduit depuis 20 puis 24 pour des
+// créneaux toujours plus grands) : à ce pas, 00h-8h n'est plus garanti sur
+// une seule ligne (compromis assumé, voir le commentaire CSS).
 const SOMMEIL_NB_CRENEAUX = 48;
 const SOMMEIL_COEUR_DEBUT = 3;   // 23:30
 const SOMMEIL_COEUR_FIN = 19;    // 07:30, dernier créneau du cœur (se termine à 8h)
@@ -3144,6 +3246,17 @@ const SPORT_JOURNEE = [
   { cle: 'muscu', nom: 'Muscu', icone: '🏋️' },
   { cle: 'footing', nom: 'Footing', icone: '🏃' },
 ];
+
+/* Cherche un repère de journée par clé dans les deux tables (JOURNEE_SOMMEIL
+   et SPORT_JOURNEE partagent la forme {cle, nom, icone}) : le glissement vers
+   la frise (voir demarrerGlissementRepere plus bas) doit reconnaître l'un
+   comme l'autre depuis le 17 septembre 2026, demande de l'utilisateur de
+   pouvoir glisser tous les icônes de journée, sport compris — jusque-là
+   réservé aux cinq puces de JOURNEE_SOMMEIL, le sport ne se plaçait que par
+   le sélecteur d'heure à côté de sa puce. */
+function itemJourneeParCle(cle) {
+  return JOURNEE_SOMMEIL.find((i) => i.cle === cle) || SPORT_JOURNEE.find((i) => i.cle === cle);
+}
 
 function formatDateCourte(date) {
   return String(date.getDate()).padStart(2, '0') + '/' +
@@ -3223,7 +3336,12 @@ function actionnerJourneeSommeil(nuit, item) {
    la frise (remarque de l'utilisateur) : un appui simple bascule
    l'insomnie (basculerCreneauSommeil, inchangé), l'appui-glissé depuis une
    puce crée un repère, l'appui long sur un créneau qui en porte un le
-   supprime (voir departGlissementRepere/appuiLongCreneau plus bas). */
+   supprime (voir demarrerGlissementRepere/deposerGlissementRepere plus bas).
+   Étendu le 17 septembre 2026 aux puces de SPORT_JOURNEE (muscu, footing),
+   jusque-là seulement cliquables puis réglées via un champ heure séparé :
+   même geste de glissement pour toute icône de journée, sport compris (voir
+   itemJourneeParCle). Le sport garde son propre stockage (`nuit.sports`, une
+   seule heure par type) plutôt que `reperesFrise`, voir deposerGlissementRepere. */
 function placerRepereFrise(nuit, type, index) {
   nuit.reperesFrise = nuit.reperesFrise || [];
   nuit.reperesFrise.push({ type, index });
@@ -3247,7 +3365,7 @@ function supprimerRepereFrise(nuit, index) {
    trouver par élément sous le doigt évite de dupliquer cette mise en page
    en JavaScript. */
 function demarrerGlissementRepere(nuit, type, x, y) {
-  const item = JOURNEE_SOMMEIL.find((i) => i.cle === type);
+  const item = itemJourneeParCle(type);
   if (!item) return;
   const fantome = document.createElement('div');
   fantome.className = 'repere-fantome';
@@ -3296,7 +3414,24 @@ function deposerGlissementRepere(x, y) {
   document.querySelectorAll('.sommeil-creneau.cible-glissement').forEach((el) => el.classList.remove('cible-glissement'));
   glissementRepere = null;
   if (!g.seuilFranchi || g.indexSurvole < 0) return;
-  placerRepereFrise(g.nuit, g.type, g.indexSurvole);
+  // Un sport (SPORT_JOURNEE) pose son heure dans nuit.sports, une seule
+  // occurrence par type (voir majHeureSport) : glisser son icône vers un
+  // créneau revient à choisir ce sport ET son heure d'un seul geste, plutôt
+  // que cliquer la puce puis remplir le champ heure séparément. Les autres
+  // repères (JOURNEE_SOMMEIL) tolèrent plusieurs occurrences (café à 1h puis
+  // à 3h) et vivent dans nuit.reperesFrise, voir placerRepereFrise.
+  if (SPORT_JOURNEE.some((sp) => sp.cle === g.type)) {
+    majHeureSport(g.nuit, g.type, creneauxSommeil()[g.indexSurvole]);
+  } else {
+    placerRepereFrise(g.nuit, g.type, g.indexSurvole);
+  }
+}
+
+function supprimerSportFrise(nuit, type) {
+  if (!nuit.sports) return;
+  delete nuit.sports[type];
+  enregistrerNuit(nuit);
+  rendreSommeil();
 }
 
 /* Sport du jour saisi à la main plutôt que déduit seul de l'historique
@@ -3364,10 +3499,14 @@ function rendreSommeil() {
     const repereIci = !sportIci ? reperesParIndex[index] : null;
     const repereItem = repereIci ? JOURNEE_SOMMEIL.find((i) => i.cle === repereIci.type) : null;
     const icone = sportIci
-      ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure) + '">' + sportIci.sp.icone + '</span>'
+      ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure + ' — appui long pour retirer') + '">' + sportIci.sp.icone + '</span>'
       : (repereItem ? '<span class="sommeil-creneau-sport" title="' + echapper(repereItem.nom + ', ' + creneau + ' — appui long pour retirer') + '">' + repereItem.icone + '</span>' : '');
     const heure = (index % 2 === 0 && !icone) ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
-    const donneeRepere = repereItem ? ' data-repere="1"' : '';
+    // data-repere-* unifie les deux familles pour l'appui long (voir plus
+    // bas) : un sport (nuit.sports) se retire par supprimerSportFrise, un
+    // repère de journée (nuit.reperesFrise) par supprimerRepereFrise.
+    const donneeRepere = sportIci ? ' data-repere-sport="' + sportIci.sp.cle + '"'
+      : (repereItem ? ' data-repere-type="' + repereIci.type + '"' : '');
     // Cases du cœur agrandies (demande de l'utilisateur le 17 septembre
     // 2026) : une classe à part de l'état sommeil/insomnie/libre, un
     // créneau d'insomnie dans le cœur devant rester agrandi lui aussi.
@@ -3390,7 +3529,7 @@ function rendreSommeil() {
     let appuiLongDeclenche = false;
     bouton.addEventListener('pointerdown', () => {
       appuiLongDeclenche = false;
-      if (bouton.dataset.repere !== '1') return;
+      if (!bouton.dataset.repereType && !bouton.dataset.repereSport) return;
       minuteurAppuiLong = setTimeout(() => {
         minuteurAppuiLong = null;
         appuiLongDeclenche = true;
@@ -3402,7 +3541,11 @@ function rendreSommeil() {
       });
     });
     bouton.addEventListener('click', () => {
-      if (appuiLongDeclenche) { supprimerRepereFrise(nuit, Number(bouton.dataset.index)); return; }
+      if (appuiLongDeclenche) {
+        if (bouton.dataset.repereSport) supprimerSportFrise(nuit, bouton.dataset.repereSport);
+        else supprimerRepereFrise(nuit, Number(bouton.dataset.index));
+        return;
+      }
       basculerCreneauSommeil(nuit, Number(bouton.dataset.index));
     });
   });
@@ -3443,6 +3586,14 @@ function rendreSommeil() {
     }).join('');
   $('sommeil-journee').querySelectorAll('.journee-item[data-sport]').forEach((bouton) => {
     bouton.addEventListener('click', () => basculerSportJournee(nuit, bouton.dataset.sport));
+    // Glissement vers la frise (17 septembre 2026, voir itemJourneeParCle et
+    // deposerGlissementRepere) : pose directement l'heure visée dans
+    // nuit.sports, sans passer par le clic puis le champ heure. Même geste
+    // que les puces JOURNEE_SOMMEIL plus bas, désormais unifié pour toutes
+    // les icônes de journée.
+    bouton.addEventListener('pointerdown', (evenement) => {
+      demarrerGlissementRepere(nuit, bouton.dataset.sport, evenement.clientX, evenement.clientY);
+    });
   });
   // Un champ heure par sport choisi (id absent d'index.html, comme les
   // autres éléments créés dynamiquement, voir mensurations-photo-suppr).
@@ -4173,6 +4324,10 @@ function brancher() {
 
   $('bouton-suivi-tonnage').addEventListener('click', () => { rendreTonnageMuscles(); afficher('tonnage-muscles'); });
   $('bouton-tonnage-muscles-retour').addEventListener('click', () => afficher('suivi'));
+
+  $('bouton-suivi-remarque').addEventListener('click', () => { rendreRemarque(); afficher('remarque'); });
+  $('bouton-remarque-retour').addEventListener('click', () => afficher('suivi'));
+  $('bouton-remarque-suivi-envoyer').addEventListener('click', envoyerRemarqueSuivi);
   ['tonnage-mannequin', 'tonnage-liste'].forEach((id) => {
     $(id).addEventListener('click', (evenement) => {
       const cible = evenement.target.closest('[data-zone]');
