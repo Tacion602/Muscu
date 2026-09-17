@@ -29,10 +29,32 @@
   --hausse: #307940;
   --baisse: #9b5e22;
   --danger: #ba3e36;
+  /* Rouge dédié à la minuterie de repos, distinct de --danger (demande de
+     l'utilisateur le 17 septembre 2026, « différencie les deux rouges ») :
+     avant cette date, la minuterie reprenait --danger telle quelle (fond
+     rouge de la toute première version, voir le commit "Minuterie rouge
+     pleine taille"), ce qui mélangeait l'alerte réelle (blessure,
+     suppression) et le simple repos dans une seule teinte. Hue décalé vers
+     le bordeaux plutôt qu'une nuance de --danger, pour que la différence se
+     voie sans avoir les deux côte à côte. Contraste texte blanc : 7,4:1. */
+  --repos: #9c2b3e;
   /* Troisième couleur des repères de mensurations (16 septembre 2026,
      bras — torse et jambes réutilisent --accent et --baisse) : contraste
      recalculé comme le reste de la palette le 17 septembre 2026. */
   --mesure-bras: #8050cb;
+  /* Échelle dédiée à l'État musculaire (17 septembre 2026, demande de
+     l'utilisateur : « tu n'as pas changé les couleurs », puis « rouge
+     orange-jaune et vert ») : quatre teintes pastel bien distinctes de
+     --danger/--baisse/--hausse (qui restent au service des vraies alertes
+     et des comparaisons), pas seulement une variante plus douce des mêmes
+     trois. Texte sombre (--texte) sur les quatre plutôt que blanc : le jaune
+     n'offre pas assez de contraste avec du blanc, autant garder un seul
+     traitement de texte pour les quatre plutôt qu'un cas particulier.
+     Contraste avec --texte : 5,6:1 (fatigue) à 14,4:1 (repos). */
+  --muscu-fatigue: #e57373;
+  --muscu-charge: #ffb74d;
+  --muscu-recuperation: #fff176;
+  --muscu-pret: #81c784;
   /* Fond des champs d'une série, selon son tonnage face à la même série la
      semaine passée (voir appliquerCouleurTonnage). Le vert reprend --hausse,
      le rouge --baisse, en lavis pâle : le texte assombri au-dessus reste le
@@ -187,20 +209,24 @@ body { display: flex; flex-direction: column; }
 /* Dégradé dynamique de la page d'accueil (demande de l'utilisateur le
    17 septembre 2026) : un dérivé très doux de --fond, jamais assez marqué
    pour gêner la lecture du texte posé dessus (les cartes elles-mêmes restent
-   sur --fond-carte, opaque), qui dérive lentement plutôt qu'un fond figé.
-   Coupé sous prefers-reduced-motion, comme le reste des animations de
-   l'application. */
+   sur --fond-carte, opaque). Vertical, plus clair en haut et plus sombre en
+   bas (précision de l'utilisateur, même lecture que le dégradé de Sommeil) :
+   un dégradé deux fois plus haut que l'écran (`background-size: 100% 160%`)
+   dont seule la fenêtre de position dérive lentement — la tranche visible
+   reste donc toujours une portion croissante du même dégradé, jamais
+   inversée, tout en restant "dynamique" (la portion affichée change avec le
+   temps). Coupé sous prefers-reduced-motion, comme le reste des animations
+   de l'application. */
 #ecran-menu {
-  background: linear-gradient(-45deg, var(--fond), #eef4f1, var(--fond), #f6f1e8);
-  background-size: 300% 300%;
+  background: linear-gradient(180deg, #faf9f6 0%, #f2efe8 45%, #e4ddc9 100%);
+  background-size: 100% 160%;
 }
 @media (prefers-reduced-motion: no-preference) {
-  #ecran-menu { animation: degrade-accueil 20s ease infinite; }
+  #ecran-menu { animation: degrade-accueil 20s ease-in-out infinite alternate; }
 }
 @keyframes degrade-accueil {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
 }
 #ecran-menu .liste-menu { justify-content: center; }
 #ecran-menu .carte-menu { max-width: 300px; margin-inline: auto; }
@@ -262,11 +288,12 @@ body { display: flex; flex-direction: column; }
   text-align: center;
 }
 .calendrier-case {
-  /* Plus haute que large (4/5) depuis le 16 septembre 2026, demande de
+  /* Plus haute que large depuis le 16 septembre 2026, demande de
      l'utilisateur (« calendrier plus grand ») : la grille remplit déjà
      toute la largeur disponible en 7 colonnes, aspect-ratio:1 ne laissait
-     donc aucune marge pour agrandir sans élargir l'écran. */
-  aspect-ratio: 4 / 5;
+     donc aucune marge pour agrandir sans élargir l'écran. Encore agrandie
+     le 17 septembre 2026 (même demande, répétée) : 4/5 -> 3/4. */
+  aspect-ratio: 3 / 4;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -280,8 +307,8 @@ body { display: flex; flex-direction: column; }
 }
 .calendrier-case.vide { visibility: hidden; }
 .calendrier-case.aujourdhui { border-color: var(--accent); border-width: 2px; }
-.calendrier-num { font-size: 12px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
-.calendrier-icone { font-size: 24px; line-height: 1; }
+.calendrier-num { font-size: 13px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
+.calendrier-icone { font-size: 28px; line-height: 1; }
 /* Réutilisées par la vue mensuelle du sommeil (rendreMoisSommeil) : mêmes
    trois couleurs que l'état musculaire, sur le fond de la case plutôt que
    le texte. */
@@ -315,12 +342,18 @@ body { display: flex; flex-direction: column; }
   text-align: center;
 }
 .mannequin-svg .silhouette { fill: var(--fond-champ); }
-.mannequin-svg .zone-fatigue { fill: var(--danger); }
-.mannequin-svg .zone-recup { fill: var(--baisse); }
-.mannequin-svg .zone-prete { fill: var(--hausse); }
-.etat-pastille.zone-fatigue { background: var(--danger); }
-.etat-pastille.zone-recup { background: var(--baisse); }
-.etat-pastille.zone-prete { background: var(--hausse); }
+/* Échelle à quatre teintes (voir --muscu-* dans l'en-tête du fichier),
+   propre à l'État musculaire : ne pas confondre avec .zone-fatigue/-recup/
+   -prete, réutilisées ailleurs (calendrier du mois de Sommeil) pour un
+   sens différent (qualité de nuit, pas récupération musculaire). */
+.mannequin-svg .muscu-fatigue { fill: var(--muscu-fatigue); }
+.mannequin-svg .muscu-charge { fill: var(--muscu-charge); }
+.mannequin-svg .muscu-recuperation { fill: var(--muscu-recuperation); }
+.mannequin-svg .muscu-pret { fill: var(--muscu-pret); }
+.etat-pastille.muscu-fatigue { background: var(--muscu-fatigue); }
+.etat-pastille.muscu-charge { background: var(--muscu-charge); }
+.etat-pastille.muscu-recuperation { background: var(--muscu-recuperation); }
+.etat-pastille.muscu-pret { background: var(--muscu-pret); }
 
 .mannequin-liste {
   display: grid;
@@ -331,7 +364,7 @@ body { display: flex; flex-direction: column; }
 .etat-pastille {
   border-radius: var(--rayon-petit);
   padding: 8px 10px;
-  color: #fff;
+  color: var(--texte);
 }
 .etat-pastille-nom { display: block; font-size: 13px; font-weight: 700; }
 .etat-pastille-detail { display: block; font-size: 11px; opacity: .9; margin-top: 1px; }
@@ -364,7 +397,11 @@ body { display: flex; flex-direction: column; }
 .tonnage-zone.choisi { border-color: var(--accent); }
 .tonnage-zone-nom { font-size: 13px; font-weight: 700; }
 .tonnage-zone-barre { height: 5px; border-radius: 3px; background: var(--fond-champ); overflow: hidden; }
-.tonnage-zone-remplie { display: block; height: 100%; background: var(--accent-clair); border-radius: 3px; }
+/* Vert en progression, orange en recul (17 septembre 2026, tonnage devenu
+   surcharge progressive) : même code que .compare.hausse/.baisse ailleurs
+   dans l'application. */
+.tonnage-zone-remplie { display: block; height: 100%; background: var(--hausse); border-radius: 3px; }
+.tonnage-zone-remplie.baisse { background: var(--baisse); }
 .tonnage-zone-valeur { font-size: 11px; color: var(--texte-faible); }
 
 .tonnage-detail { margin-top: 8px; }
@@ -417,12 +454,13 @@ body { display: flex; flex-direction: column; }
    l'utilisateur) : seul le retour reste, flottant tout en haut de l'écran
    (niveau caméra selfie), un peu plus grand que .icone ailleurs (52px
    contre 44px) pour rester facile à toucher sans le confort d'une barre
-   pleine largeur autour de lui. Remonté une seconde fois le même jour
-   ("encore plus haut") : le plancher hors encoche passe de 6 à 2px, au plus
-   près du bord sans coller le bouton dessus. */
+   pleine largeur autour de lui. Remonté deux fois de plus le même jour
+   ("encore plus haut", répété) : le plancher hors encoche est passé de 6 à
+   2px puis à 0, `env(safe-area-inset-top)` restant la seule protection
+   contre une encoche ou une caméra selfie réelle. */
 .icone-sommeil-flottant {
   position: absolute;
-  top: max(env(safe-area-inset-top), 2px);
+  top: env(safe-area-inset-top);
   left: 8px;
   z-index: 5;
   width: 52px;
@@ -456,22 +494,35 @@ body { display: flex; flex-direction: column; }
    donc 80px de haut. Renommée `.sommeil-creneau.libre` (voir
    rendreSommeil() dans js/app.js) plutôt que réutilisée : deux sens
    différents de "vide" n'avaient pas à partager la même classe. */
-.sommeil-frise {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  margin-bottom: 8px;
-}
-/* 17 par ligne (three de moins que les 20 du 16 septembre 2026, demande de
+/* 17 par ligne (trois de moins que les 20 du 16 septembre 2026, demande de
    l'utilisateur le 17 septembre 2026, « le plus grand possible ») : les
    créneaux gagnent en taille, au prix de la garantie précédente (00h-8h sur
    une seule ligne pile à 20/ligne) qui ne tient plus à ce pas — 00h-8h
    déborde désormais sur la deuxième ligne. Choix assumé : l'utilisateur a
    demandé cette réduction en connaissance du compromis, la taille du
    créneau important plus ici que la continuité visuelle du bloc de
-   sommeil. */
+   sommeil.
+
+   Grille plutôt que flex-wrap + largeur en calc() depuis le 17 septembre
+   2026 : à certaines largeurs d'écran, l'arrondi au pixel de 17 largeurs
+   calculées individuellement pouvait déborder de quelques dixièmes de
+   pixel et faire passer un dix-septième créneau à la ligne suivante,
+   éclatant la frise en 4 lignes inégales au lieu de 3 (signalé par
+   l'utilisateur). `grid-template-columns: repeat(17, 1fr)` répartit la
+   largeur restante déterministiquement entre les colonnes : le nombre par
+   ligne ne peut plus varier avec l'arrondi. Un abandon de la grille pour ce
+   même composant avait eu lieu plus tôt (voir plus haut, « pas un problème
+   de grille... aspect-ratio ignoré ») : `align-items: start` évite cette
+   fois l'étirement vertical par défaut d'une grille, qui écrasait
+   `aspect-ratio` sur les items. */
+.sommeil-frise {
+  display: grid;
+  grid-template-columns: repeat(17, 1fr);
+  align-items: start;
+  gap: 3px;
+  margin-bottom: 8px;
+}
 .sommeil-creneau {
-  width: calc((100% - 48px) / 17);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -1357,18 +1408,21 @@ body { display: flex; flex-direction: column; }
 
 /* Même hauteur que #chrono-seance-demarrer (71px), décision de l'utilisateur
    le 7 septembre 2026 : le repos doit se voir de loin, pas se fondre dans la
-   carte comme un simple compteur secondaire. Fond passé du rouge (alerte) au
-   teal `--accent` le 16 septembre 2026 (demande de l'utilisateur, "pas fond
-   rouge sur blanc"), puis revenu à une teinte proche du rouge le 17 septembre
-   2026 (nouvelle demande de l'utilisateur, "remets le chrono visible") :
-   `--danger`, déjà adouci le même jour (palette générale plus claire, moins
-   saturée), plutôt qu'un rouge dédié — la minuterie de repos reste la seule
-   à s'en servir hors alerte réelle (blessure, suppression), mais évite de
-   faire cohabiter deux rouges différents dans l'application. Le chiffre a
-   cédé la place le 16 septembre à une jauge (voir .jauge-pilule) : jugé peu
-   fiable en fond de tâche par l'utilisateur, remplacé par un repère visuel de
-   progression plutôt qu'un compte à rebours exact à lire — non repris cette
-   fois, la demande du 17 portant sur la teinte, pas sur le chiffre. */
+   carte comme un simple compteur secondaire.
+
+   Historique du fond : rouge (`--danger`) à l'origine, passé au teal
+   `--accent` le 16 septembre 2026 (demande de l'utilisateur, "pas fond
+   rouge sur blanc"), puis proche du rouge de nouveau le 17 septembre 2026
+   ("remets le chrono visible"). D'abord réutilisé `--danger` tel quel ce
+   jour-là, puis séparé en `--repos` dans la foulée (« différencie les deux
+   rouges ») : la minuterie de repos et les vraies alertes (blessure,
+   suppression) ne doivent plus partager une seule teinte.
+
+   Historique du contenu : chiffre à l'origine, cédé à une jauge le
+   16 septembre 2026 (`.jauge-pilule`, jugée peu fiable en fond de tâche),
+   chiffre repris le 17 septembre 2026 (« pas de bulle au milieu droit,
+   décompte comme au début ») — la pilule reste seule sur
+   `#minuterie-plein-ecran`, pas visée par cette dernière demande. */
 .minuterie {
   flex: 0 0 128px;
   display: flex;
@@ -1378,13 +1432,17 @@ body { display: flex; flex-direction: column; }
   padding: 0;
   border: 0;
   border-radius: var(--rayon);
-  background: var(--danger);
+  background: var(--repos);
   text-align: center;
   cursor: pointer;
   touch-action: manipulation;
   overflow: hidden;
 }
 .minuterie[hidden] { display: none; }
+/* Chiffre dimensionné pour les 128px fixes de ce cadre (voir .minuterie
+   ci-dessus) : 60px, taille par défaut de .minuterie-chiffres, déborderait
+   sur un temps à deux chiffres de minutes. */
+#minuterie .minuterie-chiffres { font-size: 34px; }
 
 /* Bandeau de récupération toujours visible depuis le 12 septembre 2026, en
    transparence quand aucun repos n'est lancé (demande de l'utilisateur) :
@@ -1435,8 +1493,13 @@ body { display: flex; flex-direction: column; }
    décompte. Cadre légèrement plus bas que celui de la minuterie de repos
    (18px contre 22px) : cette ligne est plus étroite que la fiche d'exercice
    qui accueille la minuterie. */
-.jauge-pilule-seance { width: 64px; height: 18px; flex: none; }
-.jauge-pilule-remplissage-accent { background: var(--accent-clair); }
+/* Recolorée le 17 septembre 2026 (demande de l'utilisateur, « un classique,
+   tu as compris ») : contour gris foncé et fond gris clair plutôt que noir
+   et blanc (la pilule de repos, teal plutôt que blanc pour le remplissage :
+   deux jauges côte à côte dans la même teinte auraient été impossibles à
+   distinguer l'une de l'autre au premier coup d'œil). */
+.jauge-pilule-seance { width: 64px; height: 18px; flex: none; border-color: var(--texte-faible); background: var(--fond-champ); }
+.jauge-pilule-remplissage-accent { background: #fff; }
 
 /* Plein écran repris le 16 septembre 2026, à la demande de l'utilisateur,
    sur le même principe que .vague-demarrage (position:fixed, inset:0) :
@@ -1463,7 +1526,7 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   justify-content: center;
   gap: 24px;
-  background: var(--danger);
+  background: var(--repos);
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -1480,7 +1543,7 @@ body { display: flex; flex-direction: column; }
    afficherComparaisonTonnage, mais sur le total de l'exercice plutôt qu'une
    série), puis le nom du prochain exercice. Voir validerSerie() et
    rendreBilanMinuterie() dans js/app.js. Texte blanc simple, sans le
-   code couleur hausse/baisse habituel : sur le fond teal plein écran,
+   code couleur hausse/baisse habituel : sur le fond `--repos` plein écran,
    `--hausse`/`--baisse` (pensées pour un fond clair) manqueraient de
    contraste, et le signe du pourcentage suffit à lire le sens. */
 .minuterie-bilan { text-align: center; color: #fff; padding: 0 24px; max-width: 340px; }

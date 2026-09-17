@@ -90,7 +90,7 @@
     </button></li>
     <li><button id="bouton-suivi-tonnage" class="carte-menu carte-menu-petite">
       <span class="carte-menu-icone" aria-hidden="true">&#128202;</span>
-      <span class="carte-menu-nom">Tonnage par muscle</span>
+      <span class="carte-menu-nom">Surcharge progressive</span>
     </button></li>
     <!-- Septième entrée, ajoutée le 17 septembre 2026 (demande de
          l'utilisateur) : envoyer une remarque libre sans passer par un
@@ -234,17 +234,18 @@
   </main>
 </section>
 
-<!-- Tonnage par muscle, mannequin cliquable : voir rendreTonnageMuscles()
-     dans js/app.js. Même mannequin de face que l'État musculaire, mais
-     colore par charge de travail plutôt que par récupération. -->
+<!-- Surcharge progressive par muscle (« Tonnage par muscle » jusqu'au
+     17 septembre 2026, voir rendreTonnageMuscles() dans js/app.js) :
+     mannequin cliquable, même mannequin de face que l'État musculaire, mais
+     coloré par écart de charge plutôt que par récupération. -->
 <section id="ecran-tonnage-muscles" class="ecran">
   <header class="barre">
     <button id="bouton-tonnage-muscles-retour" class="icone" aria-label="Retour">&#8592;</button>
-    <div class="barre-titre"><span>Tonnage par muscle</span></div>
+    <div class="barre-titre"><span>Surcharge progressive</span></div>
     <span class="icone" aria-hidden="true"></span>
   </header>
   <main class="corps">
-    <p class="suivi-legende">Charge × répétitions cumulées, toutes séances confondues. Toucher une zone pour le détail par exercice.</p>
+    <p class="suivi-legende">Écart de charge × répétitions sur la première série de travail, entre le début et la fin de la période. Toucher une zone pour le détail par exercice.</p>
     <!-- Fenêtre choisie plutôt que fixée à 7 jours (demande de l'utilisateur
          le 17 septembre 2026) : sur un programme hebdomadaire, une zone
          entraînée une fois par semaine (jambes) tombait souvent hors d'une
@@ -397,10 +398,13 @@
           </div>
         </details>
 
+        <!-- Chiffre plutôt que pilule depuis le 17 septembre 2026 (retour en
+             arrière demandé par l'utilisateur, « décompte comme au
+             début ») : voir battre() dans js/app.js. La pilule reste seule
+             en plein écran (#minuterie-plein-ecran), pas visée par la
+             demande. -->
         <div id="minuterie" class="minuterie inactif">
-          <div class="jauge-pilule" aria-hidden="true">
-            <div id="minuterie-jauge-remplissage" class="jauge-pilule-remplissage"></div>
-          </div>
+          <span id="minuterie-chiffres" class="minuterie-chiffres"></span>
         </div>
       </div>
 

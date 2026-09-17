@@ -378,16 +378,26 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
       jauge) le 17 septembre 2026, mais seulement sur le dernier repos d'un
       exercice (`minuterie.bilan`, voir « bilan du dernier repos » plus
       bas) : là, le temps exact compte pour régler la machine suivante, ce
-      qui ne vaut pas pour un repos ordinaire.
+      qui ne vaut pas pour un repos ordinaire. **Chiffre repris partout le
+      17 septembre 2026, même jour, deuxième demande** (« pas de bulle au
+      milieu droit, retour en arrière, décompte comme au début ») : la
+      pilule sur le bandeau compact (`#minuterie`) cède la place à
+      `#minuterie-chiffres` (`.minuterie-chiffres`, 34px pour tenir dans les
+      128px fixes du cadre), tenu à jour par `battre()`. Elle reste seule en
+      plein écran (`#minuterie-plein-ecran`), non visée par cette dernière
+      demande.
     - **Fond repassé du teal (`--accent`) à une teinte proche du rouge le
       17 septembre 2026** (demande de l'utilisateur, « remets le chrono
       visible ») : le fond avait pourtant été changé en sens inverse le
       16 septembre à la demande explicite de l'utilisateur (« pas fond
-      rouge sur blanc »). `--danger`, déjà adouci le même jour (palette
-      générale plus claire, moins saturée, voir « Direction visuelle »),
-      plutôt qu'un rouge dédié : la minuterie de repos reste la seule à
-      s'en servir hors alerte réelle (blessure, suppression), mais évite de
-      faire cohabiter deux rouges différents dans l'application.
+      rouge sur blanc »). D'abord réutilisé `--danger` tel quel (déjà
+      adouci le même jour, palette générale plus claire moins saturée, voir
+      « Direction visuelle »), puis séparé en **`--repos`**, une teinte
+      bordeaux dédiée, dans la foulée le même jour (« différencie les deux
+      rouges ») : la minuterie de repos et les vraies alertes (blessure,
+      suppression, `--danger`) ne partagent plus une seule teinte. Le fond
+      de `#minuterie` et `#minuterie-plein-ecran` porte désormais `--repos`,
+      pas `--danger`.
   - **Plein écran repris le 16 septembre 2026** (`#minuterie-plein-ecran`
     dans `index.html`, `position:fixed; inset:0`, même principe que
     `.vague-demarrage`), demande de l'utilisateur, après l'avoir vu abandonné
@@ -819,14 +829,19 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   valeur que la fine ligne `#jauge-remplie` juste au-dessus
   (`proportionFaite()`, la fraction de séries validées sur l'ensemble de la
   séance, pas seulement l'exercice affiché) — la même pilule que la
-  minuterie de repos (`.jauge-pilule`), remplie en teal (`--accent-clair`)
-  plutôt qu'en vert pour ne pas laisser croire à un second décompte de
-  repos. Remplace le texte d'estimation « ~Xmin restant » qui vivait au
-  même endroit depuis le 16 septembre 2026 (temps total estimé de la
-  séance moins le temps écoulé) : `dureeTotaleEstimeeS()`,
-  `dureeEstimeeSerie()` et `EXERCICES_POLYARTICULAIRES`, qui ne servaient
-  qu'à ce calcul, ont été retirés avec lui plutôt que laissés morts dans le
-  fichier.
+  minuterie de repos (`.jauge-pilule`). Remplace le texte d'estimation
+  « ~Xmin restant » qui vivait au même endroit depuis le 16 septembre 2026
+  (temps total estimé de la séance moins le temps écoulé) :
+  `dureeTotaleEstimeeS()`, `dureeEstimeeSerie()` et
+  `EXERCICES_POLYARTICULAIRES`, qui ne servaient qu'à ce calcul, ont été
+  retirés avec lui plutôt que laissés morts dans le fichier.
+  - **Recolorée le même jour, deuxième demande** (« pas satisfaisant... un
+    classique, tu as compris ») : contour gris foncé (`--texte-faible`) et
+    fond gris clair (`--fond-champ`) plutôt que noir et blanc, remplissage
+    blanc plutôt que teal — un remplissage de la même teinte que celui de
+    la minuterie de repos aurait rendu les deux pilules indissociables au
+    premier coup d'œil. `.jauge-pilule-seance`/`.jauge-pilule-remplissage-
+    accent` dans `css/style.css`.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
@@ -895,11 +910,16 @@ que soit le sous-menu ensuite ouvert.
     uniquement), qui étaient alignées à gauche depuis leur création. La
     variante `.carte-menu-petite` du sous-menu Suivi, déjà en ligne
     icône-puis-texte, n'est pas concernée.
-  - **Dégradé dynamique le 17 septembre 2026** (même demande) : un dérivé
-    très doux de `--fond` qui dérive lentement (`background-position`
-    animé, `background-size: 300%`), coupé sous `prefers-reduced-motion`
-    comme le reste des animations de l'application. Les cartes restent sur
-    `--fond-carte`, opaque, la lisibilité du texte n'est pas concernée.
+  - **Dégradé dynamique le 17 septembre 2026** (même demande), **vertical
+    depuis la même journée** (précision de l'utilisateur : « plus sombre en
+    bas, plus clair en haut », même lecture que le dégradé de Sommeil) : un
+    dégradé deux fois plus haut que l'écran (`background-size: 100% 160%`)
+    dont seule la fenêtre de position dérive lentement — la tranche visible
+    reste donc toujours une portion croissante du même dégradé, jamais
+    inversée, tout en restant "dynamique" (la portion affichée change avec
+    le temps). Coupé sous `prefers-reduced-motion` comme le reste des
+    animations de l'application. Les cartes restent sur `--fond-carte`,
+    opaque, la lisibilité du texte n'est pas concernée.
 - **Direction visuelle : mode clair, référence Strava**, choisi via
   `impeccable.style` (outillage de conception introduit ce jour-là, voir
   « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
@@ -921,6 +941,25 @@ que soit le sous-menu ensuite ouvert.
     (`--fond-champ`). Les valeurs `rgba()` à la main qui reprenaient les
     anciens RGB de `--accent`/`--hausse`/`--baisse` (fonds teintés d'un
     badge, d'une ligne validée...) ont été mises à jour avec.
+  - **État musculaire passé à une échelle à part, quatre teintes, le
+    17 septembre 2026** (demande de l'utilisateur : « tu n'as pas changé les
+    couleurs », puis « rouge orange-jaune et vert ») : la retouche
+    ci-dessus, appliquée à `--danger`/`--baisse`/`--hausse` partagées,
+    restait trop proche des teintes d'origine pour se voir d'un coup d'œil,
+    et ces trois variables servent par ailleurs à de vraies alertes ou
+    comparaisons qui n'avaient pas à changer plus. `--muscu-fatigue`,
+    `--muscu-charge`, `--muscu-recuperation`, `--muscu-pret` : quatre pastel
+    dédiés (rouge, orange, jaune, vert), quatre paliers au lieu de trois
+    (`couleurEtat()` dans `js/app.js`, seuils 0,25/0,55/0,85). Texte sombre
+    (`--texte`) plutôt que blanc sur les quatre : le jaune n'offre pas assez
+    de contraste avec du blanc, un seul traitement de texte pour les quatre
+    plutôt qu'un cas particulier. Classes `.muscu-*`, à ne pas confondre
+    avec `.zone-fatigue`/`.zone-recup`/`.zone-prete` qui restent en place et
+    inchangées pour le calendrier du mois de Sommeil (qualité de nuit, pas
+    récupération musculaire — même mot, sens différent, deux échelles).
+  - **Minuterie de repos différenciée de --danger le 17 septembre 2026**
+    (demande de l'utilisateur : « différencie les deux rouges ») : voir
+    `--repos` plus bas, section Séance.
 
 L'écran de séance et le pont Apps Script ne sont pas concernés par ce
 chantier : tout ce qui suit vit dans le sous-menu Suivi, jamais relu par
@@ -1000,6 +1039,15 @@ autres sous-écrans via `afficher()`.
       dix zones adossées à `muscle`. Restent en silhouette neutre, faute de
       donnée : tête, cou, genoux, adducteurs (vrai sens anatomique, aucun
       exercice du programme ne les cible).
+  - **Toutes les zones dans la liste depuis le 17 septembre 2026** (« il
+    manque les pecs, biceps ») : un ancien champ `vue` réservait la liste
+    texte aux zones jugées "pas évidentes sur le mannequin de face" (dos,
+    épaules arrière...), en excluant pectoraux/épaules/biceps/quadriceps —
+    bien coloriées sur le mannequin, mais absentes de la liste où
+    l'utilisateur les cherchait. Champ retiré, `ZONES_MUSCULAIRES` n'a plus
+    besoin de le porter ; même correction sur la liste de Tonnage par
+    muscle (devenue Surcharge progressive, voir plus bas), qui souffrait du
+    même défaut.
   - **Palette plus claire et moins saturée le 17 septembre 2026** (demande
     de l'utilisateur, déclenchée par cet écran mais appliquée à
     l'ensemble) : voir « Direction visuelle » plus haut, la retouche vit
@@ -1023,15 +1071,28 @@ autres sous-écrans via `afficher()`.
       00h-8h peut désormais déborder sur la deuxième ligne. Compromis
       assumé par l'utilisateur, la taille du créneau comptant plus ici que
       la continuité visuelle du bloc de sommeil.
+    - **Passée de flex-wrap + largeur en `calc()` à `grid-template-columns:
+      repeat(17, 1fr)` le même jour** (signalé par l'utilisateur : la frise
+      éclatait en 4 lignes inégales au lieu de 3 sur certaines largeurs
+      d'écran) : l'arrondi au pixel de 17 largeurs calculées individuellement
+      pouvait déborder de quelques dixièmes de pixel et faire passer un
+      dix-septième créneau à la ligne suivante — une grille répartit la
+      largeur déterministiquement, le nombre par ligne ne peut plus varier.
+      `align-items: start` sur `.sommeil-frise` évite l'étirement vertical
+      par défaut d'une grille, qui aurait sinon écrasé `aspect-ratio` sur
+      les créneaux (déjà vu une fois, voir juste en dessous, « pas un
+      problème de grille... »).
   - **Sans barre ni titre depuis le 17 septembre 2026** (remarque de
     l'utilisateur) : seul le retour reste, `.icone-sommeil-flottant`,
     flottant tout en haut de l'écran (niveau caméra selfie, `position:
     absolute` sur `#ecran-sommeil`) plutôt que dans une barre opaque qui
     aurait coupé le dégradé de fond en haut, et un peu plus grand que
     `.icone` ailleurs (52px contre 44px) pour rester facile à toucher sans
-    le confort d'une barre pleine largeur autour de lui. Remonté une
-    seconde fois le même jour (« encore plus haut ») : le plancher hors
-    encoche passe de 6 à 2px.
+    le confort d'une barre pleine largeur autour de lui. Remonté trois fois
+    de plus le même jour (« encore plus haut », répété) : le plancher hors
+    encoche est passé de 6 à 2px puis à 0, `env(safe-area-inset-top)`
+    restant la seule protection contre une encoche ou une caméra selfie
+    réelle.
   - **Dégradé de fond intensifié le 17 septembre 2026** (remarque de
     l'utilisateur, « plus foncé et plus clair aux extrémités ») :
     l'extrémité haute est éclaircie juste assez pour rester au-dessus de
@@ -1042,15 +1103,16 @@ autres sous-écrans via `afficher()`.
   - **Cœur de nuit (23h30-8h) agrandi le 17 septembre 2026** (`.sommeil-
     creneau.coeur`, `aspect-ratio: 1 / 1.35`) : plus haut que large plutôt
     que plus large, pour ne pas changer le nombre de créneaux par ligne.
-  - **Trois appuis distincts sur la frise, ajoutés le 17 septembre 2026**
-    (remarque de l'utilisateur) : un appui simple bascule l'insomnie
-    (inchangé), un appui-glissé depuis une puce « La journée » (ou, depuis
-    le même jour, une puce de sport) pose un repère à l'heure visée sur la
-    frise, un appui long (550 ms) sur un créneau qui en porte un le
-    retire. Les trois se répartissent le même geste tactile sans se
-    marcher dessus : voir `demarrerGlissementRepere()`,
-    `deposerGlissementRepere()` et le minuteur d'appui long dans
-    `rendreSommeil()`, `js/app.js`.
+  - **Deux appuis distincts sur la frise, ajoutés le 17 septembre 2026**
+    (remarque de l'utilisateur) : un appui simple sur un créneau nu bascule
+    l'insomnie (inchangé) ; un appui-glissé depuis une puce « La journée »
+    (ou, depuis le même jour, une puce de sport) pose un repère à l'heure
+    visée sur la frise ; un appui simple sur un créneau qui en porte déjà un
+    le retire directement. Voir `demarrerGlissementRepere()`,
+    `deposerGlissementRepere()` et le câblage du clic dans `rendreSommeil()`,
+    `js/app.js`. **Un troisième geste (appui long de 550 ms pour retirer) a
+    existé quelques heures le même jour avant d'être simplifié** en appui
+    simple (« pas 3 ») : un geste de trop pour un résultat identique.
     - Les repères de `JOURNEE_SOMMEIL` (café, alcool, pipi nocturne, écran
       tardif, repas tardif) tolèrent plusieurs occurrences (café à 1h puis
       à 3h) et vivent dans `nuit.reperesFrise`, une liste plutôt qu'une
@@ -1165,47 +1227,59 @@ autres sous-écrans via `afficher()`.
     ferait descendre la ligne en progressant. Le texte sous la courbe reste
     en allure, repère habituel du coureur, avec le même écart en s/km et la
     même coloration hausse/baisse que l'écran de footing.
-- **Tonnage par muscle, mannequin cliquable**, à partir des mêmes captures
-  de référence, passé aux mêmes polygones réalistes que l'État musculaire
-  le 17 septembre 2026 (voir la puce dédiée plus haut) : les dix zones à
-  tonnage (celles adossées au champ `muscle`, `ZONES_MUSCULAIRES.filter(z =>
+- **Surcharge progressive par muscle, mannequin cliquable** (« Tonnage par
+  muscle » jusqu'au 17 septembre 2026), à partir des mêmes captures de
+  référence, passé aux mêmes polygones réalistes que l'État musculaire le
+  17 septembre 2026 (voir la puce dédiée plus haut) : les dix zones à
+  charge (celles adossées au champ `muscle`, `ZONES_MUSCULAIRES.filter(z =>
   z.muscles)`) y sont cliquables, sur l'une des deux vues ou les deux
   (triceps, mollets). Réutilise `ZONES_MUSCULAIRES` plutôt qu'une table
   muscle → exercices séparée : même simplification déjà en place pour
-  l'État musculaire, un seul muscle par exercice. **Différent du tonnage
-  écarté comme indicateur de progression sur un exercice** (voir plus haut,
-  « L'indicateur de progression est la première série de travail ») : là,
-  le problème était de comparer deux séances entre elles, le tonnage
-  montant mécaniquement quand la charge baisse et que les répétitions
-  montent. Ici, pas de comparaison série à série : une simple somme par
-  zone sur une fenêtre choisie, pour repérer un déséquilibre de volume entre
-  groupes musculaires — usage reconnu (suivi du volume hebdomadaire) qui ne
-  prête pas à la même confusion.
-  - Coloré en continu (`fill-opacity` proportionnelle au tonnage, pas trois
-    paliers comme l'État musculaire) plutôt que par état de récupération.
-    Chaque zone (sur le mannequin ou dans la liste, dos compris depuis le
-    même mannequin de dos que l'État musculaire) est cliquable et ouvre le
-    détail par exercice en dessous ; la zone la plus chargée s'ouvre par
-    défaut. Les trois zones sourcées du gainage (`abdominaux`, `obliques`,
-    `avant-bras`, voir État musculaire) n'ont pas de tonnage kg à sommer :
-    exclues de ce mannequin-ci, en silhouette neutre, plutôt qu'un chiffre
-    inventé.
+  l'État musculaire, un seul muscle par exercice.
+  - **Reconverti d'une somme de tonnage kg à un écart de progression en %,
+    le 17 septembre 2026** (demande de l'utilisateur : « tonnage par muscle
+    devient surcharge progressive ») : la somme par zone donnait un volume
+    de travail, pas une progression — un piège déjà écarté ailleurs (voir
+    plus haut, « L'indicateur de progression est la première série de
+    travail ») : le tonnage monte mécaniquement quand la charge baisse et
+    que les répétitions montent, qu'une zone soit en réalité en train de
+    stagner ou reculer. `surchargeExercice()` reprend l'indicateur déjà
+    retenu partout ailleurs dans l'application (première série de travail,
+    charge × répétitions, voir `indicateur()`/`premiereSerieDeTravail()`) et
+    calcule son écart en % entre la première et la dernière séance de
+    l'exercice dans la fenêtre choisie ; `surchargeZone()` moyenne cet écart
+    sur les exercices de la zone qui en ont un. `null` (pas de couleur, pas
+    de chiffre inventé, « Pas assez de données ») si moins de deux séances
+    de l'exercice tombent dans la fenêtre — un écart à 0 % aurait
+    laissé croire à une stagnation mesurée plutôt qu'à une absence de
+    mesure. Les noms `tonnage*` (fonctions, classes CSS, ids) restent tels
+    quels : renommer tout ça aurait été du remue-ménage pour un
+    changement qui porte sur ce qui est affiché, pas sur l'architecture.
+  - Coloré en continu (`fill-opacity` proportionnelle à l'ampleur de
+    l'écart, 20 % servant de plafond visuel plutôt que de seuil de
+    jugement), vert (`--hausse`) en progression, orange (`--baisse`) en
+    recul, gris neutre (`--fond-champ`) sans donnée suffisante. Chaque zone
+    (sur le mannequin ou dans la liste, dos compris depuis le même
+    mannequin de dos que l'État musculaire, **toutes affichées depuis le
+    17 septembre 2026**, voir plus haut « il manque les pecs, biceps ») est
+    cliquable et ouvre le détail par exercice en dessous ; la zone au plus
+    grand écart absolu (progrès ou recul) s'ouvre par défaut — « la plus
+    chargée » n'avait plus de sens une fois le tonnage remplacé. Les trois
+    zones sourcées du gainage (`abdominaux`, `obliques`, `avant-bras`, voir
+    État musculaire) n'ont pas cet indicateur : exclues de ce mannequin-ci,
+    en silhouette neutre, plutôt qu'un chiffre inventé.
   - **Fenêtre choisie (1 mois / 6 mois) plutôt que fixée à 7 jours**,
     changé le 17 septembre 2026 : sur un programme où chaque jour ne revient
     qu'une fois par semaine, un léger décalage (jambes faites 8 jours plus
     tôt plutôt que 7) suffisait à faire disparaître toute la zone de l'écran
     (« Rien sur les 7 derniers jours »), alors qu'elle avait bien été
     travaillée — signalé par l'utilisateur comme un bogue, c'était en
-    réalité la fenêtre trop étroite pour un programme hebdomadaire. Deux
-    boutons (`TONNAGE_PERIODES`, variable `tonnagePeriodeJours`, 30 ou 182
-    jours) remplacent l'ancienne constante `TONNAGE_PERIODE_JOURS`. Une
-    fenêtre plus large laisse aussi apparaître une vraie courbe de
-    progression par exercice (voir la puce précédente) là où 7 jours ne
-    contenaient souvent qu'une seule séance — c'est cette courbe par
-    exercice, déjà en place depuis le 16 septembre, qui porte la
-    « surcharge progressive » demandée sur cet écran, pas un nouveau
-    chiffre : le tonnage y reste une somme de volume, pas un indicateur de
-    performance (voir la mise en garde plus haut).
+    réalité la fenêtre trop étroite pour un programme hebdomadaire, et une
+    fenêtre trop courte pour la surcharge progressive ne laisse de toute
+    façon pas le temps à un écart de se former (un exercice fait une seule
+    fois n'a rien à comparer). Deux boutons (`TONNAGE_PERIODES`, variable
+    `tonnagePeriodeJours`, 30 ou 182 jours) remplacent l'ancienne constante
+    `TONNAGE_PERIODE_JOURS`.
 - **Remarque**, septième et dernier contenu, ajouté le 17 septembre 2026
   (demande de l'utilisateur) : envoyer une remarque libre au développeur
   sans passer par un exercice ni une fin de séance, seuls chemins qui le

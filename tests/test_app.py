@@ -462,7 +462,7 @@ def test_l_etat_musculaire_regroupe_les_graphies_du_meme_muscle(page):
     # pas seulement "epaules" comme l'ancien mannequin a quatre formes.
     classe = page.evaluate(
         "document.querySelector('#mannequin polygon[data-zone=\\'epaules\\']').getAttribute('class')")
-    assert classe == "zone-fatigue", "l'orthographe accentuee n'a pas ete reconnue : " + classe
+    assert classe == "muscu-fatigue", "l'orthographe accentuee n'a pas ete reconnue : " + classe
 
 
 def test_le_mannequin_de_dos_couvre_les_six_zones_de_la_liste(page):
@@ -480,7 +480,8 @@ def test_le_mannequin_de_dos_couvre_les_six_zones_de_la_liste(page):
         "[...document.querySelectorAll('#mannequin .mannequin-vue-titre')].map(t => t.textContent)")
     assert titres == ["Avant", "Arrière"]
     zones_dos = page.evaluate(
-        "document.querySelectorAll('#mannequin svg')[1].querySelectorAll('.zone-fatigue, .zone-recup, .zone-prete').length")
+        "document.querySelectorAll('#mannequin svg')[1]"
+        ".querySelectorAll('.muscu-fatigue, .muscu-charge, .muscu-recuperation, .muscu-pret').length")
     # 28 polygones, pas 10 : le mannequin realiste du 17 septembre 2026
     # decoupe chaque zone plus finement que l'ancien FORMES_MANNEQUIN_ARRIERE
     # (dos = trapeze x2 + haut du dos x2 + bas du dos x2 = 6, epaules
@@ -866,37 +867,45 @@ def ouvrir_tonnage_muscles(page):
     page.wait_for_selector("#tonnage-mannequin svg")
 
 
-def test_le_tonnage_par_muscle_ouvre_sur_la_zone_la_plus_chargee(page):
+def test_la_surcharge_progressive_ouvre_sur_la_zone_au_plus_grand_ecart(page):
     """16 septembre 2026, mannequin cliquable demande a partir des captures
-    envoyees comme reference : au premier affichage, pas d'ecran vide, la
-    zone qui a le plus de tonnage sur les 7 derniers jours s'ouvre seule."""
-    seance_muscu_zone(page, 2, "Developpe couche", "Pectoraux", 80, 8, series=3)
-    seance_muscu_zone(page, 2, "Curl biceps", "Biceps", 20, 10, series=2)
+    envoyees comme reference, reconverti en surcharge progressive le
+    17 septembre 2026 (demande de l'utilisateur) : au premier affichage, pas
+    d'ecran vide, la zone au plus grand ecart absolu (progres ou recul) sur
+    la periode s'ouvre seule. Deux seances par exercice, sinon aucun ecart
+    n'est calculable (voir surchargeExercice)."""
+    seance_muscu_zone(page, 48, "Developpe couche", "Pectoraux", 50, 10)
+    seance_muscu_zone(page, 1, "Developpe couche", "Pectoraux", 60, 10)
+    seance_muscu_zone(page, 48, "Curl biceps", "Biceps", 20, 10)
+    seance_muscu_zone(page, 1, "Curl biceps", "Biceps", 22, 10)
     page.reload()
     ouvrir_tonnage_muscles(page)
     detail = page.locator("#tonnage-detail")
     assert "Pectoraux" in detail.locator("h3").text_content()
-    assert "1920 kg" in detail.locator("h3").text_content()
+    assert "+20" in detail.locator("h3").text_content()
 
 
 def test_toucher_une_zone_change_le_detail(page):
     """Le mannequin et la liste partagent le meme comportement : toucher une
     zone quelconque affiche son detail par exercice, sans recharger la
     page ni perdre les autres zones."""
-    seance_muscu_zone(page, 2, "Developpe couche", "Pectoraux", 80, 8, series=3)
-    seance_muscu_zone(page, 2, "Tirage vertical", "Grand dorsal", 60, 10, series=1)
+    seance_muscu_zone(page, 48, "Developpe couche", "Pectoraux", 50, 10)
+    seance_muscu_zone(page, 1, "Developpe couche", "Pectoraux", 60, 10)
+    seance_muscu_zone(page, 48, "Tirage vertical", "Grand dorsal", 60, 10)
+    seance_muscu_zone(page, 1, "Tirage vertical", "Grand dorsal", 66, 10)
     page.reload()
     ouvrir_tonnage_muscles(page)
     page.locator("#tonnage-liste .tonnage-zone", has_text="Dos").click()
     detail = page.locator("#tonnage-detail")
     assert "Dos" in detail.locator("h3").text_content()
     assert "Tirage vertical" in detail.text_content()
-    assert "600 kg" in detail.text_content()
+    assert "+10" in detail.text_content()
 
 
 def test_une_zone_sans_tonnage_affiche_un_message(page):
     """Une zone jamais travaillee sur la periode n'a rien a lister."""
-    seance_muscu_zone(page, 2, "Developpe couche", "Pectoraux", 80, 8, series=3)
+    seance_muscu_zone(page, 48, "Developpe couche", "Pectoraux", 50, 10)
+    seance_muscu_zone(page, 1, "Developpe couche", "Pectoraux", 60, 10)
     page.reload()
     ouvrir_tonnage_muscles(page)
     page.locator("#tonnage-liste .tonnage-zone", has_text="Mollets").click()
@@ -907,7 +916,8 @@ def test_le_mannequin_de_dos_est_aussi_cliquable(page):
     """16 septembre 2026 : les six zones sans vue de face ont maintenant un
     repere sur un second mannequin, cliquable au meme titre que le premier
     (meme delegation d'evenement sur #tonnage-mannequin)."""
-    seance_muscu_zone(page, 2, "Tirage vertical", "Grand dorsal", 60, 10, series=1)
+    seance_muscu_zone(page, 48, "Tirage vertical", "Grand dorsal", 60, 10)
+    seance_muscu_zone(page, 1, "Tirage vertical", "Grand dorsal", 66, 10)
     page.reload()
     ouvrir_tonnage_muscles(page)
     # .first : "dos" regroupe plusieurs polygones (trapeze, haut et bas du
@@ -916,7 +926,7 @@ def test_le_mannequin_de_dos_est_aussi_cliquable(page):
     page.locator("#tonnage-mannequin svg[aria-label*='dos'] [data-zone='dos']").first.click()
     detail = page.locator("#tonnage-detail")
     assert "Dos" in detail.locator("h3").text_content()
-    assert "600 kg" in detail.text_content()
+    assert "+10" in detail.text_content()
 
 
 # --------------------------------------------------------- seance gainage

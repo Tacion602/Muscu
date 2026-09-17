@@ -2061,13 +2061,12 @@ function battre() {
     return;
   }
 
-  // Le chiffre a cédé la place à une jauge le 16 septembre 2026 (voir
-  // .jauge-pilule dans css/style.css) : seul le pourcentage écoulé reste
-  // affiché visuellement, le temps exact restant ne survit qu'en aria-label
-  // pour un lecteur d'écran.
+  // Chiffre sur le bandeau compact (voir .minuterie dans css/style.css,
+  // revenu le 17 septembre 2026 après le passage par une jauge le
+  // 16 septembre) ; la jauge reste seule en plein écran.
+  $('minuterie-chiffres').textContent = texteDuree(restant);
   const progres = Math.min(1, Math.max(0, 1 - restant / minuterie.duree));
   const pourcent = (progres * 100) + '%';
-  $('minuterie-jauge-remplissage').style.width = pourcent;
   $('minuterie-plein-ecran-jauge-remplissage').style.width = pourcent;
   const libelle = 'Récupération, ' + texteDuree(restant) + ' restant';
   $('minuterie').setAttribute('aria-label', libelle);
@@ -2099,7 +2098,7 @@ function arreterMinuterie() {
   if (tictac) clearInterval(tictac);
   tictac = null;
   $('minuterie').classList.add('inactif');
-  $('minuterie-jauge-remplissage').style.width = '0%';
+  $('minuterie-chiffres').textContent = '';
   $('minuterie-plein-ecran').hidden = true;
   $('minuterie-plein-ecran-jauge-remplissage').style.width = '0%';
   rendreBilanMinuterie(null);
@@ -2827,24 +2826,30 @@ function rendreEvolutionCourse() {
    indicatif, pas une mesure. Chaque zone récupère à une vitesse forfaitaire
    (48 h les petits groupes, 72 h les gros, l'utilisateur ayant lui-même
    noté que les petits groupes récupèrent plus vite) depuis la dernière
-   série validée qui l'a travaillée, tous exercices confondus. Les muscles
-   visibles de face vivent sur le mannequin ; les autres (dos, arrière
-   d'épaule, fessiers, ischio-jambiers, mollets) en liste dessous, faute
-   d'une vue de dos. Le champ `muscle` du classeur porte parfois le même
-   muscle sous deux graphies (ex. "Deltoide lateral" et "Deltoïde latéral"
-   coexistent dans le programme actuel) : la comparaison passe par
-   formeDuNom() plutôt que par égalité stricte, pour ne pas en perdre une. */
+   série validée qui l'a travaillée, tous exercices confondus. Le champ
+   `muscle` du classeur porte parfois le même muscle sous deux graphies (ex.
+   "Deltoide lateral" et "Deltoïde latéral" coexistent dans le programme
+   actuel) : la comparaison passe par formeDuNom() plutôt que par égalité
+   stricte, pour ne pas en perdre une.
+
+   Toutes les zones apparaissent aussi bien sur le mannequin que dans la
+   liste texte en dessous : un ancien champ `vue` réservait la liste aux
+   zones "pas évidentes sur le mannequin de face" (dos, épaules arrière...),
+   en excluant pectoraux/épaules/biceps/quadriceps — retiré le 17 septembre
+   2026 (« il manque les pecs, biceps » : ces zones étaient bien coloriées
+   sur le mannequin, mais absentes de la liste, où l'utilisateur les
+   cherchait). */
 const ZONES_MUSCULAIRES = [
-  { cle: 'pectoraux', nom: 'Pectoraux', muscles: ['pectoraux'], recuperation_h: 72, vue: 'avant' },
-  { cle: 'epaules', nom: 'Épaules', muscles: ['deltoide lateral'], recuperation_h: 48, vue: 'avant' },
-  { cle: 'biceps', nom: 'Biceps', muscles: ['biceps'], recuperation_h: 48, vue: 'avant' },
-  { cle: 'quadriceps', nom: 'Quadriceps', muscles: ['quadriceps'], recuperation_h: 72, vue: 'avant' },
-  { cle: 'dos', nom: 'Dos', muscles: ['grand dorsal'], recuperation_h: 72, vue: 'liste' },
-  { cle: 'epaules-arriere', nom: 'Épaules arrière', muscles: ['deltoide posterieur'], recuperation_h: 48, vue: 'liste' },
-  { cle: 'triceps', nom: 'Triceps', muscles: ['triceps'], recuperation_h: 48, vue: 'liste' },
-  { cle: 'fessiers', nom: 'Fessiers', muscles: ['grand fessier', 'abducteurs et moyen fessier'], recuperation_h: 72, vue: 'liste' },
-  { cle: 'ischios', nom: 'Ischio-jambiers', muscles: ['ischio-jambiers et fessiers'], recuperation_h: 72, vue: 'liste' },
-  { cle: 'mollets', nom: 'Mollets', muscles: ['mollets'], recuperation_h: 48, vue: 'liste' },
+  { cle: 'pectoraux', nom: 'Pectoraux', muscles: ['pectoraux'], recuperation_h: 72 },
+  { cle: 'epaules', nom: 'Épaules', muscles: ['deltoide lateral'], recuperation_h: 48 },
+  { cle: 'biceps', nom: 'Biceps', muscles: ['biceps'], recuperation_h: 48 },
+  { cle: 'quadriceps', nom: 'Quadriceps', muscles: ['quadriceps'], recuperation_h: 72 },
+  { cle: 'dos', nom: 'Dos', muscles: ['grand dorsal'], recuperation_h: 72 },
+  { cle: 'epaules-arriere', nom: 'Épaules arrière', muscles: ['deltoide posterieur'], recuperation_h: 48 },
+  { cle: 'triceps', nom: 'Triceps', muscles: ['triceps'], recuperation_h: 48 },
+  { cle: 'fessiers', nom: 'Fessiers', muscles: ['grand fessier', 'abducteurs et moyen fessier'], recuperation_h: 72 },
+  { cle: 'ischios', nom: 'Ischio-jambiers', muscles: ['ischio-jambiers et fessiers'], recuperation_h: 72 },
+  { cle: 'mollets', nom: 'Mollets', muscles: ['mollets'], recuperation_h: 48 },
   /* Trois zones ajoutées le 17 septembre 2026 (« il manque de nombreux
      muscles ») : le programme de musculation ne charge ni les abdominaux, ni
      les obliques, ni les avant-bras au sens de `muscle` (colonne B du
@@ -2859,9 +2864,9 @@ const ZONES_MUSCULAIRES = [
      l'avant-bras (grip) dans tout le programme, footings compris (voir
      derniereFoisMouvement, qui lit déjà footing et gainage confondus pour ce
      mouvement) — son propre repos (60 s) sert de vitesse de récupération. */
-  { cle: 'abdominaux', nom: 'Abdominaux', mouvements: ['dead_bug', 'planche', 'crunch_inverse', 'releve_genoux'], recuperation_h: 48, vue: 'avant' },
-  { cle: 'obliques', nom: 'Obliques', mouvements: ['pallof_press', 'bird_dog', 'marche_ours', 'planche_laterale'], recuperation_h: 48, vue: 'avant' },
-  { cle: 'avant-bras', nom: 'Avant-bras', mouvements: ['farmer_walk'], recuperation_h: 48, vue: 'liste' },
+  { cle: 'abdominaux', nom: 'Abdominaux', mouvements: ['dead_bug', 'planche', 'crunch_inverse', 'releve_genoux'], recuperation_h: 48 },
+  { cle: 'obliques', nom: 'Obliques', mouvements: ['pallof_press', 'bird_dog', 'marche_ours', 'planche_laterale'], recuperation_h: 48 },
+  { cle: 'avant-bras', nom: 'Avant-bras', mouvements: ['farmer_walk'], recuperation_h: 48 },
 ];
 
 /* Mannequin réaliste (17 septembre 2026, chantier débloqué : une base
@@ -2979,10 +2984,16 @@ function etatZone(zone) {
   return { fraction: Math.max(0, Math.min(1, heures / zone.recuperation_h)), texte: 'Dernière fois : ' + ilYA(dernier) };
 }
 
+/* Quatre paliers depuis le 17 septembre 2026 (demande de l'utilisateur,
+   « rouge orange-jaune et vert »), contre trois jusque-là : voir les
+   variables --muscu-* et les classes .muscu-* dans css/style.css, propres à
+   cet écran (ne pas confondre avec .zone-fatigue/-recup/-prete, réutilisées
+   pour le calendrier du mois de Sommeil). */
 function couleurEtat(fraction) {
-  if (fraction < 0.34) return 'zone-fatigue';
-  if (fraction < 0.85) return 'zone-recup';
-  return 'zone-prete';
+  if (fraction < 0.25) return 'muscu-fatigue';
+  if (fraction < 0.55) return 'muscu-charge';
+  if (fraction < 0.85) return 'muscu-recuperation';
+  return 'muscu-pret';
 }
 
 function rendreEtatMusculaire() {
@@ -3012,7 +3023,7 @@ function rendreEtatMusculaire() {
       '<div class="mannequin-vue"><p class="mannequin-vue-titre">Arrière</p>' + arriere + '</div>' +
     '</div>';
 
-  $('mannequin-liste').innerHTML = ZONES_MUSCULAIRES.filter((z) => z.vue === 'liste').map((zone) => (
+  $('mannequin-liste').innerHTML = ZONES_MUSCULAIRES.map((zone) => (
     '<div class="etat-pastille ' + classe(zone.cle) + '">' +
       '<span class="etat-pastille-nom">' + echapper(zone.nom) + '</span>' +
       '<span class="etat-pastille-detail">' + echapper(etats[zone.cle].texte) + '</span>' +
@@ -3020,29 +3031,35 @@ function rendreEtatMusculaire() {
   )).join('');
 }
 
-/* Tonnage par muscle, sixième et dernier contenu du menu Suivi ajouté le
-   16 septembre 2026, mannequin cliquable réclamé par l'utilisateur à partir
-   des captures d'applications tierces envoyées comme référence. Différent
-   du tonnage écarté comme indicateur de progression sur un exercice (voir
-   plus haut, "L'indicateur de progression est la première série de
-   travail") : là, le problème était de comparer deux séances entre elles,
-   le tonnage montant mécaniquement quand la charge baisse et que les
-   répétitions montent. Ici, pas de comparaison série à série : une simple
-   somme par zone sur une fenêtre glissante, pour repérer un déséquilibre de
-   volume entre groupes musculaires — usage reconnu en musculation (suivi du
-   volume hebdomadaire), qui ne prête pas à la même confusion. Réutilise
-   ZONES_MUSCULAIRES (voir État musculaire ci-dessus) plutôt qu'une table
-   muscle → exercices séparée : même simplification déjà en place, un seul
-   muscle par exercice, pas de muscles secondaires.
+/* Surcharge progressive par muscle, sixième et dernier contenu du menu
+   Suivi ajouté le 16 septembre 2026 sous le nom "Tonnage par muscle",
+   mannequin cliquable réclamé par l'utilisateur à partir des captures
+   d'applications tierces envoyées comme référence. Reconverti en indicateur
+   de progression le 17 septembre 2026 (demande de l'utilisateur : « tonnage
+   par muscle devient surcharge progressive ») : la somme de tonnage kg par
+   zone donnait un volume, pas une progression (une zone peut porter
+   beaucoup de tonnage sans que la charge avance), et souffrait du même
+   défaut déjà écarté ailleurs (voir plus haut, « L'indicateur de
+   progression est la première série de travail ») — le tonnage monte
+   mécaniquement quand la charge baisse et que les répétitions montent.
+   Remplacé par l'écart, en %, de l'indicateur de progression déjà retenu
+   partout ailleurs dans l'application (première série de travail, charge ×
+   répétitions) entre le début et la fin de la période choisie, moyenné sur
+   les exercices de la zone. Réutilise ZONES_MUSCULAIRES (voir État
+   musculaire ci-dessus) plutôt qu'une table muscle → exercices séparée :
+   même simplification déjà en place, un seul muscle par exercice, pas de
+   muscles secondaires. `tonnage*` reste le nom des fonctions/classes
+   (renommer plus loin serait pur remue-ménage) : ce qui compte a changé, pas
+   l'étiquette interne.
 
    Fenêtre choisie (1 mois / 6 mois) plutôt que fixée à 7 jours depuis le
    17 septembre 2026, demande de l'utilisateur : sur un programme où chaque
    jour ne revient qu'une fois par semaine, un léger décalage (jambes faites
    8 jours plus tôt plutôt que 7) suffisait à faire disparaître toute la zone
    de l'écran ("Rien sur les 7 derniers jours"), alors que la zone avait bien
-   été travaillée. Une fenêtre plus large laisse aussi apparaître une vraie
-   courbe de progression par exercice (voir plus bas) là où 7 jours ne
-   contenaient souvent qu'une seule séance. */
+   été travaillée. Une fenêtre plus large laisse aussi à l'écart le temps de
+   se former : sur 7 jours, un exercice fait une seule fois ne donne aucun
+   écart calculable. */
 const TONNAGE_PERIODES = [
   { jours: 30, nom: '1 mois' },
   { jours: 182, nom: '6 mois' },
@@ -3050,35 +3067,69 @@ const TONNAGE_PERIODES = [
 let tonnagePeriodeJours = TONNAGE_PERIODES[0].jours;
 let zoneTonnageChoisie = null;
 
-function tonnageZone(zone, depuis) {
-  let total = 0;
+/* Tous les noms d'exercices jamais rattachés à cette zone (muscle), tout
+   l'historique confondu — pas seulement la fenêtre, qui ne sert qu'à borner
+   les points de l'écart lui-même (voir surchargeExercice). */
+function nomsExercicesZone(zone) {
+  const noms = new Set();
   lireTableau(CLES.historique).forEach((s) => {
-    if (!s.fin || new Date(s.fin) < depuis) return;
     (s.exercices || []).forEach((exo) => {
-      if (!zone.muscles.includes(formeDuNom(exo.muscle))) return;
-      total += tonnageDesSeries(exo.series || []);
+      if (zone.muscles.includes(formeDuNom(exo.muscle))) noms.add(exo.nom);
     });
   });
-  return total;
+  return [...noms];
 }
 
-function exercicesZoneTonnage(zone, depuis) {
-  const parNom = {};
+/* Écart en % de l'indicateur (première série de travail, charge ×
+   répétitions) entre la première et la dernière séance de cet exercice dans
+   la fenêtre — null si moins de deux séances y tombent, plutôt qu'un écart
+   à 0 % qui laisserait croire à une stagnation mesurée. */
+function surchargeExercice(nom, depuis) {
+  const points = lireTableau(CLES.historique)
+    .filter((s) => s.fin && new Date(s.fin) >= depuis)
+    .sort((a, b) => new Date(a.fin) - new Date(b.fin))
+    .map((s) => premiereSerieDeTravail((s.exercices || []).find((e) => memeExercice(e.nom, nom))))
+    .filter(Boolean)
+    .map(indicateur)
+    .filter((v) => v > 0);
+  if (points.length < 2) return null;
+  return Math.round(((points[points.length - 1] - points[0]) / points[0]) * 1000) / 10;
+}
+
+/* Moyenne non pondérée des écarts des exercices de la zone qui en ont un
+   (voir surchargeExercice) ; null si aucun n'a assez de séances dans la
+   fenêtre pour calculer quoi que ce soit. */
+function surchargeZone(zone, depuis) {
+  const ecarts = nomsExercicesZone(zone)
+    .map((nom) => surchargeExercice(nom, depuis))
+    .filter((v) => v != null);
+  if (!ecarts.length) return null;
+  return Math.round((ecarts.reduce((a, b) => a + b, 0) / ecarts.length) * 10) / 10;
+}
+
+/* Noms des exercices de la zone réellement travaillés (au moins une série
+   faite hors échauffement) dans la fenêtre, pour le détail par exercice :
+   un exercice du programme jamais fait sur la période n'a rien à montrer. */
+function exercicesTravaillesZone(zone, depuis) {
+  const noms = new Set();
   lireTableau(CLES.historique).forEach((s) => {
     if (!s.fin || new Date(s.fin) < depuis) return;
     (s.exercices || []).forEach((exo) => {
       if (!zone.muscles.includes(formeDuNom(exo.muscle))) return;
-      const t = tonnageDesSeries(exo.series || []);
-      if (!t) return;
-      parNom[exo.nom] = (parNom[exo.nom] || 0) + t;
+      if (tonnageDesSeries(exo.series || [])) noms.add(exo.nom);
     });
   });
-  return Object.entries(parNom).sort((a, b) => b[1] - a[1]);
+  return [...noms];
 }
 
 function actionnerZoneTonnage(cle) {
   zoneTonnageChoisie = cle;
   rendreTonnageMuscles();
+}
+
+function texteEcartSurcharge(v) {
+  if (v == null) return 'Pas assez de données';
+  return (v > 0 ? '+' : '') + v + ' %';
 }
 
 function rendreTonnageMuscles() {
@@ -3090,35 +3141,41 @@ function rendreTonnageMuscles() {
   });
 
   const depuis = new Date(Date.now() - tonnagePeriodeJours * 86400000);
-  // Seules les zones adossées à un exercice chargé (barre, machine...) ont un
-  // tonnage kg à sommer ; les zones sourcées du gainage (obliques, abdominaux,
-  // avant-bras, voir ZONES_MUSCULAIRES) n'ont pas d'équivalent kg et restent
-  // en silhouette neutre sur cet écran plutôt qu'un chiffre inventé.
+  // Seules les zones adossées à un exercice chargé (barre, machine...) ont
+  // une charge à comparer d'une séance à l'autre ; les zones sourcées du
+  // gainage (obliques, abdominaux, avant-bras, voir ZONES_MUSCULAIRES)
+  // n'ont pas cet indicateur et restent en silhouette neutre sur cet écran
+  // plutôt qu'un chiffre inventé.
   const zonesTonnage = ZONES_MUSCULAIRES.filter((z) => z.muscles);
-  const tonnages = {};
-  zonesTonnage.forEach((zone) => { tonnages[zone.cle] = tonnageZone(zone, depuis); });
-  const max = Math.max(1, ...Object.values(tonnages));
+  const ecarts = {};
+  zonesTonnage.forEach((zone) => { ecarts[zone.cle] = surchargeZone(zone, depuis); });
 
   const titreZone = (cle) => {
     const zone = zonesTonnage.find((z) => z.cle === cle);
-    return zone ? zone.nom + ' — ' + tonnages[cle] + ' kg' : '';
+    return zone ? zone.nom + ' — ' + texteEcartSurcharge(ecarts[cle]) : '';
   };
-  // Opacité plutôt que trois couleurs discrètes (État musculaire) : le
-  // tonnage est une quantité continue, pas un état à trois paliers. 0,12
-  // minimum pour qu'une zone jamais travaillée reste repérable sur le fond
-  // clair, sans jamais se confondre avec la silhouette neutre.
-  const styleZone = (cle) => 'fill: var(--accent-clair); fill-opacity: ' +
-    (0.12 + 0.88 * (tonnages[cle] / max)).toFixed(2) + ';' +
-    (cle === zoneTonnageChoisie ? ' stroke: var(--accent); stroke-width: 2;' : '');
+  // Vert en progression, orange en recul (même code que .compare.hausse/
+  // .baisse ailleurs), opacité proportionnelle à l'ampleur de l'écart —
+  // 20 % sert de plafond d'intensité visuelle, pas de seuil de jugement.
+  // Gris neutre (--fond-champ) quand il n'y a rien à juger, jamais un
+  // chiffre inventé pour départager.
+  const styleZone = (cle) => {
+    const v = ecarts[cle];
+    const contour = cle === zoneTonnageChoisie ? ' stroke: var(--accent); stroke-width: 2;' : '';
+    if (v == null) return 'fill: var(--fond-champ);' + contour;
+    const intensite = Math.min(1, Math.abs(v) / 20);
+    return 'fill: var(' + (v >= 0 ? '--hausse' : '--baisse') + '); fill-opacity: ' +
+      (0.18 + 0.72 * intensite).toFixed(2) + ';' + contour;
+  };
   // Mannequin réaliste (17 septembre 2026, voir MANNEQUIN_AVANT/ARRIERE et
-  // rendreMannequinPolygones() plus haut) : seules les zones à tonnage sont
+  // rendreMannequinPolygones() plus haut) : seules les zones à charge sont
   // cliquables ici, le reste (gainage, silhouette anatomique non suivie)
   // reste neutre.
-  const zoneAttrs = (cle) => (cle in tonnages)
+  const zoneAttrs = (cle) => (cle in ecarts)
     ? 'class="zone-cliquable" data-zone="' + cle + '" style="' + styleZone(cle) + '"'
     : 'class="silhouette"';
-  const avant = rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face, tonnage par zone', zoneAttrs, titreZone);
-  const arriere = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos, tonnage par zone', zoneAttrs, titreZone);
+  const avant = rendreMannequinPolygones(MANNEQUIN_AVANT, 'de face, surcharge par zone', zoneAttrs, titreZone);
+  const arriere = rendreMannequinPolygones(MANNEQUIN_ARRIERE, 'de dos, surcharge par zone', zoneAttrs, titreZone);
 
   $('tonnage-mannequin').innerHTML =
     '<div class="mannequin-paire">' +
@@ -3126,42 +3183,47 @@ function rendreTonnageMuscles() {
       '<div class="mannequin-vue"><p class="mannequin-vue-titre">Arrière</p>' + arriere + '</div>' +
     '</div>';
 
-  $('tonnage-liste').innerHTML = zonesTonnage.filter((z) => z.vue === 'liste').map((zone) => (
-    '<button type="button" class="tonnage-zone' + (zone.cle === zoneTonnageChoisie ? ' choisi' : '') +
+  $('tonnage-liste').innerHTML = zonesTonnage.map((zone) => {
+    const v = ecarts[zone.cle];
+    const largeur = v == null ? 0 : Math.min(100, (Math.abs(v) / 20) * 100);
+    return '<button type="button" class="tonnage-zone' + (zone.cle === zoneTonnageChoisie ? ' choisi' : '') +
       '" data-zone="' + zone.cle + '">' +
       '<span class="tonnage-zone-nom">' + echapper(zone.nom) + '</span>' +
-      '<span class="tonnage-zone-barre"><span class="tonnage-zone-remplie" style="width: ' +
-        Math.round((tonnages[zone.cle] / max) * 100) + '%"></span></span>' +
-      '<span class="tonnage-zone-valeur">' + tonnages[zone.cle] + ' kg</span>' +
-    '</button>'
-  )).join('');
+      '<span class="tonnage-zone-barre"><span class="tonnage-zone-remplie' + (v != null && v < 0 ? ' baisse' : '') +
+        '" style="width: ' + Math.round(largeur) + '%"></span></span>' +
+      '<span class="tonnage-zone-valeur">' + texteEcartSurcharge(v) + '</span>' +
+    '</button>';
+  }).join('');
 
-  // La zone la plus chargée s'ouvre par défaut plutôt qu'un écran vide au
-  // premier affichage ; un choix déjà fait survit au réaffichage de l'écran
-  // (rendreTonnageMuscles est rappelée après chaque clic de zone).
+  // La zone au plus grand écart (progrès ou recul) s'ouvre par défaut :
+  // « la plus chargée » n'a plus de sens depuis que l'écran mesure une
+  // progression plutôt qu'un volume. Un choix déjà fait survit au
+  // réaffichage de l'écran (rendreTonnageMuscles est rappelée après chaque
+  // clic de zone).
   const cles = zonesTonnage.map((z) => z.cle);
   if (!cles.includes(zoneTonnageChoisie)) {
-    zoneTonnageChoisie = cles.reduce((a, b) => (tonnages[b] > tonnages[a] ? b : a));
+    const avecDonnees = cles.filter((c) => ecarts[c] != null);
+    zoneTonnageChoisie = avecDonnees.length
+      ? avecDonnees.reduce((a, b) => (Math.abs(ecarts[b]) > Math.abs(ecarts[a]) ? b : a))
+      : cles[0];
   }
   const zoneDetail = zonesTonnage.find((z) => z.cle === zoneTonnageChoisie);
-  const exercices = exercicesZoneTonnage(zoneDetail, depuis);
-  // Une simple liste chiffrée jugée peu parlante par l'utilisateur le
-  // 16 septembre 2026 : chaque exercice dédié à la zone (2-3 en général,
-  // exercicesZoneTonnage ne gardant que ceux travaillés sur la fenêtre)
-  // affiche désormais sa courbe de progression au fil des semaines, pas
-  // seulement son tonnage des 7 derniers jours. progressionPremiereSerie()
-  // attend une séance de référence pour borner les points affichés (la
-  // fiche d'historique s'en sert pour rejouer "l'état ce jour-là") ; ici on
-  // veut tout l'historique jusqu'à maintenant, d'où cette séance fictive
-  // qui ne porte qu'un `fin` égal à l'instant présent.
+  // progressionPremiereSerie() attend une séance de référence pour borner
+  // les points affichés (la fiche d'historique s'en sert pour rejouer
+  // "l'état ce jour-là") ; ici on veut tout l'historique jusqu'à
+  // maintenant, d'où cette séance fictive qui ne porte qu'un `fin` égal à
+  // l'instant présent.
   const jusquaMaintenant = { fin: new Date().toISOString() };
   const nomPeriode = TONNAGE_PERIODES.find((p) => p.jours === tonnagePeriodeJours).nom;
-  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + tonnages[zoneDetail.cle] + ' kg sur ' + nomPeriode + '</h3>' +
+  const exercices = exercicesTravaillesZone(zoneDetail, depuis)
+    .map((nom) => ({ nom, ecart: surchargeExercice(nom, depuis) }))
+    .sort((a, b) => Math.abs(b.ecart || 0) - Math.abs(a.ecart || 0));
+  $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + texteEcartSurcharge(ecarts[zoneDetail.cle]) + ' sur ' + nomPeriode + '</h3>' +
     (exercices.length
-      ? exercices.map(([nom, t]) => {
+      ? exercices.map(({ nom, ecart }) => {
           const courbeHtml = progressionPremiereSerie(jusquaMaintenant, nom, false);
           return '<div class="tonnage-detail-exo">' +
-            '<div class="tonnage-detail-ligne"><span>' + echapper(nom) + '</span><span>' + t + ' kg</span></div>' +
+            '<div class="tonnage-detail-ligne"><span>' + echapper(nom) + '</span><span>' + texteEcartSurcharge(ecart) + '</span></div>' +
             (courbeHtml || '<p class="vide">Pas encore assez de séances pour une courbe.</p>') +
           '</div>';
         }).join('')
@@ -3332,11 +3394,14 @@ function actionnerJourneeSommeil(nuit, item) {
    « La journée » qui restent le geste rapide sans heure précise : les deux
    cohabitent, l'un n'annule pas l'autre. Plusieurs occurrences du même type
    peuvent être placées (café à 1h puis à 3h) ; `reperesFrise` est une liste
-   à part plutôt qu'une carte par type, pour ça. Trois appuis distincts sur
-   la frise (remarque de l'utilisateur) : un appui simple bascule
-   l'insomnie (basculerCreneauSommeil, inchangé), l'appui-glissé depuis une
-   puce crée un repère, l'appui long sur un créneau qui en porte un le
-   supprime (voir demarrerGlissementRepere/deposerGlissementRepere plus bas).
+   à part plutôt qu'une carte par type, pour ça. Deux appuis distincts sur
+   la frise (remarque de l'utilisateur) : un appui simple sur un créneau nu
+   bascule l'insomnie (basculerCreneauSommeil, inchangé), l'appui-glissé
+   depuis une puce crée un repère (voir demarrerGlissementRepere/
+   deposerGlissementRepere plus bas) — un appui simple sur un créneau qui en
+   porte déjà un le retire directement (voir le câblage du clic dans
+   rendreSommeil()). Un troisième geste (appui long pour retirer) a existé
+   un temps le même jour avant d'être simplifié en appui simple (« pas 3 »).
    Étendu le 17 septembre 2026 aux puces de SPORT_JOURNEE (muscu, footing),
    jusque-là seulement cliquables puis réglées via un champ heure séparé :
    même geste de glissement pour toute icône de journée, sport compris (voir
@@ -3499,8 +3564,8 @@ function rendreSommeil() {
     const repereIci = !sportIci ? reperesParIndex[index] : null;
     const repereItem = repereIci ? JOURNEE_SOMMEIL.find((i) => i.cle === repereIci.type) : null;
     const icone = sportIci
-      ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure + ' — appui long pour retirer') + '">' + sportIci.sp.icone + '</span>'
-      : (repereItem ? '<span class="sommeil-creneau-sport" title="' + echapper(repereItem.nom + ', ' + creneau + ' — appui long pour retirer') + '">' + repereItem.icone + '</span>' : '');
+      ? '<span class="sommeil-creneau-sport" title="' + echapper(sportIci.sp.nom + ' ' + sportIci.heure + ' — toucher pour retirer') + '">' + sportIci.sp.icone + '</span>'
+      : (repereItem ? '<span class="sommeil-creneau-sport" title="' + echapper(repereItem.nom + ', ' + creneau + ' — toucher pour retirer') + '">' + repereItem.icone + '</span>' : '');
     const heure = (index % 2 === 0 && !icone) ? '<span class="sommeil-creneau-heure">' + creneau.split(':')[0] + '</span>' : '';
     // data-repere-* unifie les deux familles pour l'appui long (voir plus
     // bas) : un sport (nuit.sports) se retire par supprimerSportFrise, un
@@ -3514,38 +3579,16 @@ function rendreSommeil() {
     if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '"' + donneeRepere + ' aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
     return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + classeCoeur + '" data-index="' + index + '"' + donneeRepere + ' aria-label="' + creneau + '">' + heure + icone + '</button>';
   }).join('');
-  // Appui simple = bascule l'insomnie (inchangé). Appui long (550 ms) sur un
-  // créneau qui porte un repère = le supprime. La suppression elle-même
-  // n'a lieu que dans le `click` qui suit le relâchement, jamais dans le
-  // minuteur pendant que le doigt est encore posé : rendreSommeil()
-  // remplace tous les boutons de la frise, et un remplacement en plein
-  // geste ferait retomber le click final sur un bouton neuf, à la
-  // fermeture différente (voir lancerMinuterie() plus haut pour le même
-  // principe, un affichage différé d'un tick pour ne pas voler un clic en
-  // cours). Une variable locale par bouton (pas partagée entre eux) suffit
-  // : chaque fermeture ne survit qu'à son propre geste.
+  // Deux appuis, pas trois (simplifié le 17 septembre 2026, demande de
+  // l'utilisateur : « pas 3 », l'appui long faisait un geste de trop) : un
+  // appui simple sur un créneau qui porte un repère ou un sport le retire
+  // directement, un appui simple sur un créneau nu bascule l'insomnie
+  // (inchangé). Le glissement depuis une puce reste le seul moyen d'en
+  // poser un.
   $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {
-    let minuteurAppuiLong = null;
-    let appuiLongDeclenche = false;
-    bouton.addEventListener('pointerdown', () => {
-      appuiLongDeclenche = false;
-      if (!bouton.dataset.repereType && !bouton.dataset.repereSport) return;
-      minuteurAppuiLong = setTimeout(() => {
-        minuteurAppuiLong = null;
-        appuiLongDeclenche = true;
-      }, 550);
-    });
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => {
-      bouton.addEventListener(type, () => {
-        if (minuteurAppuiLong) { clearTimeout(minuteurAppuiLong); minuteurAppuiLong = null; }
-      });
-    });
     bouton.addEventListener('click', () => {
-      if (appuiLongDeclenche) {
-        if (bouton.dataset.repereSport) supprimerSportFrise(nuit, bouton.dataset.repereSport);
-        else supprimerRepereFrise(nuit, Number(bouton.dataset.index));
-        return;
-      }
+      if (bouton.dataset.repereSport) { supprimerSportFrise(nuit, bouton.dataset.repereSport); return; }
+      if (bouton.dataset.repereType) { supprimerRepereFrise(nuit, Number(bouton.dataset.index)); return; }
       basculerCreneauSommeil(nuit, Number(bouton.dataset.index));
     });
   });
