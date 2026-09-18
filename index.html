@@ -14,13 +14,12 @@
 </head>
 <body>
 
-<!-- Menu principal : Sport ou Suivi (demande de l'utilisateur le
-     16 septembre 2026). Réglages y vit désormais, accessible d'un geste
-     quel que soit le sous-menu ensuite ouvert. -->
+<!-- Menu principal : Sport, Suivi ou Réglages (demande de l'utilisateur le
+     16 septembre 2026, Réglages ajouté en troisième carte le 18 septembre
+     2026 à la place de l'engrenage). -->
 <section id="ecran-menu" class="ecran actif">
   <header class="entete-accueil">
     <h1>Muscu</h1>
-    <button id="bouton-reglages" class="icone" aria-label="Réglages">&#9881;</button>
   </header>
   <ul class="liste-menu">
     <li><button id="bouton-menu-sport" class="carte-menu">
@@ -32,6 +31,11 @@
       <span class="carte-menu-icone" aria-hidden="true">&#128197;</span>
       <span class="carte-menu-nom">Suivi</span>
       <span class="carte-menu-detail">Calendrier d'activité</span>
+    </button></li>
+    <li><button id="bouton-menu-reglages" class="carte-menu">
+      <span class="carte-menu-icone" aria-hidden="true">&#9881;&#65039;</span>
+      <span class="carte-menu-nom">Réglages</span>
+      <span class="carte-menu-detail">Pont vers le classeur, son, veille</span>
     </button></li>
   </ul>
 </section>
@@ -450,6 +454,12 @@
       <p class="gainage-legende">Interférence avec les muscles de la course. Vert : faible. Rouge : élevée.</p>
       <div class="gainage-degrade" aria-hidden="true"></div>
       <p class="gainage-note">Arrêter la série dès que la position se dégrade, pas à la brûlure ni à la fin du minuteur : 20 secondes correctes valent mieux que 45 avec le dos creusé. Progression : 2 à 3 semaines aux valeurs de départ, puis 5 à 10 s de plus sur les tenues, 2 répétitions de plus sur le reste, charge ou distance sur le farmer walk.</p>
+      <div class="gainage-duree-reglage">
+        <span>Durée de tenue</span>
+        <button id="gainage-duree-moins" type="button" class="icone" aria-label="Réduire la durée de tenue">&minus;</button>
+        <span id="gainage-duree-valeur"></span>
+        <button id="gainage-duree-plus" type="button" class="icone" aria-label="Augmenter la durée de tenue">+</button>
+      </div>
       <div id="gainage-categories"></div>
     </div>
   </main>
@@ -490,11 +500,28 @@
      Voir lancerMinuterie(), battre() et minuterieTerminee() dans
      js/app.js. -->
 <div id="minuterie-plein-ecran" class="minuterie-plein-ecran" hidden>
-  <div class="jauge-pilule" aria-hidden="true">
-    <div id="minuterie-plein-ecran-jauge-remplissage" class="jauge-pilule-remplissage"></div>
+  <!-- Anneau qui se réduit (18 septembre 2026, demande de l'utilisateur :
+       « pas en rouge, en vert dégradé progressif », « schéma de montre
+       cercle qui se réduit ») : remplace l'ancienne jauge pilule linéaire.
+       Le chiffre ordinaire et celui du bilan partagent le même cercle,
+       jamais visibles ensemble (rendreBilanMinuterie() bascule l'un contre
+       l'autre) — voir battre() dans js/app.js pour l'anneau lui-même. -->
+  <div class="minuterie-cercle">
+    <svg class="minuterie-anneau" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="degrade-repos-plein" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" class="anneau-arret-fin"></stop>
+          <stop offset="100%" class="anneau-arret-debut"></stop>
+        </linearGradient>
+      </defs>
+      <circle class="minuterie-anneau-fond" cx="50" cy="50" r="45"></circle>
+      <circle id="minuterie-plein-ecran-anneau-progres" class="minuterie-anneau-progres"
+              cx="50" cy="50" r="45" stroke="url(#degrade-repos-plein)"></circle>
+    </svg>
+    <p id="minuterie-plein-ecran-chiffres" class="minuterie-chiffres-cercle"></p>
+    <p id="minuterie-bilan-chiffres" class="minuterie-chiffres-cercle" hidden></p>
   </div>
   <div id="minuterie-plein-ecran-bilan" class="minuterie-bilan" hidden>
-    <p id="minuterie-bilan-chiffres" class="minuterie-bilan-chiffres" hidden></p>
     <p id="minuterie-bilan-tonnage" class="minuterie-bilan-tonnage" hidden></p>
     <p id="minuterie-bilan-suivant" class="minuterie-bilan-suivant" hidden></p>
     <p id="minuterie-bilan-consigne" class="minuterie-bilan-consigne" hidden></p>

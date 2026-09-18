@@ -40,10 +40,11 @@ ENTETES[ONGLET_EXERCICES] = [
 ];
 ENTETES[ONGLET_SEANCES] = [
   'Date', 'Semaine', 'Jour', 'Type', 'Duree (min)',
-  'Series', 'Tonnage', 'Distance (km)', 'Allure (min/km)',
+  'Series', 'Tonnage', 'Distance (km)', 'Allure (min/km)', 'Calories',
   // Propres aux quatre types de course. Des colonnes nommees plutot qu'un
   // champ texte libre : creuses par nature, mais tracables en graphique.
   'Repetitions', 'Recup (s)', 'Pente (%)', 'Charge portee (kg)', 'Duree seuil (min)',
+  'Vitesse moyenne (km/h)',
 ];
 
 function doPost(requete) {
@@ -390,10 +391,10 @@ const NOMS_TYPE_COURSE = {
   seuil: 'Séance au seuil',
 };
 const ENTETES_TYPE_COURSE = {
-  ef: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)'],
-  fractionne: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Repetitions', 'Recup (s)'],
-  incline: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Pente (%)', 'Charge portee (kg)'],
-  seuil: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Duree au seuil (min)'],
+  ef: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Vitesse moyenne (km/h)'],
+  fractionne: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Repetitions', 'Recup (s)'],
+  incline: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Pente (%)', 'Charge portee (kg)', 'Vitesse moyenne (km/h)'],
+  seuil: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Duree au seuil (min)'],
 };
 
 function feuilleCourse(classeur) {
@@ -468,10 +469,11 @@ function ecrireCourseGrille(classeur, seance, date) {
       const allure = (f.duree_min && f.distance_km)
         ? Math.round((f.duree_min / f.distance_km) * 100) / 100
         : '';
-      const base = [formatDateCourte(date), vide(f.duree_min), vide(f.distance_km), allure];
+      const base = [formatDateCourte(date), vide(f.duree_min), vide(f.distance_km), allure, vide(f.calories)];
       const extra = {
+        ef: [vide(f.vitesse_moy_kmh)],
         fractionne: [vide(f.repetitions), vide(f.recup_s)],
-        incline: [vide(f.pente_pct), vide(f.charge_kg)],
+        incline: [vide(f.pente_pct), vide(f.charge_kg), vide(f.vitesse_moy_kmh)],
         seuil: [vide(f.duree_seuil_min)],
       }[type] || [];
 
@@ -713,7 +715,8 @@ function feuilleSommeil(classeur) {
   let feuille = classeur.getSheetByName('Sommeil');
   if (feuille) return feuille;
   feuille = classeur.insertSheet('Sommeil');
-  const entetes = ['Nuit du', 'Insomnie (creneaux)', 'Insomnie (heures)', 'Raisons',
+  const entetes = ['Nuit du', 'Insomnie (creneaux)', 'Insomnie (heures)',
+    'Sommeil hors coeur (heures)', 'Coeur desactive (heures)', 'Raisons',
     'Alcool', 'Cafe', 'Pipi nocturne', 'Ecran tardif', 'Repas tardif', 'Muscu', 'Footing'];
   feuille.getRange(1, 1, 1, entetes.length).setValues([entetes]).setFontWeight('bold');
   feuille.setFrozenRows(1);
@@ -739,6 +742,8 @@ function ecrireSommeil(classeur, nuits) {
       n.cle,
       (n.insomnies || []).length,
       (n.insomnies || []).join(', '),
+      (n.sommeilHorsCoeur || []).join(', '),
+      (n.horsServiceCoeur || []).join(', '),
       (n.raisons || []).join(', '),
       !!n.alcool,
       n.cafe || 0,
@@ -879,9 +884,9 @@ function ecrireSeance(seance) {
           : '';
         lignes.push([
           date, semaine, jour, type, vide(f.duree_min), '', '',
-          vide(f.distance_km), allure,
+          vide(f.distance_km), allure, vide(f.calories),
           vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
-          vide(f.charge_kg), vide(f.duree_seuil_min),
+          vide(f.charge_kg), vide(f.duree_seuil_min), vide(f.vitesse_moy_kmh),
         ]);
       });
     });

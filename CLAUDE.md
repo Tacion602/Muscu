@@ -259,6 +259,15 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     pour la tenue et le repos (45 s, 60 s pour le farmer walk et le relevé de
     genoux), indépendant de la minuterie de musculation ; `arreterMinuterie()`
     l'arrête aussi, comme `commencer()`.
+    - **Durée de tenue réglable depuis l'écran, le 18 septembre 2026**
+      (demande de l'utilisateur, « comment je peux augmenter le chrono »),
+      15 à 120 s par pas de 5 (`dureeTenueGainage`, boutons `#gainage-duree-
+      moins`/`#gainage-duree-plus`) : l'ancienne constante fixe à 45 s
+      devient un réglage persisté à part (`CLES.dureeGainage`), sans passer
+      par `reglages`/`sauverReglages()` qui réécrit tout le formulaire de la
+      page Réglages d'un bloc et l'aurait effacé à chaque sauvegarde. Ne
+      touche que la tenue, pas le repos qui reste fixe par mouvement (45 ou
+      60 s) : ce n'est pas ce qui a été demandé.
   - **Le nom du mouvement porte la couleur d'interférence avec la course**,
     du vert au rouge (`nomMouvementColore()`) : plus de pastille à côté,
     décision de l'utilisateur le 13 septembre 2026 qui inverse celle du
@@ -398,6 +407,26 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
       suppression, `--danger`) ne partagent plus une seule teinte. Le fond
       de `#minuterie` et `#minuterie-plein-ecran` porte désormais `--repos`,
       pas `--danger`.
+    - **Rouge abandonné pour du vert le 18 septembre 2026** (demande de
+      l'utilisateur : « il ne doit pas être en rouge, mais en vert dégradé
+      progressif »), revenant sur la demande du 17 ci-dessus : `--repos`
+      passe du bordeaux à un vert foncé (`#1d5c3a`, 7,9:1 avec le texte
+      blanc), sans toucher `--danger` ni la distinction entre les deux
+      obtenue la veille. **Jauge pilule remplacée par un anneau qui se
+      réduit** (« schéma de montre, cercle qui se réduit »), en plein écran
+      seulement (le bandeau compact garde son simple chiffre sur fond
+      recoloré, déjà sans oblong) : cercle SVG (`.minuterie-anneau`, rayon
+      45, `stroke-dasharray` = sa circonférence), la part visible du tracé
+      pilotée par `stroke-dashoffset` selon la fraction de temps qui RESTE
+      (`CIRCONFERENCE_ANNEAU` dans `js/app.js`, tenue à jour par `battre()`
+      à chaque tick) — un cercle plein au départ du repos, vide à zéro.
+      Tracé en dégradé (`--repos-anneau` → `--repos-anneau-fin`, deux verts
+      plus vifs que le fond, purement décoratifs) plutôt qu'une teinte
+      plate, pour le « dégradé » demandé. Le chiffre ordinaire
+      (`#minuterie-plein-ecran-chiffres`) et celui du bilan du dernier repos
+      (`#minuterie-bilan-chiffres`, voir plus bas) partagent désormais le
+      même cercle, `rendreBilanMinuterie()` bascule l'un contre l'autre :
+      jamais les deux visibles à la fois.
   - **Plein écran repris le 16 septembre 2026** (`#minuterie-plein-ecran`
     dans `index.html`, `position:fixed; inset:0`, même principe que
     `.vague-demarrage`), demande de l'utilisateur, après l'avoir vu abandonné
@@ -572,6 +601,23 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     portée, durée au seuil) restent traçables en graphique là où un champ
     texte libre ne le serait pas. Une **ligne par passage renseigné**, pas
     une par séance ni une par type.
+  - **Calories pour les quatre types, vitesse moyenne pour Endurance et
+    Incliné, ajoutées le 18 septembre 2026** (demande de l'utilisateur, « il
+    manque des données », relayant l'affichage d'un tapis de course) :
+    `calories` rejoint `CHAMPS_FOOTING` (communs aux quatre types, comme
+    durée et distance), `vitesse_moy_kmh` rejoint `type.champs` de `ef` et
+    `incline` seulement — Fractionné et Seuil n'ont pas de vitesse moyenne
+    stable sur toute la sortie, portée par nature. **Une saisie manuelle,
+    pas un calcul** : l'allure affichée sous chaque passage (distance ÷
+    durée) reste le repère qui fait foi pour la progression, ce nouveau
+    champ ne fait que reprendre ce qu'un tapis de course affiche
+    directement, sans repasser par le calcul. Colonnes ajoutées en
+    conséquence dans le classeur (`ENTETES`, `ENTETES_TYPE_COURSE` et les
+    lignes de `ecrireSeance()`/`ecrireCourseGrille()` dans
+    `appsscript/Code.gs`) : `Calories` juste après `Allure (min/km)` pour
+    les quatre, `Vitesse moyenne (km/h)` en fin de bloc pour Endurance et
+    Incliné. **Nécessite le redéploiement du pont**, comme les évolutions
+    précédentes de cette liste — voir « Chantiers ouverts ».
 - **Un type peut compter plusieurs passages depuis le 8 septembre 2026**,
   demande de l'utilisateur : refaire l'Incliné à une autre charge dans la
   même séance, sans écraser le premier passage. `seance.footing[cle]` est
@@ -842,6 +888,42 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     la minuterie de repos aurait rendu les deux pilules indissociables au
     premier coup d'œil. `.jauge-pilule-seance`/`.jauge-pilule-remplissage-
     accent` dans `css/style.css`.
+    - **Ne grandissait pas du tout, corrigé le 18 septembre 2026** (signalé
+      par l'utilisateur, « le oblong ne grandit pas », confirmé par deux
+      captures d'écran successives) : `#jauge-seance-remplissage` est un
+      `<span>`, et un élément inline ignore purement `width`/`height` en
+      CSS quelle que soit la valeur posée par `rendreJauge()` —
+      `getBoundingClientRect()` donnait `width: 0` malgré un `style.width`
+      non nul. Un premier correctif (remplissage blanc sur fond gris clair,
+      1,15:1 de contraste, quasi invisible) avait semblé plausible sur le
+      moment mais ne changeait rien au fond : `.jauge-pilule-remplissage`
+      manquait `display: block`, seule vraie cause. Les deux corrections
+      sont restées (`--texte-faible` en remplissage, 5,56:1, et `display:
+      block`) : la première améliore la lisibilité une fois la seconde en
+      place. Sans effet sur l'ancien remplissage en `<div>` de la minuterie
+      de repos plein écran, déjà block par défaut, remplacé depuis par
+      l'anneau qui se réduit — jamais concerné par ce bug.
+    - **Largeur fixe (64px) abandonnée le même jour, demande suivante**
+      (« bulle plus grande, jusqu'à séance, avec le même espace que sa
+      distance avec le bord gauche ») : `.jauge-pilule-seance` passe à
+      `flex: 1`, `justify-content: space-between` retiré de
+      `.ligne-progression` au profit de `gap: var(--marge)` — l'espace
+      auparavant laissé vide entre la pilule et le texte "Séance HH:MM"
+      revient à la pilule, avec un espacement fixe avant le texte égal à la
+      marge de gauche de la ligne.
+  - **`proportionFaite()` pondérée par le temps de repos le 18 septembre
+    2026** (demande de l'utilisateur : « les exo du début prennent
+    légèrement plus de temps, soit proportionnel ») : un compte de séries à
+    plat faisait avancer la pilule au même rythme sur un poly-articulaire à
+    90-120 s de repos (souvent en début de séance) que sur un exercice
+    d'isolation à 45 s, alors que le premier occupe bien plus de temps réel.
+    Chaque série pèse désormais le `repos_s` de son exercice (plancher
+    30 s) plutôt que 1 : plus proche du temps réellement passé, sans
+    ressusciter l'estimation complète de durée retirée la veille
+    (`EXERCICES_POLYARTICULAIRES`, `dureeEstimeeSerie()`,
+    `dureeTotaleEstimeeS()`, voir juste au-dessus) — ce n'est pas ce texte
+    qui revient, juste un poids sur la jauge déjà en place. `#jauge-remplie`
+    suit le même calcul, les deux venant de la même fonction.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
@@ -891,6 +973,20 @@ l'utilisateur : « Sport » ouvre l'ancien accueil (les sept bulles J1-J6 et
 Bonus, inchangé) ; « Suivi » ouvre un sous-menu à six contenus, détaillés
 ci-dessous. `Réglages` vit sur ce premier écran, accessible d'un geste quel
 que soit le sous-menu ensuite ouvert.
+
+- **Troisième carte « Réglages » depuis le 18 septembre 2026**, à la place
+  de l'engrenage isolé dans l'en-tête (demande de l'utilisateur : « supprime
+  l'engrenage, tous les réglages arrivent dans ce menu ») : même style que
+  « Sport » et « Suivi » (`#bouton-menu-reglages`, classe `.carte-menu`),
+  ouvre le même écran `#ecran-reglages` qu'avant, rien n'a changé côté
+  contenu des réglages eux-mêmes. `.entete-accueil` ne porte donc plus que
+  le titre "Muscu", sans bouton à droite.
+  - **Cases à cocher de cet écran agrandies le même jour** (signalé par
+    l'utilisateur : « toutes les cases à cocher de réglages ont la même
+    taille » — 22px, tranchant avec les cibles larges du reste de
+    l'application) : 30px, `.bascule input` dans `css/style.css`. Restent
+    uniformes entre elles, choix confirmé par l'utilisateur plutôt que de
+    les hiérarchiser par importance.
 
 - **Les deux cartes du premier écran sont centrées, largeur resserrée à
   300px**, pas étalées sur toute la hauteur disponible (signalé par
@@ -977,6 +1073,20 @@ autres sous-écrans via `afficher()`.
   première séance enregistrée ce jour-là (`iconeJour()`, déjà utilisée pour
   les bulles de l'accueil). Ne distingue pas J1 de J3, ce niveau de détail
   vivant dans l'historique.
+  - **Badge `×N` pour un jour à plusieurs séances, le 18 septembre 2026**
+    (signalé par l'utilisateur : une deuxième séance le même jour restait
+    invisible, `parJour` ne gardant que la première trouvée) : chaque jour
+    garde désormais toutes ses séances, la première fixe toujours l'icône,
+    un badge en coin (`.calendrier-multi`) s'ajoute dès la deuxième.
+  - **Fond bleu si une nuit a été renseignée ce jour-là, même demande,
+    même jour** : indépendant de toute séance de sport (`lireSommeil()`,
+    `nuit.cle`), coloré du bleu le plus clair du dégradé de fond de l'écran
+    Sommeil (`#5a7aa8`, voir `#ecran-sommeil` dans `css/style.css`) plutôt
+    qu'une couleur de la palette de ce calendrier-ci, pour rester
+    reconnaissable comme « du sommeil » d'un coup d'œil. Classe `.a-sommeil`
+    sur `.calendrier-case`, à ne pas confondre avec `.zone-fatigue`/
+    `.zone-recup`/`.zone-prete`, réutilisées par un tout autre écran (la vue
+    mensuelle de Sommeil elle-même, voir plus bas).
 - **État musculaire**, gadget **indicatif, pas une mesure** : chaque zone
   récupère à une vitesse forfaitaire (`ZONES_MUSCULAIRES` dans `js/app.js`,
   48 h les petits groupes, 72 h les gros) depuis la dernière série validée
@@ -1082,6 +1192,19 @@ autres sous-écrans via `afficher()`.
       par défaut d'une grille, qui aurait sinon écrasé `aspect-ratio` sur
       les créneaux (déjà vu une fois, voir juste en dessous, « pas un
       problème de grille... »).
+    - **Réduit à 12 par ligne, quatre lignes, le 18 septembre 2026** (demande
+      de l'utilisateur : « 3 lignes, j'en veux 4 ») : 48 créneaux ÷ 12 tombe
+      juste, quatre lignes pleines plutôt que 17/17/14 (trois lignes, la
+      dernière incomplète). Moins de colonnes agrandit encore chaque
+      créneau, même logique que le passage de 20 à 17 la veille, au prix
+      d'un bloc plus haut — compromis assumé par l'utilisateur, comme les
+      précédents de cette liste.
+    - **Fenêtre décalée à 23h le 18 septembre 2026** (demande de
+      l'utilisateur : « première ligne démarre à 23h »), 22h à l'origine :
+      `SOMMEIL_DEBUT_MIN` passe à `23 * 60`, `SOMMEIL_COEUR_DEBUT`/`_FIN`
+      décalés d'un cran (1 et 17 au lieu de 3 et 19) pour que le cœur de
+      nuit (23h30-8h) tombe toujours au bon endroit sur la fenêtre glissée.
+      Toujours 24h couvertes, seul le point de départ change.
   - **Sans barre ni titre depuis le 17 septembre 2026** (remarque de
     l'utilisateur) : seul le retour reste, `.icone-sommeil-flottant`,
     flottant tout en haut de l'écran (niveau caméra selfie, `position:
@@ -1103,30 +1226,64 @@ autres sous-écrans via `afficher()`.
   - **Cœur de nuit (23h30-8h) agrandi le 17 septembre 2026** (`.sommeil-
     creneau.coeur`, `aspect-ratio: 1 / 1.35`) : plus haut que large plutôt
     que plus large, pour ne pas changer le nombre de créneaux par ligne.
-  - **Deux appuis distincts sur la frise, ajoutés le 17 septembre 2026**
+  - **Trois appuis distincts sur la frise, ajoutés le 17 septembre 2026**
     (remarque de l'utilisateur) : un appui simple sur un créneau nu bascule
-    l'insomnie (inchangé) ; un appui-glissé depuis une puce « La journée »
-    (ou, depuis le même jour, une puce de sport) pose un repère à l'heure
-    visée sur la frise ; un appui simple sur un créneau qui en porte déjà un
-    le retire directement. Voir `demarrerGlissementRepere()`,
-    `deposerGlissementRepere()` et le câblage du clic dans `rendreSommeil()`,
-    `js/app.js`. **Un troisième geste (appui long de 550 ms pour retirer) a
-    existé quelques heures le même jour avant d'être simplifié** en appui
-    simple (« pas 3 ») : un geste de trop pour un résultat identique.
+    l'insomnie (dans le cœur, voir plus bas pour hors du cœur) ; un appui
+    sur une puce « La journée » (ou de sport) puis sur une case de la frise
+    y pose un repère à l'heure visée ; un appui simple sur un créneau qui en
+    porte déjà un le retire directement. Voir le câblage du clic dans
+    `rendreSommeil()`, `js/app.js`. **Un quatrième geste (appui long de
+    550 ms pour retirer) a existé quelques heures le même jour avant d'être
+    simplifié** en appui simple (« pas 3 ») : un geste de trop pour un
+    résultat identique.
+    - **Sélection puis dépose au clic, plutôt que glissement, depuis le
+      18 septembre 2026** (demande de l'utilisateur : « le cliqué-glissé ne
+      fonctionne pas, il lâche les émoticônes à mi-chemin ») : le premier
+      appui-glissé au doigt (17 septembre 2026, `demarrerGlissementRepere`/
+      `deposerGlissementRepere`, retirés) s'est révélé peu fiable sur
+      certains appareils réels. Un appui sur une puce l'arme
+      (`armementFriseSommeil`, surlignée en pointillé blanc — voir
+      `.journee-item.arme` dans `css/style.css`), un second sur une case de
+      la frise y dépose le repère (ou l'heure du sport) et désarme ; un
+      appui sur la puce déjà armée la désarme sans rien déposer. N'annule
+      pas le comportement existant de la puce (bascule ou compteur), qui se
+      déclenche au même appui que l'armement plutôt qu'à un appui distinct.
+    - **Trois états en boucle hors du cœur depuis le 18 septembre 2026**
+      (demande de l'utilisateur : « en dehors des heures de sommeil pré
+      rempli, 1 clic bleu, +1 clique rouge, +1 clique grisé ») : rien
+      n'étant pré-rempli hors du cœur, un appui simple ne pouvait jusque-là
+      que créer une insomnie (rouge), sans moyen de marquer un vrai sommeil
+      en dehors de la fenêtre bleue par défaut (s'endormir avant 23h30, se
+      réveiller après 8h). `basculerCreneauSommeil()` boucle désormais
+      grisé → bleu (`nuit.sommeilHorsCoeur`, nouveau tableau, même principe
+      que `nuit.insomnies`) → rouge → grisé, hors du cœur.
+      - **Le cœur suit la même boucle depuis la demande suivante, même
+        jour** (« le bleu activé par défaut doit aussi pouvoir se
+        désactiver ») : jusque-là seuls bleu et rouge y existaient, sans
+        moyen de désactiver le bleu par défaut. `nuit.horsServiceCoeur`
+        (nouveau tableau) code ce "grisé" par une **absence** au lieu d'une
+        présence : le cœur étant bleu par défaut, marquer une case grisée
+        s'y fait en l'ajoutant à cette liste plutôt qu'en la retirant d'une
+        liste de bleus qui n'existe pas. `etatCreneauSommeil()` centralise
+        cette différence de représentation, `insomnies` restant commun aux
+        deux zones et prioritaire sur l'affichage. Colonnes `Sommeil hors
+        coeur (heures)` et `Coeur desactive (heures)` ajoutées à la page
+        `Sommeil` du classeur en conséquence (`ecrireSommeil` dans
+        `appsscript/Code.gs`) — nécessite le redéploiement du pont, comme
+        les autres évolutions de cette page (voir « Chantiers ouverts »).
     - Les repères de `JOURNEE_SOMMEIL` (café, alcool, pipi nocturne, écran
       tardif, repas tardif) tolèrent plusieurs occurrences (café à 1h puis
       à 3h) et vivent dans `nuit.reperesFrise`, une liste plutôt qu'une
       carte par type.
-    - **Les puces de sport (`SPORT_JOURNEE`) glissent aussi vers la frise
+    - **Les puces de sport (`SPORT_JOURNEE`) se posent aussi sur la frise
       depuis le 17 septembre 2026** (« possible appuyé glisser pour placer
       tous les icônes de journée », jusque-là réservé aux cinq puces
-      ci-dessus) : `itemJourneeParCle()` cherche dans les deux tables, et
-      déposer un sport pose directement son heure dans `nuit.sports` (une
-      seule occurrence par type, voir la puce suivante) plutôt que dans
-      `reperesFrise`. Le champ `<input type="time">` à côté de la puce
-      reste disponible pour une saisie manuelle précise ; les deux
-      cohabitent, l'un n'annule pas l'autre. L'appui long retire aussi un
-      sport posé sur la frise (`supprimerSportFrise()`), même geste que
+      ci-dessus) : déposer un sport pose directement son heure dans
+      `nuit.sports` (une seule occurrence par type, voir la puce suivante)
+      plutôt que dans `reperesFrise`. Le champ `<input type="time">` à côté
+      de la puce reste disponible pour une saisie manuelle précise ; les
+      deux cohabitent, l'un n'annule pas l'autre. Un appui sur un sport posé
+      sur la frise le retire aussi (`supprimerSportFrise()`), même geste que
       pour les autres repères.
   - **Muscu et footing dissociés le même jour** (même date), autre demande
     du même soir : un seul `sportType` empêchait de noter les deux (ex.
@@ -1389,17 +1546,19 @@ un bug si le sujet revient.
    séance de gainage dans une page `Gainage`, sauvegarde des consignes
    techniques dans une page `Consignes`, écriture des mensurations valeurs
    et photo Drive dans une page `Mensurations`) sont désormais en ligne.
-   **Deux évolutions attendent maintenant leur tour** : la sauvegarde du
+   **Trois évolutions attendent maintenant leur tour** : la sauvegarde du
    sommeil dans une page `Sommeil` (`ecrireSommeil`), écrite dans la foulée
    du redéploiement du 16 — repérée en relisant le pont qu'aucune page ne
    couvrait le sommeil jusque-là, contrairement aux consignes et aux
-   mensurations (voir « Sommeil » plus haut) — et, depuis le 17 septembre
-   2026, l'action `remarque` de `doPost` pour la remarque libre du menu
-   Suivi (voir « Remarque » plus haut), qui réutilise l'onglet `Remarques`
-   existant. Un nouveau redéploiement sera nécessaire pour que les deux
-   atteignent le classeur ; l'application reste par ailleurs utilisable en
-   local sans cette étape, l'adresse et le secret du pont restant ceux déjà
-   en place dans les réglages.
+   mensurations (voir « Sommeil » plus haut) — l'action `remarque` de
+   `doPost` pour la remarque libre du menu Suivi (17 septembre 2026, voir
+   « Remarque » plus haut), qui réutilise l'onglet `Remarques` existant, et
+   les colonnes Calories/Vitesse moyenne des jours de course (18 septembre
+   2026, voir « Les jours de course... » plus haut). Un nouveau
+   redéploiement sera nécessaire pour que les trois atteignent le classeur ;
+   l'application reste par ailleurs utilisable en local sans cette étape,
+   l'adresse et le secret du pont restant ceux déjà en place dans les
+   réglages.
 2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
    accumulées. Côté application, c'est fait depuis le 10 septembre 2026 : la
    fiche d'une séance enregistrée porte la courbe de chaque exercice
@@ -1450,6 +1609,12 @@ un bug si le sujet revient.
    son image tant que la table n'est pas mise à jour à la main.
 8. **Lien Garmin Connect**, bloqué sur l'accès à leur API officielle,
    fermée à candidature (même section).
+9. **Accueil et sous-menus jugés trop statiques**, noté par l'utilisateur le
+   18 septembre 2026 pour plus tard : « page d'accueil, et sous-menu plus
+   dynamique, couleurs et mise en page, aucune couleur unie sur les fonds ».
+   Question posée en même temps, pas encore tranchée : passer par
+   `impeccable.style` (déjà l'outillage de la refonte du 16 septembre 2026,
+   voir « Décision de départ ») plutôt qu'à la main. Rien d'entamé.
 
 ## Posture sur les questions d'entraînement
 

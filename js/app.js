@@ -13,7 +13,14 @@ const CLES = {
   sommeil: 'muscu.sommeil',
   mensurations: 'muscu.mensurations',
   remarques: 'muscu.remarques',
+  dureeGainage: 'muscu.dureeGainage',
 };
+
+/* Circonférence du tracé de l'anneau de repos (2π × 45, rayon fixé dans
+   index.html/.minuterie-anneau-progres) : reprise ici pour piloter
+   stroke-dashoffset dans battre(), doit rester égale à stroke-dasharray
+   dans css/style.css. */
+const CIRCONFERENCE_ANNEAU = 2 * Math.PI * 45;
 
 const REGLAGES_PAR_DEFAUT = {
   pont: '',
@@ -59,6 +66,7 @@ const ECHAUFFEMENT_PAR_JOUR = {
 const CHAMPS_FOOTING = [
   { cle: 'duree_min', libelle: 'Durée (min)' },
   { cle: 'distance_km', libelle: 'Distance (km)' },
+  { cle: 'calories', libelle: 'Calories' },
 ];
 
 /* Gainage des jours de footing, du 6 au 11 septembre 2026 : planches, pallof
@@ -176,7 +184,18 @@ const CATEGORIES_GAINAGE = [
     mouvements: ['crunch_inverse', 'releve_genoux'] },
 ];
 
-const DUREE_TENUE_S = 45;
+const DUREE_TENUE_S_DEFAUT = 45;
+/* Réglable depuis l'écran de gainage (« comment augmenter le chrono »,
+   17 septembre 2026) : borné à 15-120 s, persisté à part des réglages
+   généraux pour ne pas dépendre du formulaire de la page Réglages, qui
+   réécrit tout `reglages` d'un bloc à chaque sauvegarde. */
+let dureeTenueGainage = lire(CLES.dureeGainage, { secondes: DUREE_TENUE_S_DEFAUT }).secondes;
+
+function reglerDureeTenueGainage(delta) {
+  dureeTenueGainage = Math.max(15, Math.min(120, dureeTenueGainage + delta));
+  ecrire(CLES.dureeGainage, { secondes: dureeTenueGainage });
+  if (estGainage()) rendreCategoriesGainage();
+}
 
 /* Ajoutée aux jours du programme au démarrage : elle ne vient pas du
    classeur (voir MOUVEMENTS_GAINAGE). */
@@ -204,7 +223,9 @@ const TYPES_COURSE = [
     cle: 'ef',
     nom: 'Endurance',
     complet: 'Endurance fondamentale',
-    champs: [],
+    champs: [
+      { cle: 'vitesse_moy_kmh', libelle: 'Vitesse moyenne (km/h)' },
+    ],
     echauffement: [
       'Marche rapide, 2 min',
       'Montées de genoux et talons-fesses en marchant, 1 min',
@@ -232,6 +253,7 @@ const TYPES_COURSE = [
     champs: [
       { cle: 'pente_pct', libelle: 'Pente (%)' },
       { cle: 'charge_kg', libelle: 'Charge (kg)' },
+      { cle: 'vitesse_moy_kmh', libelle: 'Vitesse moyenne (km/h)' },
     ],
     echauffement: [
       '10 min à plat en endurance fondamentale',
@@ -266,7 +288,7 @@ let audio = null;
 let nuitAffichee = null;  // clé (DD/MM/AAAA) de la nuit affichée sur l'écran Sommeil
 let mensurationAffichee = null;  // clé (DD/MM/AAAA) du jour affiché sur l'écran Mensurations
 let glisseSlider = false;  // curseur de comparaison avant/après en cours de glissement
-let glissementRepere = null;    // repère de journée en cours de glissement vers la frise (voir demarrerGlissementRepere)
+let armementFriseSommeil = null;    // clé (sport ou JOURNEE_SOMMEIL) armée, en attente d'une case sur la frise
 let indexTypeEvolution = 0;  // type de course affiché sur l'écran Évolution course
 
 /* ---------------------------------------------------------------- stockage */
@@ -1087,6 +1109,7 @@ function rendreSeanceGainage() {
 }
 
 function rendreCategoriesGainage() {
+  $('gainage-duree-valeur').textContent = dureeTenueGainage + ' s';
   const bloc = $('gainage-categories');
   bloc.innerHTML = '';
   if (!seance.choix) seance.choix = {};
@@ -1353,7 +1376,7 @@ function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
     bouton.type = 'button';
     bouton.className = 'gainage-demarrer';
     bouton.setAttribute('aria-label', 'Démarrer la tenue, ' + libelle);
-    bouton.textContent = '▶ ' + DUREE_TENUE_S;
+    bouton.textContent = '▶ ' + dureeTenueGainage;
     bouton.addEventListener('click', () => demarrerTenue(cle, index));
     cellule.appendChild(bouton);
   }
@@ -1411,7 +1434,7 @@ function battreGainage() {
 
 function demarrerTenue(cle, index) {
   if (minuteurGainage && minuteurGainage.type === 'tenue') finirTenue(false);
-  lancerMinuteurGainage('tenue', DUREE_TENUE_S, cle, index);
+  lancerMinuteurGainage('tenue', dureeTenueGainage, cle, index);
 }
 
 /* Fin d'une tenue, au bout des 45 s ou sur appui : on note le temps réellement
@@ -1422,8 +1445,8 @@ function finirTenue(complete) {
   const tenue = minuteurGainage;
   if (!tenue || tenue.type !== 'tenue') return;
   const tenu = complete
-    ? DUREE_TENUE_S
-    : Math.min(DUREE_TENUE_S, Math.max(1, Math.round((Date.now() - tenue.debut) / 1000)));
+    ? dureeTenueGainage
+    : Math.min(dureeTenueGainage, Math.max(1, Math.round((Date.now() - tenue.debut) / 1000)));
   valeursMouvement(tenue.cle, seriesDuMouvement(tenue.cle))[tenue.index] = tenu;
   enregistrerSeance();
   arreterMinuteurGainage();
@@ -1741,13 +1764,26 @@ function afficherComparaisonTonnage(serie, reference) {
   toastTonnage = setTimeout(() => { bandeau.classList.remove('visible'); }, 2000);
 }
 
+/* Pondérée par le temps de repos de chaque exercice depuis le 18 septembre
+   2026 (demande de l'utilisateur : « les exo du début prennent légèrement
+   plus de temps, soit proportionnel ») : un simple compte de séries faisait
+   avancer la jauge au même rythme sur un exercice poly-articulaire à
+   90-120 s de repos qu'sur un exercice d'isolation à 45 s, alors que le
+   premier occupe bien plus de temps réel. Le repos domine la durée d'une
+   série sur l'exécution elle-même, assez pour servir de proxy honnête sans
+   ressusciter une estimation complète (voir EXERCICES_POLYARTICULAIRES,
+   dureeEstimeeSerie(), dureeTotaleEstimeeS(), retirés le 17 septembre 2026 :
+   ce n'est pas ce texte-là qui revient, juste un poids sur la jauge
+   existante). Plancher à 30 s pour qu'un exercice sans repos connu ne
+   s'efface pas complètement de la pondération. */
 function proportionFaite() {
   let total = 0;
   let faites = 0;
   seance.exercices.forEach((e) => {
+    const poids = Math.max(30, e.repos_s || 90);
     e.series.forEach((s) => {
-      total++;
-      if (s.faite) faites++;
+      total += poids;
+      if (s.faite) faites += poids;
     });
   });
   return total ? faites / total : 0;
@@ -2065,9 +2101,14 @@ function battre() {
   // revenu le 17 septembre 2026 après le passage par une jauge le
   // 16 septembre) ; la jauge reste seule en plein écran.
   $('minuterie-chiffres').textContent = texteDuree(restant);
-  const progres = Math.min(1, Math.max(0, 1 - restant / minuterie.duree));
-  const pourcent = (progres * 100) + '%';
-  $('minuterie-plein-ecran-jauge-remplissage').style.width = pourcent;
+  $('minuterie-plein-ecran-chiffres').textContent = texteDuree(restant);
+  // Anneau qui se réduit (18 septembre 2026) : la part visible du tracé
+  // suit le temps qui RESTE, pas celui écoulé, d'où l'offset croissant
+  // avec le temps qui passe. CIRCONFERENCE_ANNEAU reprend la valeur fixée
+  // dans .minuterie-anneau-progres (css/style.css, stroke-dasharray).
+  const fractionRestante = Math.min(1, Math.max(0, restant / minuterie.duree));
+  $('minuterie-plein-ecran-anneau-progres').style.strokeDashoffset =
+    (CIRCONFERENCE_ANNEAU * (1 - fractionRestante)) + 'px';
   const libelle = 'Récupération, ' + texteDuree(restant) + ' restant';
   $('minuterie').setAttribute('aria-label', libelle);
   $('minuterie-plein-ecran').setAttribute('aria-label', libelle);
@@ -2100,7 +2141,8 @@ function arreterMinuterie() {
   $('minuterie').classList.add('inactif');
   $('minuterie-chiffres').textContent = '';
   $('minuterie-plein-ecran').hidden = true;
-  $('minuterie-plein-ecran-jauge-remplissage').style.width = '0%';
+  $('minuterie-plein-ecran-chiffres').textContent = '';
+  $('minuterie-plein-ecran-anneau-progres').style.strokeDashoffset = '0px';
   rendreBilanMinuterie(null);
 }
 
@@ -2111,11 +2153,15 @@ function arreterMinuterie() {
    de tous les exercices). Voir validerSerie(). */
 function rendreBilanMinuterie(bilan) {
   const bloc = $('minuterie-plein-ecran-bilan');
+  const chiffresOrdinaires = $('minuterie-plein-ecran-chiffres');
   const ligneChiffres = $('minuterie-bilan-chiffres');
   const ligneTonnage = $('minuterie-bilan-tonnage');
   const ligneSuivant = $('minuterie-bilan-suivant');
   const ligneConsigne = $('minuterie-bilan-consigne');
 
+  // Les deux chiffres partagent le même cercle (voir index.html) : jamais
+  // visibles ensemble, celui du bilan prenant la place de l'ordinaire.
+  chiffresOrdinaires.hidden = false;
   ligneChiffres.hidden = true;
   ligneTonnage.hidden = true;
   ligneSuivant.hidden = true;
@@ -2127,6 +2173,7 @@ function rendreBilanMinuterie(bilan) {
   // à ce bilan, voir battre() plus haut qui le tient à jour tant qu'il est
   // affiché. Toujours affiché dès qu'un bilan existe : c'est justement le
   // temps dont on dispose pour régler la machine suivante.
+  chiffresOrdinaires.hidden = true;
   ligneChiffres.textContent = texteDuree(minuterie ? (minuterie.fin - Date.now()) / 1000 : 0);
   ligneChiffres.hidden = false;
 
@@ -2717,13 +2764,27 @@ function sauverReglages() {
    16 septembre 2026), premier contenu de ce sous-menu : les cases du mois
    en cours, avec l'icône du type de la première séance enregistrée ce
    jour-là (muscu, footing ou gainage). Ne distingue pas J1 de J3 : ce
-   niveau de détail vit dans l'historique, ici c'est un coup d'œil. */
+   niveau de détail vit dans l'historique, ici c'est un coup d'œil.
+
+   Deux séances le même jour ne se voyaient pas (signalé par l'utilisateur
+   le 18 septembre 2026, `parJour` ne gardant que la première) : chaque jour
+   garde désormais toutes ses séances, la première fixe toujours l'icône,
+   un badge `×N` s'ajoute au-delà d'une seule.
+
+   Fond bleu (même demande, même jour) quand une nuit a été renseignée ce
+   jour-là (`nuit.cle`, indépendant de toute séance de sport) : `#5a7aa8`,
+   le bleu le plus clair du dégradé de fond de l'écran Sommeil
+   (`#ecran-sommeil` dans css/style.css), pour rester reconnaissable comme
+   « du sommeil » d'un coup d'œil sur ce calendrier-ci. */
 function rendreCalendrier() {
   const parJour = {};
   lireTableau(CLES.historique).filter((s) => s.fin).forEach((s) => {
     const cle = dateCourte(s.fin);
-    if (!parJour[cle]) parJour[cle] = s;
+    if (!parJour[cle]) parJour[cle] = [];
+    parJour[cle].push(s);
   });
+  const nuitsParJour = {};
+  lireSommeil().forEach((n) => { nuitsParJour[n.cle] = true; });
 
   const maintenant = new Date();
   const annee = maintenant.getFullYear();
@@ -2736,11 +2797,14 @@ function rendreCalendrier() {
   for (let i = 0; i < decalage; i++) html += '<span class="calendrier-case vide"></span>';
   for (let jour = 1; jour <= nbJours; jour++) {
     const cle = String(jour).padStart(2, '0') + '/' + String(mois + 1).padStart(2, '0') + '/' + annee;
-    const seance = parJour[cle];
+    const seances = parJour[cle] || [];
+    const seance = seances[0];
     const aujourdhui = jour === maintenant.getDate();
-    html += '<span class="calendrier-case' + (aujourdhui ? ' aujourdhui' : '') + '">' +
+    const classeSommeil = nuitsParJour[cle] ? ' a-sommeil' : '';
+    html += '<span class="calendrier-case' + (aujourdhui ? ' aujourdhui' : '') + classeSommeil + '">' +
       '<span class="calendrier-num">' + jour + '</span>' +
       (seance ? '<span class="calendrier-icone">' + iconeJour({ type: seance.type, code: seance.jour }) + '</span>' : '') +
+      (seances.length > 1 ? '<span class="calendrier-multi">×' + seances.length + '</span>' : '') +
       '</span>';
   }
   $('calendrier').innerHTML =
@@ -3241,17 +3305,22 @@ function rendreTonnageMuscles() {
    aucun créneau n'existe tant qu'on n'y touche pas — l'apparition marque
    un coucher tardif ou un réveil précoce, hors du cadre habituel. Un seul
    état à retenir par créneau (dans ou hors insomnie) suffit aux deux cas. */
-const SOMMEIL_DEBUT_MIN = 22 * 60;
+/* Départ à 23h depuis le 18 septembre 2026 (demande de l'utilisateur :
+   « première ligne démarre à 23h »), 22h à l'origine. Toujours 24h
+   couvertes (SOMMEIL_NB_CRENEAUX inchangé) : seul le point de départ de la
+   fenêtre glisse d'une heure, SOMMEIL_COEUR_DEBUT/FIN décalés d'autant. */
+const SOMMEIL_DEBUT_MIN = 23 * 60;
 // 48 créneaux (24h) depuis le 16 septembre 2026, demande de l'utilisateur :
 // la frise ne couvrait jusque-là que 22h-11h (26 créneaux), sans place pour
 // un sport ou un repère de l'après-midi (indexCreneauPourHeure renvoyait
-// -1). 17 créneaux par ligne depuis le 17 septembre 2026 (voir
-// .sommeil-creneau dans css/style.css, réduit depuis 20 puis 24 pour des
-// créneaux toujours plus grands) : à ce pas, 00h-8h n'est plus garanti sur
-// une seule ligne (compromis assumé, voir le commentaire CSS).
+// -1). 12 créneaux par ligne depuis le 18 septembre 2026 (voir
+// .sommeil-creneau dans css/style.css, réduit depuis 20 puis 17 pour des
+// créneaux toujours plus grands, quatre lignes pleines plutôt que trois
+// dont une incomplète) : à ce pas, 00h-8h n'est pas garanti sur une seule
+// ligne (compromis assumé, voir le commentaire CSS).
 const SOMMEIL_NB_CRENEAUX = 48;
-const SOMMEIL_COEUR_DEBUT = 3;   // 23:30
-const SOMMEIL_COEUR_FIN = 19;    // 07:30, dernier créneau du cœur (se termine à 8h)
+const SOMMEIL_COEUR_DEBUT = 1;   // 23:30
+const SOMMEIL_COEUR_FIN = 17;    // 07:30, dernier créneau du cœur (se termine à 8h)
 
 function creneauxSommeil() {
   const creneaux = [];
@@ -3309,17 +3378,6 @@ const SPORT_JOURNEE = [
   { cle: 'footing', nom: 'Footing', icone: '🏃' },
 ];
 
-/* Cherche un repère de journée par clé dans les deux tables (JOURNEE_SOMMEIL
-   et SPORT_JOURNEE partagent la forme {cle, nom, icone}) : le glissement vers
-   la frise (voir demarrerGlissementRepere plus bas) doit reconnaître l'un
-   comme l'autre depuis le 17 septembre 2026, demande de l'utilisateur de
-   pouvoir glisser tous les icônes de journée, sport compris — jusque-là
-   réservé aux cinq puces de JOURNEE_SOMMEIL, le sport ne se plaçait que par
-   le sélecteur d'heure à côté de sa puce. */
-function itemJourneeParCle(cle) {
-  return JOURNEE_SOMMEIL.find((i) => i.cle === cle) || SPORT_JOURNEE.find((i) => i.cle === cle);
-}
-
 function formatDateCourte(date) {
   return String(date.getDate()).padStart(2, '0') + '/' +
     String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
@@ -3355,8 +3413,8 @@ function lireSommeil() {
 
 function nuitPour(cle) {
   return lireSommeil().find((n) => n.cle === cle) ||
-    { cle, insomnies: [], raisons: [], alcool: false, cafe: 0, pipi: 0, ecranTard: false, repasTardif: false,
-      sports: {}, reperesFrise: [] };
+    { cle, insomnies: [], sommeilHorsCoeur: [], horsServiceCoeur: [], raisons: [], alcool: false,
+      cafe: 0, pipi: 0, ecranTard: false, repasTardif: false, sports: {}, reperesFrise: [] };
 }
 
 function enregistrerNuit(nuit) {
@@ -3365,11 +3423,54 @@ function enregistrerNuit(nuit) {
   ecrire(CLES.sommeil, toutes);
 }
 
+/* Trois états en boucle sur toute la frise, un appui à la fois : grisé →
+   bleu (sommeil) → rouge (insomnie) → grisé. Identique dans le cœur de nuit
+   et en dehors, mais l'état "grisé" s'y représente différemment puisque le
+   cœur est bleu par défaut :
+   - hors du cœur, rien n'est pré-rempli (ajouté le 18 septembre 2026,
+     demande de l'utilisateur : marquer un vrai sommeil en dehors de la
+     fenêtre bleue, par exemple s'endormir avant 23h30) : "bleu" veut dire
+     présent dans `nuit.sommeilHorsCoeur`, "grisé" veut dire absent des
+     deux listes ;
+   - dans le cœur, bleu est la valeur par défaut : jusqu'au 18 septembre
+     2026 seuls bleu et rouge existaient (« le bleu activé par défaut doit
+     aussi pouvoir se désactiver », l'utilisateur voulait grisé aussi) —
+     "grisé" s'y représente par la présence dans `nuit.horsServiceCoeur`
+     (nouveau tableau, sens inversé de `sommeilHorsCoeur` : marque une
+     absence plutôt qu'une présence, seule façon de coder un "moins que la
+     valeur par défaut"), "bleu" par son absence. `insomnies` reste commun
+     aux deux zones et l'emporte sur les deux autres tableaux à l'affichage
+     (rendreSommeil()) comme à la boucle ci-dessous. */
+function etatCreneauSommeil(nuit, creneau, dansLeCoeur) {
+  if (nuit.insomnies.includes(creneau)) return 'insomnie';
+  const enSommeil = dansLeCoeur
+    ? !(nuit.horsServiceCoeur || []).includes(creneau)
+    : (nuit.sommeilHorsCoeur || []).includes(creneau);
+  return enSommeil ? 'sommeil' : 'libre';
+}
+
 function basculerCreneauSommeil(nuit, index) {
   const creneau = creneauxSommeil()[index];
-  const position = nuit.insomnies.indexOf(creneau);
-  if (position >= 0) nuit.insomnies.splice(position, 1);
-  else nuit.insomnies.push(creneau);
+  const dansLeCoeur = index >= SOMMEIL_COEUR_DEBUT && index <= SOMMEIL_COEUR_FIN;
+  if (!nuit.sommeilHorsCoeur) nuit.sommeilHorsCoeur = [];
+  if (!nuit.horsServiceCoeur) nuit.horsServiceCoeur = [];
+  const retirer = (liste) => {
+    const position = liste.indexOf(creneau);
+    if (position >= 0) liste.splice(position, 1);
+  };
+
+  const etat = etatCreneauSommeil(nuit, creneau, dansLeCoeur);
+  if (etat === 'sommeil') {
+    if (dansLeCoeur) retirer(nuit.horsServiceCoeur); else retirer(nuit.sommeilHorsCoeur);
+    nuit.insomnies.push(creneau);
+  } else if (etat === 'insomnie') {
+    retirer(nuit.insomnies);
+    if (dansLeCoeur) nuit.horsServiceCoeur.push(creneau);
+  } else if (dansLeCoeur) {
+    retirer(nuit.horsServiceCoeur);
+  } else {
+    nuit.sommeilHorsCoeur.push(creneau);
+  }
   enregistrerNuit(nuit);
   rendreSommeil();
 }
@@ -3389,24 +3490,32 @@ function actionnerJourneeSommeil(nuit, item) {
   rendreSommeil();
 }
 
-/* Repères de journée placés directement sur la frise par appui-glissé
-   (demande de l'utilisateur le 17 septembre 2026), en plus des puces
+/* Repères de journée placés directement sur la frise, en plus des puces
    « La journée » qui restent le geste rapide sans heure précise : les deux
    cohabitent, l'un n'annule pas l'autre. Plusieurs occurrences du même type
    peuvent être placées (café à 1h puis à 3h) ; `reperesFrise` est une liste
-   à part plutôt qu'une carte par type, pour ça. Deux appuis distincts sur
-   la frise (remarque de l'utilisateur) : un appui simple sur un créneau nu
-   bascule l'insomnie (basculerCreneauSommeil, inchangé), l'appui-glissé
-   depuis une puce crée un repère (voir demarrerGlissementRepere/
-   deposerGlissementRepere plus bas) — un appui simple sur un créneau qui en
-   porte déjà un le retire directement (voir le câblage du clic dans
-   rendreSommeil()). Un troisième geste (appui long pour retirer) a existé
-   un temps le même jour avant d'être simplifié en appui simple (« pas 3 »).
-   Étendu le 17 septembre 2026 aux puces de SPORT_JOURNEE (muscu, footing),
-   jusque-là seulement cliquables puis réglées via un champ heure séparé :
-   même geste de glissement pour toute icône de journée, sport compris (voir
-   itemJourneeParCle). Le sport garde son propre stockage (`nuit.sports`, une
-   seule heure par type) plutôt que `reperesFrise`, voir deposerGlissementRepere. */
+   à part plutôt qu'une carte par type, pour ça.
+
+   Sélection puis dépose, pas glissement, depuis le 18 septembre 2026
+   (demande de l'utilisateur : « le cliqué-glissé ne fonctionne pas, il
+   lâche les émoticônes à mi-chemin ») : un premier appui-glissé avait été
+   tenté le 17 septembre, peu fiable au doigt sur certains appareils.
+   Remplacé par deux appuis simples — le premier sur une puce l'arme
+   (`armementFriseSommeil`, surlignée en pointillé blanc, voir rendreSommeil
+   et css/style.css `.journee-item.arme`), le second sur une case de la
+   frise y dépose le repère (ou l'heure du sport) et désarme. Un appui sur
+   la puce déjà armée la désarme sans rien déposer. N'annule pas le
+   comportement existant de la puce (bascule ou compteur), qui continue de
+   se déclencher au même appui : voir le câblage du clic dans
+   rendreSommeil(). Trois appuis distincts au total sur la frise elle-même
+   restent : un appui simple sur un créneau nu bascule l'insomnie
+   (basculerCreneauSommeil, inchangé), un appui sur un créneau qui porte
+   déjà un repère le retire directement, un appui pendant qu'une puce est
+   armée y dépose son repère à la place de ces deux comportements. Étendu
+   aux puces de SPORT_JOURNEE (muscu, footing) comme aux cinq de
+   JOURNEE_SOMMEIL : le sport garde son propre stockage (`nuit.sports`, une
+   seule heure par type) plutôt que `reperesFrise`, voir le câblage du clic
+   sur la frise dans rendreSommeil(). */
 function placerRepereFrise(nuit, type, index) {
   nuit.reperesFrise = nuit.reperesFrise || [];
   nuit.reperesFrise.push({ type, index });
@@ -3418,78 +3527,6 @@ function supprimerRepereFrise(nuit, index) {
   nuit.reperesFrise = (nuit.reperesFrise || []).filter((r) => r.index !== index);
   enregistrerNuit(nuit);
   rendreSommeil();
-}
-
-/* Glissement d'une puce « La journée » vers la frise, pour y poser un
-   repère à une heure précise (voir placerRepereFrise). Un simple appui
-   sans déplacement (`seuilFranchi` jamais vrai) ne fait rien ici : le
-   `click` natif qui suit se charge alors normalement du comportement
-   existant de la puce (bascule ou compteur). document.elementFromPoint
-   plutôt qu'un calcul de grille : la frise passe de 13 à 20 colonnes selon
-   la largeur d'écran (voir .sommeil-creneau dans css/style.css), la
-   trouver par élément sous le doigt évite de dupliquer cette mise en page
-   en JavaScript. */
-function demarrerGlissementRepere(nuit, type, x, y) {
-  const item = itemJourneeParCle(type);
-  if (!item) return;
-  const fantome = document.createElement('div');
-  fantome.className = 'repere-fantome';
-  fantome.textContent = item.icone;
-  fantome.style.left = x + 'px';
-  fantome.style.top = y + 'px';
-  document.body.appendChild(fantome);
-  glissementRepere = { nuit, type, fantome, depart: { x, y }, seuilFranchi: false, indexSurvole: -1 };
-}
-
-function deplacerGlissementRepere(x, y) {
-  const g = glissementRepere;
-  if (!g) return;
-  g.fantome.style.left = x + 'px';
-  g.fantome.style.top = y + 'px';
-  const dx = x - g.depart.x;
-  const dy = y - g.depart.y;
-  if (!g.seuilFranchi && (dx * dx + dy * dy) > 36) {
-    g.seuilFranchi = true;
-    g.fantome.classList.add('actif');
-  }
-  const cible = document.elementFromPoint(x, y);
-  const creneau = cible && cible.closest ? cible.closest('.sommeil-creneau') : null;
-  const index = creneau ? Number(creneau.dataset.index) : -1;
-  if (index !== g.indexSurvole) {
-    document.querySelectorAll('.sommeil-creneau.cible-glissement').forEach((el) => el.classList.remove('cible-glissement'));
-    if (creneau) creneau.classList.add('cible-glissement');
-    g.indexSurvole = index;
-  }
-}
-
-/* Aucun `click` natif ne suit un vrai glissement (mousedown/pointerdown sur
-   un élément puis pointerup sur un autre, après un déplacement) : c'est le
-   comportement standard des navigateurs (identique en tactile, où un
-   déplacement au-delà du seuil de scroll supprime aussi le clic de
-   synthèse), vérifié ici avant d'écrire cette fonction — un bouton
-   `venDeDeposerRepere` avait d'abord été posé pour s'en prémunir "au cas
-   où", mais restait vrai indéfiniment (le clic censé le consommer
-   n'arrivant jamais) et avalait alors le clic tout à fait normal de
-   l'interaction suivante sur un créneau. Le dépôt peut donc être immédiat,
-   sans détour par un tick. */
-function deposerGlissementRepere(x, y) {
-  const g = glissementRepere;
-  if (!g) return;
-  g.fantome.remove();
-  document.querySelectorAll('.sommeil-creneau.cible-glissement').forEach((el) => el.classList.remove('cible-glissement'));
-  glissementRepere = null;
-  if (!g.seuilFranchi || g.indexSurvole < 0) return;
-  // Un sport (SPORT_JOURNEE) pose son heure dans nuit.sports, une seule
-  // occurrence par type (voir majHeureSport) : glisser son icône vers un
-  // créneau revient à choisir ce sport ET son heure d'un seul geste, plutôt
-  // que cliquer la puce puis remplir le champ heure séparément. Les autres
-  // repères (JOURNEE_SOMMEIL) tolèrent plusieurs occurrences (café à 1h puis
-  // à 3h) et vivent dans nuit.reperesFrise, voir placerRepereFrise.
-  if (SPORT_JOURNEE.some((sp) => sp.cle === g.type)) {
-    majHeureSport(g.nuit, g.type, creneauxSommeil()[g.indexSurvole]);
-  } else {
-    placerRepereFrise(g.nuit, g.type, g.indexSurvole);
-  }
 }
 
 function supprimerSportFrise(nuit, type) {
@@ -3549,8 +3586,10 @@ function rendreSommeil() {
   $('bouton-sommeil-suivant').disabled = !cleAnterieure(nuitAffichee, cleNuitCourante());
 
   $('sommeil-frise').innerHTML = creneaux.map((creneau, index) => {
-    const enInsomnie = nuit.insomnies.includes(creneau);
     const dansLeCoeur = index >= SOMMEIL_COEUR_DEBUT && index <= SOMMEIL_COEUR_FIN;
+    // Trois états, dans le cœur comme en dehors (18 septembre 2026, voir
+    // etatCreneauSommeil()/basculerCreneauSommeil() plus haut).
+    const etat = etatCreneauSommeil(nuit, creneau, dansLeCoeur);
     // "libre", pas "vide" : la classe générique .vide (messages d'état vide
     // en <p>, padding 40px) matchait aussi ces boutons et leur imposait
     // 80px de haut, seule vraie cause de la frise débordante signalée par
@@ -3576,20 +3615,32 @@ function rendreSommeil() {
     // 2026) : une classe à part de l'état sommeil/insomnie/libre, un
     // créneau d'insomnie dans le cœur devant rester agrandi lui aussi.
     const classeCoeur = dansLeCoeur ? ' coeur' : '';
-    if (!enInsomnie && !dansLeCoeur) return '<button type="button" class="sommeil-creneau libre" data-index="' + index + '"' + donneeRepere + ' aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
-    return '<button type="button" class="sommeil-creneau ' + (enInsomnie ? 'insomnie' : 'sommeil') + classeCoeur + '" data-index="' + index + '"' + donneeRepere + ' aria-label="' + creneau + '">' + heure + icone + '</button>';
+    if (etat === 'libre') return '<button type="button" class="sommeil-creneau libre' + classeCoeur + '" data-index="' + index + '"' + donneeRepere + ' aria-label="Ajouter ' + creneau + '">' + heure + icone + '</button>';
+    return '<button type="button" class="sommeil-creneau ' + etat + classeCoeur + '" data-index="' + index + '"' + donneeRepere + ' aria-label="' + creneau + '">' + heure + icone + '</button>';
   }).join('');
-  // Deux appuis, pas trois (simplifié le 17 septembre 2026, demande de
-  // l'utilisateur : « pas 3 », l'appui long faisait un geste de trop) : un
-  // appui simple sur un créneau qui porte un repère ou un sport le retire
-  // directement, un appui simple sur un créneau nu bascule l'insomnie
-  // (inchangé). Le glissement depuis une puce reste le seul moyen d'en
-  // poser un.
+  // Surlignage de toute la frise tant qu'une puce est armée (voir
+  // placerRepereFrise plus haut), pour que la case à toucher se voie avant
+  // même d'y poser le doigt.
+  $('sommeil-frise').classList.toggle('armee', !!armementFriseSommeil);
+  // Trois comportements sur un appui, pas deux : une puce armée dépose son
+  // repère ici (18 septembre 2026, remplace le glissement) ; sinon, un
+  // créneau qui porte déjà un repère ou un sport le retire directement
+  // (simplifié le 17 septembre 2026, demande de l'utilisateur : « pas 3 »,
+  // l'appui long faisait un geste de trop) ; sinon un appui simple sur un
+  // créneau nu bascule l'insomnie (inchangé).
   $('sommeil-frise').querySelectorAll('.sommeil-creneau').forEach((bouton) => {
     bouton.addEventListener('click', () => {
+      const index = Number(bouton.dataset.index);
+      if (armementFriseSommeil) {
+        const type = armementFriseSommeil;
+        armementFriseSommeil = null;
+        if (SPORT_JOURNEE.some((sp) => sp.cle === type)) majHeureSport(nuit, type, creneauxSommeil()[index]);
+        else placerRepereFrise(nuit, type, index);
+        return;
+      }
       if (bouton.dataset.repereSport) { supprimerSportFrise(nuit, bouton.dataset.repereSport); return; }
-      if (bouton.dataset.repereType) { supprimerRepereFrise(nuit, Number(bouton.dataset.index)); return; }
-      basculerCreneauSommeil(nuit, Number(bouton.dataset.index));
+      if (bouton.dataset.repereType) { supprimerRepereFrise(nuit, index); return; }
+      basculerCreneauSommeil(nuit, index);
     });
   });
 
@@ -3609,7 +3660,8 @@ function rendreSommeil() {
   $('sommeil-journee').innerHTML =
     SPORT_JOURNEE.map((sp) => {
       const choisi = nuit.sports && nuit.sports[sp.cle] != null;
-      const bouton = '<button type="button" class="journee-item' + (choisi ? ' choisi' : '') + '" data-sport="' + sp.cle + '">' +
+      const arme = armementFriseSommeil === sp.cle ? ' arme' : '';
+      const bouton = '<button type="button" class="journee-item' + (choisi ? ' choisi' : '') + arme + '" data-sport="' + sp.cle + '">' +
         sp.icone + ' ' + echapper(sp.nom) + '</button>';
       const champHeure = choisi
         ? '<input type="time" class="sommeil-sport-heure" data-heure-pour="' + sp.cle + '" value="' + (nuit.sports[sp.cle] || '') + '">'
@@ -3617,25 +3669,26 @@ function rendreSommeil() {
       return bouton + champHeure;
     }).join('') +
     JOURNEE_SOMMEIL.map((item) => {
+      const arme = armementFriseSommeil === item.cle ? ' arme' : '';
       if (item.type === 'bascule') {
-        return '<button type="button" class="journee-item' + (nuit[item.cle] ? ' choisi' : '') + '" data-cle="' + item.cle + '">' +
+        return '<button type="button" class="journee-item' + (nuit[item.cle] ? ' choisi' : '') + arme + '" data-cle="' + item.cle + '">' +
           item.icone + ' ' + echapper(item.nom) + '</button>';
       }
       const valeur = nuit[item.cle] || 0;
-      return '<button type="button" class="journee-item' + (valeur ? ' choisi' : '') + '" data-cle="' + item.cle + '">' +
+      return '<button type="button" class="journee-item' + (valeur ? ' choisi' : '') + arme + '" data-cle="' + item.cle + '">' +
         item.icone + ' ' + echapper(item.nom) + (valeur ? ' · ' + valeur : '') +
         (valeur ? '<span class="journee-remise" data-remise="' + item.cle + '">&times;</span>' : '') +
       '</button>';
     }).join('');
   $('sommeil-journee').querySelectorAll('.journee-item[data-sport]').forEach((bouton) => {
-    bouton.addEventListener('click', () => basculerSportJournee(nuit, bouton.dataset.sport));
-    // Glissement vers la frise (17 septembre 2026, voir itemJourneeParCle et
-    // deposerGlissementRepere) : pose directement l'heure visée dans
-    // nuit.sports, sans passer par le clic puis le champ heure. Même geste
-    // que les puces JOURNEE_SOMMEIL plus bas, désormais unifié pour toutes
-    // les icônes de journée.
-    bouton.addEventListener('pointerdown', (evenement) => {
-      demarrerGlissementRepere(nuit, bouton.dataset.sport, evenement.clientX, evenement.clientY);
+    // Armer avant d'appeler basculerSportJournee (18 septembre 2026,
+    // remplace le glissement) : cette fonction re-rend tout l'écran, elle
+    // doit donc déjà lire le nouvel état pour surligner la bonne puce.
+    // N'annule pas le comportement existant du clic (choisir/désélectionner
+    // le sport du jour), qui continue de se déclencher au même appui.
+    bouton.addEventListener('click', () => {
+      armementFriseSommeil = armementFriseSommeil === bouton.dataset.sport ? null : bouton.dataset.sport;
+      basculerSportJournee(nuit, bouton.dataset.sport);
     });
   });
   // Un champ heure par sport choisi (id absent d'index.html, comme les
@@ -3647,15 +3700,8 @@ function rendreSommeil() {
     bouton.addEventListener('click', (evenement) => {
       const remise = evenement.target.closest('[data-remise]');
       if (remise) { remettreAZeroJournee(nuit, remise.dataset.remise); return; }
+      armementFriseSommeil = armementFriseSommeil === bouton.dataset.cle ? null : bouton.dataset.cle;
       actionnerJourneeSommeil(nuit, JOURNEE_SOMMEIL.find((i) => i.cle === bouton.dataset.cle));
-    });
-    // Appui-glissé vers la frise (demande de l'utilisateur le
-    // 17 septembre 2026) : y pose un repère à l'heure visée, en plus du
-    // geste ci-dessus qui reste le raccourci sans heure précise. Départ
-    // ignoré depuis la croix de remise, qui a son propre geste.
-    bouton.addEventListener('pointerdown', (evenement) => {
-      if (evenement.target.closest('[data-remise]')) return;
-      demarrerGlissementRepere(nuit, bouton.dataset.cle, evenement.clientX, evenement.clientY);
     });
   });
 
@@ -4289,6 +4335,8 @@ function brancher() {
   // donc pas de branche « lancer un repos manuel » à reprendre ici.
   $('minuterie-plein-ecran').addEventListener('click', () => minuterieTerminee(true));
   $('gainage-chrono').addEventListener('click', appuiBandeauGainage);
+  $('gainage-duree-moins').addEventListener('click', () => reglerDureeTenueGainage(-5));
+  $('gainage-duree-plus').addEventListener('click', () => reglerDureeTenueGainage(5));
 
   $('bouton-enregistrer').addEventListener('click', enregistrerEtSynchroniser);
   $('bouton-fin-retour').addEventListener('click', () => { afficher('seance'); rendreSeanceCourante(); });
@@ -4309,10 +4357,12 @@ function brancher() {
     });
   });
 
-  // Réglages vit sur le menu principal (Sport/Suivi), accessible d'un geste
-  // quel que soit le sous-menu ensuite ouvert (demande de l'utilisateur le
-  // 16 septembre 2026).
-  $('bouton-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });
+  // Réglages vit sur le menu principal (Sport/Suivi), en troisième carte
+  // depuis le 18 septembre 2026 (demande de l'utilisateur, « supprime
+  // l'engrenage, tous les réglages arrivent dans ce menu ») : jusque-là un
+  // engrenage isolé dans l'en-tête, moins visible et hors du style des deux
+  // autres cartes.
+  $('bouton-menu-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });
   $('bouton-reglages-retour').addEventListener('click', () => {
     sauverReglages();
     rendreAccueil();
@@ -4390,16 +4440,6 @@ function brancher() {
   });
   window.addEventListener('pointerup', () => { glisseSlider = false; });
 
-  // Glissement d'un repère de journée vers la frise du sommeil, même
-  // principe que la poignée ci-dessus (écouteurs posés une fois ici,
-  // l'état glissementRepere décide s'il y a quelque chose à faire) : voir
-  // demarrerGlissementRepere() dans rendreSommeil().
-  window.addEventListener('pointermove', (evenement) => {
-    if (glissementRepere) deplacerGlissementRepere(evenement.clientX, evenement.clientY);
-  });
-  window.addEventListener('pointerup', (evenement) => {
-    if (glissementRepere) deposerGlissementRepere(evenement.clientX, evenement.clientY);
-  });
   ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
    'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));

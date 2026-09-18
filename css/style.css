@@ -29,15 +29,22 @@
   --hausse: #307940;
   --baisse: #9b5e22;
   --danger: #ba3e36;
-  /* Rouge dédié à la minuterie de repos, distinct de --danger (demande de
-     l'utilisateur le 17 septembre 2026, « différencie les deux rouges ») :
-     avant cette date, la minuterie reprenait --danger telle quelle (fond
-     rouge de la toute première version, voir le commit "Minuterie rouge
-     pleine taille"), ce qui mélangeait l'alerte réelle (blessure,
-     suppression) et le simple repos dans une seule teinte. Hue décalé vers
-     le bordeaux plutôt qu'une nuance de --danger, pour que la différence se
-     voie sans avoir les deux côte à côte. Contraste texte blanc : 7,4:1. */
-  --repos: #9c2b3e;
+  /* Fond de la minuterie de repos, vert depuis le 18 septembre 2026 (demande
+     de l'utilisateur : « il ne doit pas être en rouge, mais en vert ») :
+     avant cette date, un bordeaux dédié (voir le commit "Minuterie rouge
+     pleine taille" puis « différencie les deux rouges », 17 septembre 2026)
+     distinguait le repos de --danger, mélangés à l'origine sur un même
+     rouge. Même besoin de distinction, résolu autrement : le vert ne
+     partage déjà aucune des teintes d'alerte de l'application. Contraste
+     texte blanc : 7,9:1. */
+  --repos: #1d5c3a;
+  /* Anneau qui se réduit sur le repos plein écran, même jour, même demande
+     (« vert dégradé progressif », « cercle qui se réduit ») : deux verts
+     plus vifs que le fond `--repos` pour rester lisibles dessus, en
+     dégradé le long du tracé plutôt qu'une teinte plate. Décoratif, sans
+     texte dessus : pas de contrainte WCAG à calculer ici. */
+  --repos-anneau: #5fe0a0;
+  --repos-anneau-fin: #2f9d63;
   /* Troisième couleur des repères de mensurations (16 septembre 2026,
      bras — torse et jambes réutilisent --accent et --baisse) : contraste
      recalculé comme le reste de la palette le 17 septembre 2026. */
@@ -149,9 +156,14 @@ body { display: flex; flex-direction: column; }
 
 .ligne-progression {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  /* Espace avant "Séance" égal à la marge de gauche (demande de
+     l'utilisateur le 18 septembre 2026, « bulle plus grande, jusqu'à
+     séance, avec le même espace que sa distance avec le bord gauche ») :
+     `justify-content: space-between` laissait tout l'espace restant vide
+     entre la pilule (largeur fixe) et le texte, plutôt que de le donner à
+     la pilule elle-même. */
+  gap: var(--marge);
   padding: 6px var(--marge) 8px;
   background: var(--fond-carte);
   border-bottom: 1px solid var(--trait);
@@ -295,6 +307,7 @@ body { display: flex; flex-direction: column; }
      le 17 septembre 2026 (même demande, répétée) : 4/5 -> 3/4. */
   aspect-ratio: 3 / 4;
   min-width: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -309,6 +322,27 @@ body { display: flex; flex-direction: column; }
 .calendrier-case.aujourdhui { border-color: var(--accent); border-width: 2px; }
 .calendrier-num { font-size: 13px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
 .calendrier-icone { font-size: 28px; line-height: 1; }
+/* Deux séances le même jour, ajouté le 18 septembre 2026 (signalé par
+   l'utilisateur, invisible jusque-là) : petit badge en coin plutôt qu'une
+   seconde icône, qui n'aurait pas eu la place sur une case de cette
+   taille. */
+.calendrier-multi {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--texte-faible);
+}
+/* Nuit renseignée ce jour-là (18 septembre 2026, demande de l'utilisateur),
+   indépendant de toute séance de sport : bleu le plus clair du dégradé de
+   fond de l'écran Sommeil (`#ecran-sommeil` plus bas), pas une couleur de
+   cette palette-ci, pour rester reconnaissable comme "du sommeil" d'un
+   coup d'œil. Texte blanc comme les trois classes de zone ci-dessous, même
+   besoin de contraste sur un fond soudain plus sombre. */
+.calendrier-case.a-sommeil { background: #5a7aa8; border-color: #5a7aa8; }
+.calendrier-case.a-sommeil .calendrier-num,
+.calendrier-case.a-sommeil .calendrier-multi { color: #fff; }
 /* Réutilisées par la vue mensuelle du sommeil (rendreMoisSommeil) : mêmes
    trois couleurs que l'état musculaire, sur le fond de la case plutôt que
    le texte. */
@@ -494,30 +528,28 @@ body { display: flex; flex-direction: column; }
    donc 80px de haut. Renommée `.sommeil-creneau.libre` (voir
    rendreSommeil() dans js/app.js) plutôt que réutilisée : deux sens
    différents de "vide" n'avaient pas à partager la même classe. */
-/* 17 par ligne (trois de moins que les 20 du 16 septembre 2026, demande de
-   l'utilisateur le 17 septembre 2026, « le plus grand possible ») : les
-   créneaux gagnent en taille, au prix de la garantie précédente (00h-8h sur
-   une seule ligne pile à 20/ligne) qui ne tient plus à ce pas — 00h-8h
-   déborde désormais sur la deuxième ligne. Choix assumé : l'utilisateur a
-   demandé cette réduction en connaissance du compromis, la taille du
-   créneau important plus ici que la continuité visuelle du bloc de
-   sommeil.
+/* 12 par ligne, quatre lignes égales depuis le 18 septembre 2026 (demande
+   de l'utilisateur : « 3 lignes, j'en veux 4 ») : 48 créneaux ÷ 12 tombe
+   juste, quatre lignes pleines plutôt que 17/17/14 (trois lignes, la
+   dernière incomplète, choix du 17 septembre 2026). Moins de colonnes par
+   ligne agrandit chaque créneau (même logique que le passage de 20 à 17
+   colonnes la veille, « le plus grand possible ») au prix d'un bloc plus
+   haut, compromis assumé par l'utilisateur.
 
    Grille plutôt que flex-wrap + largeur en calc() depuis le 17 septembre
-   2026 : à certaines largeurs d'écran, l'arrondi au pixel de 17 largeurs
+   2026 : à certaines largeurs d'écran, l'arrondi au pixel de largeurs
    calculées individuellement pouvait déborder de quelques dixièmes de
-   pixel et faire passer un dix-septième créneau à la ligne suivante,
-   éclatant la frise en 4 lignes inégales au lieu de 3 (signalé par
-   l'utilisateur). `grid-template-columns: repeat(17, 1fr)` répartit la
-   largeur restante déterministiquement entre les colonnes : le nombre par
-   ligne ne peut plus varier avec l'arrondi. Un abandon de la grille pour ce
-   même composant avait eu lieu plus tôt (voir plus haut, « pas un problème
-   de grille... aspect-ratio ignoré ») : `align-items: start` évite cette
-   fois l'étirement vertical par défaut d'une grille, qui écrasait
-   `aspect-ratio` sur les items. */
+   pixel et faire passer un créneau à la ligne suivante, éclatant la frise
+   en lignes inégales (signalé par l'utilisateur). `grid-template-columns:
+   repeat(12, 1fr)` répartit la largeur restante déterministiquement entre
+   les colonnes : le nombre par ligne ne peut plus varier avec l'arrondi.
+   Un abandon de la grille pour ce même composant avait eu lieu plus tôt
+   (voir plus haut, « pas un problème de grille... aspect-ratio ignoré ») :
+   `align-items: start` évite cette fois l'étirement vertical par défaut
+   d'une grille, qui écrasait `aspect-ratio` sur les items. */
 .sommeil-frise {
   display: grid;
-  grid-template-columns: repeat(17, 1fr);
+  grid-template-columns: repeat(12, 1fr);
   align-items: start;
   gap: 3px;
   margin-bottom: 8px;
@@ -543,10 +575,11 @@ body { display: flex; flex-direction: column; }
 .sommeil-creneau.coeur { aspect-ratio: 1 / 1.35; }
 .sommeil-creneau.coeur .sommeil-creneau-heure { font-size: 9px; }
 .sommeil-creneau.coeur .sommeil-creneau-sport { font-size: 13px; }
-/* Cible d'un repère en cours de glissement (voir .repere-fantome plus
-   bas) : contour blanc plutôt qu'un changement de fond, visible sur les
-   trois états (libre, sommeil, insomnie). */
-.sommeil-creneau.cible-glissement { outline: 2px solid #fff; outline-offset: 1px; }
+/* Repère armé (18 septembre 2026, remplace le glissement, voir plus bas
+   « Sélection puis dépose ») : contour pointillé sur toute la frise tant
+   qu'une puce attend sa case, visible sur les trois états (libre, sommeil,
+   insomnie) sans changer leur fond. */
+.sommeil-frise.armee .sommeil-creneau { outline: 1px dashed rgba(255, 255, 255, .5); outline-offset: -1px; }
 /* Heure incrustee un creneau sur deux (demande utilisateur, 16 septembre
    2026) : blanc semi-opaque, lisible sur les trois fonds (gris translucide,
    bleu, rouge) sans ajouter de contraste par etat. pointer-events:none pour
@@ -562,25 +595,6 @@ body { display: flex; flex-direction: column; }
    js/app.js. */
 .sommeil-creneau-sport { font-size: 11px; line-height: 1; pointer-events: none; }
 
-/* Icône suivant le doigt pendant le glissement d'un repère (17 septembre
-   2026) : pointer-events:none, sans quoi document.elementFromPoint()
-   (voir deplacerGlissementRepere() dans js/app.js) trouverait le fantôme
-   lui-même plutôt que le créneau dessous. Discret tant que le seuil de
-   déplacement n'est pas franchi (`.actif`), pour ne pas gêner la lecture
-   d'un simple appui qui n'ira nulle part. */
-.repere-fantome {
-  position: fixed;
-  z-index: 70;
-  transform: translate(-50%, -50%) scale(.9);
-  font-size: 20px;
-  line-height: 1;
-  pointer-events: none;
-  opacity: .55;
-}
-.repere-fantome.actif {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.3);
-}
 .sommeil-legende { font-size: 12px; color: rgba(255, 255, 255, .7); margin: 0 0 22px; }
 
 .sommeil-sous-titre {
@@ -614,6 +628,12 @@ body { display: flex; flex-direction: column; }
 }
 .raison-chip.choisi { background: var(--danger); border-color: var(--danger); }
 .journee-item.choisi { background: var(--accent-clair); border-color: var(--accent-clair); }
+/* Puce armée, en attente d'une case sur la frise (18 septembre 2026,
+   remplace le glissement : « un clique sélection émoticône, +1 clique
+   choix de l'endroit »). Contour blanc plutôt que le fond `.choisi`, pour
+   rester distinguable d'un sport déjà retenu ou d'une raison déjà cochée
+   sur la même puce. */
+.journee-item.arme { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
 /* Cible agrandie le 16 septembre 2026 (signalé difficile à toucher) : la
    croix ne mesurait que sa propre police (13px), au milieu d'un bouton par
    ailleurs cliquable pour incrémenter — un appui imprécis relançait le
@@ -1476,6 +1496,18 @@ body { display: flex; flex-direction: column; }
   overflow: hidden;
 }
 .jauge-pilule-remplissage {
+  /* `display: block` obligatoire : `#jauge-seance-remplissage` est un
+     `<span>` (voir index.html), et un élément inline ignore purement et
+     simplement `width`/`height` en CSS, quelle que soit la valeur posée en
+     JavaScript (`rendreJauge()`). Bug réel, pas un problème de couleur :
+     trouvé le 18 septembre 2026 après un premier correctif de contraste
+     insuffisant (signalé par l'utilisateur, capture à l'appui, « toujours
+     pas ») — `getBoundingClientRect()` donnait `width: 0` malgré un
+     `style.width` non nul, la pilule ne grandissait donc jamais, sur aucun
+     jour. Sans effet sur l'ancien remplissage en `<div>` de la minuterie de
+     repos plein écran (déjà block par défaut, remplacé depuis par l'anneau
+     qui se réduit), qui n'a jamais porté ce bug. */
+  display: block;
   height: 100%;
   width: 0%;
   background: var(--hausse);
@@ -1497,9 +1529,22 @@ body { display: flex; flex-direction: column; }
    tu as compris ») : contour gris foncé et fond gris clair plutôt que noir
    et blanc (la pilule de repos, teal plutôt que blanc pour le remplissage :
    deux jauges côte à côte dans la même teinte auraient été impossibles à
-   distinguer l'une de l'autre au premier coup d'œil). */
-.jauge-pilule-seance { width: 64px; height: 18px; flex: none; border-color: var(--texte-faible); background: var(--fond-champ); }
-.jauge-pilule-remplissage-accent { background: #fff; }
+   distinguer l'une de l'autre au premier coup d'œil).
+   Remplissage recoloré le 18 septembre 2026 (signalé par l'utilisateur,
+   « le oblong ne grandit pas ») : `--texte-faible` plutôt que blanc, même
+   teinte que le contour — voir `.jauge-pilule-remplissage` plus haut pour
+   la vraie cause (un `<span>` sans `display: block`), ce recolorage
+   n'étant qu'une amélioration de lisibilité en plus, le blanc d'origine
+   (1,15:1 sur ce fond gris clair) restant quasi invisible même une fois le
+   bug corrigé.
+
+   Largeur fixe (64px) abandonnée le même jour, demande suivante (« bulle
+   plus grande, jusqu'à séance, avec le même espace que sa distance avec le
+   bord gauche ») : `flex: 1` occupe tout l'espace laissé par
+   `justify-content: space-between` sur `.ligne-progression` (retiré, voir
+   plus haut), le texte "Séance HH:MM" gardant sa largeur de contenu. */
+.jauge-pilule-seance { flex: 1; height: 18px; border-color: var(--texte-faible); background: var(--fond-champ); }
+.jauge-pilule-remplissage-accent { background: var(--texte-faible); }
 
 /* Plein écran repris le 16 septembre 2026, à la demande de l'utilisateur,
    sur le même principe que .vague-demarrage (position:fixed, inset:0) :
@@ -1531,11 +1576,53 @@ body { display: flex; flex-direction: column; }
   touch-action: manipulation;
 }
 .minuterie-plein-ecran[hidden] { display: none; }
-.minuterie-plein-ecran .jauge-pilule {
-  width: min(70vw, 320px);
-  height: 32px;
-  border-width: 3px;
+
+/* Anneau qui se réduit (18 septembre 2026, remplace la jauge pilule
+   linéaire) : SVG à 100 unités de côté, tracé de rayon 45 donc de
+   circonférence 2π×45 ≈ 282,74, valeur reprise telle quelle dans
+   `stroke-dasharray` pour que `stroke-dashoffset` (piloté par battre() dans
+   js/app.js) puisse aller de 0 (anneau plein, repos qui démarre) à cette
+   même valeur (anneau vide, à zéro). Tourné -90deg pour partir du haut
+   plutôt que de la droite, sens horaire par défaut de `stroke-dashoffset`
+   croissant sur un cercle décrit dans le sens des aiguilles. */
+.minuterie-cercle {
+  position: relative;
+  width: min(65vw, 260px);
+  height: min(65vw, 260px);
 }
+.minuterie-anneau { width: 100%; height: 100%; display: block; }
+.minuterie-anneau-fond, .minuterie-anneau-progres {
+  fill: none;
+  stroke-width: 7;
+}
+.minuterie-anneau-fond { stroke: rgba(255, 255, 255, .25); }
+.minuterie-anneau-progres {
+  stroke-linecap: round;
+  stroke-dasharray: 282.74;
+  stroke-dashoffset: 0;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .minuterie-anneau-progres { transition: stroke-dashoffset .2s linear; }
+}
+.anneau-arret-debut { stop-color: var(--repos-anneau); }
+.anneau-arret-fin { stop-color: var(--repos-anneau-fin); }
+
+.minuterie-chiffres-cercle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #fff;
+  font-size: 48px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.minuterie-chiffres-cercle[hidden] { display: none; }
 
 /* Bilan affiché uniquement sur le dernier repos d'un exercice (demande de
    l'utilisateur le 16 septembre 2026) : le tonnage de l'exercice qui vient
@@ -1548,18 +1635,6 @@ body { display: flex; flex-direction: column; }
    contraste, et le signe du pourcentage suffit à lire le sens. */
 .minuterie-bilan { text-align: center; color: #fff; padding: 0 24px; max-width: 340px; }
 .minuterie-bilan[hidden] { display: none; }
-/* Chiffre repris le 17 septembre 2026 (demande de l'utilisateur), mais
-   seulement ici : le temps exact compte pour ce dernier repos, où il
-   sert à savoir combien de temps reste pour régler la machine suivante
-   (voir battre() dans js/app.js). Ailleurs, .jauge-pilule seule suffit. */
-.minuterie-bilan-chiffres {
-  margin: 0 0 4px;
-  font-size: 48px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-.minuterie-bilan-chiffres[hidden] { display: none; }
 .minuterie-bilan-tonnage {
   margin: 0;
   font-size: 17px;
@@ -1711,7 +1786,12 @@ body { display: flex; flex-direction: column; }
 .champ-large code { background: var(--fond-champ); padding: 1px 4px; border-radius: 6px; }
 
 .bascule { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
-.bascule input { width: 22px; height: 22px; accent-color: var(--accent-clair); }
+/* Agrandies le 18 septembre 2026 (signalé par l'utilisateur : les cases à
+   cocher de Réglages sont toutes à la même taille) : 22px tranchait avec
+   les cibles larges du reste de l'application ("doigts moites", voir
+   Décision de départ) ; 30px s'en rapproche sans dépasser la hauteur de
+   ligne existante (padding 12px déjà présent absorbe la différence). */
+.bascule input { width: 30px; height: 30px; flex: none; accent-color: var(--accent-clair); }
 
 hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 
@@ -1816,6 +1896,27 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
     #FDAE61, #F46D43, #D73027, #A50026);
 }
 .gainage-note { font-size: 12px; line-height: 1.5; color: var(--texte-faible); margin: 0 0 14px; }
+.gainage-duree-reglage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--texte-faible);
+}
+.gainage-duree-reglage .icone {
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  background: var(--fond-champ);
+}
+.gainage-duree-reglage span:nth-child(3) {
+  min-width: 34px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte);
+  font-weight: 500;
+}
 .gainage-choix { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .gainage-choix .type-course {
   flex: 1 1 auto;

@@ -493,6 +493,64 @@ def test_le_mannequin_de_dos_couvre_les_six_zones_de_la_liste(page):
         "ischios (x4), mollets (x6), avant-bras (x4)")
 
 
+def ouvrir_calendrier(page):
+    page.evaluate("afficher('menu')")
+    page.click("#bouton-menu-suivi")
+    page.click("#bouton-suivi-calendrier")
+    page.wait_for_selector(".calendrier-grille")
+
+
+def test_deux_seances_le_meme_jour_portent_un_badge_sur_le_calendrier(page):
+    """18 septembre 2026, signale par l'utilisateur : le calendrier ne
+    gardait que la premiere seance du jour (parJour), la seconde restait
+    invisible. Un badge ×N s'ajoute desormais des la deuxieme, l'icone
+    restant celle de la premiere."""
+    page.evaluate("""() => {
+      const h = (heures) => new Date(Date.now() - heures * 3600000).toISOString();
+      const seances = [
+        { id: 'M1', jour: 'J1', titre: 'Test', type: 'muscu', fin: h(3), envoye: true, exercices: [] },
+        { id: 'M2', jour: 'G', titre: 'Test', type: 'gainage', fin: h(1), envoye: true },
+      ];
+      localStorage.setItem('muscu.historique', JSON.stringify(seances));
+    }""")
+    page.reload()
+    ouvrir_calendrier(page)
+    aujourdhui = page.locator(".calendrier-case.aujourdhui")
+    assert aujourdhui.locator(".calendrier-multi").text_content() == "×2"
+
+
+def test_un_jour_sans_deuxieme_seance_n_a_pas_de_badge(page):
+    """Temoin du test precedent : une seule seance ce jour-la ne doit rien
+    afficher de plus que l'icone habituelle."""
+    page.evaluate("""() => {
+      const seance = {
+        id: 'M1', jour: 'J1', titre: 'Test', type: 'muscu',
+        fin: new Date().toISOString(), envoye: true, exercices: [],
+      };
+      localStorage.setItem('muscu.historique', JSON.stringify([seance]));
+    }""")
+    page.reload()
+    ouvrir_calendrier(page)
+    aujourdhui = page.locator(".calendrier-case.aujourdhui")
+    assert aujourdhui.locator(".calendrier-multi").count() == 0
+
+
+def test_une_nuit_renseignee_colore_le_jour_en_bleu_sur_le_calendrier(page):
+    """18 septembre 2026, demande de l'utilisateur : un jour dont la nuit a
+    ete renseignee (independamment de toute seance de sport) prend le bleu
+    le plus clair du degrade de fond de l'ecran Sommeil, pour se voir d'un
+    coup d'oeil sur ce calendrier-ci."""
+    page.evaluate("""() => {
+      const cleAujourdhui = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const nuit = { cle: cleAujourdhui, insomnies: [], raisons: [] };
+      localStorage.setItem('muscu.sommeil', JSON.stringify([nuit]));
+    }""")
+    page.reload()
+    ouvrir_calendrier(page)
+    aujourdhui = page.locator(".calendrier-case.aujourdhui")
+    assert "a-sommeil" in aujourdhui.get_attribute("class")
+
+
 def ouvrir_sommeil(page):
     # La fixture laisse la page sur Sport (via "Sport" pour le temoin des
     # cartes de jour) : revenir au menu par script plutot que de supposer
@@ -506,46 +564,59 @@ def ouvrir_sommeil(page):
 def test_le_coeur_de_la_frise_de_sommeil_est_bleu_par_defaut(page):
     """16 septembre 2026 : 23h30 a 8h est suppose du sommeil sans rien a
     saisir pour une nuit ordinaire ; en dehors, rien ne s'affiche tant
-    qu'on n'y touche pas."""
+    qu'on n'y touche pas. Fenetre demarrant a 23h depuis le 18 septembre
+    2026 (etait 22h), voir SOMMEIL_DEBUT_MIN dans js/app.js."""
     ouvrir_sommeil(page)
     creneaux = page.locator(".sommeil-creneau")
     assert creneaux.count() == 48   # 24h, depuis le 16 septembre 2026 (etait 26, 22h-11h)
-    assert "sommeil" in creneaux.nth(3).get_attribute("class")    # 23:30
-    assert "sommeil" in creneaux.nth(19).get_attribute("class")   # 07:30, dernier du coeur
-    assert "libre" in creneaux.nth(0).get_attribute("class")      # 22:00
-    assert "libre" in creneaux.nth(20).get_attribute("class")     # 08:00
+    assert "sommeil" in creneaux.nth(1).get_attribute("class")    # 23:30
+    assert "sommeil" in creneaux.nth(17).get_attribute("class")   # 07:30, dernier du coeur
+    assert "libre" in creneaux.nth(0).get_attribute("class")      # 23:00
+    assert "libre" in creneaux.nth(18).get_attribute("class")     # 08:00
 
 
-def test_la_frise_de_sommeil_tient_dix_sept_creneaux_par_ligne(page):
-    """16 septembre 2026 : 20 creneaux par ligne (voir .sommeil-creneau dans
-    css/style.css), choisis pour que 22h-7h30 (le coeur de nuit, indices 0 a
-    19) tombe entierement sur la premiere ligne. Reduit a 17 le 17 septembre
-    2026 (demande de l'utilisateur, creneaux "le plus grand possible") :
-    compromis assume, 22h-7h30 peut desormais deborder sur la deuxieme ligne
-    (verifie plus bas), au profit de creneaux plus grands. Verifie par la
-    position verticale plutot que par un nombre par ligne, la mise en page
-    n'exposant rien d'autre a lire."""
+def test_la_frise_de_sommeil_tient_douze_creneaux_par_ligne(page):
+    """16 septembre 2026 : 20 creneaux par ligne au depart (voir
+    .sommeil-creneau dans css/style.css), reduit a 17 le 17 septembre 2026
+    (creneaux "le plus grand possible"), puis a 12 le 18 septembre 2026
+    (demande de l'utilisateur : "3 lignes, j'en veux 4") : 48 creneaux ÷ 12
+    tombe juste, quatre lignes pleines plutot que trois dont une
+    incomplete. Verifie par la position verticale plutot que par un nombre
+    par ligne, la mise en page n'exposant rien d'autre a lire."""
     ouvrir_sommeil(page)
     creneaux = page.locator(".sommeil-creneau")
     haut_premiere_ligne = creneaux.nth(0).bounding_box()["y"]
-    assert creneaux.nth(16).bounding_box()["y"] == haut_premiere_ligne     # dernier de la premiere ligne
-    assert creneaux.nth(17).bounding_box()["y"] > haut_premiere_ligne      # premier de la deuxieme ligne
-    assert creneaux.nth(19).bounding_box()["y"] > haut_premiere_ligne      # 07:30 : le coeur deborde desormais
+    assert creneaux.nth(11).bounding_box()["y"] == haut_premiere_ligne     # dernier de la premiere ligne
+    assert creneaux.nth(12).bounding_box()["y"] > haut_premiere_ligne      # premier de la deuxieme ligne
 
 
 def test_toucher_un_creneau_de_sommeil_bascule_en_insomnie(page):
-    """Meme demande : un appui sur un creneau bleu le passe en rouge, un
-    second l'y ramene. Sur un creneau vide, l'appui en cree un rouge."""
+    """18 septembre 2026 : trois etats en boucle sur toute la frise, dans le
+    coeur comme en dehors (demande de l'utilisateur, "1 clic bleu, +1
+    clique rouge, +1 clique grise" puis "le bleu active par defaut doit
+    aussi pouvoir se desactiver") : bleu -> rouge -> grise -> bleu. Avant
+    cette date, le coeur n'avait que deux etats (bleu/rouge) et l'exterieur
+    ne pouvait que creer une insomnie ; les deux zones suivent maintenant la
+    meme boucle, seule la representation du "grise" differe cote donnees
+    (voir etatCreneauSommeil() dans js/app.js)."""
     ouvrir_sommeil(page)
     coeur = page.locator(".sommeil-creneau").nth(3)
+    assert "sommeil" in coeur.get_attribute("class")
     coeur.click()
     assert "insomnie" in coeur.get_attribute("class")
+    coeur.click()
+    assert "libre" in coeur.get_attribute("class")
     coeur.click()
     assert "sommeil" in coeur.get_attribute("class")
 
     hors_coeur = page.locator(".sommeil-creneau").nth(0)
+    assert "libre" in hors_coeur.get_attribute("class")
+    hors_coeur.click()
+    assert "sommeil" in hors_coeur.get_attribute("class")
     hors_coeur.click()
     assert "insomnie" in hors_coeur.get_attribute("class")
+    hors_coeur.click()
+    assert "libre" in hors_coeur.get_attribute("class")
 
 
 def test_le_compteur_cafe_du_sommeil_incremente(page):
@@ -615,52 +686,44 @@ def test_sommeil_sans_barre_ni_titre(page):
     assert retour.bounding_box()["y"] < 20
 
 
-def test_glisser_une_puce_journee_pose_un_repere_sur_la_frise(page):
-    """17 septembre 2026, demande de l'utilisateur : appui-glisse depuis une
-    puce "La journee" vers un creneau pour y poser un repere a une heure
-    precise, en plus du geste existant (tap = compteur/bascule, inchange,
-    verifie ici absent de tout effet de bord)."""
+def test_armer_une_puce_journee_pose_un_repere_sur_la_frise(page):
+    """17 septembre 2026, demande de l'utilisateur : depuis une puce "La
+    journee" vers un creneau pour y poser un repere a une heure precise, en
+    plus du geste existant (tap = compteur/bascule, inchange).
+
+    18 septembre 2026, changement de strategie (demande de l'utilisateur :
+    "le clique-glisse ne fonctionne pas, il lache les emoticones a mi
+    chemin") : le glissement au doigt, peu fiable, cede la place a deux
+    appuis simples, la puce s'armant (surlignee) au premier avant que le
+    second, sur une case de la frise, n'y depose le repere."""
     ouvrir_sommeil(page)
     puce = page.locator("#sommeil-journee .journee-item", has_text="Café")
     creneau_cible = page.locator(".sommeil-creneau").nth(10)
-    boite_puce = puce.bounding_box()
-    boite_cible = creneau_cible.bounding_box()
 
-    page.mouse.move(boite_puce["x"] + boite_puce["width"] / 2, boite_puce["y"] + boite_puce["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(boite_cible["x"] + boite_cible["width"] / 2, boite_cible["y"] + boite_cible["height"] / 2, steps=10)
-    page.mouse.up()
-    # Le depot (placerRepereFrise) est differe d'un tick cote application
-    # (voir deposerGlissementRepere dans js/app.js), pour laisser le click
-    # natif qui suit le relachement trouver le bon bouton avant le
-    # redessin : le laisser passer avant de lire le DOM.
-    page.wait_for_timeout(100)
+    puce.click()
+    assert "arme" in puce.get_attribute("class")
+    creneau_cible.click()
 
     assert creneau_cible.locator(".sommeil-creneau-sport").count() == 1
-    assert "· 1" not in puce.text_content(), "le tap normal (compteur) n'a pas a s'ajouter au glissement"
+    assert "arme" not in puce.get_attribute("class")
+    assert "· 1" in puce.text_content(), "le tap qui arme reste aussi le tap du compteur, inchange"
 
 
-def test_appui_long_sur_un_repere_le_supprime(page):
-    """Troisieme geste demande le meme jour : appui simple = bascule
-    l'insomnie (inchange), glissement = pose un repere (test precedent),
-    appui long sur un creneau qui en porte un = le retire, sans basculer
-    l'insomnie en plus."""
+def test_un_appui_sur_un_repere_le_supprime(page):
+    """Deux appuis distincts sur la frise (simplifie le 17 septembre 2026,
+    demande de l'utilisateur : "pas 3", un troisieme geste d'appui long
+    avait existe quelques heures) : un appui simple sur un creneau nu
+    bascule l'insomnie (inchange), un appui simple sur un creneau qui porte
+    deja un repere le retire directement, sans basculer l'insomnie en
+    plus."""
     ouvrir_sommeil(page)
     puce = page.locator("#sommeil-journee .journee-item", has_text="Café")
     creneau_cible = page.locator(".sommeil-creneau").nth(10)
-    boite_puce = puce.bounding_box()
-    boite_cible = creneau_cible.bounding_box()
-    page.mouse.move(boite_puce["x"] + boite_puce["width"] / 2, boite_puce["y"] + boite_puce["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(boite_cible["x"] + boite_cible["width"] / 2, boite_cible["y"] + boite_cible["height"] / 2, steps=10)
-    page.mouse.up()
-    page.wait_for_timeout(100)
+    puce.click()
+    creneau_cible.click()
     assert creneau_cible.locator(".sommeil-creneau-sport").count() == 1
 
-    creneau_cible.hover()
-    page.mouse.down()
-    page.wait_for_timeout(650)
-    page.mouse.up()
+    creneau_cible.click()
 
     assert creneau_cible.locator(".sommeil-creneau-sport").count() == 0
     assert "insomnie" not in creneau_cible.get_attribute("class")
@@ -1118,9 +1181,10 @@ def test_les_consignes_sont_sauvegardees_a_la_synchronisation(page):
                       body='{"ok": true, "classeur": "Test"}')
 
     page.route("https://exemple-test.invalid/pont", intercepter)
-    # Reglages vit sur le menu principal (16 septembre 2026), pas sur Sport.
+    # Reglages vit sur le menu principal (16 septembre 2026), pas sur Sport,
+    # en troisieme carte depuis le 18 septembre 2026 (etait un engrenage).
     page.click("#bouton-sport-retour")
-    page.click("#bouton-reglages")
+    page.click("#bouton-menu-reglages")
     page.fill("#reglage-pont", "https://exemple-test.invalid/pont")
     page.click("#bouton-tester-pont")
     page.wait_for_selector("#reglages-message.ok", timeout=8000)
@@ -1154,7 +1218,7 @@ def test_le_sommeil_est_sauvegarde_a_la_synchronisation(page):
                       body='{"ok": true, "classeur": "Test"}')
 
     page.route("https://exemple-test.invalid/pont", intercepter)
-    page.click("#bouton-reglages")
+    page.click("#bouton-menu-reglages")
     page.fill("#reglage-pont", "https://exemple-test.invalid/pont")
     page.click("#bouton-tester-pont")
     page.wait_for_selector("#reglages-message.ok", timeout=8000)
