@@ -315,6 +315,28 @@ body { display: flex; flex-direction: column; }
   background: conic-gradient(from 0deg,
     #0B132B, #1C2541, #3A506B, #5BC0BE, #F4F4F4, #FF6B6B, #0B132B);
 }
+/* Plus de barre ni de titre depuis le 23 septembre 2026 (demande de
+   l'utilisateur, capture Pixel 9 à l'appui : « supprimer la bande blanche
+   en haut pour que le dégradé prenne 100 % de l'écran », « supprimer le
+   nom Sport ») : même geste que Sommeil le 17 septembre 2026 (voir
+   #ecran-sommeil plus bas), seul le retour reste, flottant. Fond
+   transparent-flou plutôt que blanc plein comme sur Sommeil : la palette
+   de cet écran n'est pas toujours sombre (Horizon Shift passe par du
+   clair), un icône uni n'y resterait pas lisible partout, la même
+   transparence que .carte-jour tient quelle que soit la teinte dessous. */
+#ecran-accueil {
+  padding-top: calc(env(safe-area-inset-top) + 60px);
+}
+.icone-sport-flottant {
+  position: absolute;
+  top: env(safe-area-inset-top);
+  left: 8px;
+  z-index: 5;
+  background: rgba(255, 255, 255, .3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--rayon-plein);
+}
 /* Suivi : Quiet Voltage. */
 #ecran-suivi .fond-vivant {
   background: conic-gradient(from 0deg,
@@ -979,8 +1001,15 @@ body { display: flex; flex-direction: column; }
   flex: 1;
   overflow-y: auto;
   display: grid;
-  gap: 8px;
-  align-content: start;
+  /* Espacées sur toute la hauteur disponible plutôt que tassées en haut
+     (demande de l'utilisateur le 23 septembre 2026, capture Pixel 9) :
+     `space-evenly` répartit les sept cartes sur tout l'écran quand elles
+     tiennent, et retombe sur le comportement de `start` sans rien casser
+     si un écran plus petit ou un jour de plus les fait déborder (l'espace
+     supplémentaire à distribuer devient nul, le défilement prend le relais
+     comme avant). */
+  gap: 14px;
+  align-content: space-evenly;
 }
 
 .carte-jour {
@@ -1005,7 +1034,10 @@ body { display: flex; flex-direction: column; }
   box-shadow: 0 1px 2px rgba(20, 32, 29, .06);
   border: 1px solid var(--trait);
   border-radius: var(--rayon);
-  padding: 8px 12px;
+  /* Agrandies le 23 septembre 2026 (demande de l'utilisateur, même capture
+     que l'espacement ci-dessus) : plus de place autour du contenu une fois
+     les sept cartes étalées sur tout l'écran plutôt que tassées. */
+  padding: 14px 16px;
   color: var(--texte);
   font: inherit;
   cursor: pointer;
@@ -1015,7 +1047,7 @@ body { display: flex; flex-direction: column; }
 .carte-jour::before {
   content: attr(data-icone);
   grid-row: 1 / span 3;
-  font-size: 34px;
+  font-size: 42px;
   line-height: 1;
 }
 .carte-jour > div { grid-column: 2; }
@@ -1032,9 +1064,9 @@ body { display: flex; flex-direction: column; }
   font-weight: 700;
   letter-spacing: .5px;
 }
-.carte-nom { font-size: 15px; font-weight: 600; margin: 2px 0 3px; }
+.carte-nom { font-size: 17px; font-weight: 600; margin: 3px 0 4px; }
 .carte-detail {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--texte-faible);
   white-space: nowrap;
   overflow: hidden;

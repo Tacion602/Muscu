@@ -1166,6 +1166,28 @@ que soit le sous-menu ensuite ouvert.
         (`.champ-large input`/`select`, scopé à `#ecran-reglages` pour ne
         pas toucher les mêmes classes sur l'écran de fin ou les
         mensurations) passent en transparent flouté, même esprit.
+      - **Sport : plus de barre ni de titre depuis le 23 septembre 2026**
+        (demande de l'utilisateur, capture Pixel 9 à l'appui : « supprimer
+        la bande blanche en haut pour que le dégradé prenne 100 % de
+        l'écran », « supprimer le nom Sport ») : même geste que Sommeil le
+        17 septembre 2026 (voir plus bas, `#ecran-sommeil`), seul le retour
+        reste, flottant (`.icone-sport-flottant`, absolu, calé sur
+        `env(safe-area-inset-top)`). Fond transparent-flou plutôt que blanc
+        plein comme sur Sommeil : la palette de cet écran (Horizon Shift)
+        n'est pas toujours sombre, contrairement au dégradé fixe nuit de
+        Sommeil, un icône uni n'y resterait donc pas lisible partout — même
+        traitement que `.carte-jour`. `#ecran-accueil` gagne un
+        `padding-top` compensant l'absence de barre, scopé à lui seul (les
+        trois autres écrans du chantier gardent leur barre).
+        **Cartes espacées sur toute la hauteur et agrandies, même
+        capture** (« bulles espacement pour prendre toute la hauteur de
+        l'écran et agrandissement ») : `.liste-jours` passe de
+        `align-content: start` à `space-evenly`, qui retombe sur le même
+        comportement que `start` si les sept cartes finissent par déborder
+        (plus de jours, écran plus petit) — l'espace à distribuer devient
+        nul, le défilement déjà en place prend le relais sans rien de plus
+        à gérer. `.carte-jour` (padding, emoji, nom, détail) et l'espace
+        entre cartes agrandis en proportion.
 - **Direction visuelle : mode clair, référence Strava**, choisi via
   `impeccable.style` (outillage de conception introduit ce jour-là, voir
   « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
