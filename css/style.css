@@ -218,27 +218,119 @@ body { display: flex; flex-direction: column; }
    `align-items: center` sur `.liste-menu` : à l'essai, ce dernier casse la
    largeur en pourcentage des cartes (chacune revient à sa largeur de
    contenu au lieu de 100 %, inégale entre « Sport » et « Suivi »). */
-/* Dégradé dynamique de la page d'accueil (demande de l'utilisateur le
-   17 septembre 2026) : un dérivé très doux de --fond, jamais assez marqué
-   pour gêner la lecture du texte posé dessus (les cartes elles-mêmes restent
-   sur --fond-carte, opaque). Vertical, plus clair en haut et plus sombre en
-   bas (précision de l'utilisateur, même lecture que le dégradé de Sommeil) :
-   un dégradé deux fois plus haut que l'écran (`background-size: 100% 160%`)
-   dont seule la fenêtre de position dérive lentement — la tranche visible
-   reste donc toujours une portion croissante du même dégradé, jamais
-   inversée, tout en restant "dynamique" (la portion affichée change avec le
-   temps). Coupé sous prefers-reduced-motion, comme le reste des animations
-   de l'application. */
-#ecran-menu {
-  background: linear-gradient(180deg, #faf9f6 0%, #f2efe8 45%, #e4ddc9 100%);
-  background-size: 100% 160%;
+/* Dégradé dynamique de la page d'accueil, demande de l'utilisateur le
+   17 septembre 2026 (vertical, dérivé doux de --fond, voir versions
+   précédentes dans l'historique git), remplacé le 22 septembre 2026 par un
+   « fond vivant » technique reprise d'un CodePen (Vanessa Victorino,
+   "Living Palette System", conic-gradient flouté en rotation) : `.fond-
+   vivant` est une couche à part plutôt qu'un `background` sur `#ecran-menu`
+   lui-même, la rotation demandant un `transform` que `background-position`
+   ne permet pas. `filter: blur()` adoucit tout, l'en-tête et les cartes
+   restant opaques (`--fond-carte`) au-dessus : la lisibilité du texte n'est
+   pas concernée, comme pour l'ancien dégradé. Coupé sous
+   prefers-reduced-motion, comme le reste des animations de l'application.
+
+   Cinq palettes du CodePen d'origine, sélectionnables, deuxième demande le
+   même jour (« switch pour choisir entre les 5 propositions », défaut
+   Desert Bloom) : reprises telles quelles cette fois, pas la palette
+   pastel déjà en place de l'essai précédent. `--fv1` à `--fv6` par palette,
+   choisies via un attribut `data-degrade` sur `<html>` plutôt qu'une
+   variable unique : `.fond-vivant` n'a besoin de connaître que les six noms
+   de variable, jamais les couleurs, `appliquerDegradeAccueil()` (js/app.js)
+   ne fait que poser l'attribut depuis `reglages.degradeAccueil`. Premier et
+   dernier arrêt du dégradé identiques (`--fv1` répété en fin de liste) pour
+   que la boucle ne montre pas de couture au raccord. */
+:root, [data-degrade="desert"] {
+  --fv1: #3E2723; --fv2: #6D4C41; --fv3: #D7CCC8;
+  --fv4: #FFAB91; --fv5: #FF7043; --fv6: #FFF3E0;
+}
+[data-degrade="horizon"] {
+  --fv1: #0B132B; --fv2: #1C2541; --fv3: #3A506B;
+  --fv4: #5BC0BE; --fv5: #F4F4F4; --fv6: #FF6B6B;
+}
+[data-degrade="voltage"] {
+  --fv1: #1A1A1D; --fv2: #4E4E50; --fv3: #6F2232;
+  --fv4: #950740; --fv5: #C3073F; --fv6: #EAEAEA;
+}
+[data-degrade="filtered"] {
+  --fv1: #1F1D36; --fv2: #3F3351; --fv3: #864879;
+  --fv4: #E9A6A6; --fv5: #F0F0F0; --fv6: #2E2E2E;
+}
+[data-degrade="cosmic"] {
+  --fv1: #0F0F1B; --fv2: #1B1B2F; --fv3: #16213E;
+  --fv4: #533483; --fv5: #E94560; --fv6: #F5F5F5;
+}
+/* Fond vivant étendu à Sport, Suivi et Réglages le 23 septembre 2026
+   (demande de l'utilisateur : « même principe » que l'accueil, « dégradé
+   couleur différente », « fond transparent organisé comme la page
+   d'accueil ») : quatre écrans, quatre teintes (l'accueil garde sa
+   palette choisie par l'utilisateur, les trois autres une des quatre
+   palettes du CodePen restantes, fixe, pour rester visuellement
+   distinctes de l'accueil et entre elles). Propriétés communes
+   (géométrie, flou, échelle) regroupées sur `.fond-vivant` nu plutôt que
+   répétées par écran ; seule la couleur change, voir plus bas. */
+#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages {
+  position: relative;
+  overflow: hidden;
+  background: var(--fond);
+}
+#ecran-menu > *:not(.fond-vivant),
+#ecran-accueil > *:not(.fond-vivant),
+#ecran-suivi > *:not(.fond-vivant),
+#ecran-reglages > *:not(.fond-vivant) { position: relative; z-index: 1; }
+/* Réduit en taille pour un dégradé plus fin (23 septembre 2026, « scale
+   réduit... fin ») : `scale(.55)` combiné à la rotation dans le keyframe,
+   sans quoi l'animation repartirait de l'échelle 1 au premier tour.
+
+   Dimensionné en `vmax` plutôt qu'en `inset` en pourcentage, corrigé le
+   même jour (signalé par l'utilisateur : un bord clair — presque blanc,
+   `--fond` — apparaissait aux coins pendant la rotation) : `inset: -25%`
+   donne un carré basé sur la largeur ET la hauteur du conteneur
+   séparément, plus petit que sa diagonale une fois réduit à l'échelle
+   .55 — insuffisant pour couvrir les coins d'un écran de téléphone
+   (portrait, très étroit) à toutes les rotations. `220vmax` (basé sur la
+   plus grande dimension du viewport) donne un carré nettement plus grand
+   que la diagonale de l'écran même une fois réduit, couvrant les coins
+   quel que soit l'angle. */
+.fond-vivant {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 220vmax;
+  height: 220vmax;
+  margin-top: -110vmax;
+  margin-left: -110vmax;
+  z-index: 0;
+  filter: blur(70px) saturate(120%);
+  opacity: .6;
+  transform: scale(.55);
+}
+#ecran-menu .fond-vivant {
+  background: conic-gradient(from 0deg,
+    var(--fv1), var(--fv2), var(--fv3), var(--fv4), var(--fv5), var(--fv6), var(--fv1));
+}
+/* Sport (exercices) : Horizon Shift, palette fixe (pas de switch comme
+   l'accueil, non demandé ici). */
+#ecran-accueil .fond-vivant {
+  background: conic-gradient(from 0deg,
+    #0B132B, #1C2541, #3A506B, #5BC0BE, #F4F4F4, #FF6B6B, #0B132B);
+}
+/* Suivi : Quiet Voltage. */
+#ecran-suivi .fond-vivant {
+  background: conic-gradient(from 0deg,
+    #1A1A1D, #4E4E50, #6F2232, #950740, #C3073F, #EAEAEA, #1A1A1D);
+}
+/* Réglages : Filtered Reality. */
+#ecran-reglages .fond-vivant {
+  background: conic-gradient(from 0deg,
+    #1F1D36, #3F3351, #864879, #E9A6A6, #F0F0F0, #2E2E2E, #1F1D36);
 }
 @media (prefers-reduced-motion: no-preference) {
-  #ecran-menu { animation: degrade-accueil 20s ease-in-out infinite alternate; }
+  .fond-vivant { animation: fond-vivant-rotation 45s linear infinite; }
 }
-@keyframes degrade-accueil {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 0% 100%; }
+@keyframes fond-vivant-rotation {
+  from { transform: scale(.55) rotate(0deg); }
+  to { transform: scale(.55) rotate(360deg); }
 }
 #ecran-menu .liste-menu { justify-content: center; }
 #ecran-menu .carte-menu { max-width: 300px; margin-inline: auto; }
@@ -247,6 +339,20 @@ body { display: flex; flex-direction: column; }
    deux grandes cartes du tout premier écran sont concernées, la variante
    .carte-menu-petite du sous-menu Suivi garde sa mise en page en ligne. */
 #ecran-menu .carte-menu { align-items: center; text-align: center; }
+/* Cartes transparentes le 23 septembre 2026 (demande de l'utilisateur),
+   pour laisser voir le fond vivant tourner derrière : `--fond-carte` (blanc)
+   en rgba plutôt que la variable telle quelle. 60% d'abord (alpha .4), puis
+   70% (alpha .3, deuxième demande le même jour). `backdrop-filter: blur()`
+   en plus, pas demandé mais nécessaire : sans lui, le texte perd toute
+   lisibilité dès que le dégradé passe une teinte sombre dessous (Cosmic
+   Ink, Quiet Voltage) — un flou léger adoucit le fond sans revenir à une
+   carte opaque. Scopé à `#ecran-menu` : `.carte-menu-petite` du sous-menu
+   Suivi, sur fond uni, n'a aucune raison d'être concernée. */
+#ecran-menu .carte-menu {
+  background: rgba(255, 255, 255, .3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
 .carte-menu {
   display: flex;
   flex-direction: column;
@@ -271,12 +377,22 @@ body { display: flex; flex-direction: column; }
 /* Menu Suivi : mêmes cartes, plus basses, sans détail (trois entrées,
    16 septembre 2026). */
 .liste-menu-petite { padding: var(--marge); gap: 8px; }
+/* Largeur plafonnée, centrée, et fond transparent le 23 septembre 2026
+   (demande de l'utilisateur : « même largeur, centrée », « organisé comme
+   la page d'accueil ») : même plafond que les cartes de l'accueil et de
+   Sport, pour laisser voir le fond vivant de cet écran (voir plus haut)
+   sur les côtés. */
 .carte-menu-petite {
   min-height: auto;
   flex-direction: row;
   align-items: center;
   gap: 14px;
   padding: 16px 18px;
+  max-width: 300px;
+  margin-inline: auto;
+  background: rgba(255, 255, 255, .3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .carte-menu-petite .carte-menu-icone { font-size: 28px; margin-bottom: 0; }
 .carte-menu-petite .carte-menu-nom { font-size: 17px; }
@@ -873,8 +989,19 @@ body { display: flex; flex-direction: column; }
   column-gap: 12px;
   align-items: center;
   width: 100%;
+  /* Largeur plafonnée et centrée le 23 septembre 2026 (demande de
+     l'utilisateur : « même largeur, centrée », « organisé comme la page
+     d'accueil »), revenant sur le plein-largeur du 14 septembre 2026 —
+     cette fois pour laisser voir le fond vivant tourner sur les côtés,
+     raison qui n'existait pas alors. Même plafond que les cartes de
+     l'accueil (`#ecran-menu .carte-menu`), pour une cohérence visuelle
+     entre les deux écrans. */
+  max-width: 300px;
+  margin-inline: auto;
   text-align: left;
-  background: var(--fond-carte);
+  background: rgba(255, 255, 255, .3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 1px 2px rgba(20, 32, 29, .06);
   border: 1px solid var(--trait);
   border-radius: var(--rayon);
@@ -1297,7 +1424,7 @@ body { display: flex; flex-direction: column; }
    12 septembre 2026. */
 .tableau-titres, .ligne-serie {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.8fr 30px;
+  grid-template-columns: 1fr 1fr 0.8fr 30px 30px;
   gap: 8px;
   align-items: center;
 }
@@ -1359,6 +1486,28 @@ body { display: flex; flex-direction: column; }
   touch-action: manipulation;
 }
 .ligne-serie-suppr:active { color: var(--danger); }
+
+/* Rest-pause, ajouté le 23 septembre 2026 (demande de l'utilisateur, après
+   question coach sur l'intérêt de la méthode : outil légitime d'accumulation
+   de volume proche de l'échec, pas un mécanisme à part) : marque une série
+   comme un mini-bloc de rest-pause (quelques secondes de repos puis 2-3-5
+   répétitions de plus), chaque relance restant sa propre ligne. Bouton
+   bascule plutôt qu'une case à cocher native, même registre visuel que la
+   croix de suppression juste à côté (30px, discret au repos). */
+.ligne-serie-restpause {
+  width: 30px;
+  height: 44px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-champ);
+  color: var(--texte-faible);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.ligne-serie-restpause.actif { background: var(--accent-clair); border-color: var(--accent-clair); color: #fff; }
 
 .ajouter {
   width: 100%;
@@ -1694,6 +1843,101 @@ body { display: flex; flex-direction: column; }
 .principal.grand { padding: 18px; font-size: 17px; margin-top: 20px; }
 .principal[disabled] { opacity: .5; }
 
+/* Bouton « Enregistrer et synchroniser » de l'écran de fin, animé le
+   23 septembre 2026 (demande de l'utilisateur, lien CodePen fourni) :
+   même empreinte que .principal.grand (pleine largeur, même marge), mais
+   un cercle à gauche qui tourne pendant l'envoi (.envoi) puis affiche une
+   coche à l'arrivée (.envoye) plutôt qu'un simple texte de bouton. Anneau
+   en SVG, même principe que .minuterie-anneau (stroke-dasharray/-dashoffset)
+   mais tournant indéfiniment (durée réelle de l'envoi inconnue à l'avance,
+   contrairement au repos qui a une durée fixe) plutôt qu'à décompte. */
+.bouton-sync {
+  width: 100%;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 7px;
+  border: 0;
+  border-radius: var(--rayon-plein);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .3s ease;
+}
+.bouton-sync[disabled] { pointer-events: none; }
+.bouton-sync-cercle {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bouton-sync-anneau {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  transform: rotate(-90deg);
+}
+.bouton-sync-anneau-trace {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 100.5;
+  stroke-dashoffset: 100.5;
+  opacity: 0;
+}
+.bouton-sync-icone { font-size: 20px; line-height: 1; transition: opacity .2s ease, transform .3s ease; }
+.bouton-sync-check {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  opacity: 0;
+  transform: scale(.4);
+  transition: opacity .25s ease, transform .35s ease;
+}
+.bouton-sync-texte {
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 300px;
+  transition: max-width .35s ease, opacity .25s ease, margin-left .35s ease;
+}
+/* En cours d'envoi : l'icône disparaît, l'anneau tourne, le texte se
+   résorbe pour ne laisser que le cercle (même idée que le bouton du
+   CodePen, qui se réduit à un rond pendant le téléchargement). */
+.bouton-sync.envoi .bouton-sync-icone { opacity: 0; transform: scale(.5); }
+.bouton-sync.envoi .bouton-sync-anneau-trace {
+  opacity: 1;
+  animation: bouton-sync-rotation 1s linear infinite;
+}
+.bouton-sync.envoi .bouton-sync-texte { max-width: 0; opacity: 0; margin-left: -14px; }
+@keyframes bouton-sync-rotation {
+  0% { stroke-dashoffset: 100.5; transform: rotate(0deg); }
+  50% { stroke-dashoffset: 25; }
+  100% { stroke-dashoffset: 100.5; transform: rotate(360deg); }
+}
+/* Envoyé : fond vert (--hausse), coche à la place de l'icône, texte de
+   retour. */
+.bouton-sync.envoye { background: var(--hausse); }
+.bouton-sync.envoye .bouton-sync-anneau-trace { opacity: 0; animation: none; }
+.bouton-sync.envoye .bouton-sync-icone { opacity: 0; }
+.bouton-sync.envoye .bouton-sync-check { opacity: 1; transform: scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  .bouton-sync.envoi .bouton-sync-anneau-trace { animation: none; opacity: 1; stroke-dashoffset: 25; }
+}
+
 .discret {
   width: 100%;
   padding: 13px;
@@ -1772,7 +2016,7 @@ body { display: flex; flex-direction: column; }
 
 .champ-large { display: block; margin-bottom: 18px; }
 .champ-large > span { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-.champ-large input {
+.champ-large input, .champ-large select {
   width: 100%;
   height: 46px;
   padding: 0 12px;
@@ -1784,6 +2028,18 @@ body { display: flex; flex-direction: column; }
 }
 .champ-large small { display: block; margin-top: 6px; font-size: 12px; color: var(--texte-faible); line-height: 1.5; }
 .champ-large code { background: var(--fond-champ); padding: 1px 4px; border-radius: 6px; }
+/* Champs transparents sur l'écran Réglages le 23 septembre 2026 (demande
+   de l'utilisateur : « organisé comme la page d'accueil »), pour laisser
+   voir le fond vivant de cet écran (voir plus haut) : scopé à
+   `#ecran-reglages`, `.champ-large` servant aussi à l'écran de fin
+   (remarque, blessure) et aux mensurations, sans fond vivant, pas
+   concernés. */
+#ecran-reglages .champ-large input,
+#ecran-reglages .champ-large select {
+  background: rgba(255, 255, 255, .3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
 
 .bascule { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
 /* Agrandies le 18 septembre 2026 (signalé par l'utilisateur : les cases à

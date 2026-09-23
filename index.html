@@ -18,6 +18,10 @@
      16 septembre 2026, Réglages ajouté en troisième carte le 18 septembre
      2026 à la place de l'engrenage). -->
 <section id="ecran-menu" class="ecran actif">
+  <!-- Fond vivant (22 septembre 2026, demande de l'utilisateur, technique
+       reprise d'un CodePen : conic-gradient flouté en rotation lente) : voir
+       .fond-vivant dans css/style.css. -->
+  <div class="fond-vivant" aria-hidden="true"></div>
   <header class="entete-accueil">
     <h1>Muscu</h1>
   </header>
@@ -42,6 +46,7 @@
 
 <!-- Sport : choix du jour (ancien accueil, devenu sous-menu) -->
 <section id="ecran-accueil" class="ecran">
+  <div class="fond-vivant" aria-hidden="true"></div>
   <header class="barre">
     <button id="bouton-sport-retour" class="icone" aria-label="Retour">&#8592;</button>
     <div class="barre-titre"><span>Sport</span></div>
@@ -66,6 +71,7 @@
 <!-- Suivi : petit menu à six entrées (16 septembre 2026, devenu trop
      grand pour tenir empilé sur un seul écran une fois le sommeil ajouté). -->
 <section id="ecran-suivi" class="ecran">
+  <div class="fond-vivant" aria-hidden="true"></div>
   <header class="barre">
     <button id="bouton-suivi-retour" class="icone" aria-label="Retour">&#8592;</button>
     <div class="barre-titre"><span>Suivi</span></div>
@@ -417,6 +423,7 @@
         <span class="col-saisie">Reps</span>
         <span class="col-rir">RIR</span>
         <span class="col-suppr"></span>
+        <span class="col-suppr"></span>
       </div>
       <ol id="series" class="series"></ol>
 
@@ -568,13 +575,31 @@
          Rempli par preparerEcranFin() dans js/app.js. -->
     <p id="fin-alerte" class="alerte-incomplete" hidden></p>
 
-    <button id="bouton-enregistrer" class="principal grand">Enregistrer et synchroniser</button>
+    <!-- Bouton animé (23 septembre 2026, demande de l'utilisateur, lien
+         CodePen fourni — "download button animation" de Denis Pasko) :
+         technique reprise (anneau qui tourne pendant l'envoi, coche à la
+         fin), pas le code lui-même, qui dépend de GSAP et de plusieurs
+         plugins payants (CustomEase, DrawSVG) incompatibles avec une PWA
+         hors ligne sans build. Voir .bouton-sync dans css/style.css et
+         enregistrerEtSynchroniser() dans js/app.js pour la bascule des
+         classes .envoi/.envoye. -->
+    <button id="bouton-enregistrer" type="button" class="bouton-sync">
+      <span class="bouton-sync-cercle" aria-hidden="true">
+        <svg class="bouton-sync-anneau" viewBox="0 0 40 40">
+          <circle class="bouton-sync-anneau-trace" cx="20" cy="20" r="16"></circle>
+        </svg>
+        <span class="bouton-sync-icone">&#8595;</span>
+        <span class="bouton-sync-check">&#10003;</span>
+      </span>
+      <span id="bouton-enregistrer-texte" class="bouton-sync-texte">Synchronisation</span>
+    </button>
     <p id="fin-message" class="message"></p>
   </main>
 </section>
 
 <!-- Réglages -->
 <section id="ecran-reglages" class="ecran">
+  <div class="fond-vivant" aria-hidden="true"></div>
   <header class="barre">
     <button id="bouton-reglages-retour" class="icone" aria-label="Retour">&#8592;</button>
     <div class="barre-titre"><span>Réglages</span></div>
@@ -589,6 +614,16 @@
     <label class="champ-large">
       <span>Mot de passe du pont</span>
       <input id="reglage-secret" type="text" autocomplete="off" placeholder="celui inscrit dans le script">
+    </label>
+    <label class="champ-large">
+      <span>Dégradé de l'accueil</span>
+      <select id="reglage-degrade-accueil">
+        <option value="desert">Desert Bloom</option>
+        <option value="horizon">Horizon Shift</option>
+        <option value="voltage">Quiet Voltage</option>
+        <option value="filtered">Filtered Reality</option>
+        <option value="cosmic">Cosmic Ink</option>
+      </select>
     </label>
     <label class="bascule">
       <input id="reglage-son" type="checkbox" checked>

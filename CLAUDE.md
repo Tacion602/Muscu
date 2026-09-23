@@ -181,6 +181,25 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     nom. Un même exercice peut donc afficher une consigne différente sur
     deux jours si elle a été modifiée sur l'un et pas l'autre ; non demandé,
     à revoir si ça gêne à l'usage.
+  - **`ANCIENS_NOMS` (`js/app.js`) fait exception à la correspondance
+    exacte, pour un renommage délibéré du classeur dont l'historique doit
+    continuer.** Table nouveau nom → liste d'anciens noms (formes
+    normalisées, `formeDuNom()`), consultée par `memeExercice()`, elle-même
+    utilisée partout où `derniereFois()` cherchait jusque-là une égalité
+    stricte (`progressionPremiereSerie()`, `surchargeExercice()`, la courbe
+    de la fiche d'historique). Deux cas déjà rencontrés : le 13 septembre
+    2026, le développé machine unilatéral devient bilatéral et garde ses
+    valeurs ; le 23 septembre 2026, `Developpe incline machine` devient
+    `Developpe incline banc` — l'utilisateur a toujours fait cet exercice à
+    la barre ou aux haltères, le classeur portait la mauvaise machine
+    depuis le départ, ce n'est pas un changement de mouvement mais une
+    correction du programme. Renommer sans cette table démarrerait un
+    historique vide (voir la sous-puce ci-dessus) ; `IMAGES_EXERCICES` est à
+    mettre à jour séparément avec la même fragilité, sans passer par
+    `ANCIENS_NOMS` (voir « Image par exercice » dans les chantiers) — pour
+    ce cas précis, l'ancienne photo (machine) est réutilisée en
+    `generique: true`, faute d'une vraie photo de développé incliné banc à
+    portée dans `free-exercise-db`.
 
 - **Plusieurs séances peuvent être en cours en même temps, une par jour.**
   Décision de l'utilisateur le 27 août 2026 : entrer dans J3 ne doit rien
@@ -351,11 +370,31 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   sans confirmation : la série se rajoute d'un geste (`+ Ajouter une série`)
   et rien n'est encore synchronisé pendant la séance, contrairement au
   nettoyage de l'historique qui, lui, demande confirmation.
+- **Une série peut être marquée « rest-pause » depuis le 23 septembre 2026**
+  (demande de l'utilisateur, après question coach : outil légitime
+  d'accumulation de volume proche de l'échec, comparaisons directes plus
+  minces que sur le tempo mais cohérentes — voir la réponse donnée dans la
+  conversation) : bouton bascule `RP` (`.ligne-serie-restpause` dans
+  `rendreSeries()`), même registre que la croix de suppression juste à côté.
+  Chaque relance d'un bloc rest-pause reste sa propre ligne de série,
+  charge/reps/RIR suffisant à la décrire ; le drapeau (`serie.restPause`)
+  ne fait que la signaler comme telle. **Simple drapeau local pour
+  l'instant** : suit la séance dans `muscu.historique` comme le reste, mais
+  n'est pas encore remonté au classeur (aucune colonne dédiée dans
+  `appsscript/Code.gs`) — pas demandé, à ajouter si le besoin se confirme à
+  l'usage.
 - **Le signal sonore de fin de récupération est au volume maximal utile**
   depuis le 7 septembre 2026 (gain 0.9 dans `signaler()`, contre 0.3
   auparavant) : jugé trop faible par l'utilisateur pour s'entendre depuis
   l'autre bout de la salle. 0.9 plutôt que 1 pour garder une marge avant
   écrêtage du haut-parleur du téléphone.
+- **Retour tactile bref à chaque série validée depuis le 23 septembre
+  2026** (demande de l'utilisateur), en plus de la vibration de fin de
+  repos déjà présente dans `signaler()` : `navigator.vibrate(30)` dans
+  `validerSerie()`, sur le même réglage `reglages.vibration` que celle-ci,
+  mais un tapotement court plutôt que le motif en trois temps
+  (`[180, 90, 180]`) qui reste propre à la fin de récupération — les deux
+  moments n'ont pas à se confondre au toucher.
 - **La minuterie se lance après chaque série validée**, échauffement compris
   dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
 - **La minuterie a un bandeau compact depuis le 27 août 2026** (60px,
@@ -443,6 +482,19 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
       première fois. `battre()` repasse `#minuterie-plein-ecran` en `hidden`
       dès les 20 % de temps restant, le bandeau compact reprenant la main
       pour préparer la série suivante avant la fin.
+      - **Un appui referme aussi le plein écran sans attendre les 80 %**,
+        depuis le 22 septembre 2026 (demande de l'utilisateur : « on
+        atterrit sur la page exo, le décompte continu et visible », pas
+        fermé). Jusque-là, le même geste appelait `minuterieTerminee()`
+        comme sur le bandeau compact et **annulait tout le repos** — cohérent
+        avec « toute la surface ferme le repos » (voir plus bas), mais pas
+        ce que l'utilisateur voulait ici : juste revenir à la fiche pendant
+        que le repos continue en arrière-plan, comme le fait déjà `battre()`
+        de lui-même à 20 %. Le clic sur `#minuterie-plein-ecran` ne fait
+        donc plus que le masquer (`hidden = true`), sans toucher `minuterie`
+        ni `arreterMinuterie()`. **Le bandeau compact, lui, garde son
+        comportement d'origine** (un appui annule le repos, ou en lance un
+        manuel s'il est inactif) : seul le plein écran a changé.
     - **Bug trouvé en testant, pas en salle** : `lancerMinuterie()` peut
       tomber en plein milieu d'un clic déjà commencé sur une flèche
       d'exercice — la validation implicite d'une série par sortie de champ
@@ -747,6 +799,23 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     finir (`afficherSeanceEnregistree()`) au lieu de renvoyer à l'accueil.
     Sa pastille dit si elle a atteint le classeur. **Seule l'erreur d'envoi
     reste sur l'écran de fin** : son message nomme la cause, ce que la
+    pastille « en attente » ne dirait pas.
+  - **Bouton d'envoi animé depuis le 23 septembre 2026** (demande de
+    l'utilisateur, lien CodePen fourni — "download button animation" de
+    Denis Pasko) : technique reprise (cercle qui tourne pendant l'envoi,
+    coche à la fin), pas le code lui-même, qui dépend de GSAP et de
+    plugins payants (CustomEase, DrawSVG) incompatibles avec une PWA hors
+    ligne sans build. `.bouton-sync` (`css/style.css`) remplace
+    `.principal.grand` sur `#bouton-enregistrer` : cercle à gauche avec un
+    anneau SVG (même principe que `.minuterie-anneau`, mais tournant en
+    boucle plutôt qu'à décompte, la durée réelle de l'envoi n'étant pas
+    connue à l'avance). Classes `.envoi` (texte "Synchronisation" résorbé
+    à rien, anneau qui tourne) et `.envoye` (coche, texte "Envoyé", fond
+    `--hausse`) basculées dans `enregistrerEtSynchroniser()`, remises à
+    zéro par `preparerEcranFin()` à chaque ouverture de l'écran de fin.
+    Retirée sur échec (`.envoi` enlevée, bouton réactivé) : avant cette
+    évolution, un échec laissait le bouton désactivé sans retour possible
+    sauf à quitter l'écran, jamais corrigé faute d'avoir été signalé.
     pastille « en attente » ne dirait pas.
   - **Un `<details>` natif plutôt qu'une bascule maison** : l'ouverture et la
     fermeture ne demandent alors aucun état à tenir côté script.
@@ -1010,12 +1079,93 @@ que soit le sous-menu ensuite ouvert.
     depuis la même journée** (précision de l'utilisateur : « plus sombre en
     bas, plus clair en haut », même lecture que le dégradé de Sommeil) : un
     dégradé deux fois plus haut que l'écran (`background-size: 100% 160%`)
-    dont seule la fenêtre de position dérive lentement — la tranche visible
-    reste donc toujours une portion croissante du même dégradé, jamais
-    inversée, tout en restant "dynamique" (la portion affichée change avec
-    le temps). Coupé sous `prefers-reduced-motion` comme le reste des
-    animations de l'application. Les cartes restent sur `--fond-carte`,
-    opaque, la lisibilité du texte n'est pas concernée.
+    dont seule la fenêtre de position dérive lentement. Coupé sous
+    `prefers-reduced-motion` comme le reste des animations de l'application.
+    Les cartes restent sur `--fond-carte`, opaque, la lisibilité du texte
+    n'est pas concernée.
+    - **Remplacé par un « fond vivant » le 22 septembre 2026** (demande de
+      l'utilisateur, lien CodePen fourni — "Living Palette System" de
+      Vanessa Victorino, technique reprise) : `.fond-vivant`, un
+      `conic-gradient` très flouté (`blur(70px) saturate(120%)`) en rotation
+      lente (45 s, `@keyframes fond-vivant-rotation`), plutôt que le
+      glissement vertical précédent. Couche à part (`<div class="fond-
+      vivant">` dans `index.html`) plutôt qu'un `background` sur
+      `#ecran-menu` lui-même : une rotation demande `transform`, que
+      `background-position` ne permet pas. Toujours coupé sous
+      `prefers-reduced-motion`, cartes et en-tête toujours opaques
+      au-dessus. Premier geste du chantier « accueil et sous-menus trop
+      statiques » noté la veille (voir « Chantiers ouverts ») — le reste
+      (sous-menus, `impeccable.style`) n'est pas encore entamé.
+      - **Les cinq palettes du CodePen, sélectionnables, deuxième demande le
+        même jour** (« switch pour choisir entre les 5 propositions de
+        dégradé », défaut Desert Bloom) : reprises telles quelles cette
+        fois — Horizon Shift, Quiet Voltage, Filtered Reality, Desert
+        Bloom, Cosmic Ink —, pas la palette pastel de l'application comme
+        au premier essai. `--fv1` à `--fv6` définies par palette via un
+        attribut `data-degrade` sur `<html>` (`[data-degrade="desert"]`
+        etc. dans `css/style.css`) plutôt qu'une variable CSS unique :
+        `.fond-vivant` n'a besoin de connaître que les six noms de
+        variable, jamais les couleurs elles-mêmes ;
+        `appliquerDegradeAccueil()` (`js/app.js`) ne fait que poser
+        l'attribut depuis `reglages.degradeAccueil`, appelée au démarrage
+        et à chaque sauvegarde des réglages. Premier et dernier arrêt du
+        dégradé identiques (`--fv1` répété en fin de liste), même besoin
+        qu'au premier essai. Choix mémorisé dans `reglages` comme les
+        autres réglages (`#reglage-degrade-accueil` sur l'écran Réglages,
+        un `<select>` plutôt que cinq cases : un seul choix possible à la
+        fois) — à ne pas isoler à part comme `dureeTenueGainage`
+        (gainage), qui vit ailleurs pour une tout autre raison.
+      - **Réduit en taille pour un dégradé plus fin, même demande** :
+        `transform: scale(.55)` sur `.fond-vivant`, combiné à la rotation
+        dans `@keyframes fond-vivant-rotation` (l'échelle doit être répétée
+        dans les deux étapes du keyframe, sans quoi l'animation repartirait
+        de l'échelle 1 au premier tour). La couche reste centrée et couvre
+        toujours l'écran une fois floutée, mais en occupant moins d'espace
+        visuel, plus proche d'un halo que d'un aplat.
+        - **Bord clair aux coins, corrigé le même jour** (signalé par
+          l'utilisateur : un bord presque blanc — `--fond` — apparaissait
+          selon l'angle de rotation) : `inset: -25%` dimensionnait la
+          couche à partir de la largeur ET de la hauteur du conteneur
+          séparément, plus petit que sa diagonale une fois réduit à
+          l'échelle .55 — insuffisant pour couvrir les coins d'un écran de
+          téléphone (portrait, très étroit) à toutes les rotations.
+          `width`/`height: 220vmax` (basé sur la plus grande dimension du
+          viewport) donne un carré nettement plus grand que la diagonale
+          de l'écran même une fois réduit à l'échelle, couvrant les coins
+          quel que soit l'angle.
+      - **Les trois cartes transparentes le 23 septembre 2026** (demande de
+        l'utilisateur, pour laisser voir le fond vivant tourner derrière) :
+        `#ecran-menu .carte-menu { background: rgba(255,255,255, X); }`
+        plutôt que `--fond-carte` telle quelle. 60 % d'abord (alpha .4),
+        puis **70 % au deuxième réglage, même jour** (alpha .3, valeur
+        actuelle). `backdrop-filter: blur(16px)` ajouté en plus, pas
+        demandé mais nécessaire : sans lui le texte perdait toute
+        lisibilité dès que le dégradé passait une teinte sombre dessous
+        (Cosmic Ink, Quiet Voltage).
+      - **Étendu à Sport, Suivi et Réglages, même jour** (demande de
+        l'utilisateur : « même principe pour la page exercices, suivi et
+        réglage », « dégradé couleur différente qu'en page d'accueil »,
+        « fond transparent organisé comme la page d'accueil ») :
+        `#ecran-accueil`, `#ecran-suivi` et `#ecran-reglages` reçoivent
+        chacun leur propre `<div class="fond-vivant">` et leur propre
+        palette **fixe** (pas de `<select>` comme l'accueil, non demandé
+        ici) parmi les quatre restantes du CodePen — Horizon Shift pour
+        Sport, Quiet Voltage pour Suivi, Filtered Reality pour Réglages —
+        choisies pour rester visuellement distinctes de l'accueil et entre
+        elles. Les propriétés communes (géométrie, flou, échelle,
+        `@keyframes fond-vivant-rotation`) ont été regroupées sur
+        `.fond-vivant` nu plutôt que répétées par écran ; seul le
+        `background` (les couleurs) change par sélecteur d'écran.
+        `.carte-jour` (Sport) et `.carte-menu-petite` (Suivi) reprennent le
+        même traitement transparent que `.carte-menu`, plus **largeur
+        plafonnée à 300px et centrée** (« même largeur, centrée »),
+        revenant sur le plein-largeur du 14 septembre 2026 pour
+        `.carte-jour` — cette fois pour laisser voir le dégradé sur les
+        côtés, raison qui n'existait pas alors. Réglages n'a pas de
+        « bulles » à recentrer (un formulaire) : seuls ses champs
+        (`.champ-large input`/`select`, scopé à `#ecran-reglages` pour ne
+        pas toucher les mêmes classes sur l'écran de fin ou les
+        mensurations) passent en transparent flouté, même esprit.
 - **Direction visuelle : mode clair, référence Strava**, choisi via
   `impeccable.style` (outillage de conception introduit ce jour-là, voir
   « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
@@ -1612,9 +1762,17 @@ un bug si le sujet revient.
 9. **Accueil et sous-menus jugés trop statiques**, noté par l'utilisateur le
    18 septembre 2026 pour plus tard : « page d'accueil, et sous-menu plus
    dynamique, couleurs et mise en page, aucune couleur unie sur les fonds ».
-   Question posée en même temps, pas encore tranchée : passer par
-   `impeccable.style` (déjà l'outillage de la refonte du 16 septembre 2026,
-   voir « Décision de départ ») plutôt qu'à la main. Rien d'entamé.
+   **Premier geste fait le 22 septembre 2026** : fond de l'accueil remplacé
+   par un dégradé conique flouté en rotation (« fond vivant », voir « Menu
+   Sport/Suivi » plus haut), technique reprise d'un CodePen fourni par
+   l'utilisateur. **Étendu le 23 septembre 2026** à Sport, Suivi et
+   Réglages (même section) : chacun son propre fond vivant, une palette
+   fixe différente de l'accueil, cartes/champs transparents assortis.
+   **Reste à faire** : les écrans du sous-menu Suivi eux-mêmes (Calendrier,
+   État musculaire, Sommeil...) restent chacun sur leur fond propre, aucun
+   fond vivant ; la question posée le 18 n'est toujours pas tranchée —
+   passer par `impeccable.style` (déjà l'outillage de la refonte du
+   16 septembre 2026) plutôt qu'à la main.
 
 ## Posture sur les questions d'entraînement
 

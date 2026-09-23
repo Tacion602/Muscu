@@ -352,15 +352,21 @@ def test_la_minuterie_plein_ecran_s_affiche_puis_se_retrecit(page):
         "le repos continue en bandeau compact, pas arrete"
 
 
-def test_toucher_la_minuterie_plein_ecran_ferme_le_repos(page):
-    """Toute la surface ferme le repos avant la fin, comme le bandeau
-    compact (meme geste, memes coordonnees)."""
+def test_toucher_la_minuterie_plein_ecran_revient_a_la_fiche_sans_annuler(page):
+    """22 septembre 2026, demande de l'utilisateur : un appui sur le plein
+    ecran ne doit plus annuler le repos (« on atterrit sur la page exo, le
+    decompte continu et visible »), contrairement au bandeau compact qui,
+    lui, annule toujours (voir test_la_minuterie_est_visible_apres_une_
+    validation et la doc). Le plein ecran se ferme simplement, exactement
+    ce que fait deja battre() de lui-meme a 20% de temps restant."""
     ouvrir_jour(page, "J1")
     saisir_serie(page, 0, 40, 8)
     page.locator("#minuterie-plein-ecran").wait_for(state="visible", timeout=2000)
     page.click("#minuterie-plein-ecran")
-    assert page.evaluate("minuterie") is None
+    assert page.evaluate("minuterie") is not None, "le repos continue en arriere-plan"
     assert not page.locator("#minuterie-plein-ecran").is_visible()
+    assert not page.locator("#minuterie").evaluate("el => el.classList.contains('inactif')"), \
+        "le bandeau compact reprend la main, toujours actif"
 
 
 def test_le_bilan_du_dernier_repos_annonce_l_exercice_suivant(page):

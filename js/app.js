@@ -30,6 +30,9 @@ const REGLAGES_PAR_DEFAUT = {
   veille: true,
   clavierPendantRecup: true,
   notification: false,
+  // Palette du fond vivant de l'accueil (22 septembre 2026), voir
+  // appliquerDegradeAccueil() et .fond-vivant dans css/style.css.
+  degradeAccueil: 'desert',
 };
 
 /* Échauffement de début de séance, optimisé aux zones travaillées ce jour-là,
@@ -500,6 +503,11 @@ const ANCIENS_NOMS = {
   // 13 septembre 2026, demande de l'utilisateur : le développé machine
   // devient bilatéral, et garde les valeurs de la version unilatérale.
   'developpe machine': ['developpe machine unilateral'],
+  // 23 septembre 2026, demande de l'utilisateur : il a toujours fait un
+  // développé banc (barre ou haltères) à cette place, jamais la machine que
+  // portait le classeur — correction du programme, pas un changement de
+  // mouvement, l'historique doit donc suivre.
+  'developpe incline banc': ['developpe incline machine'],
 };
 
 /* Illustrations par exercice, ajoutées le 17 septembre 2026 (chantier
@@ -521,7 +529,7 @@ const IMAGES_EXERCICES = {
   'Curl incline halteres': { fichier: 'curl-incline-halteres.jpg' },
   'Curl marteau': { fichier: 'curl-marteau.jpg' },
   'Curl pupitre': { fichier: 'curl-pupitre.jpg' },
-  'Developpe incline machine': { fichier: 'developpe-incline-machine.jpg' },
+  'Developpe incline banc': { fichier: 'developpe-incline-machine.jpg', generique: true },
   'Developpe machine': { fichier: 'developpe-machine.jpg' },
   'Dips buste penche': { fichier: 'dips-buste-penche.jpg' },
   'Ecarte poulie horizontale hauteur poitrine': { fichier: 'ecarte-poulie-horizontale-hauteur-poitrine.jpg' },
@@ -1861,6 +1869,25 @@ function rendreSeries() {
       enregistrerSeance();
     });
 
+    // Rest-pause (23 septembre 2026, demande de l'utilisateur après
+    // question coach sur l'intérêt de la méthode) : marque cette série
+    // comme un mini-bloc de rest-pause, chaque relance restant sa propre
+    // ligne (charge/reps/RIR déjà présents suffisent à les décrire). Simple
+    // drapeau local (`serie.restPause`) sur la série, pas encore remonté au
+    // classeur — voir CLAUDE.md.
+    const restPause = document.createElement('button');
+    restPause.type = 'button';
+    restPause.className = 'ligne-serie-restpause' + (serie.restPause ? ' actif' : '');
+    restPause.setAttribute('aria-label', 'Rest pause sur cette série');
+    restPause.setAttribute('aria-pressed', serie.restPause ? 'true' : 'false');
+    restPause.textContent = 'RP';
+    restPause.addEventListener('click', () => {
+      serie.restPause = !serie.restPause;
+      enregistrerSeance();
+      restPause.classList.toggle('actif', serie.restPause);
+      restPause.setAttribute('aria-pressed', serie.restPause ? 'true' : 'false');
+    });
+
     // Suppression d'une série en trop (demande de l'utilisateur le
     // 7 septembre 2026) : sans confirmation, la série étant facile à
     // rajouter et rien n'étant encore synchronisé pendant la séance.
@@ -1876,7 +1903,7 @@ function rendreSeries() {
       rendreJauge();
     });
 
-    ligne.append(champCharge, champReps, champRir, supprimer);
+    ligne.append(champCharge, champReps, champRir, restPause, supprimer);
     liste.appendChild(ligne);
     enchainement.push(champCharge, champReps, champRir);
   });
@@ -1973,6 +2000,10 @@ function validerSerie(exercice, serie, index) {
   serie.heure = new Date().toISOString();
   enregistrerSeance();
   afficherComparaisonTonnage(serie, reference);
+  // Retour tactile bref à chaque validation (demande de l'utilisateur le
+  // 22 septembre 2026, distinct de la vibration de fin de repos ci-dessous
+  // dans signaler(), plus longue et en trois temps).
+  if (reglages.vibration && navigator.vibrate) navigator.vibrate(30);
 
   // Amorcer le clavier avant tout changement de DOM (voir amorcerClavier) :
   // le geste (Entrée ou la sortie du champ) est encore "chaud" à cet instant
@@ -2472,6 +2503,8 @@ function preparerEcranFin() {
   $('fin-message').textContent = '';
   $('fin-message').className = 'message';
   $('bouton-enregistrer').disabled = false;
+  $('bouton-enregistrer').classList.remove('envoi', 'envoye');
+  $('bouton-enregistrer-texte').textContent = 'Synchronisation';
   $('fin-remarque').value = seance.remarque || '';
 
   // Exercices restes sans aucune serie validee : signales, jamais bloquants
@@ -2534,7 +2567,8 @@ function enregistrerEtSynchroniser() {
   relacherVeille();
 
   const message = $('fin-message');
-  $('bouton-enregistrer').disabled = true;
+  const bouton = $('bouton-enregistrer');
+  bouton.disabled = true;
 
   if (!reglages.pont) {
     message.className = 'message';
@@ -2546,9 +2580,19 @@ function enregistrerEtSynchroniser() {
     return;
   }
 
+  // Bouton animé (23 septembre 2026, demande de l'utilisateur) : .envoi
+  // pendant l'appel réseau (anneau qui tourne, voir css/style.css), .envoye
+  // à la réussite (coche, texte "Envoyé"). Retiré en cas d'échec pour
+  // revenir à l'état de départ, réessayable.
+  bouton.classList.add('envoi');
   message.className = 'message';
   message.textContent = 'Envoi vers le classeur...';
   synchroniser().then((compte) => {
+    bouton.classList.remove('envoi');
+    if (compte) {
+      bouton.classList.add('envoye');
+      $('bouton-enregistrer-texte').textContent = 'Envoyé';
+    }
     message.className = 'message ok';
     message.textContent = compte
       ? 'Classeur mis à jour.'
@@ -2557,6 +2601,8 @@ function enregistrerEtSynchroniser() {
     rendreAccueil();
     setTimeout(() => afficherSeanceEnregistree(idEnregistre), 1600);
   }).catch((erreur) => {
+    bouton.classList.remove('envoi');
+    bouton.disabled = false;
     message.className = 'message erreur';
     message.textContent = "Envoi impossible : " + erreur.message +
       ' La séance reste enregistrée sur le téléphone et repartira plus tard.';
@@ -2734,6 +2780,7 @@ async function synchroniser() {
 function rendreReglages() {
   $('reglage-pont').value = reglages.pont;
   $('reglage-secret').value = reglages.secret;
+  $('reglage-degrade-accueil').value = reglages.degradeAccueil;
   $('reglage-son').checked = reglages.son;
   $('reglage-vibration').checked = reglages.vibration;
   $('reglage-veille').checked = reglages.veille;
@@ -2751,6 +2798,7 @@ function sauverReglages() {
   reglages = {
     pont: $('reglage-pont').value.trim(),
     secret: $('reglage-secret').value.trim(),
+    degradeAccueil: $('reglage-degrade-accueil').value,
     son: $('reglage-son').checked,
     vibration: $('reglage-vibration').checked,
     veille: $('reglage-veille').checked,
@@ -2758,6 +2806,18 @@ function sauverReglages() {
     notification: $('reglage-notification').checked,
   };
   ecrire(CLES.reglages, reglages);
+  appliquerDegradeAccueil();
+}
+
+/* Palette du fond vivant de l'accueil (22 septembre 2026, demande de
+   l'utilisateur : « switch pour choisir entre les 5 propositions de
+   dégradé », défaut Desert Bloom) : `.fond-vivant` (css/style.css) ne lit
+   que `--fv1` à `--fv6`, définies par palette via cet attribut
+   `data-degrade` sur `<html>` — cette fonction n'a donc jamais besoin de
+   connaître les couleurs elles-mêmes. Appelée au démarrage et à chaque
+   sauvegarde des réglages. */
+function appliquerDegradeAccueil() {
+  document.documentElement.dataset.degrade = reglages.degradeAccueil || 'desert';
 }
 
 /* Vue d'ensemble mensuelle du menu Suivi (demande de l'utilisateur le
@@ -4330,10 +4390,16 @@ function brancher() {
       lancerMinuterie(ficheExercice().repos_s || 90);
     }
   });
-  // Toute la surface ferme le repos, comme le bandeau compact ; jamais
-  // visible en dehors d'un repos actif (voir lancerMinuterie/arreterMinuterie),
-  // donc pas de branche « lancer un repos manuel » à reprendre ici.
-  $('minuterie-plein-ecran').addEventListener('click', () => minuterieTerminee(true));
+  // Un appui referme le plein écran sans annuler le repos, depuis le
+  // 22 septembre 2026 (signalé par l'utilisateur : « on atterrit sur la
+  // page exo, le décompte continu et visible », pas fermé). Avant cette
+  // date, le même geste que le bandeau compact annulait tout le repos
+  // (minuterieTerminee) : cohérent avec « toute la surface ferme le
+  // repos », mais l'utilisateur veut ici juste revenir à la fiche
+  // d'exercice pendant que le repos continue en arrière-plan — exactement
+  // ce que fait déjà battre() de lui-même à 20 % de temps restant, voir
+  // plus bas, simplement déclenché à la demande plutôt qu'automatiquement.
+  $('minuterie-plein-ecran').addEventListener('click', () => { $('minuterie-plein-ecran').hidden = true; });
   $('gainage-chrono').addEventListener('click', appuiBandeauGainage);
   $('gainage-duree-moins').addEventListener('click', () => reglerDureeTenueGainage(-5));
   $('gainage-duree-plus').addEventListener('click', () => reglerDureeTenueGainage(5));
@@ -4440,8 +4506,8 @@ function brancher() {
   });
   window.addEventListener('pointerup', () => { glisseSlider = false; });
 
-  ['reglage-pont', 'reglage-secret', 'reglage-son', 'reglage-vibration', 'reglage-veille',
-   'reglage-clavier-recup']
+  ['reglage-pont', 'reglage-secret', 'reglage-degrade-accueil', 'reglage-son',
+   'reglage-vibration', 'reglage-veille', 'reglage-clavier-recup']
     .forEach((id) => $(id).addEventListener('change', sauverReglages));
   // À part : cocher doit d'abord obtenir la permission du navigateur, un
   // geste que sauverReglages() seule ne déclenche pas.
@@ -4536,6 +4602,7 @@ async function demarrer() {
 
   fusionnerJ6DansJ2();
   brancher();
+  appliquerDegradeAccueil();
   rendreAccueil();
   afficher('menu');
 

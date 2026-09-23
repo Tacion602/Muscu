@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-13T14:06:48+00:00",
+ "importe_le": "2026-09-23T15:45:53+00:00",
  "jours": [
   {
    "code": "J1",
@@ -18,7 +18,7 @@
    "exercices": [
     {
      "numero": 1,
-     "nom": "Developpe incline machine",
+     "nom": "Developpe incline banc",
      "prescription": "4x 6-8",
      "series": 4,
      "reps_min": 6,
@@ -130,7 +130,7 @@
       1,
       1
      ],
-     "consigne": "Poulies a hauteur de poitrine, un pas en avant. Coudes legerement flechis et fixes, rapprocher les mains devant le sternum. Revenir jusqu'a l'etirement des pectoraux sans perdre la tension.",
+     "consigne": "Coudes légèrement fléchis, angle fixe tout du long (pas de coup de triceps). Amener les mains devant la poitrine, coudes un peu plus bas que les épaules. Contraction pectorale marquée en fin de mouvement, pas juste un rapprochement des mains. Contrôler la phase excentrique plutôt que de laisser les poulies tirer les bras en arrière.",
      "muscle": "Pectoraux",
      "repos_s": 90,
      "historique": [
@@ -232,7 +232,7 @@
       1,
       1
      ],
-     "consigne": "Poulie basse, buste legerement incline. Tension continue en bas d'amplitude.",
+     "consigne": "Poulie basse, coude légèrement fléchi et fixe. Monter jusqu'à l'horizontale, pas plus haut (au-delà, la charge part vers le trapèze). Petit doigt légèrement plus haut que le pouce en haut du mouvement, pour cibler le deltoïde latéral plutôt que l'antérieur. Contrôler la descente.",
      "muscle": "Deltoide lateral",
      "repos_s": 75,
      "historique": [
@@ -634,7 +634,7 @@
       1,
       1
      ],
-     "consigne": "Bassin plaque au banc, sans le decoller en fin de flexion. Descente controlee jusqu'au genou presque tendu.",
+     "consigne": "Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",
      "muscle": "Ischio-jambiers et fessiers",
      "repos_s": 90,
      "historique": [
