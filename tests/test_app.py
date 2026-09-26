@@ -511,11 +511,11 @@ def ouvrir_calendrier(page):
     page.wait_for_selector(".calendrier-grille")
 
 
-def test_deux_seances_le_meme_jour_portent_un_badge_sur_le_calendrier(page):
+def test_plusieurs_seances_le_meme_jour_se_voient_sur_le_calendrier(page):
     """18 septembre 2026, signale par l'utilisateur : le calendrier ne
     gardait que la premiere seance du jour (parJour), la seconde restait
-    invisible. Un badge ×N s'ajoute desormais des la deuxieme, l'icone
-    restant celle de la premiere."""
+    invisible. Depuis le 26 septembre 2026, deux icones s'affichent cote a
+    cote, et le badge ×N ne sert plus qu'au-dela de deux."""
     page.evaluate("""() => {
       const h = (heures) => new Date(Date.now() - heures * 3600000).toISOString();
       const seances = [
@@ -527,7 +527,20 @@ def test_deux_seances_le_meme_jour_portent_un_badge_sur_le_calendrier(page):
     page.reload()
     ouvrir_calendrier(page)
     aujourdhui = page.locator(".calendrier-case.aujourdhui")
-    assert aujourdhui.locator(".calendrier-multi").text_content() == "×2"
+    assert aujourdhui.locator(".calendrier-icone").count() == 2
+    assert aujourdhui.locator(".calendrier-multi").count() == 0
+
+    page.evaluate("""() => {
+      const h = JSON.parse(localStorage.getItem('muscu.historique'));
+      h.push({ id: 'M3', jour: 'J3', titre: 'Test', type: 'muscu',
+        fin: new Date(Date.now() - 2 * 3600000).toISOString(), envoye: true, exercices: [] });
+      localStorage.setItem('muscu.historique', JSON.stringify(h));
+    }""")
+    page.reload()
+    ouvrir_calendrier(page)
+    aujourdhui = page.locator(".calendrier-case.aujourdhui")
+    assert aujourdhui.locator(".calendrier-icone").count() == 2
+    assert aujourdhui.locator(".calendrier-multi").text_content() == "×3"
 
 
 def test_un_jour_sans_deuxieme_seance_n_a_pas_de_badge(page):

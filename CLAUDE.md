@@ -1328,6 +1328,26 @@ que soit le sous-menu ensuite ouvert.
           redéfinis un cran plus sombres. Pied de Sport, bloc des séances
           en cours et corps de Réglages reçoivent le même verre plutôt que
           du texte posé à nu sur le fond.
+      - **Même jour, plusieurs retouches successives** (demandes de
+        l'utilisateur) :
+        - **Accueil plein écran** : plus d'en-tête blanc ni de titre
+          « Muscu » (`.entete-accueil` retiré de `index.html`).
+        - **Pied de Sport sans fond** : « Séances enregistrées » en simple
+          texte blanc (`.lien-historique`) ; l'état de synchronisation
+          (`#etat-sync`, « Classeur à jour »…) quitte Sport pour l'écran
+          des séances enregistrées, rafraîchi par `rendreHistorique()`.
+        - **Verre des bulles à 70 %** au lieu de 80 % (« légèrement plus
+          transparent »), texte secondaire toujours AA au pire point.
+        - **Horizon Shift retiré de l'application** (« n'utilise pas
+          Horizon Shift ») : option supprimée du choix de l'accueil, un
+          choix déjà enregistré retombe sur Desert Bloom.
+        - **Un dégradé différent par page, garanti** : `data-palette` posé
+          sur chacun des quatre écrans par `appliquerDegradeAccueil()` —
+          l'accueil prend le choix des réglages, Sport, Suivi et Réglages
+          les trois palettes restantes de `PALETTES_FOND` dans l'ordre.
+          Remplace l'attribut unique `data-degrade` sur `<html>` et les
+          couleurs figées par écran, qui laissaient l'accueil tomber sur la
+          même palette qu'une autre page selon le choix fait.
       - **Suivi aligné sur Sport le 26 septembre 2026** (« bulles suivi
         même mise en page que les bulles sport ») : plus de barre ni de
         titre, même retour flottant (`.icone-retour-flottant`, renommée
@@ -1411,6 +1431,16 @@ autres sous-écrans via `afficher()`.
     invisible, `parJour` ne gardant que la première trouvée) : chaque jour
     garde désormais toutes ses séances, la première fixe toujours l'icône,
     un badge en coin (`.calendrier-multi`) s'ajoute dès la deuxième.
+  - **Deux icônes par jour et navigation de mois en mois, le 26 septembre
+    2026** (demande de l'utilisateur) : les deux premières séances du jour
+    s'affichent côte à côte, réduites (`.calendrier-icones.deux`), et le
+    badge `×N` ne sert plus qu'au-delà de deux. Flèches ‹ › au-dessus de la
+    grille (`#calendrier-precedent`/`#calendrier-suivant`, déclarées dans
+    `index.html` comme l'exige `outils/verifier_code.py`), décalage
+    `decalageMoisCalendrier` remis à zéro à chaque ouverture ; pas de mois
+    futur (flèche › désactivée sur le mois en cours). « Aujourd'hui » n'est
+    plus marqué que sur le mois en cours : le numéro du jour suffisait
+    jusque-là, faute de navigation.
   - **Fond bleu si une nuit a été renseignée ce jour-là, même demande,
     même jour** : indépendant de toute séance de sport (`lireSommeil()`,
     `nuit.cle`), coloré du bleu le plus clair du dégradé de fond de l'écran

@@ -22,9 +22,8 @@
        reprise d'un CodePen : conic-gradient flouté en rotation lente) : voir
        .fond-vivant dans css/style.css. -->
   <div class="fond-vivant" aria-hidden="true"></div>
-  <header class="entete-accueil">
-    <h1>Muscu</h1>
-  </header>
+  <!-- Plein écran depuis le 26 septembre 2026 (demande de l'utilisateur :
+       « supprime bandeau blanc et Muscu ») : plus d'en-tête. -->
   <ul class="liste-menu">
     <li><button id="bouton-menu-sport" class="carte-menu">
       <span class="carte-menu-icone" aria-hidden="true">&#127947;&#65039;</span>
@@ -58,9 +57,10 @@
 
   <ul id="liste-jours" class="liste-jours"></ul>
 
+  <!-- Pied sans fond, simple lien blanc (26 septembre 2026) ; l'état de la
+       synchronisation a rejoint l'écran des séances enregistrées. -->
   <div class="pied-accueil">
-    <p id="etat-sync" class="etat-sync"></p>
-    <button id="bouton-historique" class="discret">Séances enregistrées</button>
+    <button id="bouton-historique" class="lien-historique">Séances enregistrées</button>
   </div>
 </section>
 
@@ -113,7 +113,12 @@
     <span class="icone" aria-hidden="true"></span>
   </header>
   <main class="corps">
-    <p class="suivi-legende">Type de la première séance enregistrée ce jour-là.</p>
+    <p class="suivi-legende">Séances enregistrées ce jour-là (deux icônes au plus, ×N au-delà).</p>
+    <div class="calendrier-nav">
+      <button type="button" class="icone" id="calendrier-precedent" aria-label="Mois précédent">&#8249;</button>
+      <span id="calendrier-mois" class="calendrier-mois"></span>
+      <button type="button" class="icone" id="calendrier-suivant" aria-label="Mois suivant">&#8250;</button>
+    </div>
     <div id="calendrier"></div>
   </main>
 </section>
@@ -609,7 +614,6 @@
       <span>Dégradé de l'accueil</span>
       <select id="reglage-degrade-accueil">
         <option value="desert">Desert Bloom</option>
-        <option value="horizon">Horizon Shift</option>
         <option value="voltage">Quiet Voltage</option>
         <option value="filtered">Filtered Reality</option>
         <option value="cosmic">Cosmic Ink</option>
@@ -658,6 +662,7 @@
     <span class="icone"></span>
   </header>
   <main class="corps">
+    <p id="etat-sync" class="etat-sync"></p>
     <div id="liste-historique"></div>
   </main>
 </section>

@@ -240,23 +240,19 @@ body { display: flex; flex-direction: column; }
    ne fait que poser l'attribut depuis `reglages.degradeAccueil`. Premier et
    dernier arrêt du dégradé identiques (`--fv1` répété en fin de liste) pour
    que la boucle ne montre pas de couture au raccord. */
-:root, [data-degrade="desert"] {
+:root, [data-palette="desert"] {
   --fv1: #3E2723; --fv2: #6D4C41; --fv3: #D7CCC8;
   --fv4: #FFAB91; --fv5: #FF7043; --fv6: #FFF3E0;
 }
-[data-degrade="horizon"] {
-  --fv1: #0B132B; --fv2: #1C2541; --fv3: #3A506B;
-  --fv4: #5BC0BE; --fv5: #F4F4F4; --fv6: #FF6B6B;
-}
-[data-degrade="voltage"] {
+[data-palette="voltage"] {
   --fv1: #1A1A1D; --fv2: #4E4E50; --fv3: #6F2232;
   --fv4: #950740; --fv5: #C3073F; --fv6: #EAEAEA;
 }
-[data-degrade="filtered"] {
+[data-palette="filtered"] {
   --fv1: #1F1D36; --fv2: #3F3351; --fv3: #864879;
   --fv4: #E9A6A6; --fv5: #F0F0F0; --fv6: #2E2E2E;
 }
-[data-degrade="cosmic"] {
+[data-palette="cosmic"] {
   --fv1: #0F0F1B; --fv2: #1B1B2F; --fv3: #16213E;
   --fv4: #533483; --fv5: #E94560; --fv6: #F5F5F5;
 }
@@ -306,19 +302,17 @@ body { display: flex; flex-direction: column; }
 @media (min-width: 601px) {
   .fond-vivant { filter: blur(80px) saturate(130%); }
 }
-#ecran-menu { background: var(--fv1); }
-#ecran-accueil { background: #0B132B; }
-#ecran-suivi { background: #1A1A1D; }
-#ecran-reglages { background: #1F1D36; }
-#ecran-menu .fond-vivant {
+/* Une palette par écran, toujours différente (26 septembre 2026, « un
+   dégradé différent par page ») : l'attribut `data-palette` est posé sur
+   chacun des quatre écrans par appliquerDegradeAccueil() (js/app.js),
+   l'accueil prenant le choix des réglages et les trois autres les trois
+   palettes restantes. Les variables --fv1 à --fv6 descendent jusqu'à la
+   couche et au fond de chaque écran. */
+#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages { background: var(--fv1); }
+#ecran-menu .fond-vivant, #ecran-accueil .fond-vivant,
+#ecran-suivi .fond-vivant, #ecran-reglages .fond-vivant {
   background: conic-gradient(from 0deg,
     var(--fv1), var(--fv2), var(--fv3), var(--fv4), var(--fv5), var(--fv6), var(--fv1));
-}
-/* Sport (exercices) : Horizon Shift, palette fixe (pas de switch comme
-   l'accueil, non demandé ici). */
-#ecran-accueil .fond-vivant {
-  background: conic-gradient(from 0deg,
-    #0B132B, #1C2541, #3A506B, #5BC0BE, #F4F4F4, #FF6B6B, #0B132B);
 }
 /* Plus de barre ni de titre depuis le 23 septembre 2026 (demande de
    l'utilisateur, capture Pixel 9 à l'appui : « supprimer la bande blanche
@@ -326,7 +320,7 @@ body { display: flex; flex-direction: column; }
    nom Sport ») : même geste que Sommeil le 17 septembre 2026 (voir
    #ecran-sommeil plus bas), seul le retour reste, flottant. Fond
    transparent-flou plutôt que blanc plein comme sur Sommeil : la palette
-   de cet écran n'est pas toujours sombre (Horizon Shift passe par du
+   de cet écran n'est pas toujours sombre (sa palette passe par du
    clair), un icône uni n'y resterait pas lisible partout, la même
    transparence que .carte-jour tient quelle que soit la teinte dessous. */
 /* Suivi suit le 26 septembre 2026 (« bulles suivi même mise en page que
@@ -343,16 +337,6 @@ body { display: flex; flex-direction: column; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: var(--rayon-plein);
-}
-/* Suivi : Quiet Voltage. */
-#ecran-suivi .fond-vivant {
-  background: conic-gradient(from 0deg,
-    #1A1A1D, #4E4E50, #6F2232, #950740, #C3073F, #EAEAEA, #1A1A1D);
-}
-/* Réglages : Filtered Reality. */
-#ecran-reglages .fond-vivant {
-  background: conic-gradient(from 0deg,
-    #1F1D36, #3F3351, #864879, #E9A6A6, #F0F0F0, #2E2E2E, #1F1D36);
 }
 @media (prefers-reduced-motion: no-preference) {
   .fond-vivant { animation: fond-vivant-rotation 25s linear infinite; }
@@ -471,6 +455,14 @@ body { display: flex; flex-direction: column; }
 .calendrier-case.aujourdhui { border-color: var(--accent); border-width: 2px; }
 .calendrier-num { font-size: 13px; color: var(--texte-faible); font-variant-numeric: tabular-nums; }
 .calendrier-icone { font-size: 28px; line-height: 1; }
+/* Deux icônes côte à côte quand deux séances tombent le même jour
+   (26 septembre 2026), réduites pour tenir dans la case. */
+.calendrier-icones { display: flex; gap: 1px; }
+.calendrier-icones.deux .calendrier-icone { font-size: 19px; }
+/* Navigation de mois en mois (même jour). */
+.calendrier-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.calendrier-mois { font-weight: 700; font-size: 17px; text-transform: capitalize; }
+.calendrier-nav .icone[disabled] { opacity: .3; }
 /* Deux séances le même jour, ajouté le 18 septembre 2026 (signalé par
    l'utilisateur, invisible jusque-là) : petit badge en coin plutôt qu'une
    seconde icône, qui n'aurait pas eu la place sur une case de cette
@@ -2413,11 +2405,14 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
    Le fond recalé sur l'original du CodePen est bien plus sombre (opacité
    pleine, coins de la couleur la plus sombre de la palette) : à 30 % de
    blanc, texte sombre sur fond presque noir, illisible (constaté sur Sport,
-   palette Horizon Shift). 80 % de blanc garde un peu de transparence et
+   palette de l'époque). 80 % de blanc garde un peu de transparence et
    remet le texte au-dessus du seuil WCAG AA au pire point (fond le plus
    sombre sous la carte) : --texte ≥ 12:1, texte secondaire foncé
    (#3b4643) ≈ 6:1, code du jour en --accent ≈ 4,6:1. */
-:root { --verre: rgba(255, 255, 255, .8); }
+/* Passé à 70 % le même jour (« légèrement plus transparent toutes les
+   bulles ») : le texte principal reste bien au-dessus du seuil, le texte
+   secondaire foncé (#3b4643) tombe vers ~4,8:1 au pire point, toujours AA. */
+:root { --verre: rgba(255, 255, 255, .7); }
 #ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages {
   --texte-faible: #3b4643;
   --accent-clair: #226059;
@@ -2425,7 +2420,6 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 /* Hors cartes, sur le fond lui-même : pied de Sport, bloc des séances en
    cours, étiquettes de Réglages — même verre plutôt que du texte posé à nu
    sur un fond qui passe du clair au presque noir. */
-#ecran-accueil .pied-accueil,
 #ecran-accueil .reprise,
 #ecran-reglages .corps {
   background: var(--verre);
@@ -2480,4 +2474,25 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .serpent { display: none; }
+}
+
+/* Accueil plein écran (26 septembre 2026, « supprime bandeau blanc et
+   Muscu ») : plus d'en-tête, compensation de l'encoche seulement. */
+#ecran-menu { padding-top: env(safe-area-inset-top); }
+/* Pied de Sport sans fond ni trait (même demande) : « Séances
+   enregistrées » en simple texte blanc sur le fond vivant, l'état de la
+   synchronisation ayant rejoint l'écran des séances enregistrées. Ombre
+   portée neutre pour rester lisible quand le dégradé passe par du clair. */
+#ecran-accueil .pied-accueil { border-top: 0; background: transparent; }
+.lien-historique {
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+  cursor: pointer;
 }

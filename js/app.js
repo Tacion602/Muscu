@@ -3053,8 +3053,16 @@ function sauverReglages() {
    connaître les couleurs elles-mêmes. Appelée au démarrage et à chaque
    sauvegarde des réglages. */
 function appliquerDegradeAccueil() {
-  document.documentElement.dataset.degrade = reglages.degradeAccueil || 'desert';
+  // Horizon Shift retiré le 26 septembre 2026 : un choix enregistré avant
+  // retombe sur la palette par défaut.
+  if (!PALETTES_FOND.includes(reglages.degradeAccueil)) reglages.degradeAccueil = 'desert';
+  // Un dégradé différent par page (même jour) : l'accueil prend le choix,
+  // Sport, Suivi et Réglages les trois palettes restantes, dans l'ordre.
+  $('ecran-menu').dataset.palette = reglages.degradeAccueil;
+  const autres = PALETTES_FOND.filter((p) => p !== reglages.degradeAccueil);
+  ['accueil', 'suivi', 'reglages'].forEach((ecran, i) => { $('ecran-' + ecran).dataset.palette = autres[i]; });
 }
+const PALETTES_FOND = ['desert', 'cosmic', 'voltage', 'filtered'];
 
 /* Vue d'ensemble mensuelle du menu Suivi (demande de l'utilisateur le
    16 septembre 2026), premier contenu de ce sous-menu : les cases du mois
@@ -3082,9 +3090,13 @@ function rendreCalendrier() {
   const nuitsParJour = {};
   lireSommeil().forEach((n) => { nuitsParJour[n.cle] = true; });
 
+  // Navigation de mois en mois (26 septembre 2026) : décalage par rapport
+  // au mois en cours, remis à zéro à chaque ouverture de l'écran.
   const maintenant = new Date();
-  const annee = maintenant.getFullYear();
-  const mois = maintenant.getMonth();
+  const premier = new Date(maintenant.getFullYear(), maintenant.getMonth() + decalageMoisCalendrier, 1);
+  const annee = premier.getFullYear();
+  const mois = premier.getMonth();
+  const estMoisCourant = decalageMoisCalendrier === 0;
   const nbJours = new Date(annee, mois + 1, 0).getDate();
   // Lundi en premier plutôt que dimanche (getDay() renvoie 0 pour dimanche).
   const decalage = (new Date(annee, mois, 1).getDay() + 6) % 7;
@@ -3094,20 +3106,28 @@ function rendreCalendrier() {
   for (let jour = 1; jour <= nbJours; jour++) {
     const cle = String(jour).padStart(2, '0') + '/' + String(mois + 1).padStart(2, '0') + '/' + annee;
     const seances = parJour[cle] || [];
-    const seance = seances[0];
-    const aujourdhui = jour === maintenant.getDate();
+    // Deux icônes au plus (26 septembre 2026, « possible de voir 2
+    // icônes ») : muscu + cardio le même jour se lisent d'un coup d'œil ; le
+    // badge ×N ne sert plus qu'au-delà de deux.
+    const icones = seances.slice(0, 2)
+      .map((s) => '<span class="calendrier-icone">' + iconeJour({ type: s.type, code: s.jour }) + '</span>').join('');
+    const aujourdhui = estMoisCourant && jour === maintenant.getDate();
     const classeSommeil = nuitsParJour[cle] ? ' a-sommeil' : '';
     html += '<span class="calendrier-case' + (aujourdhui ? ' aujourdhui' : '') + classeSommeil + '">' +
       '<span class="calendrier-num">' + jour + '</span>' +
-      (seance ? '<span class="calendrier-icone">' + iconeJour({ type: seance.type, code: seance.jour }) + '</span>' : '') +
-      (seances.length > 1 ? '<span class="calendrier-multi">×' + seances.length + '</span>' : '') +
+      (icones ? '<span class="calendrier-icones' + (seances.length > 1 ? ' deux' : '') + '">' + icones + '</span>' : '') +
+      (seances.length > 2 ? '<span class="calendrier-multi">×' + seances.length + '</span>' : '') +
       '</span>';
   }
+  const nomMois = premier.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  $('calendrier-mois').textContent = nomMois;
+  $('calendrier-suivant').disabled = estMoisCourant;
   $('calendrier').innerHTML =
     '<div class="calendrier-entetes">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D']
       .map((j) => '<span>' + j + '</span>').join('') + '</div>' +
     '<div class="calendrier-grille">' + html + '</div>';
 }
+let decalageMoisCalendrier = 0;
 
 /* Évolution course, dernier contenu du menu Suivi ajouté le 16 septembre
    2026 : les distances et durées existent déjà dans muscu.historique,
@@ -4253,6 +4273,9 @@ function deplacerSliderMensurations(x) {
 }
 
 function rendreHistorique(idOuvert) {
+  // L'état de la synchronisation vit ici depuis le 26 septembre 2026
+  // (retiré du pied de l'écran Sport à la demande de l'utilisateur).
+  rendreEtatSync();
   const cible = $('liste-historique');
   const seances = lireTableau(CLES.historique)
     .filter((s) => s.fin)
@@ -4684,7 +4707,9 @@ function brancher() {
   $('bouton-sport-retour').addEventListener('click', () => afficher('menu'));
   $('bouton-suivi-retour').addEventListener('click', () => afficher('menu'));
 
-  $('bouton-suivi-calendrier').addEventListener('click', () => { rendreCalendrier(); afficher('calendrier'); });
+  $('bouton-suivi-calendrier').addEventListener('click', () => { decalageMoisCalendrier = 0; rendreCalendrier(); afficher('calendrier'); });
+  $('calendrier-precedent').addEventListener('click', () => { decalageMoisCalendrier--; rendreCalendrier(); });
+  $('calendrier-suivant').addEventListener('click', () => { decalageMoisCalendrier++; rendreCalendrier(); });
   $('bouton-calendrier-retour').addEventListener('click', () => afficher('suivi'));
   $('bouton-suivi-etat').addEventListener('click', () => { rendreEtatMusculaire(); afficher('etat-musculaire'); });
   $('bouton-etat-retour').addEventListener('click', () => afficher('suivi'));
