@@ -47,6 +47,21 @@
         ],
         "createdAt": "2026-09-16T10:22:50.282Z",
         "reason": "meme regle que l'ignore deja pose sur index.html : #jauge-remplie, 3px de hauteur, transition de largeur d'origine (premiere version du projet, avant cette session), cout de reflow negligeable sur un element isole aussi petit, pas le panneau large que la regle vise."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.34, 1.8, .64, 1)",
+        "createdAt": "2026-09-26T12:43:04.094Z",
+        "reason": "Reproduit Back.easeOut.config(2.5) du CodePen 'download button animation' que l'utilisateur a demandé de copier (code source collé le 26/09/2026)"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-26T12:57:10.279Z",
+        "reason": "Direction électrique/néon choisie par l'utilisateur le 26/09/2026 pour l'écran de séance et le repos : halos cyan/magenta demandés"
       }
     ]
   }

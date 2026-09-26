@@ -45,6 +45,8 @@ ENTETES[ONGLET_SEANCES] = [
   // champ texte libre : creuses par nature, mais tracables en graphique.
   'Repetitions', 'Recup (s)', 'Pente (%)', 'Charge portee (kg)', 'Duree seuil (min)',
   'Vitesse moyenne (km/h)',
+  // HIIT (26 septembre 2026) : cours suivi et frequences cardiaques.
+  'Activite', 'FC moyenne (bpm)', 'FC max (bpm)',
 ];
 
 function doPost(requete) {
@@ -141,6 +143,11 @@ function ongletPret(classeur, nom) {
     onglet.appendRow(ENTETES[nom]);
     onglet.setFrozenRows(1);
     onglet.getRange(1, 1, 1, ENTETES[nom].length).setFontWeight('bold');
+  } else if (onglet.getRange(1, ENTETES[nom].length).getValue() === '') {
+    // Colonnes ajoutees apres coup (Calories le 18, HIIT le 26 septembre
+    // 2026), toujours en fin de ligne : la premiere ligne d'un onglet deja
+    // cree les recoit ici, sans quoi les valeurs arriveraient sans titre.
+    onglet.getRange(1, 1, 1, ENTETES[nom].length).setValues([ENTETES[nom]]).setFontWeight('bold');
   }
   return onglet;
 }
@@ -389,12 +396,16 @@ const NOMS_TYPE_COURSE = {
   fractionne: 'Fractionné',
   incline: 'Incliné',
   seuil: 'Séance au seuil',
+  hiit: 'HIIT',
 };
 const ENTETES_TYPE_COURSE = {
   ef: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Vitesse moyenne (km/h)'],
   fractionne: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Repetitions', 'Recup (s)'],
   incline: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Pente (%)', 'Charge portee (kg)', 'Vitesse moyenne (km/h)'],
   seuil: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Duree au seuil (min)'],
+  // Distance et allure restent vides pour le HIIT : meme debut de ligne que
+  // les autres types, un seul chemin d'ecriture.
+  hiit: ['Date', 'Duree (min)', 'Distance (km)', 'Allure (min/km)', 'Calories', 'Activite', 'FC moyenne (bpm)', 'FC max (bpm)'],
 };
 
 function feuilleCourse(classeur) {
@@ -475,6 +486,7 @@ function ecrireCourseGrille(classeur, seance, date) {
         fractionne: [vide(f.repetitions), vide(f.recup_s)],
         incline: [vide(f.pente_pct), vide(f.charge_kg), vide(f.vitesse_moy_kmh)],
         seuil: [vide(f.duree_seuil_min)],
+        hiit: [vide(f.activite), vide(f.fc_moy), vide(f.fc_max)],
       }[type] || [];
 
       feuille.getRange(bloc.ligne, 1, 1, bloc.colonnes).setValues([base.concat(extra)]);
@@ -887,6 +899,7 @@ function ecrireSeance(seance) {
           vide(f.distance_km), allure, vide(f.calories),
           vide(f.repetitions), vide(f.recup_s), vide(f.pente_pct),
           vide(f.charge_kg), vide(f.duree_seuil_min), vide(f.vitesse_moy_kmh),
+          vide(f.activite), vide(f.fc_moy), vide(f.fc_max),
         ]);
       });
     });

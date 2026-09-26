@@ -21,6 +21,11 @@ const CLES = {
    stroke-dashoffset dans battre(), doit rester égale à stroke-dasharray
    dans css/style.css. */
 const CIRCONFERENCE_ANNEAU = 2 * Math.PI * 45;
+const REPOS_REST_PAUSE_S = 10;
+const DUREE_MIN_ENVOI_MS = 2200;
+// Le plein écran de repos s'efface progressivement jusqu'à disparaître à
+// 30 s de la fin (26 septembre 2026), à la place de l'ancien seuil de 20 %.
+const REPOS_FONDU_FIN_S = 30;
 
 const REGLAGES_PAR_DEFAUT = {
   pont: '',
@@ -131,6 +136,9 @@ const MOUVEMENTS_GAINAGE = {
   },
   pallof_press: {
     nom: 'Pallof press', mode: 'reps', prescription: '8-10 par côté', repos: 45,
+    // Poids suggéré tant qu'aucun n'a été noté (remarque du 18 septembre 2026,
+    // « prérempli à 10 kg »), voir celluleSerie.
+    poidsDefaut: 10,
     interference: 1, couleur: '#1A9850', couleurTexte: '#157c41',
     consigne: 'Poulie à hauteur de poitrine, à 1 m, perpendiculaire. 2 s pour tendre, '
       + '2 s de maintien, 2 s de retour. Départ 10 à 15 kg. Le buste ne pivote pas.',
@@ -277,6 +285,27 @@ const TYPES_COURSE = [
       '2 accélérations de 30 secondes à allure seuil, récupération complète',
     ],
   },
+  /* HIIT en cours collectif, ajouté le 26 septembre 2026 (demande de
+     l'utilisateur : « même hiérarchie que fractionné, incliné »). Pas de
+     distance (`sansDistance`), donc pas d'allure : durée totale et calories
+     (communes), fréquences cardiaques moyenne et maximale, et le cours
+     choisi (`choix`, un seul parmi les options). L'échauffement est celui
+     du cours lui-même, d'où une liste courte. */
+  {
+    cle: 'hiit',
+    nom: 'HIIT',
+    complet: 'HIIT, Body Attack ou Body Combat',
+    sansDistance: true,
+    choix: { cle: 'activite', options: ['Body Attack', 'Body Combat'] },
+    champs: [
+      { cle: 'fc_moy', libelle: 'FC moyenne (bpm)' },
+      { cle: 'fc_max', libelle: 'FC max (bpm)' },
+    ],
+    echauffement: [
+      "L'échauffement du cours suffit, arriver quelques minutes en avance",
+      'Mobilité épaules et hanches, 2 min, avant les séquences de frappes ou de sauts',
+    ],
+  },
 ];
 
 let programme = null;
@@ -325,7 +354,17 @@ function cleConsigne(codeJour, nomExo) {
    réécrire automatiquement. Voir CLAUDE.md, section "Le classeur". */
 function consigneAffichee(codeJour, nomExo, consigneImportee) {
   const overrides = lire(CLES.consignes, {});
-  const valeur = overrides[cleConsigne(codeJour, nomExo)];
+  let valeur = overrides[cleConsigne(codeJour, nomExo)];
+  // Un exercice renommé (ANCIENS_NOMS) garde la consigne saisie sous son
+  // ancien nom : sinon le renommage du 23 septembre 2026 perdait en silence
+  // la note de J1 (constaté le 26 dans la page Consignes du classeur).
+  if (valeur === undefined) {
+    const ancienne = Object.keys(overrides).find((cle) => {
+      const [jour, ...reste] = cle.split('|');
+      return jour === codeJour && memeExercice(reste.join('|'), nomExo);
+    });
+    if (ancienne) valeur = overrides[ancienne];
+  }
   return valeur !== undefined ? valeur : (consigneImportee || '');
 }
 
@@ -414,9 +453,50 @@ function oublierSeance(code) {
 
 const $ = (id) => document.getElementById(id);
 
+/* Serpent autour des bulles de l'accueil (26 septembre 2026, demande de
+   l'utilisateur, CodePen « Snake highlight » de Mikael Ainalem, code collé
+   par l'utilisateur) : un segment de trait en dégradé magenta → rouge qui
+   glisse le long du contour, puis s'allonge jusqu'à le fermer. L'original
+   anime `stroke-dasharray`/`stroke-dashoffset` avec anime.js ; ici des
+   keyframes CSS (voir .serpent dans css/style.css), le tracé étant normalisé
+   par `pathLength="100"` quelle que soit la taille de la bulle. Deux temps,
+   choisis par l'utilisateur : un tour rapide à l'appui avant d'ouvrir
+   l'écran, et un tour de ~3 s autour de la dernière bulle choisie au retour
+   sur l'accueil. Accueil seulement (« uniquement dans la page d'accueil »). */
+const DUREE_SERPENT_APPUI_MS = 800;
+const DUREE_SERPENT_RETOUR_MS = 3000;
+let derniereBulleAccueil = null;
+
+function jouerSerpent(bouton, mode) {
+  if (!bouton) return;
+  let svg = bouton.querySelector('.serpent');
+  if (!svg) {
+    const id = 'serpent-degrade-' + bouton.id;
+    bouton.insertAdjacentHTML('beforeend',
+      '<svg class="serpent" aria-hidden="true">' +
+      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0" stop-color="#ff00ff"/><stop offset="1" stop-color="#ff0000"/>' +
+      '</linearGradient></defs>' +
+      '<rect pathLength="100" stroke="url(#' + id + ')"/></svg>');
+    svg = bouton.querySelector('.serpent');
+  }
+  svg.classList.remove('appui', 'retour');
+  void svg.getBoundingClientRect();
+  svg.classList.add(mode);
+}
+
+function ouvrirDepuisAccueil(idBouton, ouvrir) {
+  derniereBulleAccueil = idBouton;
+  const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduit) { ouvrir(); return; }
+  jouerSerpent($(idBouton), 'appui');
+  setTimeout(ouvrir, DUREE_SERPENT_APPUI_MS);
+}
+
 function afficher(nom) {
   document.querySelectorAll('.ecran').forEach((e) => e.classList.remove('actif'));
   $('ecran-' + nom).classList.add('actif');
+  if (nom === 'menu' && derniereBulleAccueil) jouerSerpent($(derniereBulleAccueil), 'retour');
   window.scrollTo(0, 0);
   const corps = $('ecran-' + nom).querySelector('.corps');
   if (corps) corps.scrollTop = 0;
@@ -437,6 +517,18 @@ function jourDe(code) {
    de la bulle garde le code d'origine. */
 function codeCanonique(code) {
   return code === 'J6' ? 'J2' : code;
+}
+
+/* Ordre de semaine du 26 septembre 2026 (décidé avec l'utilisateur :
+   Haut max, Cardio, Pull, Jambes, Push, Cardio, repos), renommé **dans
+   l'application seulement** : le classeur garde ses codes (J1 Push, J5
+   Haut max), dont dépendent ses pages de sortie, les consignes et les
+   séances en cours. Seul l'affichage passe par ici ; `jour.code` et
+   `seance.jour` restent les codes du classeur partout ailleurs. */
+const ORDRE_JOURS_AFFICHAGE = ['J5', 'J2', 'J3', 'J4', 'J1', 'J6', 'G'];
+const CODES_AFFICHES = { J5: 'J1', J1: 'J5' };
+function codeAffiche(code) {
+  return CODES_AFFICHES[code] || code;
 }
 
 function nombreOuNull(valeur) {
@@ -508,6 +600,13 @@ const ANCIENS_NOMS = {
   // portait le classeur — correction du programme, pas un changement de
   // mouvement, l'historique doit donc suivre.
   'developpe incline banc': ['developpe incline machine'],
+  // 26 septembre 2026, demande de l'utilisateur : le leg curl passe en
+  // bilatéral et garde son historique unilatéral, en connaissance de cause
+  // (première comparaison faussée : charge d'une jambe contre deux).
+  // « Leg curl allongé » (même forme sans accent ni casse) figure aussi :
+  // c'est sous ce nom, saisi autrement, que vivent une séance et la
+  // consigne de J4 (page Consignes du classeur).
+  'leg curl allonge': ['leg curl allonge unilateral', 'leg curl allonge'],
 };
 
 /* Illustrations par exercice, ajoutées le 17 septembre 2026 (chantier
@@ -541,7 +640,7 @@ const IMAGES_EXERCICES = {
   'Extension triceps poulie barre': { fichier: 'extension-triceps-poulie-barre.jpg' },
   'Extension triceps unilaterale poulie': { fichier: 'extension-triceps-unilaterale-poulie.jpg', generique: true },
   'FACE PULL': { fichier: 'face-pull.jpg' },
-  'LEG CURL ALLONGE UNILATERAL': { fichier: 'leg-curl-allonge-unilateral.jpg' },
+  'LEG CURL ALLONGE': { fichier: 'leg-curl-allonge-unilateral.jpg' },
   'Lat pull-in unilateral poulie a genoux': { fichier: 'lat-pull-in-unilateral-poulie-a-genoux.jpg', generique: true },
   'Mollets debout unilatéral': { fichier: 'mollets-debout-unilateral.jpg' },
   'Oiseau inverse machine': { fichier: 'oiseau-inverse-machine.jpg', generique: true },
@@ -629,7 +728,12 @@ function sansCodeDeJour(titre) {
 }
 
 function nomDuJour(titre) {
-  return sansCodeDeJour(titre).split(/\s+-\s+/)[0].trim();
+  const nom = sansCodeDeJour(titre).split(/\s+-\s+/)[0].trim();
+  // « Cardio » à la place de « Footing » depuis le 26 septembre 2026
+  // (demande de l'utilisateur, le HIIT rejoignant la course) : renommé à
+  // l'affichage seulement, le classeur et `type: "footing"` restent tels
+  // quels (renommer le type toucherait l'historique et le pont).
+  return /^footing$/i.test(nom) ? 'CARDIO' : nom;
 }
 
 function rendreAccueil() {
@@ -637,7 +741,11 @@ function rendreAccueil() {
   liste.innerHTML = '';
   const enCours = lireSeancesEnCours();
 
-  programme.jours.forEach((jour) => {
+  const rang = (jour) => {
+    const i = ORDRE_JOURS_AFFICHAGE.indexOf(jour.code);
+    return i === -1 ? ORDRE_JOURS_AFFICHAGE.length : i;
+  };
+  programme.jours.slice().sort((a, b) => rang(a) - rang(b)).forEach((jour) => {
     const item = document.createElement('li');
     const bouton = document.createElement('button');
     bouton.className = 'carte-jour';
@@ -658,7 +766,7 @@ function rendreAccueil() {
     // leur propre repère et affichent la date à la suite. Voir .carte-jour
     // dans css/style.css.
     const detail = jour.type === 'footing'
-      ? 'Durée et distance'
+      ? 'Course et HIIT'
       : jour.type === 'gainage'
         ? 'Bonus'
         : (derniere ? 'Dernière : ' + ilYA(derniere.fin) : 'Pas encore faite');
@@ -669,10 +777,10 @@ function rendreAccueil() {
     bouton.dataset.icone = iconeJour(jour);
     bouton.innerHTML =
       '<div class="carte-code">' +
-      (jour.type === 'gainage' ? 'Bonus' : jour.code) +
+      (jour.type === 'gainage' ? 'Bonus' : codeAffiche(jour.code)) +
       (commencee ? '<span class="pastille-en-cours">en cours</span>' : '') +
       '</div>' +
-      '<div class="carte-nom">' + echapper(nom || 'Footing') + '</div>' +
+      '<div class="carte-nom">' + echapper(nom || 'Cardio') + '</div>' +
       '<div class="carte-detail">' + detail +
       (jour.type !== 'muscu' && derniere ? ' &middot; ' + ilYA(derniere.fin) : '') +
       '</div>';
@@ -704,14 +812,14 @@ function rendreReprises(enCours) {
 
     const texte = document.createElement('span');
     texte.className = 'reprise-texte';
-    texte.textContent = code + ' · commencée ' + ilYA(enCours[code].debut);
+    texte.textContent = codeAffiche(code) + ' · commencée ' + ilYA(enCours[code].debut);
 
     const abandonner = document.createElement('button');
     abandonner.className = 'discret';
     abandonner.type = 'button';
     abandonner.textContent = 'Abandonner';
     abandonner.addEventListener('click', () => {
-      if (!confirm('Abandonner la séance ' + code + ' ? Les séries saisies seront perdues.')) return;
+      if (!confirm('Abandonner la séance ' + codeAffiche(code) + ' ? Les séries saisies seront perdues.')) return;
       if (seance && seance.jour === code) seance = null;
       oublierSeance(code);
       rendreAccueil();
@@ -805,7 +913,7 @@ function commencer(code) {
 }
 
 function rendreDemarrage(jour) {
-  $('demarrage-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
+  $('demarrage-jour').textContent = codeAffiche(jour.code) + ' ' + nomDuJour(jour.titre);
   $('demarrage-nom').textContent = nomDuJour(jour.titre);
   const liste = ECHAUFFEMENT_PAR_JOUR[jour.code] || [];
   $('demarrage-echauffement').hidden = !liste.length;
@@ -989,6 +1097,31 @@ function champCycle(cycle, definition, actualiser, precedente) {
   return etiquette;
 }
 
+/* Un choix unique parmi quelques options (le cours de HIIT), en boutons
+   comme les types de course. Par défaut celui de la dernière sortie du même
+   type, posé tout de suite pour ne jamais partir au classeur sans valeur. */
+function choixCycle(cycle, choix, precedente) {
+  if (!cycle[choix.cle]) {
+    cycle[choix.cle] = (precedente && precedente[choix.cle]) || choix.options[0];
+    enregistrerSeance();
+  }
+  const bloc = document.createElement('div');
+  bloc.className = 'footing-types';
+  choix.options.forEach((option) => {
+    const bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.className = 'type-course' + (cycle[choix.cle] === option ? ' choisi' : '');
+    bouton.textContent = option;
+    bouton.addEventListener('click', () => {
+      cycle[choix.cle] = option;
+      enregistrerSeance();
+      bloc.querySelectorAll('.type-course').forEach((b) => b.classList.toggle('choisi', b === bouton));
+    });
+    bloc.appendChild(bouton);
+  });
+  return bloc;
+}
+
 function rendreFooting() {
   const jour = jourDe(seance.jour);
   $('bloc-muscu').hidden = true;
@@ -997,7 +1130,7 @@ function rendreFooting() {
   $('bouton-precedent').hidden = true;
   $('bouton-suivant').hidden = true;
 
-  $('seance-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
+  $('seance-jour').textContent = codeAffiche(jour.code) + ' ' + nomDuJour(jour.titre);
   $('seance-progression').textContent = '';
   $('ligne-progression').hidden = true;
 
@@ -1081,9 +1214,13 @@ function rendreCyclesCourse() {
       majAllureCycle(cycle, allure, compare, cleComparaison);
     };
 
+    if (type.choix) carte.appendChild(choixCycle(cycle, type.choix, precedente));
+
     const champs = document.createElement('div');
     champs.className = 'footing-champs';
-    CHAMPS_FOOTING.forEach((definition) => champs.appendChild(champCycle(cycle, definition, actualiser, precedente)));
+    CHAMPS_FOOTING
+      .filter((definition) => !(type.sansDistance && definition.cle === 'distance_km'))
+      .forEach((definition) => champs.appendChild(champCycle(cycle, definition, actualiser, precedente)));
     carte.appendChild(champs);
 
     if (type.champs.length) {
@@ -1152,6 +1289,30 @@ function valeursMouvement(cle, series) {
   return seance.mouvements[cle];
 }
 
+/* Poids par série des mouvements en répétitions ou en tenue, à côté de
+   `seance.mouvements` (voir celluleSerie). */
+function poidsMouvement(cle, series) {
+  if (!seance.poidsMouvements) seance.poidsMouvements = {};
+  const actuels = seance.poidsMouvements[cle];
+  if (!Array.isArray(actuels) || actuels.length < series) {
+    const neufs = new Array(series).fill(null);
+    (actuels || []).forEach((v, i) => { if (i < series) neufs[i] = v; });
+    seance.poidsMouvements[cle] = neufs;
+  }
+  return seance.poidsMouvements[cle];
+}
+
+function derniersPoidsMouvement(cle) {
+  const passees = lireTableau(CLES.historique)
+    .filter((s) => s.fin && (!seance || s.id !== seance.id))
+    .sort((a, b) => new Date(b.fin) - new Date(a.fin));
+  for (const s of passees) {
+    const poids = (s.poidsMouvements || {})[cle];
+    if (Array.isArray(poids) && poids.some((p) => p != null)) return poids;
+  }
+  return null;
+}
+
 function seriesDuMouvement(cle) {
   const categorie = CATEGORIES_GAINAGE.find((c) => c.mouvements.includes(cle));
   return categorie ? categorie.series : 3;
@@ -1207,11 +1368,14 @@ function texteValeur(mouvement, v) {
    fiche de l'historique, séance de gainage comme farmer walk des footings. */
 function lignesMouvementsHtml(s, cles, prefixe) {
   return cles.map((cle) => {
-    const valeurs = ((s.mouvements || {})[cle] || []).filter(valeurRenseignee);
-    if (!valeurs.length) return '';
+    const brutes = (s.mouvements || {})[cle] || [];
+    const poids = (s.poidsMouvements || {})[cle] || [];
     const m = MOUVEMENTS_GAINAGE[cle];
-    return ligneDetail((prefixe ? prefixe + ' · ' : '') + m.nom,
-      valeurs.map((v) => texteValeur(m, v)).join('  ·  '));
+    const textes = brutes.map((v, i) => (valeurRenseignee(v)
+      ? texteValeur(m, v) + (poids[i] != null ? ' à ' + poids[i] + ' kg' : '')
+      : null)).filter(Boolean);
+    if (!textes.length) return '';
+    return ligneDetail((prefixe ? prefixe + ' · ' : '') + m.nom, textes.join('  ·  '));
   }).join('');
 }
 
@@ -1231,7 +1395,7 @@ function lignesGainage(s) {
           serie: index + 1,
           valeur: objet ? null : v,
           unite: m.mode === 'chrono' ? 's' : (m.mode === 'reps' ? 'reps' : ''),
-          poids: objet ? v.poids : null,
+          poids: objet ? v.poids : (((s.poidsMouvements || {})[cle] || [])[index] ?? null),
           distance: objet ? v.distance : null,
           vitesse: objet ? v.vitesse : null,
         });
@@ -1310,8 +1474,12 @@ function carteMouvement(titre, series, cle, categorie) {
   if (avant) {
     const derniere = document.createElement('p');
     derniere.className = 'gainage-derniere';
-    derniere.textContent = 'Dernière fois : ' + avant.filter(valeurRenseignee)
-      .map((v) => texteValeur(mouvement, v)).join('  ·  ');
+    const poidsAvant = derniersPoidsMouvement(cle) || [];
+    derniere.textContent = 'Dernière fois : ' + avant
+      .map((v, i) => (valeurRenseignee(v)
+        ? texteValeur(mouvement, v) + (poidsAvant[i] != null ? ' à ' + poidsAvant[i] + ' kg' : '')
+        : null))
+      .filter(Boolean).join('  ·  ');
     carte.appendChild(derniere);
   }
 
@@ -1379,6 +1547,26 @@ function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
     });
   cellule.appendChild(input);
 
+  // Poids par série (26 septembre 2026, « ajouter le poids mis à chaque
+  // répétition ») : rangé à part dans `seance.poidsMouvements`, les valeurs
+  // de `seance.mouvements` restant de simples nombres (tout le reste, dont
+  // l'historique déjà enregistré, les lit ainsi). Suggestion en grisé : le
+  // poids de la dernière fois, ou `poidsDefaut` du mouvement.
+  const poidsAvant = derniersPoidsMouvement(cle);
+  const suggestionPoids = poidsAvant && poidsAvant[index] != null
+    ? poidsAvant[index] : (mouvement.poidsDefaut != null ? mouvement.poidsDefaut : null);
+  const poids = champGainage(poidsMouvement(cle, series)[index], suggestionPoids,
+    libelle + ', poids en kg', (n) => {
+      poidsMouvement(cle, series)[index] = n;
+      enregistrerSeance();
+    });
+  poids.classList.add('gainage-poids');
+  const etiquettePoids = document.createElement('label');
+  etiquettePoids.className = 'gainage-champ gainage-champ-poids';
+  const unitePoids = document.createElement('span');
+  unitePoids.textContent = 'kg';
+  etiquettePoids.append(poids, unitePoids);
+
   if (mouvement.mode === 'chrono') {
     const bouton = document.createElement('button');
     bouton.type = 'button';
@@ -1388,6 +1576,7 @@ function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
     bouton.addEventListener('click', () => demarrerTenue(cle, index));
     cellule.appendChild(bouton);
   }
+  cellule.appendChild(etiquettePoids);
 
   // Le repos part à la confirmation, **quel que soit le mode**. Une tenue
   // tapée à la main ne le lançait pas jusqu'au 12 septembre 2026, là où des
@@ -1396,7 +1585,16 @@ function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
   // juste : le `blur` du champ précède le `click`, un repos démarre donc une
   // fraction de seconde avant que la tenue ne le remplace.
   input.addEventListener('change', () => {
-    if (valeursMouvement(cle, series)[index] != null) serieSaisie(cle, index);
+    if (valeursMouvement(cle, series)[index] == null) return;
+    // Série confirmée sans poids tapé : on garde celui suggéré, même
+    // principe que les séries de musculation qui reprennent la dernière fois.
+    const tous = poidsMouvement(cle, series);
+    if (tous[index] == null && suggestionPoids != null) {
+      tous[index] = suggestionPoids;
+      poids.value = String(suggestionPoids);
+      enregistrerSeance();
+    }
+    serieSaisie(cle, index);
   });
   return cellule;
 }
@@ -1639,7 +1837,7 @@ function rendreExercice() {
   $('bouton-precedent').hidden = false;
   $('bouton-suivant').hidden = false;
 
-  $('seance-jour').textContent = jour.code + ' ' + nomDuJour(jour.titre);
+  $('seance-jour').textContent = codeAffiche(jour.code) + ' ' + nomDuJour(jour.titre);
   $('seance-progression').textContent = (indexExo + 1) + '/' + seance.exercices.length;
   rendreJauge();
 
@@ -1886,6 +2084,14 @@ function rendreSeries() {
       enregistrerSeance();
       restPause.classList.toggle('actif', serie.restPause);
       restPause.setAttribute('aria-pressed', serie.restPause ? 'true' : 'false');
+      // Repos de rest-pause plafonné à 10 s (26 septembre 2026) : cocher RP
+      // sur la série qui suit juste une série faite relance la minuterie à
+      // 10 s si le repos en cours est plus long.
+      const precedente = courant.series[index - 1];
+      if (serie.restPause && !serie.faite && precedente && precedente.faite
+          && (!minuterie || minuterie.fin - Date.now() > REPOS_REST_PAUSE_S * 1000)) {
+        lancerMinuterie(REPOS_REST_PAUSE_S, null);
+      }
     });
 
     // Suppression d'une série en trop (demande de l'utilisateur le
@@ -2048,8 +2254,14 @@ function validerSerie(exercice, serie, index) {
   }
   focaliserProchaineSerie();
 
+  // Prochaine série marquée rest-pause : repos plafonné à 10 s
+  // (26 septembre 2026), pas le repos ordinaire de l'exercice.
+  const suivante = exercice.series[index + 1];
+  const reposEffectif = suivante && suivante.restPause && !suivante.faite
+    ? REPOS_REST_PAUSE_S
+    : (repos || 90);
   if (!serie.echauffement || repos) {
-    lancerMinuterie(repos || 90, bilan);
+    lancerMinuterie(reposEffectif, bilan);
     // La minuterie doit se voir après chaque validation (demande de
     // l'utilisateur le 13 septembre 2026) : la saisie fait défiler la page
     // vers les séries, qui l'emportent sinon au-dessus du cadre.
@@ -2110,6 +2322,7 @@ function lancerMinuterie(secondes, bilan) {
   // de retard laisse le clic en cours atteindre sa cible en premier.
   setTimeout(() => {
     if (minuterie !== instance) return;
+    if (instance.duree <= REPOS_FONDU_FIN_S) return;
     $('minuterie-plein-ecran').hidden = false;
     const actif = document.activeElement;
     if (actif && actif !== document.body) actif.blur();
@@ -2159,9 +2372,16 @@ function battre() {
   // 2026). Le clavier ne se rouvre pas de lui-même à cet instant : aucun
   // navigateur mobile ne l'ouvre sans geste de l'utilisateur, même
   // limitation que sur la fermeture naturelle à zéro (minuterieTerminee).
-  if (restant <= minuterie.duree * 0.2) {
-    $('minuterie-plein-ecran').hidden = true;
-  }
+  //
+  // Remplacé le 26 septembre 2026 (demande de l'utilisateur) : fondu
+  // progressif, opaque au départ, invisible à REPOS_FONDU_FIN_S de la fin,
+  // plutôt qu'une disparition sèche à 20 %. Un repos plus court que ce
+  // seuil (rest-pause à 10 s) ne montre donc jamais le plein écran.
+  const plage = minuterie.duree - REPOS_FONDU_FIN_S;
+  const opacite = plage > 0 ? Math.min(1, Math.max(0, (restant - REPOS_FONDU_FIN_S) / plage)) : 0;
+  const plein = $('minuterie-plein-ecran');
+  plein.style.opacity = opacite;
+  if (opacite <= 0) plein.hidden = true;
 }
 
 function arreterMinuterie() {
@@ -2172,6 +2392,7 @@ function arreterMinuterie() {
   $('minuterie').classList.add('inactif');
   $('minuterie-chiffres').textContent = '';
   $('minuterie-plein-ecran').hidden = true;
+  $('minuterie-plein-ecran').style.opacity = '';
   $('minuterie-plein-ecran-chiffres').textContent = '';
   $('minuterie-plein-ecran-anneau-progres').style.strokeDashoffset = '0px';
   rendreBilanMinuterie(null);
@@ -2410,7 +2631,7 @@ function terminer() {
   }
 
   resume.innerHTML =
-    '<h3>' + echapper(seance.jour + ' ' + nomDuJour(seance.titre)) + '</h3>' +
+    '<h3>' + echapper(codeAffiche(seance.jour) + ' ' + nomDuJour(seance.titre)) + '</h3>' +
     '<div class="chiffres">' +
       '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
       '<div class="chiffre"><b>' + seriesFaites + '</b><span>séries</span></div>' +
@@ -2447,7 +2668,7 @@ function terminerFooting(resume) {
     cycles: (carte[type.cle] || []).filter((c) => c.duree_min != null || c.distance_km != null),
   })).filter((entree) => entree.cycles.length);
 
-  resume.innerHTML = '<h3>' + echapper(seance.jour + ' ' + nomDuJour(seance.titre)) + '</h3>';
+  resume.innerHTML = '<h3>' + echapper(codeAffiche(seance.jour) + ' ' + nomDuJour(seance.titre)) + '</h3>';
 
   if (!parType.length) {
     resume.innerHTML += '<p class="vide">Aucune sortie renseignée.</p>';
@@ -2463,13 +2684,18 @@ function terminerFooting(resume) {
         allureTexte = Math.floor(allure) + ':' +
           String(Math.round((allure - Math.floor(allure)) * 60)).padStart(2, '0');
       }
-      const nom = cycles.length > 1 ? type.complet + ', passage ' + (index + 1) : type.complet;
+      const base = type.choix && d[type.choix.cle] ? d[type.choix.cle] : type.complet;
+      const nom = cycles.length > 1 ? base + ', passage ' + (index + 1) : base;
+      // Le HIIT n'a ni distance ni allure : calories et fréquences
+      // cardiaques à la place (26 septembre 2026).
+      const chiffres = type.sansDistance
+        ? [[duree, 'minutes'], [d.calories != null ? d.calories : '&mdash;', 'kcal'],
+          [d.fc_moy != null ? d.fc_moy : '&mdash;', 'bpm moy.'], [d.fc_max != null ? d.fc_max : '&mdash;', 'bpm max']]
+        : [[duree, 'minutes'], [distance, 'km'], [allureTexte, 'min / km']];
       resume.innerHTML +=
         '<div class="resume-exo-nom">' + echapper(nom) + '</div>' +
         '<div class="chiffres">' +
-          '<div class="chiffre"><b>' + duree + '</b><span>minutes</span></div>' +
-          '<div class="chiffre"><b>' + distance + '</b><span>km</span></div>' +
-          '<div class="chiffre"><b>' + allureTexte + '</b><span>min / km</span></div>' +
+          chiffres.map(([valeur, unite]) => '<div class="chiffre"><b>' + valeur + '</b><span>' + unite + '</span></div>').join('') +
         '</div>';
     });
   });
@@ -2503,7 +2729,7 @@ function preparerEcranFin() {
   $('fin-message').textContent = '';
   $('fin-message').className = 'message';
   $('bouton-enregistrer').disabled = false;
-  $('bouton-enregistrer').classList.remove('envoi', 'envoye');
+  $('bouton-enregistrer').classList.remove('envoi', 'complet', 'envoye');
   $('bouton-enregistrer-texte').textContent = 'Synchronisation';
   $('fin-remarque').value = seance.remarque || '';
 
@@ -2584,24 +2810,34 @@ function enregistrerEtSynchroniser() {
   // pendant l'appel réseau (anneau qui tourne, voir css/style.css), .envoye
   // à la réussite (coche, texte "Envoyé"). Retiré en cas d'échec pour
   // revenir à l'état de départ, réessayable.
+  //
+  // Refait le 26 septembre 2026 (« ne pas le bloquer sur la première phase,
+  // ralentir la progression générale ») : l'anneau tournait en boucle
+  // jusqu'à la réponse, puis la page partait aussitôt. Trois phases
+  // cadencées désormais, comme le CodePen : le bouton se réduit à un rond
+  // et l'anneau se remplit (jusqu'à ~90 %, durée minimale garantie même si
+  // le réseau répond vite), se complète à la réponse, puis le bouton se
+  // redéploie en vert avec « Envoyé », tenu un moment avant de quitter.
+  const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+  const debut = Date.now();
   bouton.classList.add('envoi');
   message.className = 'message';
   message.textContent = 'Envoi vers le classeur...';
-  synchroniser().then((compte) => {
-    bouton.classList.remove('envoi');
-    if (compte) {
+  synchroniser().then((compte) => attendre(Math.max(0, DUREE_MIN_ENVOI_MS - (Date.now() - debut)))
+    .then(() => { bouton.classList.add('complet'); return attendre(900); })
+    .then(() => {
+      bouton.classList.remove('envoi', 'complet');
       bouton.classList.add('envoye');
-      $('bouton-enregistrer-texte').textContent = 'Envoyé';
-    }
-    message.className = 'message ok';
-    message.textContent = compte
-      ? 'Classeur mis à jour.'
-      : 'Séance gardée sur le téléphone, envoi à réessayer.';
-    seance = null;
-    rendreAccueil();
-    setTimeout(() => afficherSeanceEnregistree(idEnregistre), 1600);
-  }).catch((erreur) => {
-    bouton.classList.remove('envoi');
+      $('bouton-enregistrer-texte').textContent = compte ? 'Envoyé' : 'En attente';
+      message.className = 'message ok';
+      message.textContent = compte
+        ? 'Classeur mis à jour.'
+        : 'Séance gardée sur le téléphone, envoi à réessayer.';
+      seance = null;
+      rendreAccueil();
+      setTimeout(() => afficherSeanceEnregistree(idEnregistre), 2000);
+    })).catch((erreur) => {
+    bouton.classList.remove('envoi', 'complet');
     bouton.disabled = false;
     message.className = 'message erreur';
     message.textContent = "Envoi impossible : " + erreur.message +
@@ -2885,9 +3121,11 @@ function rendreCalendrier() {
    (footingParType lit tous les jours de course confondus), rien à filtrer
    ici par jour. */
 function rendreEvolutionCourse() {
+  // Le HIIT n'a pas de distance, donc pas de vitesse à tracer : écarté ici.
+  const types = TYPES_COURSE.filter((t) => !t.sansDistance);
   const boutons = $('course-evolution-types');
   boutons.innerHTML = '';
-  TYPES_COURSE.forEach((type, position) => {
+  types.forEach((type, position) => {
     const bouton = document.createElement('button');
     bouton.type = 'button';
     bouton.className = 'type-course' + (position === indexTypeEvolution ? ' choisi' : '');
@@ -2899,7 +3137,7 @@ function rendreEvolutionCourse() {
     boutons.appendChild(bouton);
   });
 
-  const type = TYPES_COURSE[indexTypeEvolution];
+  const type = types[indexTypeEvolution];
   const sorties = lireTableau(CLES.historique)
     .filter((s) => s.type === 'footing' && s.fin)
     .sort((a, b) => new Date(a.fin) - new Date(b.fin))
@@ -4032,7 +4270,7 @@ function rendreHistorique(idOuvert) {
   cible.innerHTML = seances.map((s) =>
     '<details class="entree-historique"' + (s.id === idOuvert ? ' open' : '') + '>' +
       '<summary>' +
-        '<div class="titre"><span>' + echapper(s.jour) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
+        '<div class="titre"><span>' + echapper(codeAffiche(s.jour)) + ' &middot; ' + dateCourte(s.fin) + '</span>' +
         '<span class="badge ' + (s.envoye ? 'envoye">classeur' : 'attente">en attente') + '</span></div>' +
         '<div class="details">' + resumeCourtSeance(s) + '</div>' +
       '</summary>' +
@@ -4104,6 +4342,10 @@ function detailSeance(s) {
         if (d.pente_pct) bouts.push('pente ' + d.pente_pct + ' %');
         if (d.charge_kg) bouts.push(d.charge_kg + ' kg portés');
         if (d.duree_seuil_min) bouts.push(d.duree_seuil_min + ' min au seuil');
+        if (t.choix && d[t.choix.cle]) bouts.unshift(d[t.choix.cle]);
+        if (t.sansDistance && d.calories) bouts.push(d.calories + ' kcal');
+        if (d.fc_moy) bouts.push('FC moy. ' + d.fc_moy);
+        if (d.fc_max) bouts.push('FC max ' + d.fc_max);
         html += ligneDetail(cycles.length > 1 ? t.complet + ', passage ' + (index + 1) : t.complet,
           bouts.join('  ·  '));
       });
@@ -4428,7 +4670,7 @@ function brancher() {
   // l'engrenage, tous les réglages arrivent dans ce menu ») : jusque-là un
   // engrenage isolé dans l'en-tête, moins visible et hors du style des deux
   // autres cartes.
-  $('bouton-menu-reglages').addEventListener('click', () => { rendreReglages(); afficher('reglages'); });
+  $('bouton-menu-reglages').addEventListener('click', () => ouvrirDepuisAccueil('bouton-menu-reglages', () => { rendreReglages(); afficher('reglages'); }));
   $('bouton-reglages-retour').addEventListener('click', () => {
     sauverReglages();
     rendreAccueil();
@@ -4437,8 +4679,8 @@ function brancher() {
     // vider ce qui attendait, sans obliger à passer par "Tester le pont".
     if (reglages.pont) synchroniser().then(rendreEtatSync).catch(() => {});
   });
-  $('bouton-menu-sport').addEventListener('click', () => { rendreAccueil(); afficher('accueil'); });
-  $('bouton-menu-suivi').addEventListener('click', () => afficher('suivi'));
+  $('bouton-menu-sport').addEventListener('click', () => ouvrirDepuisAccueil('bouton-menu-sport', () => { rendreAccueil(); afficher('accueil'); }));
+  $('bouton-menu-suivi').addEventListener('click', () => ouvrirDepuisAccueil('bouton-menu-suivi', () => afficher('suivi')));
   $('bouton-sport-retour').addEventListener('click', () => afficher('menu'));
   $('bouton-suivi-retour').addEventListener('click', () => afficher('menu'));
 

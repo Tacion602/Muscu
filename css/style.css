@@ -278,33 +278,38 @@ body { display: flex; flex-direction: column; }
 #ecran-accueil > *:not(.fond-vivant),
 #ecran-suivi > *:not(.fond-vivant),
 #ecran-reglages > *:not(.fond-vivant) { position: relative; z-index: 1; }
-/* Réduit en taille pour un dégradé plus fin (23 septembre 2026, « scale
-   réduit... fin ») : `scale(.55)` combiné à la rotation dans le keyframe,
-   sans quoi l'animation repartirait de l'échelle 1 au premier tour.
-
-   Dimensionné en `vmax` plutôt qu'en `inset` en pourcentage, corrigé le
-   même jour (signalé par l'utilisateur : un bord clair — presque blanc,
-   `--fond` — apparaissait aux coins pendant la rotation) : `inset: -25%`
-   donne un carré basé sur la largeur ET la hauteur du conteneur
-   séparément, plus petit que sa diagonale une fois réduit à l'échelle
-   .55 — insuffisant pour couvrir les coins d'un écran de téléphone
-   (portrait, très étroit) à toutes les rotations. `220vmax` (basé sur la
-   plus grande dimension du viewport) donne un carré nettement plus grand
-   que la diagonale de l'écran même une fois réduit, couvrant les coins
-   quel que soit l'angle. */
+/* Recalé sur l'original le 26 septembre 2026 (capture du CodePen fournie
+   par l'utilisateur : « un peu trop zoomé », « bord noir, rotation un peu
+   plus rapide », « peut-être le tourner à 90° » ; code lu sur la page
+   debug du CodePen). L'original est une couche de la taille de l'écran
+   (`inset: 0`) qui tourne sur un fond de la couleur la plus sombre de la
+   palette : les coins découvrent ce fond, d'où le « bord noir », voulu.
+   Nous avions à l'inverse une couche géante réduite à l'échelle (220vmax
+   × .55) sur fond clair à 60 % d'opacité, pour masquer justement ces
+   coins (« bord blanc », 23 septembre) : d'où l'effet zoomé et délavé.
+   Repris de l'original : opacité pleine, flou 60px sur téléphone (80px
+   au-delà de 600px, comme lui), saturation 120/130 %, un tour en 25 s.
+   Tourné à 90° comme proposé : un rectangle **paysage** (100vh × 100vw)
+   centré sur l'écran portrait, pour retrouver les proportions de l'aperçu
+   paysage du CodePen plutôt qu'une bande haute et étroite. La couleur de
+   fond de chaque écran (plus bas) est la plus sombre de sa palette. */
 .fond-vivant {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 220vmax;
-  height: 220vmax;
-  margin-top: -110vmax;
-  margin-left: -110vmax;
+  width: 100vh;
+  height: 100vw;
   z-index: 0;
-  filter: blur(70px) saturate(120%);
-  opacity: .6;
-  transform: scale(.55);
+  filter: blur(60px) saturate(120%);
+  transform: translate(-50%, -50%) rotate(90deg);
 }
+@media (min-width: 601px) {
+  .fond-vivant { filter: blur(80px) saturate(130%); }
+}
+#ecran-menu { background: var(--fv1); }
+#ecran-accueil { background: #0B132B; }
+#ecran-suivi { background: #1A1A1D; }
+#ecran-reglages { background: #1F1D36; }
 #ecran-menu .fond-vivant {
   background: conic-gradient(from 0deg,
     var(--fv1), var(--fv2), var(--fv3), var(--fv4), var(--fv5), var(--fv6), var(--fv1));
@@ -324,15 +329,17 @@ body { display: flex; flex-direction: column; }
    de cet écran n'est pas toujours sombre (Horizon Shift passe par du
    clair), un icône uni n'y resterait pas lisible partout, la même
    transparence que .carte-jour tient quelle que soit la teinte dessous. */
-#ecran-accueil {
+/* Suivi suit le 26 septembre 2026 (« bulles suivi même mise en page que
+   les bulles sport ») : même retour flottant, même compensation. */
+#ecran-accueil, #ecran-suivi {
   padding-top: calc(env(safe-area-inset-top) + 60px);
 }
-.icone-sport-flottant {
+.icone-retour-flottant {
   position: absolute;
   top: env(safe-area-inset-top);
   left: 8px;
   z-index: 5;
-  background: rgba(255, 255, 255, .3);
+  background: var(--verre);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: var(--rayon-plein);
@@ -348,11 +355,11 @@ body { display: flex; flex-direction: column; }
     #1F1D36, #3F3351, #864879, #E9A6A6, #F0F0F0, #2E2E2E, #1F1D36);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .fond-vivant { animation: fond-vivant-rotation 45s linear infinite; }
+  .fond-vivant { animation: fond-vivant-rotation 25s linear infinite; }
 }
 @keyframes fond-vivant-rotation {
-  from { transform: scale(.55) rotate(0deg); }
-  to { transform: scale(.55) rotate(360deg); }
+  from { transform: translate(-50%, -50%) rotate(90deg); }
+  to { transform: translate(-50%, -50%) rotate(450deg); }
 }
 #ecran-menu .liste-menu { justify-content: center; }
 #ecran-menu .carte-menu { max-width: 300px; margin-inline: auto; }
@@ -371,7 +378,7 @@ body { display: flex; flex-direction: column; }
    carte opaque. Scopé à `#ecran-menu` : `.carte-menu-petite` du sous-menu
    Suivi, sur fond uni, n'a aucune raison d'être concernée. */
 #ecran-menu .carte-menu {
-  background: rgba(255, 255, 255, .3);
+  background: var(--verre);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -398,7 +405,10 @@ body { display: flex; flex-direction: column; }
 
 /* Menu Suivi : mêmes cartes, plus basses, sans détail (trois entrées,
    16 septembre 2026). */
-.liste-menu-petite { padding: var(--marge); gap: 8px; }
+/* Espacées sur toute la hauteur comme .liste-jours (Sport) depuis le
+   26 septembre 2026 : `justify-content` sur un flex en colonne, même
+   repli sur le haut si ça déborde (`safe`). */
+.liste-menu-petite { padding: var(--marge) 8px; gap: 14px; justify-content: space-evenly; overflow-y: auto; }
 /* Largeur plafonnée, centrée, et fond transparent le 23 septembre 2026
    (demande de l'utilisateur : « même largeur, centrée », « organisé comme
    la page d'accueil ») : même plafond que les cartes de l'accueil et de
@@ -408,15 +418,16 @@ body { display: flex; flex-direction: column; }
   min-height: auto;
   flex-direction: row;
   align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
+  gap: 12px;
+  padding: 14px 16px;
+  min-height: 76px;
   max-width: 300px;
   margin-inline: auto;
-  background: rgba(255, 255, 255, .3);
+  background: var(--verre);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
-.carte-menu-petite .carte-menu-icone { font-size: 28px; margin-bottom: 0; }
+.carte-menu-petite .carte-menu-icone { font-size: 42px; margin-bottom: 0; }
 .carte-menu-petite .carte-menu-nom { font-size: 17px; }
 
 /* ---------- Suivi ---------- */
@@ -1028,7 +1039,7 @@ body { display: flex; flex-direction: column; }
   max-width: 300px;
   margin-inline: auto;
   text-align: left;
-  background: rgba(255, 255, 255, .3);
+  background: var(--verre);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 1px 2px rgba(20, 32, 29, .06);
@@ -1752,11 +1763,25 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   justify-content: center;
   gap: 24px;
-  background: var(--repos);
+  /* Dégradé monochrome animé (26 septembre 2026, demande de l'utilisateur :
+     « dégradé dynamique monochrome ») : quatre verts de la même famille que
+     --repos, dont la fenêtre glisse lentement. L'opacité de la couche est
+     pilotée par battre() (fondu jusqu'à 30 s de la fin), pas ici. */
+  background: linear-gradient(135deg, #103a24, var(--repos), #2f8a58, var(--repos), #103a24);
+  background-size: 300% 300%;
+  animation: repos-degrade 8s ease-in-out infinite alternate;
+  transition: opacity .25s linear;
   cursor: pointer;
   touch-action: manipulation;
 }
 .minuterie-plein-ecran[hidden] { display: none; }
+@keyframes repos-degrade {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .minuterie-plein-ecran { animation: none; }
+}
 
 /* Anneau qui se réduit (18 septembre 2026, remplace la jauge pilule
    linéaire) : SVG à 100 unités de côté, tracé de rayon 45 donc de
@@ -1875,99 +1900,175 @@ body { display: flex; flex-direction: column; }
 .principal.grand { padding: 18px; font-size: 17px; margin-top: 20px; }
 .principal[disabled] { opacity: .5; }
 
-/* Bouton « Enregistrer et synchroniser » de l'écran de fin, animé le
-   23 septembre 2026 (demande de l'utilisateur, lien CodePen fourni) :
-   même empreinte que .principal.grand (pleine largeur, même marge), mais
-   un cercle à gauche qui tourne pendant l'envoi (.envoi) puis affiche une
-   coche à l'arrivée (.envoye) plutôt qu'un simple texte de bouton. Anneau
-   en SVG, même principe que .minuterie-anneau (stroke-dasharray/-dashoffset)
-   mais tournant indéfiniment (durée réelle de l'envoi inconnue à l'avance,
-   contrairement au repos qui a une durée fixe) plutôt qu'à décompte. */
+/* Bouton « Enregistrer et synchroniser » de l'écran de fin, d'après le
+   CodePen "download button animation" de Denis Pasko (demande de
+   l'utilisateur le 23 septembre 2026, recalé le 26 sur le code source de
+   l'original, collé par l'utilisateur). L'original anime un tracé SVG avec
+   GSAP et des plugins payants (DrawSVG, CustomEase), incompatibles avec une
+   PWA hors ligne sans build : même chronologie reprise en CSS pur, phase par
+   phase, pilotée par trois classes posées par enregistrerEtSynchroniser()
+   (js/app.js) :
+   - repos : pilule bordée, rond plein à gauche avec la flèche, texte ;
+   - .envoi : la pilule se resserre en rond (0,7 s), la flèche devient un
+     carré blanc qui pivote, puis un point tourne sur l'anneau tant que
+     l'envoi dure (durée minimale garantie côté script) ;
+   - .complet : le point vire au vert et rebondit, la pilule se redéploie ;
+   - .envoye : bordure verte, texte « Envoyé » qui revient.
+   Largeur fixe (300px), pas pleine largeur : demande de l'utilisateur le
+   26 septembre 2026 (« n'adapte pas à la largeur de l'écran »), comme
+   l'original. */
 .bouton-sync {
-  width: 100%;
-  margin-top: 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 7px;
-  border: 0;
+  /* Couleurs de l'original (#00cffc, #00afd3, #02fc86). Le texte reste
+     sombre (fond clair de l'écran de fin, là où l'original est sur fond
+     noir) ; « Envoyé » prend --hausse, le vert de l'original n'offrant pas
+     assez de contraste en texte sur fond clair (bordure seulement). */
+  --sync-couleur: #00cffc;
+  --sync-remplissage: #00afd3;
+  --sync-vert: #02fc86;
+  position: relative;
+  display: block;
+  width: 300px;
+  height: 64px;
+  margin: 20px auto 0;
+  padding: 0;
+  border: 2.5px solid var(--sync-couleur);
   border-radius: var(--rayon-plein);
-  background: var(--accent);
-  color: #fff;
+  background: transparent;
+  color: var(--texte);
   font: inherit;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .3px;
   cursor: pointer;
-  transition: background .3s ease;
+  transition: width .7s cubic-bezier(.33, 1, .68, 1), border-color .2s ease;
 }
 .bouton-sync[disabled] { pointer-events: none; }
 .bouton-sync-cercle {
-  position: relative;
-  flex: none;
-  width: 44px;
-  height: 44px;
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 51px;
+  height: 51px;
+  margin-top: -25.5px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .18);
+  background: var(--sync-couleur);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: left .7s cubic-bezier(.33, 1, .68, 1), transform .7s cubic-bezier(.33, 1, .68, 1),
+    background .35s ease, opacity .33s ease;
 }
-.bouton-sync-anneau {
-  position: absolute;
-  inset: -3px;
-  width: calc(100% + 6px);
-  height: calc(100% + 6px);
-  transform: rotate(-90deg);
-}
-.bouton-sync-anneau-trace {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-dasharray: 100.5;
-  stroke-dashoffset: 100.5;
-  opacity: 0;
-}
-.bouton-sync-icone { font-size: 20px; line-height: 1; transition: opacity .2s ease, transform .3s ease; }
-.bouton-sync-check {
+/* Remplissage qui monte dans le rond pendant l'envoi (dégradé de
+   l'original, offset animé de 98 % à 0 %). */
+.bouton-sync-cercle { overflow: hidden; }
+.bouton-sync-cercle::before {
+  content: '';
   position: absolute;
   inset: 0;
+  background: var(--sync-remplissage);
+  transform: translateY(100%);
+}
+.bouton-sync.envoi .bouton-sync-cercle::before {
+  transform: translateY(0);
+  transition: transform 1.8s cubic-bezier(.55, 0, 1, .45) .75s;
+}
+.bouton-sync-icone, .bouton-sync-carre { z-index: 1; }
+.bouton-sync-icone { font-size: 24px; line-height: 1; transition: opacity .3s ease, transform .35s ease; }
+.bouton-sync:active .bouton-sync-icone { transform: translateY(2.5px); }
+.bouton-sync-carre {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: #fff;
+  opacity: 0;
+  transform: rotate(45deg) scale(.3);
+  transition: opacity .35s ease, transform .7s cubic-bezier(.33, 1, .68, 1);
+}
+.bouton-sync-texte {
+  position: absolute;
+  inset: 0;
+  padding-left: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  opacity: 0;
-  transform: scale(.4);
-  transition: opacity .25s ease, transform .35s ease;
-}
-.bouton-sync-texte {
-  overflow: hidden;
   white-space: nowrap;
-  max-width: 300px;
-  transition: max-width .35s ease, opacity .25s ease, margin-left .35s ease;
+  transition: opacity .3s ease, transform .45s cubic-bezier(.34, 1.8, .64, 1), padding-left .3s ease;
 }
-/* En cours d'envoi : l'icône disparaît, l'anneau tourne, le texte se
-   résorbe pour ne laisser que le cercle (même idée que le bouton du
-   CodePen, qui se réduit à un rond pendant le téléchargement). */
-.bouton-sync.envoi .bouton-sync-icone { opacity: 0; transform: scale(.5); }
-.bouton-sync.envoi .bouton-sync-anneau-trace {
+/* Point en orbite sur l'anneau : pivote autour du centre du bouton une fois
+   réduit en rond (même rôle que le point qui suit le tracé dans l'original). */
+.bouton-sync-orbite {
+  position: absolute;
+  inset: -2.5px;
+  margin: auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+.bouton-sync-point {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--sync-couleur);
+}
+.bouton-sync-pastille {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--sync-vert);
+  opacity: 0;
+  transform: scale(0);
+}
+
+/* Phase 1, envoi : rond, carré blanc, point qui tourne. */
+.bouton-sync.envoi { width: 64px; }
+.bouton-sync.envoi .bouton-sync-cercle { left: 50%; transform: translateX(-50%); }
+.bouton-sync.envoi .bouton-sync-icone { opacity: 0; transform: rotate(225deg) scale(.4); }
+.bouton-sync.envoi .bouton-sync-carre { opacity: 1; transform: rotate(270deg) scale(1); }
+.bouton-sync.envoi .bouton-sync-texte { opacity: 0; transform: translateY(7px) scale(.77); }
+.bouton-sync.envoi .bouton-sync-orbite {
   opacity: 1;
-  animation: bouton-sync-rotation 1s linear infinite;
+  transition: opacity .4s ease .7s;
+  animation: bouton-sync-orbite 1.1s cubic-bezier(.55, 0, .45, 1) .7s infinite;
 }
-.bouton-sync.envoi .bouton-sync-texte { max-width: 0; opacity: 0; margin-left: -14px; }
-@keyframes bouton-sync-rotation {
-  0% { stroke-dashoffset: 100.5; transform: rotate(0deg); }
-  50% { stroke-dashoffset: 25; }
-  100% { stroke-dashoffset: 100.5; transform: rotate(360deg); }
+@keyframes bouton-sync-orbite { to { transform: rotate(360deg); } }
+
+/* Phase 2, complet : le rond s'efface, la pilule se redéploie, un point
+   vert rebondit au centre. */
+.bouton-sync.envoi.complet { width: 300px; }
+.bouton-sync.envoi.complet .bouton-sync-cercle,
+.bouton-sync.envoi.complet .bouton-sync-orbite { opacity: 0; animation: none; transition: opacity .33s ease; }
+.bouton-sync.envoi.complet .bouton-sync-pastille { animation: bouton-sync-rebond 1s ease forwards; }
+@keyframes bouton-sync-rebond {
+  0% { opacity: 1; transform: scale(.6) translateY(0); }
+  40% { transform: scale(.5, 1) translateY(-22px); }
+  60% { transform: scale(1, .6) translateY(-22px); }
+  90% { opacity: 1; transform: scale(.4, 1) translateY(0); }
+  100% { opacity: 0; transform: scale(0); }
 }
-/* Envoyé : fond vert (--hausse), coche à la place de l'icône, texte de
-   retour. */
-.bouton-sync.envoye { background: var(--hausse); }
-.bouton-sync.envoye .bouton-sync-anneau-trace { opacity: 0; animation: none; }
-.bouton-sync.envoye .bouton-sync-icone { opacity: 0; }
-.bouton-sync.envoye .bouton-sync-check { opacity: 1; transform: scale(1); }
+
+/* Phase 3, envoyé : bordure verte, léger rebond, texte qui revient. */
+.bouton-sync.envoye { border-color: var(--sync-vert); animation: bouton-sync-ressort .3s ease; }
+.bouton-sync.envoye .bouton-sync-cercle { opacity: 0; }
+.bouton-sync.envoye .bouton-sync-texte { padding-left: 0; color: var(--hausse); font-weight: 700; }
+@keyframes bouton-sync-ressort {
+  40% { transform: scaleY(1.08); }
+  70% { transform: scaleY(.96); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .bouton-sync.envoi .bouton-sync-anneau-trace { animation: none; opacity: 1; stroke-dashoffset: 25; }
+  .bouton-sync, .bouton-sync * { transition: none !important; animation: none !important; }
 }
 
 .discret {
@@ -2068,7 +2169,7 @@ body { display: flex; flex-direction: column; }
    concernés. */
 #ecran-reglages .champ-large input,
 #ecran-reglages .champ-large select {
-  background: rgba(255, 255, 255, .3);
+  background: var(--verre);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -2219,6 +2320,10 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 .gainage-champ { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .gainage-champ .gainage-tenue { width: 100%; }
 .gainage-champ span { font-size: 11px; color: var(--texte-faible); }
+/* Poids par série (26 septembre 2026) : secondaire face aux répétitions ou
+   à la tenue, donc plus bas, unité à droite plutôt qu'en dessous. */
+.gainage-champ-poids { flex-direction: row; gap: 4px; }
+.gainage-poids { height: 34px; font-size: 14px; }
 .gainage-demarrer {
   height: 36px;
   border: 1px solid var(--accent-clair);
@@ -2253,3 +2358,126 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 .gainage-chrono .minuterie-chiffres { font-size: 44px; }
 #gainage-chrono-libelle { font-size: 13px; font-weight: 600; color: #fff; }
 #bloc-gainage h2 { margin: 0 0 8px; }
+
+/* ---------- Écran de séance : palette électrique / néon ----------
+
+   Demande de l'utilisateur le 25 septembre 2026 (« le vert est trop
+   classique / académique, plus dynamique / sport »), direction choisie le
+   26 : électrique / néon. Limitée à l'écran de séance et au plein écran de
+   repos (hors de #ecran-seance dans index.html) : les autres écrans gardent
+   leur palette. Les variables partagées sont redéfinies sur ces deux
+   racines plutôt que partout, les règles existantes suivent d'elles-mêmes.
+   Contrastes mesurés comme le reste : violet #6a00ff 6,0:1 et bleu #0050e6
+   5,6:1 contre --fond-champ (le plus sombre des trois fonds clairs). Les
+   teintes vraiment néon (cyan, magenta) ne portent jamais de texte : halos,
+   anneau, dégradé du repos sur fond nuit. */
+#ecran-seance, #minuterie-plein-ecran {
+  --accent: #6a00ff;
+  --accent-clair: #0050e6;
+  --neon-cyan: #00e5ff;
+  --neon-magenta: #ff2bd6;
+  --repos: #150a35;
+  --repos-anneau: #00e5ff;
+  --repos-anneau-fin: #ff2bd6;
+}
+#ecran-seance #exo-muscle { background: rgba(106, 0, 255, .1); }
+#ecran-seance .echauffement-jour { background: rgba(106, 0, 255, .06); }
+#ecran-seance .ligne-serie.faite {
+  background: rgba(0, 229, 255, .12);
+  box-shadow: inset 3px 0 0 var(--neon-cyan);
+}
+/* Halo néon sur les éléments d'action de la séance. */
+#ecran-seance .principal,
+#ecran-seance .ligne-serie-restpause.actif {
+  box-shadow: 0 0 0 1px rgba(106, 0, 255, .25), 0 4px 18px rgba(106, 0, 255, .35);
+}
+#ecran-seance #jauge-remplie {
+  background: linear-gradient(90deg, var(--neon-cyan), var(--accent), var(--neon-magenta));
+  box-shadow: 0 0 8px rgba(0, 229, 255, .6);
+}
+/* Repos : nuit électrique au lieu des verts, l'anneau cyan → magenta
+   lumineux. Même glissement lent que le dégradé vert qu'il remplace. */
+#minuterie-plein-ecran {
+  background: linear-gradient(135deg, #07031a, var(--repos), #3a0ca3, #0b2a6b, #07031a);
+  background-size: 300% 300%;
+}
+#minuterie-plein-ecran .minuterie-anneau {
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, .7)) drop-shadow(0 0 14px rgba(255, 43, 214, .45));
+}
+#minuterie-plein-ecran-chiffres, #minuterie-bilan-chiffres {
+  text-shadow: 0 0 12px rgba(0, 229, 255, .8);
+}
+
+
+/* Verre des cartes sur les quatre écrans à fond vivant, 26 septembre 2026.
+   Le fond recalé sur l'original du CodePen est bien plus sombre (opacité
+   pleine, coins de la couleur la plus sombre de la palette) : à 30 % de
+   blanc, texte sombre sur fond presque noir, illisible (constaté sur Sport,
+   palette Horizon Shift). 80 % de blanc garde un peu de transparence et
+   remet le texte au-dessus du seuil WCAG AA au pire point (fond le plus
+   sombre sous la carte) : --texte ≥ 12:1, texte secondaire foncé
+   (#3b4643) ≈ 6:1, code du jour en --accent ≈ 4,6:1. */
+:root { --verre: rgba(255, 255, 255, .8); }
+#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages {
+  --texte-faible: #3b4643;
+  --accent-clair: #226059;
+}
+/* Hors cartes, sur le fond lui-même : pied de Sport, bloc des séances en
+   cours, étiquettes de Réglages — même verre plutôt que du texte posé à nu
+   sur un fond qui passe du clair au presque noir. */
+#ecran-accueil .pied-accueil,
+#ecran-accueil .reprise,
+#ecran-reglages .corps {
+  background: var(--verre);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ---------- Serpent autour des bulles de l'accueil ----------
+
+   26 septembre 2026, d'après le CodePen « Snake highlight » de Mikael
+   Ainalem (code collé par l'utilisateur) : trait de 4 unités dans
+   l'original, dégradé #ff00ff → #ff0000, segment de 240 sur un tracé de
+   1386 (≈ 17 %), ralenti easeOutQuart. Tracé normalisé à 100 par
+   `pathLength` (voir jouerSerpent() dans js/app.js) : 17 % de segment quelle
+   que soit la taille de la bulle. Deux animations : `appui` (un tour qui se
+   referme, 0,8 s, avant l'ouverture de l'écran) et `retour` (~3 s au retour
+   sur l'accueil, deux tours puis fermeture et fondu). La géométrie du
+   rectangle passe par les propriétés CSS de SVG 2 (x, y, width, height,
+   rx), pour suivre la taille de la carte sans calcul côté script. */
+#ecran-menu .carte-menu { position: relative; }
+.serpent {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  pointer-events: none;
+  overflow: visible;
+}
+.serpent rect {
+  x: 1.5px;
+  y: 1.5px;
+  width: calc(100% - 3px);
+  height: calc(100% - 3px);
+  rx: var(--rayon);
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0 100;
+  opacity: 0;
+}
+.serpent.appui rect { animation: serpent-appui .8s cubic-bezier(.165, .84, .44, 1) forwards; }
+.serpent.retour rect { animation: serpent-retour 3s cubic-bezier(.45, 0, .25, 1) forwards; }
+@keyframes serpent-appui {
+  0% { opacity: 1; stroke-dasharray: 17 83; stroke-dashoffset: 0; }
+  100% { opacity: 1; stroke-dasharray: 100 0; stroke-dashoffset: -100; }
+}
+@keyframes serpent-retour {
+  0% { opacity: 1; stroke-dasharray: 17 83; stroke-dashoffset: 0; }
+  70% { opacity: 1; stroke-dasharray: 17 83; stroke-dashoffset: -200; }
+  85% { opacity: 1; stroke-dasharray: 100 0; stroke-dashoffset: -250; }
+  100% { opacity: 0; stroke-dasharray: 100 0; stroke-dashoffset: -250; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .serpent { display: none; }
+}

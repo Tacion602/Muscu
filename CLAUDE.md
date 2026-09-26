@@ -97,6 +97,20 @@ second jour se plaçant sinon à la position de son bloc. Seule la
 **définition** est partagée : J2 et J6 restent deux séances indépendantes,
 avec leurs propres chiffres.
 
+**L'application affiche les jours dans un autre ordre que le classeur
+depuis le 26 septembre 2026.** Semaine décidée avec l'utilisateur (voir
+« Posture sur les questions d'entraînement », priorités musculaires) :
+Haut max, Cardio, Pull, Jambes, Push, Cardio, repos ou nouveau cycle selon
+la fatigue. Demande explicite : « renomme juste les bulles dans l'appli,
+pas le classeur ». `ORDRE_JOURS_AFFICHAGE` trie les bulles et
+`codeAffiche()` échange J1 et J5 **à l'affichage seulement** (bulles,
+en-têtes de séance et de démarrage, écran de fin, séances en cours,
+historique) : le classeur garde J1 = Push et J5 = Haut max, et avec lui
+`jour.code`, `seance.jour`, les clés de consignes (`J1|…`) et les pages de
+sortie `J1`/`J5`. Une séance Push s'affiche donc « J5 » dans l'application
+mais s'écrit dans la page `J1` du classeur — voulu. `ouvrir_jour()` des
+tests prend le code du classeur et suit le même ordre d'affichage.
+
 **L'ordre des exercices d'un jour est celui des numéros de la colonne A**, pas
 celui des lignes : `convertir()` trie par `numero` depuis le 10 septembre 2026.
 Jusque-là, l'ordre suivait les lignes et le numéro n'était qu'une étiquette.
@@ -180,7 +194,12 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     restent indexées par jour et par nom (`cleConsigne`), pas seulement par
     nom. Un même exercice peut donc afficher une consigne différente sur
     deux jours si elle a été modifiée sur l'un et pas l'autre ; non demandé,
-    à revoir si ça gêne à l'usage.
+    à revoir si ça gêne à l'usage. **Elles suivent en revanche
+    `ANCIENS_NOMS` depuis le 26 septembre 2026** (`consigneAffichee()`) :
+    le renommage du développé incliné, le 23, avait laissé la note de J1
+    sous l'ancienne clé, invisible dans l'application — repéré dans la page
+    `Consignes` du classeur. Une consigne ressaisie après le renommage
+    s'enregistre sous le nouveau nom et prend le dessus.
   - **`ANCIENS_NOMS` (`js/app.js`) fait exception à la correspondance
     exacte, pour un renommage délibéré du classeur dont l'historique doit
     continuer.** Table nouveau nom → liste d'anciens noms (formes
@@ -193,7 +212,14 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     `Developpe incline banc` — l'utilisateur a toujours fait cet exercice à
     la barre ou aux haltères, le classeur portait la mauvaise machine
     depuis le départ, ce n'est pas un changement de mouvement mais une
-    correction du programme. Renommer sans cette table démarrerait un
+    correction du programme. Le 26 septembre 2026, `LEG CURL ALLONGE
+    UNILATERAL` devient `LEG CURL ALLONGE` (passage en bilatéral, placé en
+    fin de J4 par renumérotation : mollets 5, abduction 6, leg curl 7) ;
+    l'utilisateur garde l'historique unilatéral en connaissance de cause
+    (première comparaison faussée, charge d'une jambe contre deux). La
+    liste d'anciens noms y porte aussi `leg curl allonge` lui-même : une
+    séance et la consigne de J4 existent sous « Leg curl allongé », même
+    forme normalisée mais pas le même texte exact. Renommer sans cette table démarrerait un
     historique vide (voir la sous-puce ci-dessus) ; `IMAGES_EXERCICES` est à
     mettre à jour séparément avec la même fragilité, sans passer par
     `ANCIENS_NOMS` (voir « Image par exercice » dans les chantiers) — pour
@@ -305,6 +331,19 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     dans une page `Gainage` : le pont n'a pas à connaître les mouvements.
   - **La rotation externe est abandonnée**, décision de l'utilisateur le
     11 septembre 2026.
+  - **Poids par série pour les mouvements en répétitions et en tenue,
+    depuis le 26 septembre 2026** (« ajouter le poids mis à chaque
+    répétition ») : petit champ `kg` sous chaque série (`celluleSerie()`),
+    rangé à part dans `seance.poidsMouvements` plutôt que de transformer les
+    valeurs de `seance.mouvements` en objets — tout le reste (historique
+    déjà enregistré, État musculaire, `valeurRenseignee`) les lit comme de
+    simples nombres. Suggestion en grisé : le poids de la dernière fois
+    (`derniersPoidsMouvement()`), à défaut `poidsDefaut` du mouvement (10 kg
+    pour le Pallof press, remarque du 18 septembre 2026 « prérempli à
+    10 kg ») ; une série confirmée sans poids tapé reprend cette suggestion,
+    comme les séries de musculation reprennent la dernière fois. Part au
+    classeur dans la colonne `poids` déjà présente de la page `Gainage`
+    (`lignesGainage()`), rien à redéployer pour ça.
 - **Le retour depuis l'écran de fin réaffiche la séance selon son type**
   (`rendreSeanceCourante`). Il appelait l'affichage de musculation quel que
   soit le jour, et plantait donc sur un footing. L'erreur avait été vue dans
@@ -383,6 +422,14 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   n'est pas encore remonté au classeur (aucune colonne dédiée dans
   `appsscript/Code.gs`) — pas demandé, à ajouter si le besoin se confirme à
   l'usage.
+  - **Repos de rest-pause plafonné à 10 s depuis le 26 septembre 2026**
+    (« considère que le RP est de 10 s max de repos », `REPOS_REST_PAUSE_S`).
+    Deux chemins, selon le moment où `RP` est coché : déjà coché sur la
+    série suivante au moment de valider, `validerSerie()` lance 10 s au
+    lieu du repos de l'exercice ; coché après coup (repos ordinaire déjà
+    lancé), le clic sur `RP` relance la minuterie à 10 s si plus de 10 s
+    restaient. Le drapeau marque donc la **relance**, pas la série qui la
+    précède.
 - **Le signal sonore de fin de récupération est au volume maximal utile**
   depuis le 7 septembre 2026 (gain 0.9 dans `signaler()`, contre 0.3
   auparavant) : jugé trop faible par l'utilisateur pour s'entendre depuis
@@ -495,6 +542,16 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
         ni `arreterMinuterie()`. **Le bandeau compact, lui, garde son
         comportement d'origine** (un appui annule le repos, ou en lance un
         manuel s'il est inactif) : seul le plein écran a changé.
+      - **Fondu progressif à la place du seuil de 20 %, le 26 septembre
+        2026** (demande de l'utilisateur : « dégradé dynamique monochrome
+        ou animation, qui progressivement devient transparente pour qu'à
+        −30 s elle soit complètement invisible ») : `battre()` pose
+        l'opacité de `#minuterie-plein-ecran` de 1 au départ à 0 à
+        `REPOS_FONDU_FIN_S` (30 s) de la fin, puis la masque. Un repos plus
+        court que ce seuil (rest-pause à 10 s) ne l'affiche jamais,
+        `lancerMinuterie()` sautant son affichage différé. Fond : dégradé
+        de quatre verts de la famille `--repos` qui glisse lentement
+        (`@keyframes repos-degrade`, coupé sous `prefers-reduced-motion`).
     - **Bug trouvé en testant, pas en salle** : `lancerMinuterie()` peut
       tomber en plein milieu d'un clic déjà commencé sur une flèche
       d'exercice — la validation implicite d'une série par sortie de champ
@@ -670,6 +727,28 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     les quatre, `Vitesse moyenne (km/h)` en fin de bloc pour Endurance et
     Incliné. **Nécessite le redéploiement du pont**, comme les évolutions
     précédentes de cette liste — voir « Chantiers ouverts ».
+- **Les bulles J2/J6 s'appellent « Cardio » depuis le 26 septembre 2026**
+  (demande de l'utilisateur, le HIIT rejoignant la course) : renommage à
+  l'affichage seulement, dans `nomDuJour()` ; le bloc du classeur (« J2 &
+  J6 FOOTING »), `type: "footing"` et tout le code qui s'appuie dessus
+  restent tels quels — renommer le type aurait touché l'historique déjà
+  enregistré et le pont pour un gain purement visuel.
+- **Cinquième type : HIIT (Body Attack ou Body Combat), le 26 septembre
+  2026** (demande de l'utilisateur : « même hiérarchie que fractionné,
+  incliné », avec durée totale, calories, battements moyens et max).
+  `TYPES_COURSE` gagne deux options : `sansDistance` (la distance commune
+  disparaît du formulaire, pas d'allure, écarté de l'écran Évolution
+  course qui trace une vitesse) et `choix` (le cours suivi, un seul parmi
+  des options, en boutons — `choixCycle()`, posé par défaut sur celui de la
+  dernière sortie pour ne jamais partir vide au classeur). Champs propres :
+  `fc_moy`, `fc_max`. Résumé de fin et fiche d'historique affichent
+  calories et fréquences à la place de distance/allure. Côté classeur,
+  bloc `HIIT` sur la page `Course` et trois colonnes en fin de
+  `Séances (app)` (`Activite`, `FC moyenne (bpm)`, `FC max (bpm)`) ;
+  `ongletPret()` complète désormais la ligne d'en-tête d'un onglet déjà
+  créé quand des colonnes ont été ajoutées en fin de ligne (Calories et
+  Vitesse moyenne, le 18, arrivaient jusque-là sans titre). **Nécessite le
+  redéploiement du pont** — voir « Chantiers ouverts ».
 - **Un type peut compter plusieurs passages depuis le 8 septembre 2026**,
   demande de l'utilisateur : refaire l'Incliné à une autre charge dans la
   même séance, sans écraser le premier passage. `seance.footing[cle]` est
@@ -816,7 +895,26 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     Retirée sur échec (`.envoi` enlevée, bouton réactivé) : avant cette
     évolution, un échec laissait le bouton désactivé sans retour possible
     sauf à quitter l'écran, jamais corrigé faute d'avoir été signalé.
-    pastille « en attente » ne dirait pas.
+    - **Recalé sur l'original le 26 septembre 2026** (remarque de
+      l'utilisateur : « l'icône n'est pas la même », « ne pas le bloquer sur
+      la première phase, ralentir la progression générale », puis « n'adapte
+      pas à la largeur de l'écran », code source du CodePen collé par
+      l'utilisateur, la page étant bloquée par Cloudflare). L'anneau qui
+      tournait en boucle jusqu'à la réponse donnait l'impression d'un
+      bouton figé, et la page partait aussitôt la réponse reçue. Même
+      chronologie que l'original désormais, en CSS pur : pilule bordée
+      cyan (`#00cffc`) de 300px fixes, rond plein + flèche à gauche ;
+      `.envoi` la resserre en rond, la flèche devient un carré blanc qui
+      pivote, le rond se remplit par le bas (`#00afd3`) et un point tourne
+      sur l'anneau ; `.complet` (ajoutée par-dessus) redéploie la pilule
+      et fait rebondir un point vert (`#02fc86`) ; `.envoye` borde en vert
+      et fait revenir le texte « Envoyé » (ou « En attente » si rien n'est
+      parti), en `--hausse` — le vert de l'original, lisible sur son fond
+      noir, ne l'est pas en texte sur le fond clair de l'écran de fin.
+      Cadencé par `enregistrerEtSynchroniser()` : durée minimale d'envoi
+      (`DUREE_MIN_ENVOI_MS`, 2,2 s) même si le réseau répond plus vite,
+      0,9 s de rebond, puis 2 s sur « Envoyé » avant d'ouvrir la fiche.
+      Plus d'anneau SVG ni de coche : ce n'était pas l'original.
   - **Un `<details>` natif plutôt qu'une bascule maison** : l'ouverture et la
     fermeture ne demandent alors aucun état à tenir côté script.
   - **La suppression demande confirmation**, contrairement à la croix des
@@ -1133,6 +1231,22 @@ que soit le sous-menu ensuite ouvert.
           viewport) donne un carré nettement plus grand que la diagonale
           de l'écran même une fois réduit à l'échelle, couvrant les coins
           quel que soit l'angle.
+      - **Serpent autour des bulles de l'accueil, le 26 septembre 2026**
+        (demande de l'utilisateur, CodePen « Snake highlight » de Mikael
+        Ainalem, code collé par l'utilisateur ; « uniquement dans la page
+        d'accueil »). Un segment de trait en dégradé `#ff00ff` → `#ff0000`
+        glisse le long du contour de la bulle puis s'allonge jusqu'à le
+        fermer, comme l'original (segment ≈ 17 % du tracé, ralenti
+        easeOutQuart), en keyframes CSS plutôt qu'anime.js (`.serpent`,
+        `jouerSerpent()`). SVG injecté dans la carte à la première
+        animation, rectangle normalisé par `pathLength="100"` et dimensionné
+        par les propriétés CSS de SVG 2. **Deux moments, choisis par
+        l'utilisateur** : à l'appui, un tour de 0,8 s avant d'ouvrir
+        l'écran (`ouvrirDepuisAccueil()`, `DUREE_SERPENT_APPUI_MS`, qui
+        **retarde donc la navigation** de ce délai) ; au retour sur
+        l'accueil (`afficher('menu')`), ~3 s autour de la dernière bulle
+        choisie, deux tours puis fermeture et fondu. Coupé, sans délai,
+        sous `prefers-reduced-motion`.
       - **Les trois cartes transparentes le 23 septembre 2026** (demande de
         l'utilisateur, pour laisser voir le fond vivant tourner derrière) :
         `#ecran-menu .carte-menu { background: rgba(255,255,255, X); }`
@@ -1171,7 +1285,7 @@ que soit le sous-menu ensuite ouvert.
         la bande blanche en haut pour que le dégradé prenne 100 % de
         l'écran », « supprimer le nom Sport ») : même geste que Sommeil le
         17 septembre 2026 (voir plus bas, `#ecran-sommeil`), seul le retour
-        reste, flottant (`.icone-sport-flottant`, absolu, calé sur
+        reste, flottant (`.icone-retour-flottant`, absolu, calé sur
         `env(safe-area-inset-top)`). Fond transparent-flou plutôt que blanc
         plein comme sur Sommeil : la palette de cet écran (Horizon Shift)
         n'est pas toujours sombre, contrairement au dégradé fixe nuit de
@@ -1188,6 +1302,40 @@ que soit le sous-menu ensuite ouvert.
         nul, le défilement déjà en place prend le relais sans rien de plus
         à gérer. `.carte-jour` (padding, emoji, nom, détail) et l'espace
         entre cartes agrandis en proportion.
+      - **Recalé sur l'original du CodePen le 26 septembre 2026**
+        (capture de l'original fournie par l'utilisateur : « un peu trop
+        zoomé », « bord noir, rotation un peu plus rapide », « peut-être
+        le tourner à 90° » ; CSS lu sur la page debug du CodePen,
+        `cdpn.io/pen/debug/…`, que Cloudflare ne bloque pas). L'original
+        fait tourner une couche **de la taille de l'écran** sur un fond de
+        la couleur la plus sombre de la palette : les coins qui se
+        découvrent donnent le « bord noir », voulu. Le 23, on avait fait
+        l'inverse (couche 220vmax réduite à .55, fond clair, opacité 60 %)
+        pour cacher ces coins, d'où l'effet zoomé et délavé. Désormais :
+        rectangle **paysage** (100vh × 100vw) centré et tourné de 90° au
+        départ, pour retrouver les proportions de l'aperçu paysage du
+        CodePen sur un écran portrait ; opacité pleine ; flou 60px (80px
+        au-delà de 600px) et saturation 120/130 % comme l'original ; un tour
+        en 25 s au lieu de 45 ; fond de chaque écran à la couleur la plus
+        sombre de sa palette (`--fv1` pour l'accueil). **Revient sur la
+        correction « bord blanc » du 23** : c'était le fond clair qui
+        gênait, pas le principe des coins découverts.
+        - **Verre des cartes passé de 30 % à 80 % de blanc** (`--verre`),
+          conséquence directe : sur un fond désormais presque noir par
+          endroits, le texte sombre des cartes devenait illisible (constaté
+          sur Sport). 80 % remet le pire cas au-dessus de WCAG AA ; sur ces
+          quatre écrans, `--texte-faible` et `--accent-clair` sont
+          redéfinis un cran plus sombres. Pied de Sport, bloc des séances
+          en cours et corps de Réglages reçoivent le même verre plutôt que
+          du texte posé à nu sur le fond.
+      - **Suivi aligné sur Sport le 26 septembre 2026** (« bulles suivi
+        même mise en page que les bulles sport ») : plus de barre ni de
+        titre, même retour flottant (`.icone-retour-flottant`, renommée
+        depuis `.icone-sport-flottant` pour servir aux deux), même
+        `padding-top` ; `.liste-menu-petite` répartit ses sept cartes sur
+        toute la hauteur (`justify-content: space-evenly`), cartes à la
+        taille de `.carte-jour` (emoji 42px, 14px 16px de marge intérieure).
+        Réglages garde sa barre, non demandé.
 - **Direction visuelle : mode clair, référence Strava**, choisi via
   `impeccable.style` (outillage de conception introduit ce jour-là, voir
   « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
@@ -1225,6 +1373,19 @@ que soit le sous-menu ensuite ouvert.
     avec `.zone-fatigue`/`.zone-recup`/`.zone-prete` qui restent en place et
     inchangées pour le calendrier du mois de Sommeil (qualité de nuit, pas
     récupération musculaire — même mot, sens différent, deux échelles).
+  - **Écran de séance en palette électrique / néon depuis le 26 septembre
+    2026** (remarque du 25 : « le vert est trop classique / académique, plus
+    dynamique / sport », direction choisie par l'utilisateur parmi trois
+    proposées). Limitée à `#ecran-seance` et `#minuterie-plein-ecran`
+    (bloc en fin de `css/style.css`) : `--accent`, `--accent-clair`,
+    `--repos` et les deux teintes de l'anneau y sont redéfinies, les règles
+    existantes suivent. Violet `#6a00ff` (6,0:1) et bleu `#0050e6` (5,6:1)
+    pour ce qui porte du texte ; cyan `#00e5ff` et magenta `#ff2bd6`, trop
+    clairs pour du texte sur fond clair, réservés aux halos, à la jauge, à
+    la barre des séries faites et à l'anneau. Le plein écran de repos passe
+    du dégradé vert à une nuit indigo/violette, anneau cyan → magenta
+    lumineux. Remplace, sur ces deux écrans seulement, le vert de repos
+    demandé le 18 septembre.
   - **Minuterie de repos différenciée de --danger le 17 septembre 2026**
     (demande de l'utilisateur : « différencie les deux rouges ») : voir
     `--repos` plus bas, section Séance.
@@ -1726,8 +1887,11 @@ un bug si le sujet revient.
    `doPost` pour la remarque libre du menu Suivi (17 septembre 2026, voir
    « Remarque » plus haut), qui réutilise l'onglet `Remarques` existant, et
    les colonnes Calories/Vitesse moyenne des jours de course (18 septembre
-   2026, voir « Les jours de course... » plus haut). Un nouveau
-   redéploiement sera nécessaire pour que les trois atteignent le classeur ;
+   2026, voir « Les jours de course... » plus haut), auxquelles s'ajoute le
+   type HIIT (26 septembre 2026, bloc `HIIT` de la page `Course`, trois
+   colonnes de `Séances (app)`, en-têtes complétés par `ongletPret()`). Un
+   nouveau redéploiement sera nécessaire pour que les quatre atteignent le
+   classeur ;
    l'application reste par ailleurs utilisable en local sans cette étape,
    l'adresse et le secret du pont restant ceux déjà en place dans les
    réglages.
@@ -1823,3 +1987,14 @@ habituelle.
 
 Il est en reconversion professionnelle, méthodique, et travaille avec un
 programme écrit : une réponse complaisante ne lui sert à rien.
+
+**Priorités musculaires, données par l'utilisateur le 26 septembre 2026**,
+de la plus haute à la plus basse : pectoraux ; dos et épaules ; bras ;
+quadriceps ; puis, nettement en dessous, grand fessier et mollets. C'est
+elle qui a fixé l'ordre de semaine (Haut max, Cardio, Pull, Jambes, Push,
+Cardio) : les pecs gardent 4 puis 3 jours d'écart entre Haut max et Push,
+le 48 h retombant sur le dos (Haut max → Pull). À surveiller : la première
+série du tirage vertical ; si elle baisse deux semaines de suite, alléger
+le dos de Haut max plutôt que changer l'ordre. Le HIIT (sauts, fentes)
+compte comme travail de jambes : de préférence le second jour de cardio,
+après les jambes plutôt qu'avant.

@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-23T15:45:53+00:00",
+ "importe_le": "2026-09-26T16:25:31+00:00",
  "jours": [
   {
    "code": "J1",
@@ -624,53 +624,6 @@
     },
     {
      "numero": 5,
-     "nom": "LEG CURL ALLONGE UNILATERAL",
-     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
-     "series": 3,
-     "reps_min": 10,
-     "reps_max": 12,
-     "rir": [
-      2,
-      1,
-      1
-     ],
-     "consigne": "Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",
-     "muscle": "Ischio-jambiers et fessiers",
-     "repos_s": 90,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "",
-       "deload": false,
-       "total": 310,
-       "series": [
-        {
-         "note": "",
-         "charge": 10,
-         "reps": 10,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 10,
-         "reps": 10,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 10,
-         "reps": 11,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "numero": 6,
      "nom": "Mollets debout unilatéral",
      "prescription": "4 X 12-15 RIR 2 / 2 / 1 / 1",
      "series": 4,
@@ -718,7 +671,7 @@
      ]
     },
     {
-     "numero": 7,
+     "numero": 6,
      "nom": "Abduction de hanche machine",
      "prescription": "3 X 15-20 RIR 2 / 1 / 1",
      "series": 3,
@@ -733,6 +686,53 @@
      "muscle": "Abducteurs et moyen fessier",
      "repos_s": 60,
      "historique": []
+    },
+    {
+     "numero": 7,
+     "nom": "LEG CURL ALLONGE",
+     "prescription": "3 X 10-12 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 10,
+     "reps_max": 12,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",
+     "muscle": "Ischio-jambiers et fessiers",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 310,
+       "series": [
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 10,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 10,
+         "reps": 11,
+         "rir": null,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
     }
    ]
   },

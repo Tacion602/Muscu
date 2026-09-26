@@ -80,7 +80,12 @@ def ouvrir_jour(page, code):
     # Une seance de musculation neuve passe par l'ecran d'echauffement
     # (16 septembre 2026) avant la fiche du premier exercice ; une reprise,
     # ou un jour de footing, n'a pas cet ecran intermediaire.
-    page.locator(".carte-jour").nth(int(code[1]) - 1).click()
+    # `code` est le code du classeur. Depuis le 26 septembre 2026, les
+    # bulles suivent l'ordre de semaine de l'application
+    # (ORDRE_JOURS_AFFICHAGE dans js/app.js) : J5 affiche en premier sous
+    # le nom J1, J1 en cinquieme sous le nom J5.
+    ordre = ["J5", "J2", "J3", "J4", "J1", "J6"]
+    page.locator(".carte-jour").nth(ordre.index(code)).click()
     bouton = page.locator("#bouton-demarrage-commencer")
     if bouton.is_visible():
         bouton.click()
@@ -439,8 +444,8 @@ def test_l_historique_j6_fusionne_dans_j2_au_demarrage(page):
     page.wait_for_selector(".carte-jour")
     historique = page.evaluate("JSON.parse(localStorage.getItem('muscu.historique'))")
     assert historique[0]["jour"] == "J2"
-    assert "Durée et distance ·" in page.locator(".carte-jour").nth(1).text_content()
-    assert "Durée et distance ·" in page.locator(".carte-jour").nth(5).text_content()
+    assert "Course et HIIT ·" in page.locator(".carte-jour").nth(1).text_content()
+    assert "Course et HIIT ·" in page.locator(".carte-jour").nth(5).text_content()
 
 
 def test_l_etat_musculaire_regroupe_les_graphies_du_meme_muscle(page):
