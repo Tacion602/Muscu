@@ -1142,7 +1142,9 @@ body { display: flex; flex-direction: column; }
   z-index: 50;
   pointer-events: none;
   border-radius: 50%;
-  background: var(--accent);
+  /* Dégradé néon (27 septembre 2026), même famille que l'écran de séance :
+     conique pour que les couleurs tournent autour du point d'appui. */
+  background: conic-gradient(from 0deg, #6a00ff, #0050e6, #00e5ff, #ff2bd6, #6a00ff);
   transform: scale(0);
   transition: transform .6s ease-out;
   will-change: transform;
@@ -2495,4 +2497,50 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
   font-weight: 600;
   text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
   cursor: pointer;
+}
+
+/* Barre de progression de séance en néon électrique (27 septembre 2026,
+   demande de l'utilisateur) : remplissage cyan → violet → magenta qui
+   défile, halo lumineux qui grésille, étincelle blanche en bout de barre.
+   Même palette que le reste de l'écran de séance (bloc néon plus haut). */
+#ecran-seance .jauge-pilule-seance,
+.jauge-pilule-seance {
+  border-color: #6a00ff;
+  background: #14002e;
+  box-shadow: 0 0 6px rgba(0, 229, 255, .45), inset 0 0 6px rgba(106, 0, 255, .6);
+  overflow: visible;
+}
+.jauge-pilule-remplissage-accent {
+  position: relative;
+  background: linear-gradient(90deg, #00e5ff, #6a00ff, #ff2bd6, #00e5ff);
+  background-size: 300% 100%;
+  box-shadow: 0 0 8px #00e5ff, 0 0 16px rgba(255, 43, 214, .7);
+  animation: jauge-courant 1.6s linear infinite, jauge-gresille 2.3s steps(1) infinite;
+}
+.jauge-pilule-remplissage-accent::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px #fff, 0 0 12px #00e5ff, 0 0 18px #ff2bd6;
+  animation: jauge-etincelle .5s ease-in-out infinite alternate;
+}
+@keyframes jauge-courant { to { background-position: 300% 0; } }
+@keyframes jauge-gresille {
+  0%, 100% { filter: brightness(1); }
+  41% { filter: brightness(1.6); }
+  43% { filter: brightness(.8); }
+  45% { filter: brightness(1.4); }
+  78% { filter: brightness(1.8); }
+  80% { filter: brightness(1); }
+}
+@keyframes jauge-etincelle { from { transform: scale(.7); opacity: .7; } to { transform: scale(1.3); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .jauge-pilule-remplissage-accent,
+  .jauge-pilule-remplissage-accent::after { animation: none; }
 }

@@ -3080,7 +3080,15 @@ const PALETTES_FOND = ['desert', 'cosmic', 'voltage', 'filtered'];
    le bleu le plus clair du dégradé de fond de l'écran Sommeil
    (`#ecran-sommeil` dans css/style.css), pour rester reconnaissable comme
    « du sommeil » d'un coup d'œil sur ce calendrier-ci. */
+// Les nuits de Sommeil ne colorent le calendrier que si la case est cochée
+// (demande de l'utilisateur le 27 septembre 2026), choix gardé sur le téléphone.
+const CLE_SOMMEIL_CALENDRIER = 'muscu.calendrierSommeil';
+function lireSommeilCalendrier() {
+  try { return localStorage.getItem(CLE_SOMMEIL_CALENDRIER) === '1'; } catch (_) { return false; }
+}
+
 function rendreCalendrier() {
+  const afficherSommeil = $('calendrier-sommeil').checked;
   const parJour = {};
   lireTableau(CLES.historique).filter((s) => s.fin).forEach((s) => {
     const cle = dateCourte(s.fin);
@@ -3112,7 +3120,8 @@ function rendreCalendrier() {
     const icones = seances.slice(0, 2)
       .map((s) => '<span class="calendrier-icone">' + iconeJour({ type: s.type, code: s.jour }) + '</span>').join('');
     const aujourdhui = estMoisCourant && jour === maintenant.getDate();
-    const classeSommeil = nuitsParJour[cle] ? ' a-sommeil' : '';
+    // Nuits masquées par défaut depuis le 27 septembre 2026 : case à cocher.
+    const classeSommeil = afficherSommeil && nuitsParJour[cle] ? ' a-sommeil' : '';
     html += '<span class="calendrier-case' + (aujourdhui ? ' aujourdhui' : '') + classeSommeil + '">' +
       '<span class="calendrier-num">' + jour + '</span>' +
       (icones ? '<span class="calendrier-icones' + (seances.length > 1 ? ' deux' : '') + '">' + icones + '</span>' : '') +
@@ -4710,6 +4719,11 @@ function brancher() {
   $('bouton-suivi-calendrier').addEventListener('click', () => { decalageMoisCalendrier = 0; rendreCalendrier(); afficher('calendrier'); });
   $('calendrier-precedent').addEventListener('click', () => { decalageMoisCalendrier--; rendreCalendrier(); });
   $('calendrier-suivant').addEventListener('click', () => { decalageMoisCalendrier++; rendreCalendrier(); });
+  $('calendrier-sommeil').checked = lireSommeilCalendrier();
+  $('calendrier-sommeil').addEventListener('change', (e) => {
+    try { localStorage.setItem(CLE_SOMMEIL_CALENDRIER, e.target.checked ? '1' : ''); } catch (_) { /* sans stockage, le choix vaut pour la session */ }
+    rendreCalendrier();
+  });
   $('bouton-calendrier-retour').addEventListener('click', () => afficher('suivi'));
   $('bouton-suivi-etat').addEventListener('click', () => { rendreEtatMusculaire(); afficher('etat-musculaire'); });
   $('bouton-etat-retour').addEventListener('click', () => afficher('suivi'));

@@ -668,6 +668,10 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     la pose de la position de son déclenchement, sans quoi les deux
     changements posés dans le même tick peuvent se combiner dans la même
     image.
+    **Dégradé néon depuis le 27 septembre 2026** (demande de l'utilisateur) :
+    le disque uni `--accent` devient un `conic-gradient` violet, bleu, cyan,
+    magenta, les teintes de la palette néon de l'écran de séance, centré
+    sur le point d'appui.
 - **La touche Entrée sur le RIR valide directement la série** (appelle
   `.click()` sur le bouton plutôt que de se contenter du focus) : un clavier
   virtuel ne renvoie pas de second appui sur Entrée une fois le focus déplacé
@@ -1406,6 +1410,11 @@ que soit le sous-menu ensuite ouvert.
     du dégradé vert à une nuit indigo/violette, anneau cyan → magenta
     lumineux. Remplace, sur ces deux écrans seulement, le vert de repos
     demandé le 18 septembre.
+    **Barre de progression de séance en néon électrique le 27 septembre
+    2026** (demande de l'utilisateur) : remplissage cyan, violet, magenta
+    qui défile, halo qui grésille, étincelle en bout de barre
+    (`.jauge-pilule-remplissage-accent`), coupés sous
+    `prefers-reduced-motion`. Remplace le gris du 17-18 septembre.
   - **Minuterie de repos différenciée de --danger le 17 septembre 2026**
     (demande de l'utilisateur : « différencie les deux rouges ») : voir
     `--repos` plus bas, section Séance.
@@ -1450,6 +1459,10 @@ autres sous-écrans via `afficher()`.
     sur `.calendrier-case`, à ne pas confondre avec `.zone-fatigue`/
     `.zone-recup`/`.zone-prete`, réutilisées par un tout autre écran (la vue
     mensuelle de Sommeil elle-même, voir plus bas).
+    **Masqué par défaut depuis le 27 septembre 2026** (demande de
+    l'utilisateur) : case « Afficher les nuits renseignées » au-dessus du
+    calendrier (`#calendrier-sommeil`), choix gardé sur le téléphone
+    (`muscu.calendrierSommeil`, `lireSommeilCalendrier()`).
 - **État musculaire**, gadget **indicatif, pas une mesure** : chaque zone
   récupère à une vitesse forfaitaire (`ZONES_MUSCULAIRES` dans `js/app.js`,
   48 h les petits groupes, 72 h les gros) depuis la dernière série validée

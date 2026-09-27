@@ -559,7 +559,7 @@ def test_un_jour_sans_deuxieme_seance_n_a_pas_de_badge(page):
     assert aujourdhui.locator(".calendrier-multi").count() == 0
 
 
-def test_une_nuit_renseignee_colore_le_jour_en_bleu_sur_le_calendrier(page):
+def test_une_nuit_renseignee_ne_colore_le_calendrier_que_si_la_case_est_cochee(page):
     """18 septembre 2026, demande de l'utilisateur : un jour dont la nuit a
     ete renseignee (independamment de toute seance de sport) prend le bleu
     le plus clair du degrade de fond de l'ecran Sommeil, pour se voir d'un
@@ -572,6 +572,9 @@ def test_une_nuit_renseignee_colore_le_jour_en_bleu_sur_le_calendrier(page):
     page.reload()
     ouvrir_calendrier(page)
     aujourdhui = page.locator(".calendrier-case.aujourdhui")
+    # Masque par defaut depuis le 27 septembre 2026 : il faut cocher la case.
+    assert "a-sommeil" not in aujourdhui.get_attribute("class")
+    page.check("#calendrier-sommeil")
     assert "a-sommeil" in aujourdhui.get_attribute("class")
 
 
