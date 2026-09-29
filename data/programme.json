@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-26T16:25:31+00:00",
+ "importe_le": "2026-09-29T19:26:24+00:00",
  "jours": [
   {
    "code": "J1",
@@ -781,7 +781,7 @@
       1,
       1
      ],
-     "consigne": "Un bras a la fois, buste stabilise. Amplitude complete.",
+     "consigne": "POS 1",
      "muscle": "Pectoraux",
      "repos_s": 120,
      "historique": []
@@ -857,7 +857,7 @@
     },
     {
      "numero": 7,
-     "nom": "Extension triceps unilaterale poulie",
+     "nom": "Extension triceps poulie barre",
      "prescription": "3 X 12-15 RIR 2/ 1 / 1",
      "series": 3,
      "reps_min": 12,
