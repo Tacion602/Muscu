@@ -6,53 +6,53 @@
    (photo) » du dégradé, par défaut) : css/style.css garde les anciennes
    couleurs, choisir une autre palette dans les Réglages y ramène.
 
-   Palette source : rose #ff2daa, violet #7b2dff, bleu #00a3ff,
-   menthe #00ffd5, encre #0b0a0f. Le reste en est dérivé : fond clair
+   Palette source : rose #e22997, violet #6e29e2, bleu #0191e2,
+   menthe #01e2bd, encre #0b0a0f. Le reste en est dérivé : fond clair
    teinté, versions « encre » assombries pour le texte (WCAG AA sur le fond
    de champ), versions pâles pour les fonds teintés. */
 
 html[data-charte="photo"] {
-  --fond: #faf7ff;
+  --fond: #f9f6fe;
   --fond-carte: #ffffff;
-  --fond-champ: #f4eeff;
-  --trait: #e7d9ff;
+  --fond-champ: #f3eefd;
+  --trait: #e5d8fa;
   --texte: #0b0a0f;
   --texte-faible: #6d6b71;
-  --accent: #7b2dff;
-  --accent-clair: #0471b0;
-  --hausse: #067b6a;
-  --baisse: #c42585;
-  --danger: #c42585;
-  --repos: #3d1a7b;
-  --repos-anneau: #00ffd5;
-  --repos-anneau-fin: #ff2daa;
-  --mesure-bras: #0471b0;
-  --muscu-fatigue: #ffa0d9;
-  --muscu-charge: #caabff;
-  --muscu-recuperation: #8cd6ff;
-  --muscu-pret: #73ffe8;
-  --tonnage-hausse-fond: rgba(6, 123, 106, .14);
-  --tonnage-hausse-bord: rgba(6, 123, 106, .45);
-  --tonnage-baisse-fond: rgba(196, 37, 133, .14);
-  --tonnage-baisse-bord: rgba(196, 37, 133, .45);
-  --serpent-debut: #ff2daa;
-  --serpent-fin: #7b2dff;
-  --interference-1: #067b6a;
-  --interference-2: #057784;
+  --accent: #6e29e2;
+  --accent-clair: #0470b0;
+  --hausse: #067a6a;
+  --baisse: #c62586;
+  --danger: #c62586;
+  --repos: #37186e;
+  --repos-anneau: #01e2bd;
+  --repos-anneau-fin: #e22997;
+  --mesure-bras: #0470b0;
+  --muscu-fatigue: #f29fd0;
+  --muscu-charge: #c5a9f3;
+  --muscu-recuperation: #8dcdf2;
+  --muscu-pret: #73efdb;
+  --tonnage-hausse-fond: rgba(6, 122, 106, .14);
+  --tonnage-hausse-bord: rgba(6, 122, 106, .45);
+  --tonnage-baisse-fond: rgba(198, 37, 134, .14);
+  --tonnage-baisse-bord: rgba(198, 37, 134, .45);
+  --serpent-debut: #e22997;
+  --serpent-fin: #6e29e2;
+  --interference-1: #067a6a;
+  --interference-2: #057684;
   --interference-3: #04739e;
-  --interference-4: #1368ba;
-  --interference-5: #3f4fd7;
-  --interference-6: #6c35f5;
-  --interference-7: #8d2be0;
-  --interference-8: #a928b3;
-  --interference-9: #c42585;
+  --interference-4: #1167b6;
+  --interference-5: #394dc9;
+  --interference-6: #6032dc;
+  --interference-7: #8428cb;
+  --interference-8: #a526a8;
+  --interference-9: #c62586;
 }
 
 /* Fonds vivants : une seule palette, celle de la photo, sur les quatre
    écrans ; chaque écran part d'un angle différent pour ne pas se ressembler. */
 html[data-charte="photo"] [data-palette="charte"] {
-  --fv1: #7b2dff; --fv2: #ff2daa; --fv3: #00a3ff;
-  --fv4: #00ffd5; --fv5: #00a3ff; --fv6: #ff2daa;
+  --fv1: #0b0a0f; --fv2: #6e29e2; --fv3: #0191e2;
+  --fv4: #01e2bd; --fv5: #37186e; --fv6: #e22997;
 }
 html[data-charte="photo"] #ecran-accueil .fond-vivant { animation-delay: -6s; }
 html[data-charte="photo"] #ecran-suivi .fond-vivant { animation-delay: -12s; }
@@ -62,83 +62,83 @@ html[data-charte="photo"] #ecran-accueil,
 html[data-charte="photo"] #ecran-suivi,
 html[data-charte="photo"] #ecran-reglages {
   --texte-faible: #6d6b71;
-  --accent-clair: #7b2dff;
+  --accent-clair: #6e29e2;
 }
 
 /* Fonds teintés et états. */
-html[data-charte="photo"] .reprise { background: rgba(123, 45, 255, .08); }
-html[data-charte="photo"] .pastille-en-cours { background: rgba(123, 45, 255, .12); }
-html[data-charte="photo"] #exo-muscle { background: rgba(123, 45, 255, .12); }
-html[data-charte="photo"] .echauffement-jour { background: rgba(123, 45, 255, .06); }
-html[data-charte="photo"] .ligne-serie.faite { background: rgba(0, 163, 255, .12); }
-html[data-charte="photo"] .alerte-incomplete { background: rgba(196, 37, 133, .1); }
-html[data-charte="photo"] .badge.envoye { background: rgba(6, 123, 106, .14); }
-html[data-charte="photo"] .badge.attente { background: rgba(196, 37, 133, .14); }
-html[data-charte="photo"] .principal:active { background: #3d1a7b; }
+html[data-charte="photo"] .reprise { background: rgba(110, 41, 226, .08); }
+html[data-charte="photo"] .pastille-en-cours { background: rgba(110, 41, 226, .12); }
+html[data-charte="photo"] #exo-muscle { background: rgba(110, 41, 226, .12); }
+html[data-charte="photo"] .echauffement-jour { background: rgba(110, 41, 226, .06); }
+html[data-charte="photo"] .ligne-serie.faite { background: rgba(1, 145, 226, .12); }
+html[data-charte="photo"] .alerte-incomplete { background: rgba(198, 37, 134, .1); }
+html[data-charte="photo"] .badge.envoye { background: rgba(6, 122, 106, .14); }
+html[data-charte="photo"] .badge.attente { background: rgba(198, 37, 134, .14); }
+html[data-charte="photo"] .principal:active { background: #37186e; }
 html[data-charte="photo"] .footing-champs input::placeholder,
 html[data-charte="photo"] .ligne-serie input::placeholder { color: #6d6b71; }
 html[data-charte="photo"] .gainage-degrade {
-  background: linear-gradient(90deg, #067b6a, #0471b0, #7b2dff, #c42585);
+  background: linear-gradient(90deg, #067a6a, #0470b0, #6e29e2, #c62586);
 }
 
 /* Calendrier et Sommeil : le bleu de la palette plutôt que les bleus nuit. */
-html[data-charte="photo"] .calendrier-case.a-sommeil { background: #0471b0; border-color: #0471b0; }
+html[data-charte="photo"] .calendrier-case.a-sommeil { background: #0470b0; border-color: #0470b0; }
 html[data-charte="photo"] #ecran-sommeil {
-  background: linear-gradient(180deg, #0471b0 0%, #7b2dff 45%, #3d1a7b 75%, #27134b 100%);
+  background: linear-gradient(180deg, #0470b0 0%, #6e29e2 45%, #37186e 75%, #241244 100%);
 }
-html[data-charte="photo"] .sommeil-creneau.sommeil { background: #00a3ff; }
+html[data-charte="photo"] .sommeil-creneau.sommeil { background: #0191e2; }
 
 /* Vague de démarrage. */
 html[data-charte="photo"] .vague-demarrage {
-  background: conic-gradient(from 0deg, #7b2dff, #00a3ff, #00ffd5, #ff2daa, #7b2dff);
+  background: conic-gradient(from 0deg, #6e29e2, #0191e2, #01e2bd, #0b0a0f, #6e29e2);
 }
 
 /* Bouton d'envoi animé. */
 html[data-charte="photo"] .bouton-sync {
-  --sync-couleur: #00a3ff;
-  --sync-remplissage: #064f7b;
-  --sync-vert: #00ffd5;
+  --sync-couleur: #0191e2;
+  --sync-remplissage: #07476e;
+  --sync-vert: #01e2bd;
 }
 
 /* Écran de séance et repos plein écran (bloc néon de css/style.css). */
 html[data-charte="photo"] #ecran-seance,
 html[data-charte="photo"] #minuterie-plein-ecran {
-  --accent: #7b2dff;
-  --accent-clair: #0471b0;
-  --neon-cyan: #00a3ff;
-  --neon-magenta: #ff2daa;
-  --repos: #3d1a7b;
-  --repos-anneau: #00ffd5;
-  --repos-anneau-fin: #ff2daa;
+  --accent: #6e29e2;
+  --accent-clair: #0470b0;
+  --neon-cyan: #0191e2;
+  --neon-magenta: #e22997;
+  --repos: #37186e;
+  --repos-anneau: #01e2bd;
+  --repos-anneau-fin: #e22997;
 }
-html[data-charte="photo"] #ecran-seance #exo-muscle { background: rgba(123, 45, 255, .1); }
-html[data-charte="photo"] #ecran-seance .ligne-serie.faite { background: rgba(0, 163, 255, .12); }
+html[data-charte="photo"] #ecran-seance #exo-muscle { background: rgba(110, 41, 226, .1); }
+html[data-charte="photo"] #ecran-seance .ligne-serie.faite { background: rgba(1, 145, 226, .12); }
 html[data-charte="photo"] #ecran-seance .principal,
 html[data-charte="photo"] #ecran-seance .ligne-serie-restpause.actif {
-  box-shadow: 0 0 0 1px rgba(123, 45, 255, .25), 0 4px 18px rgba(123, 45, 255, .35);
+  box-shadow: 0 0 0 1px rgba(110, 41, 226, .25), 0 4px 18px rgba(110, 41, 226, .35);
 }
-html[data-charte="photo"] #ecran-seance #jauge-remplie { box-shadow: 0 0 8px rgba(0, 163, 255, .6); }
+html[data-charte="photo"] #ecran-seance #jauge-remplie { box-shadow: 0 0 8px rgba(1, 145, 226, .6); }
 html[data-charte="photo"] #minuterie-plein-ecran {
-  background: linear-gradient(135deg, #27134b, #3d1a7b, #7b2dff, #064f7b, #27134b);
+  background: linear-gradient(135deg, #241244, #37186e, #6e29e2, #07476e, #241244);
   background-size: 300% 300%;
 }
 html[data-charte="photo"] #minuterie-plein-ecran .minuterie-anneau {
-  filter: drop-shadow(0 0 6px rgba(0, 255, 213, .7)) drop-shadow(0 0 14px rgba(255, 45, 170, .45));
+  filter: drop-shadow(0 0 6px rgba(1, 226, 189, .7)) drop-shadow(0 0 14px rgba(226, 41, 151, .45));
 }
 html[data-charte="photo"] #minuterie-plein-ecran-chiffres,
-html[data-charte="photo"] #minuterie-bilan-chiffres { text-shadow: 0 0 12px rgba(0, 163, 255, .8); }
+html[data-charte="photo"] #minuterie-bilan-chiffres { text-shadow: 0 0 12px rgba(1, 145, 226, .8); }
 
 /* Barre de progression néon. */
 html[data-charte="photo"] .jauge-pilule-seance {
-  border-color: #7b2dff;
-  background: #27134b;
-  box-shadow: 0 0 6px rgba(0, 163, 255, .45), inset 0 0 6px rgba(123, 45, 255, .6);
+  border-color: #6e29e2;
+  background: #241244;
+  box-shadow: 0 0 6px rgba(1, 145, 226, .45), inset 0 0 6px rgba(110, 41, 226, .6);
 }
 html[data-charte="photo"] .jauge-pilule-remplissage-accent {
-  background: linear-gradient(90deg, #00a3ff, #7b2dff, #ff2daa, #00ffd5, #00a3ff);
+  background: linear-gradient(90deg, #0191e2, #6e29e2, #01e2bd, #0191e2);
   background-size: 300% 100%;
-  box-shadow: 0 0 8px #00a3ff, 0 0 16px rgba(255, 45, 170, .7);
+  box-shadow: 0 0 8px #0191e2, 0 0 16px rgba(226, 41, 151, .7);
 }
 html[data-charte="photo"] .jauge-pilule-remplissage-accent::after {
-  box-shadow: 0 0 6px #fff, 0 0 12px #00ffd5, 0 0 18px #ff2daa;
+  box-shadow: 0 0 6px #fff, 0 0 12px #01e2bd, 0 0 18px #e22997;
 }

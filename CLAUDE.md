@@ -1446,6 +1446,15 @@ que soit le sous-menu ensuite ouvert.
     Une couleur ajoutée plus tard dans `css/style.css` doit aussi recevoir
     son équivalent dans `charte/modele.css`, sans quoi elle échappe à la
     charte.
+    **Retouches du 30 septembre 2026** (« ajoute du noir quand même, réduis
+    la quantité de rose, toutes les couleurs légèrement plus foncées ») :
+    `ASSOMBRIR` (12 %) dans `outils/charte.py` rapproche les quatre
+    couleurs vives de l'encre avant tout calcul ; le noir entre dans les
+    fonds vivants et la vague, le rose n'y apparaît plus qu'une fois et
+    quitte la vague et la barre de progression. **Le téléphone ne recevait
+    pas la charte** : un réglage enregistré avant elle gardait son ancienne
+    palette. `reglages.charteAdoptee` fait basculer une seule fois vers la
+    charte au démarrage ; un retour choisi ensuite reste respecté.
   - **Minuterie de repos différenciée de --danger le 17 septembre 2026**
     (demande de l'utilisateur : « différencie les deux rouges ») : voir
     `--repos` plus bas, section Séance.

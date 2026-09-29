@@ -43,8 +43,8 @@ html[data-charte="photo"] {
 /* Fonds vivants : une seule palette, celle de la photo, sur les quatre
    écrans ; chaque écran part d'un angle différent pour ne pas se ressembler. */
 html[data-charte="photo"] [data-palette="charte"] {
-  --fv1: {{VIOLET}}; --fv2: {{ROSE}}; --fv3: {{BLEU}};
-  --fv4: {{MENTHE}}; --fv5: {{BLEU}}; --fv6: {{ROSE}};
+  --fv1: {{NOIR}}; --fv2: {{VIOLET}}; --fv3: {{BLEU}};
+  --fv4: {{MENTHE}}; --fv5: {{VIOLET_SOMBRE}}; --fv6: {{ROSE}};
 }
 html[data-charte="photo"] #ecran-accueil .fond-vivant { animation-delay: -6s; }
 html[data-charte="photo"] #ecran-suivi .fond-vivant { animation-delay: -12s; }
@@ -82,7 +82,7 @@ html[data-charte="photo"] .sommeil-creneau.sommeil { background: {{BLEU}}; }
 
 /* Vague de démarrage. */
 html[data-charte="photo"] .vague-demarrage {
-  background: conic-gradient(from 0deg, {{VIOLET}}, {{BLEU}}, {{MENTHE}}, {{ROSE}}, {{VIOLET}});
+  background: conic-gradient(from 0deg, {{VIOLET}}, {{BLEU}}, {{MENTHE}}, {{NOIR}}, {{VIOLET}});
 }
 
 /* Bouton d'envoi animé. */
@@ -127,7 +127,7 @@ html[data-charte="photo"] .jauge-pilule-seance {
   box-shadow: 0 0 6px rgba({{BLEU_RGB}}, .45), inset 0 0 6px rgba({{VIOLET_RGB}}, .6);
 }
 html[data-charte="photo"] .jauge-pilule-remplissage-accent {
-  background: linear-gradient(90deg, {{BLEU}}, {{VIOLET}}, {{ROSE}}, {{MENTHE}}, {{BLEU}});
+  background: linear-gradient(90deg, {{BLEU}}, {{VIOLET}}, {{MENTHE}}, {{BLEU}});
   background-size: 300% 100%;
   box-shadow: 0 0 8px {{BLEU}}, 0 0 16px rgba({{ROSE_RGB}}, .7);
 }

@@ -310,6 +310,15 @@ const TYPES_COURSE = [
 let programme = null;
 let seance = null;       // séance en cours, ou null
 let reglages = lire(CLES.reglages, REGLAGES_PAR_DEFAUT);
+// Charte photo (29 septembre 2026) : un réglage enregistré avant elle garde
+// son ancienne palette, et la charte ne s'appliquait donc jamais sur le
+// téléphone de l'utilisateur (« pas de maj sur mon portable »). Bascule une
+// seule fois vers la charte ; un retour ultérieur à une ancienne palette,
+// depuis les Réglages, est ensuite respecté.
+if (!reglages.charteAdoptee) {
+  reglages = { ...reglages, degradeAccueil: 'charte', charteAdoptee: true };
+  ecrire(CLES.reglages, reglages);
+}
 let indexExo = 0;
 let minuterie = null;    // { fin: ms, duree: s, libelle: string }
 let tictac = null;
@@ -3052,6 +3061,7 @@ function sauverReglages() {
     veille: $('reglage-veille').checked,
     clavierPendantRecup: $('reglage-clavier-recup').checked,
     notification: $('reglage-notification').checked,
+    charteAdoptee: true,
   };
   ecrire(CLES.reglages, reglages);
   appliquerDegradeAccueil();

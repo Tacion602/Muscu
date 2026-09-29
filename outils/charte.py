@@ -39,6 +39,10 @@ SORTIE = RACINE / "css" / "charte.css"
 
 # Rôle de chaque bande, de gauche à droite.
 ROLES = ["rose", "violet", "bleu", "menthe", "encre"]
+# Les quatre couleurs vives sont assombries de cette part vers l'encre avant
+# tout usage (30 septembre 2026, « toutes les couleurs légèrement plus
+# foncées »). 0 rend les couleurs de la photo telles quelles.
+ASSOMBRIR = 0.12
 SEUIL_TEXTE = 4.6
 
 
@@ -88,7 +92,8 @@ def lire_palette():
 
 def generer():
     p = lire_palette()
-    rose, violet, bleu, menthe, noir = (p[r] for r in ROLES)
+    noir = p["encre"]
+    rose, violet, bleu, menthe = (melange(p[r], noir, ASSOMBRIR) for r in ROLES[:4])
     blanc = (255, 255, 255)
     fond = melange(blanc, violet, 0.04)
     champ = melange(blanc, violet, 0.08)
