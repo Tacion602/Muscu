@@ -21,7 +21,6 @@ const CLES = {
    stroke-dashoffset dans battre(), doit rester égale à stroke-dasharray
    dans css/style.css. */
 const CIRCONFERENCE_ANNEAU = 2 * Math.PI * 45;
-const REPOS_REST_PAUSE_S = 10;
 const DUREE_MIN_ENVOI_MS = 2200;
 // Le plein écran de repos s'efface progressivement jusqu'à disparaître à
 // 30 s de la fin (26 septembre 2026), à la place de l'ancien seuil de 20 %.
@@ -37,7 +36,7 @@ const REGLAGES_PAR_DEFAUT = {
   notification: false,
   // Palette du fond vivant de l'accueil (22 septembre 2026), voir
   // appliquerDegradeAccueil() et .fond-vivant dans css/style.css.
-  degradeAccueil: 'desert',
+  degradeAccueil: 'charte',
 };
 
 /* Échauffement de début de séance, optimisé aux zones travaillées ce jour-là,
@@ -475,7 +474,7 @@ function jouerSerpent(bouton, mode) {
     bouton.insertAdjacentHTML('beforeend',
       '<svg class="serpent" aria-hidden="true">' +
       '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="0">' +
-      '<stop offset="0" stop-color="#ff00ff"/><stop offset="1" stop-color="#ff0000"/>' +
+      '<stop offset="0" style="stop-color: var(--serpent-debut, #ff00ff)"/><stop offset="1" style="stop-color: var(--serpent-fin, #ff0000)"/>' +
       '</linearGradient></defs>' +
       '<rect pathLength="100" stroke="url(#' + id + ')"/></svg>');
     svg = bouton.querySelector('.serpent');
@@ -607,6 +606,11 @@ const ANCIENS_NOMS = {
   // c'est sous ce nom, saisi autrement, que vivent une séance et la
   // consigne de J4 (page Consignes du classeur).
   'leg curl allonge': ['leg curl allonge unilateral', 'leg curl allonge'],
+  // 29 septembre 2026, remarque de l'utilisateur : l'extension triceps de
+  // Haut max a toujours été faite à deux bras à la barre. Elle prend le nom
+  // de celle de Push, même mouvement : une seule progression pour les deux
+  // jours, qui récupère aussi l'historique « unilatéral ».
+  'extension triceps poulie barre': ['extension triceps unilaterale poulie'],
 };
 
 /* Illustrations par exercice, ajoutées le 17 septembre 2026 (chantier
@@ -1415,7 +1419,11 @@ function nomMouvementColore(mouvement) {
   const nom = document.createElement('span');
   nom.className = 'gainage-nom-mouvement';
   nom.textContent = mouvement.nom;
-  nom.style.setProperty('--couleur-mouvement', mouvement.couleurTexte || mouvement.couleur);
+  // Sous la charte photo, --interference-N (css/charte.css) remplace la
+  // teinte d'origine ; sans elle, la variable est indéfinie et la teinte
+  // d'origine sert de repli.
+  nom.style.setProperty('--couleur-mouvement',
+    'var(--interference-' + mouvement.interference + ', ' + (mouvement.couleurTexte || mouvement.couleur) + ')');
   nom.title = 'Interférence avec la course : rang ' + mouvement.interference + ' sur 9';
   return nom;
 }
@@ -2084,14 +2092,6 @@ function rendreSeries() {
       enregistrerSeance();
       restPause.classList.toggle('actif', serie.restPause);
       restPause.setAttribute('aria-pressed', serie.restPause ? 'true' : 'false');
-      // Repos de rest-pause plafonné à 10 s (26 septembre 2026) : cocher RP
-      // sur la série qui suit juste une série faite relance la minuterie à
-      // 10 s si le repos en cours est plus long.
-      const precedente = courant.series[index - 1];
-      if (serie.restPause && !serie.faite && precedente && precedente.faite
-          && (!minuterie || minuterie.fin - Date.now() > REPOS_REST_PAUSE_S * 1000)) {
-        lancerMinuterie(REPOS_REST_PAUSE_S, null);
-      }
     });
 
     // Suppression d'une série en trop (demande de l'utilisateur le
@@ -2254,14 +2254,8 @@ function validerSerie(exercice, serie, index) {
   }
   focaliserProchaineSerie();
 
-  // Prochaine série marquée rest-pause : repos plafonné à 10 s
-  // (26 septembre 2026), pas le repos ordinaire de l'exercice.
-  const suivante = exercice.series[index + 1];
-  const reposEffectif = suivante && suivante.restPause && !suivante.faite
-    ? REPOS_REST_PAUSE_S
-    : (repos || 90);
   if (!serie.echauffement || repos) {
-    lancerMinuterie(reposEffectif, bilan);
+    lancerMinuterie(repos || 90, bilan);
     // La minuterie doit se voir après chaque validation (demande de
     // l'utilisateur le 13 septembre 2026) : la saisie fait défiler la page
     // vers les séries, qui l'emportent sinon au-dessus du cadre.
@@ -2377,11 +2371,9 @@ function battre() {
   // progressif, opaque au départ, invisible à REPOS_FONDU_FIN_S de la fin,
   // plutôt qu'une disparition sèche à 20 %. Un repos plus court que ce
   // seuil (rest-pause à 10 s) ne montre donc jamais le plein écran.
-  const plage = minuterie.duree - REPOS_FONDU_FIN_S;
-  const opacite = plage > 0 ? Math.min(1, Math.max(0, (restant - REPOS_FONDU_FIN_S) / plage)) : 0;
-  const plein = $('minuterie-plein-ecran');
-  plein.style.opacity = opacite;
-  if (opacite <= 0) plein.hidden = true;
+  // Fondu retiré le 29 septembre 2026 (« fini la transparence ») : opaque
+  // jusqu'à REPOS_FONDU_FIN_S de la fin, puis masqué d'un coup.
+  if (restant <= REPOS_FONDU_FIN_S) $('minuterie-plein-ecran').hidden = true;
 }
 
 function arreterMinuterie() {
@@ -2977,8 +2969,28 @@ async function envoyerRemarqueSuivi() {
   ecrire(CLES.remarques, toutes);
   champ.value = '';
   $('remarque-suivi-statut').textContent = 'Envoi…';
+  // Bouton animé repris de la fin de séance (29 septembre 2026, remarque de
+  // l'utilisateur) : mêmes phases que enregistrerEtSynchroniser().
+  const bouton = $('bouton-remarque-suivi-envoyer');
+  const texteBouton = $('bouton-remarque-suivi-texte');
+  const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+  const debut = Date.now();
+  bouton.disabled = true;
+  bouton.classList.remove('envoye');
+  bouton.classList.add('envoi');
   await synchroniserRemarques();
+  await attendre(Math.max(0, DUREE_MIN_ENVOI_MS - (Date.now() - debut)));
+  bouton.classList.add('complet');
+  await attendre(900);
   const a_jour = lireRemarquesSuivi().find((r) => r.id === remarque.id);
+  bouton.classList.remove('envoi', 'complet');
+  bouton.classList.add('envoye');
+  texteBouton.textContent = a_jour && a_jour.envoyee ? 'Envoyé' : 'En attente';
+  setTimeout(() => {
+    bouton.classList.remove('envoye');
+    bouton.disabled = false;
+    texteBouton.textContent = 'Envoyer';
+  }, 2500);
   if (a_jour && a_jour.envoyee) {
     $('remarque-suivi-statut').textContent = 'Envoyée, merci.';
     $('remarque-suivi-statut').className = 'message ok';
@@ -3055,7 +3067,24 @@ function sauverReglages() {
 function appliquerDegradeAccueil() {
   // Horizon Shift retiré le 26 septembre 2026 : un choix enregistré avant
   // retombe sur la palette par défaut.
-  if (!PALETTES_FOND.includes(reglages.degradeAccueil)) reglages.degradeAccueil = 'desert';
+  if (reglages.degradeAccueil !== 'charte' && !PALETTES_FOND.includes(reglages.degradeAccueil)) {
+    reglages.degradeAccueil = 'charte';
+  }
+  // Charte graphique tirée de charte/palette.jpg (29 septembre 2026,
+  // « uniquement ces couleurs dans toute l'appli ») : css/charte.css ne
+  // s'applique que sous html[data-charte="photo"], et les quatre fonds
+  // vivants prennent sa palette. Choisir une des anciennes palettes rend
+  // toute l'application à ses couleurs d'avant (demande de l'utilisateur :
+  // « conserve les anciennes pour rebasculer »).
+  const charte = reglages.degradeAccueil === 'charte';
+  if (charte) document.documentElement.dataset.charte = 'photo';
+  else delete document.documentElement.dataset.charte;
+  const themeCouleur = document.querySelector('meta[name="theme-color"]');
+  if (themeCouleur) themeCouleur.content = getComputedStyle(document.documentElement).getPropertyValue('--fond').trim();
+  if (charte) {
+    ['menu', 'accueil', 'suivi', 'reglages'].forEach((ecran) => { $('ecran-' + ecran).dataset.palette = 'charte'; });
+    return;
+  }
   // Un dégradé différent par page (même jour) : l'accueil prend le choix,
   // Sport, Suivi et Réglages les trois palettes restantes, dans l'ordre.
   $('ecran-menu').dataset.palette = reglages.degradeAccueil;
@@ -3468,7 +3497,19 @@ function nomsExercicesZone(zone) {
       if (zone.muscles.includes(formeDuNom(exo.muscle))) noms.add(exo.nom);
     });
   });
-  return [...noms];
+  return [...noms].filter(exerciceActif);
+}
+
+/* Exercice « actif » : au moins une série faite il y a moins de
+   SURCHARGE_ACTIF_JOURS (remarque de l'utilisateur le 29 septembre 2026,
+   « n'afficher que les exercices actifs, travaillés il y a moins de
+   2 semaines »). Un exercice retiré du programme ou remplacé cesse ainsi de
+   peser sur l'écart de sa zone et de s'afficher dans le détail. */
+const SURCHARGE_ACTIF_JOURS = 14;
+function exerciceActif(nom) {
+  const limite = Date.now() - SURCHARGE_ACTIF_JOURS * 86400000;
+  return lireTableau(CLES.historique).some((s) => s.fin && new Date(s.fin).getTime() >= limite &&
+    (s.exercices || []).some((e) => memeExercice(e.nom, nom) && (e.series || []).some((x) => x.faite && !x.echauffement)));
 }
 
 /* Écart en % de l'indicateur (première série de travail, charge ×
@@ -3510,7 +3551,7 @@ function exercicesTravaillesZone(zone, depuis) {
       if (tonnageDesSeries(exo.series || [])) noms.add(exo.nom);
     });
   });
-  return [...noms];
+  return [...noms].filter(exerciceActif);
 }
 
 function actionnerZoneTonnage(cle) {
@@ -3612,7 +3653,7 @@ function rendreTonnageMuscles() {
   $('tonnage-detail').innerHTML = '<h3>' + echapper(zoneDetail.nom) + ' — ' + texteEcartSurcharge(ecarts[zoneDetail.cle]) + ' sur ' + nomPeriode + '</h3>' +
     (exercices.length
       ? exercices.map(({ nom, ecart }) => {
-          const courbeHtml = progressionPremiereSerie(jusquaMaintenant, nom, false);
+          const courbeHtml = progressionPremiereSerie(jusquaMaintenant, nom, false, true);
           return '<div class="tonnage-detail-exo">' +
             '<div class="tonnage-detail-ligne"><span>' + echapper(nom) + '</span><span>' + texteEcartSurcharge(ecart) + '</span></div>' +
             (courbeHtml || '<p class="vide">Pas encore assez de séances pour une courbe.</p>') +
@@ -4395,7 +4436,9 @@ function detailSeance(s) {
       html += ligneDetail(e.nom, faites.map((x) =>
         (x.echauffement ? 'éch ' : '') +
         (x.charge != null ? x.charge : '?') + '×' + (x.reps != null ? x.reps : '?') +
-        (x.rir != null ? ' @' + x.rir : '')).join('  ·  '),
+        (x.rir != null ? ' @' + x.rir : '') +
+        // Rest-pause (29 septembre 2026) : simple mention, sans effet sur le repos.
+        (x.restPause ? ' RP' : '')).join('  ·  '),
         progressionPremiereSerie(s, e.nom, index === 0));
     });
   }
@@ -4454,13 +4497,14 @@ function indicateur(serie) {
    - **le nom identifie l'exercice, pas le jour** (voir `derniereFois`) : la
      courbe d'un exercice qui revient sur plusieurs jours suit toutes ses
      séances, pas seulement celles du jour affiché. */
-function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance) {
+function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance, avecAxes) {
   const fin = new Date(seanceAffichee.fin).getTime();
-  const series = lireTableau(CLES.historique)
+  const trouvees = lireTableau(CLES.historique)
     .filter((s) => s.fin && new Date(s.fin).getTime() <= fin)
     .sort((a, b) => new Date(a.fin) - new Date(b.fin))
-    .map((s) => premiereSerieDeTravail((s.exercices || []).find((e) => memeExercice(e.nom, nomExo))))
-    .filter(Boolean);
+    .map((s) => ({ quand: s.fin, serie: premiereSerieDeTravail((s.exercices || []).find((e) => memeExercice(e.nom, nomExo))) }))
+    .filter((t) => t.serie);
+  const series = trouvees.map((t) => t.serie);
 
   if (series.length < 2) return '';
 
@@ -4468,7 +4512,7 @@ function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance)
   const derniere = series[series.length - 1];
   const ecart = Math.round((points[points.length - 1] - points[points.length - 2]) * 10) / 10;
   const sens = ecart > 0 ? ' hausse' : (ecart < 0 ? ' baisse' : '');
-  return courbe(points, 'première série, charge × répétitions') +
+  return courbe(points, 'première série, charge × répétitions', avecAxes ? trouvees.map((t) => t.quand) : null) +
     '<div class="courbe-legende">' +
       (estIndicateurDeSeance ? 'Indicateur de séance · ' : '') +
       '1re série ' + derniere.charge + ' × ' + derniere.reps + ' = ' + points[points.length - 1] +
@@ -4482,15 +4526,21 @@ function progressionPremiereSerie(seanceAffichee, nomExo, estIndicateurDeSeance)
    et une ligne n'en justifient pas une, et l'application doit rester
    utilisable hors ligne sans rien télécharger. Le viewBox garde ses
    proportions, la feuille de style ne règle que la largeur. */
-function courbe(points, libelle) {
+function courbe(points, libelle, dates) {
+  // Axes gradués (dates en abscisse, valeurs en ordonnée) quand `dates` est
+  // fourni : écran Surcharge progressive seulement, depuis le 29 septembre
+  // 2026 (« abscisse et ordonnée pour plus de finesse dans la lecture »).
+  const axes = Array.isArray(dates) && dates.length === points.length;
   const largeur = 300;
-  const hauteur = 56;
+  const hauteur = axes ? 120 : 56;
   const marge = 6;
+  const gauche = axes ? 40 : marge;
+  const basAxe = axes ? 18 : marge;
   const bas = Math.min(...points);
   const haut = Math.max(...points);
   const amplitude = haut - bas || 1;
-  const x = (i) => marge + (i * (largeur - 2 * marge)) / (points.length - 1);
-  const y = (v) => hauteur - marge - ((v - bas) / amplitude) * (hauteur - 2 * marge);
+  const x = (i) => gauche + (i * (largeur - gauche - marge)) / (points.length - 1);
+  const y = (v) => hauteur - basAxe - ((v - bas) / amplitude) * (hauteur - basAxe - marge);
   const coords = points.map((v, i) => [x(i), y(v)]);
 
   const chemin = cheminLisse(coords);
@@ -4499,9 +4549,22 @@ function courbe(points, libelle) {
       '" r="' + (i === points.length - 1 ? 4 : 2.5) + '"/>')
     .join('');
 
-  return '<svg class="courbe" viewBox="0 0 ' + largeur + ' ' + hauteur + '" ' +
+  let reperes = '';
+  if (axes) {
+    const graduations = haut === bas ? [bas] : [bas, Math.round((bas + haut) / 2), haut];
+    reperes += graduations.map((v) =>
+      '<line class="courbe-grille" x1="' + gauche + '" x2="' + (largeur - marge) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '"/>' +
+      '<text class="courbe-axe" x="' + (gauche - 4) + '" y="' + (y(v) + 3).toFixed(1) + '" text-anchor="end">' + Math.round(v) + '</text>').join('');
+    const jourMois = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    const indices = points.length > 2 ? [0, Math.floor((points.length - 1) / 2), points.length - 1] : [0, points.length - 1];
+    reperes += indices.map((i, n) =>
+      '<text class="courbe-axe" x="' + x(i).toFixed(1) + '" y="' + (hauteur - 4) + '" text-anchor="' +
+        (n === 0 ? 'start' : (i === points.length - 1 ? 'end' : 'middle')) + '">' + jourMois(dates[i]) + '</text>').join('');
+  }
+
+  return '<svg class="courbe' + (axes ? ' avec-axes' : '') + '" viewBox="0 0 ' + largeur + ' ' + hauteur + '" ' +
     'role="img" aria-label="Progression, ' + libelle + ', sur ' + points.length + ' séances">' +
-    '<path d="' + chemin + '"/>' + cercles + '</svg>';
+    reperes + '<path d="' + chemin + '"/>' + cercles + '</svg>';
 }
 
 /* Courbe lissée (Catmull-Rom vers Bézier, tension 1/6) plutôt qu'une simple

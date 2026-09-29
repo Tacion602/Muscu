@@ -16,6 +16,7 @@ const FICHIERS = [
   './',
   './index.html',
   './css/style.css',
+  './css/charte.css',
   './js/app.js',
   './manifest.webmanifest',
   './data/programme.json',

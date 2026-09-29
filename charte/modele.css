@@ -1,0 +1,136 @@
+/* Charte graphique générée — NE PAS ÉDITER css/charte.css À LA MAIN.
+   Modèle : charte/modele.css ; couleurs : charte/palette.jpg ;
+   générateur : python outils/charte.py (voir son en-tête).
+
+   Ne s'applique que sous html[data-charte="photo"] (réglage « Charte
+   (photo) » du dégradé, par défaut) : css/style.css garde les anciennes
+   couleurs, choisir une autre palette dans les Réglages y ramène.
+
+   Palette source : rose {{ROSE}}, violet {{VIOLET}}, bleu {{BLEU}},
+   menthe {{MENTHE}}, encre {{NOIR}}. Le reste en est dérivé : fond clair
+   teinté, versions « encre » assombries pour le texte (WCAG AA sur le fond
+   de champ), versions pâles pour les fonds teintés. */
+
+html[data-charte="photo"] {
+  --fond: {{FOND}};
+  --fond-carte: #ffffff;
+  --fond-champ: {{CHAMP}};
+  --trait: {{TRAIT}};
+  --texte: {{NOIR}};
+  --texte-faible: {{TEXTE_FAIBLE}};
+  --accent: {{VIOLET_ENCRE}};
+  --accent-clair: {{BLEU_ENCRE}};
+  --hausse: {{MENTHE_ENCRE}};
+  --baisse: {{ROSE_ENCRE}};
+  --danger: {{ROSE_ENCRE}};
+  --repos: {{VIOLET_SOMBRE}};
+  --repos-anneau: {{MENTHE}};
+  --repos-anneau-fin: {{ROSE}};
+  --mesure-bras: {{BLEU_ENCRE}};
+  --muscu-fatigue: {{ROSE_PALE}};
+  --muscu-charge: {{VIOLET_PALE}};
+  --muscu-recuperation: {{BLEU_PALE}};
+  --muscu-pret: {{MENTHE_PALE}};
+  --tonnage-hausse-fond: rgba({{MENTHE_ENCRE_RGB}}, .14);
+  --tonnage-hausse-bord: rgba({{MENTHE_ENCRE_RGB}}, .45);
+  --tonnage-baisse-fond: rgba({{ROSE_ENCRE_RGB}}, .14);
+  --tonnage-baisse-bord: rgba({{ROSE_ENCRE_RGB}}, .45);
+  --serpent-debut: {{ROSE}};
+  --serpent-fin: {{VIOLET}};
+{{INTERFERENCE}}
+}
+
+/* Fonds vivants : une seule palette, celle de la photo, sur les quatre
+   écrans ; chaque écran part d'un angle différent pour ne pas se ressembler. */
+html[data-charte="photo"] [data-palette="charte"] {
+  --fv1: {{VIOLET}}; --fv2: {{ROSE}}; --fv3: {{BLEU}};
+  --fv4: {{MENTHE}}; --fv5: {{BLEU}}; --fv6: {{ROSE}};
+}
+html[data-charte="photo"] #ecran-accueil .fond-vivant { animation-delay: -6s; }
+html[data-charte="photo"] #ecran-suivi .fond-vivant { animation-delay: -12s; }
+html[data-charte="photo"] #ecran-reglages .fond-vivant { animation-delay: -18s; }
+html[data-charte="photo"] #ecran-menu,
+html[data-charte="photo"] #ecran-accueil,
+html[data-charte="photo"] #ecran-suivi,
+html[data-charte="photo"] #ecran-reglages {
+  --texte-faible: {{TEXTE_FAIBLE}};
+  --accent-clair: {{VIOLET_ENCRE}};
+}
+
+/* Fonds teintés et états. */
+html[data-charte="photo"] .reprise { background: rgba({{VIOLET_RGB}}, .08); }
+html[data-charte="photo"] .pastille-en-cours { background: rgba({{VIOLET_RGB}}, .12); }
+html[data-charte="photo"] #exo-muscle { background: rgba({{VIOLET_RGB}}, .12); }
+html[data-charte="photo"] .echauffement-jour { background: rgba({{VIOLET_RGB}}, .06); }
+html[data-charte="photo"] .ligne-serie.faite { background: rgba({{BLEU_RGB}}, .12); }
+html[data-charte="photo"] .alerte-incomplete { background: rgba({{ROSE_ENCRE_RGB}}, .1); }
+html[data-charte="photo"] .badge.envoye { background: rgba({{MENTHE_ENCRE_RGB}}, .14); }
+html[data-charte="photo"] .badge.attente { background: rgba({{ROSE_ENCRE_RGB}}, .14); }
+html[data-charte="photo"] .principal:active { background: {{VIOLET_SOMBRE}}; }
+html[data-charte="photo"] .footing-champs input::placeholder,
+html[data-charte="photo"] .ligne-serie input::placeholder { color: {{TEXTE_FAIBLE}}; }
+html[data-charte="photo"] .gainage-degrade {
+  background: linear-gradient(90deg, {{MENTHE_ENCRE}}, {{BLEU_ENCRE}}, {{VIOLET_ENCRE}}, {{ROSE_ENCRE}});
+}
+
+/* Calendrier et Sommeil : le bleu de la palette plutôt que les bleus nuit. */
+html[data-charte="photo"] .calendrier-case.a-sommeil { background: {{BLEU_ENCRE}}; border-color: {{BLEU_ENCRE}}; }
+html[data-charte="photo"] #ecran-sommeil {
+  background: linear-gradient(180deg, {{BLEU_ENCRE}} 0%, {{VIOLET_ENCRE}} 45%, {{VIOLET_SOMBRE}} 75%, {{VIOLET_NUIT}} 100%);
+}
+html[data-charte="photo"] .sommeil-creneau.sommeil { background: {{BLEU}}; }
+
+/* Vague de démarrage. */
+html[data-charte="photo"] .vague-demarrage {
+  background: conic-gradient(from 0deg, {{VIOLET}}, {{BLEU}}, {{MENTHE}}, {{ROSE}}, {{VIOLET}});
+}
+
+/* Bouton d'envoi animé. */
+html[data-charte="photo"] .bouton-sync {
+  --sync-couleur: {{BLEU}};
+  --sync-remplissage: {{BLEU_SOMBRE}};
+  --sync-vert: {{MENTHE}};
+}
+
+/* Écran de séance et repos plein écran (bloc néon de css/style.css). */
+html[data-charte="photo"] #ecran-seance,
+html[data-charte="photo"] #minuterie-plein-ecran {
+  --accent: {{VIOLET_ENCRE}};
+  --accent-clair: {{BLEU_ENCRE}};
+  --neon-cyan: {{BLEU}};
+  --neon-magenta: {{ROSE}};
+  --repos: {{VIOLET_SOMBRE}};
+  --repos-anneau: {{MENTHE}};
+  --repos-anneau-fin: {{ROSE}};
+}
+html[data-charte="photo"] #ecran-seance #exo-muscle { background: rgba({{VIOLET_RGB}}, .1); }
+html[data-charte="photo"] #ecran-seance .ligne-serie.faite { background: rgba({{BLEU_RGB}}, .12); }
+html[data-charte="photo"] #ecran-seance .principal,
+html[data-charte="photo"] #ecran-seance .ligne-serie-restpause.actif {
+  box-shadow: 0 0 0 1px rgba({{VIOLET_RGB}}, .25), 0 4px 18px rgba({{VIOLET_RGB}}, .35);
+}
+html[data-charte="photo"] #ecran-seance #jauge-remplie { box-shadow: 0 0 8px rgba({{BLEU_RGB}}, .6); }
+html[data-charte="photo"] #minuterie-plein-ecran {
+  background: linear-gradient(135deg, {{VIOLET_NUIT}}, {{VIOLET_SOMBRE}}, {{VIOLET}}, {{BLEU_SOMBRE}}, {{VIOLET_NUIT}});
+  background-size: 300% 300%;
+}
+html[data-charte="photo"] #minuterie-plein-ecran .minuterie-anneau {
+  filter: drop-shadow(0 0 6px rgba({{MENTHE_RGB}}, .7)) drop-shadow(0 0 14px rgba({{ROSE_RGB}}, .45));
+}
+html[data-charte="photo"] #minuterie-plein-ecran-chiffres,
+html[data-charte="photo"] #minuterie-bilan-chiffres { text-shadow: 0 0 12px rgba({{BLEU_RGB}}, .8); }
+
+/* Barre de progression néon. */
+html[data-charte="photo"] .jauge-pilule-seance {
+  border-color: {{VIOLET}};
+  background: {{VIOLET_NUIT}};
+  box-shadow: 0 0 6px rgba({{BLEU_RGB}}, .45), inset 0 0 6px rgba({{VIOLET_RGB}}, .6);
+}
+html[data-charte="photo"] .jauge-pilule-remplissage-accent {
+  background: linear-gradient(90deg, {{BLEU}}, {{VIOLET}}, {{ROSE}}, {{MENTHE}}, {{BLEU}});
+  background-size: 300% 100%;
+  box-shadow: 0 0 8px {{BLEU}}, 0 0 16px rgba({{ROSE_RGB}}, .7);
+}
+html[data-charte="photo"] .jauge-pilule-remplissage-accent::after {
+  box-shadow: 0 0 6px #fff, 0 0 12px {{MENTHE}}, 0 0 18px {{ROSE}};
+}

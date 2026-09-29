@@ -1759,8 +1759,8 @@ body { display: flex; flex-direction: column; }
   gap: 24px;
   /* Dégradé monochrome animé (26 septembre 2026, demande de l'utilisateur :
      « dégradé dynamique monochrome ») : quatre verts de la même famille que
-     --repos, dont la fenêtre glisse lentement. L'opacité de la couche est
-     pilotée par battre() (fondu jusqu'à 30 s de la fin), pas ici. */
+     --repos, dont la fenêtre glisse lentement. Opaque tout du long depuis
+     le 29 septembre 2026, battre() la masque d'un coup à 30 s de la fin. */
   background: linear-gradient(135deg, #103a24, var(--repos), #2f8a58, var(--repos), #103a24);
   background-size: 300% 300%;
   animation: repos-degrade 8s ease-in-out infinite alternate;
@@ -2217,6 +2217,9 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
   stroke-linejoin: round;
 }
 .courbe circle { fill: var(--accent-clair); }
+/* Axes gradués de l'écran Surcharge progressive (29 septembre 2026). */
+.courbe-grille { stroke: var(--trait); stroke-width: 1; stroke-dasharray: 2 3; }
+.courbe-axe { fill: var(--texte-faible); font-size: 10px; }
 .courbe-legende {
   display: flex;
   align-items: baseline;

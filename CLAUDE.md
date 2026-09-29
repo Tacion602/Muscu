@@ -66,6 +66,8 @@ mais ne participent à rien côté téléphone.
   application web. Écrit une ligne par série validée dans un onglet dédié
   `Séances (app)`, jamais dans la grille manuelle du programme dont la mise en
   page ne supporte pas un flux automatique.
+- `charte/palette.jpg`, `charte/modele.css`, `outils/charte.py` : la charte
+  graphique, générée dans `css/charte.css` (voir « Direction visuelle »).
 - `sw.js`, `manifest.webmanifest`, `icones/` : rendent l'application
   installable et utilisable hors ligne.
 - `PRODUCT.md`, `.impeccable/` : contexte et configuration d'`impeccable.style`
@@ -226,6 +228,11 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     ce cas précis, l'ancienne photo (machine) est réutilisée en
     `generique: true`, faute d'une vraie photo de développé incliné banc à
     portée dans `free-exercise-db`.
+    Le 29 septembre 2026, `Extension triceps unilaterale poulie` (J5) devient
+    `Extension triceps poulie barre`, le nom déjà porté par J1 : faite
+    depuis toujours à deux bras à la barre, même mouvement, l'utilisateur
+    choisit une seule progression commune aux deux jours. **Le renommage
+    dans « semaine 1 » est à faire par l'utilisateur**, suivi d'un import.
 
 - **Plusieurs séances peuvent être en cours en même temps, une par jour.**
   Décision de l'utilisateur le 27 août 2026 : entrer dans J3 ne doit rien
@@ -422,14 +429,11 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   n'est pas encore remonté au classeur (aucune colonne dédiée dans
   `appsscript/Code.gs`) — pas demandé, à ajouter si le besoin se confirme à
   l'usage.
-  - **Repos de rest-pause plafonné à 10 s depuis le 26 septembre 2026**
-    (« considère que le RP est de 10 s max de repos », `REPOS_REST_PAUSE_S`).
-    Deux chemins, selon le moment où `RP` est coché : déjà coché sur la
-    série suivante au moment de valider, `validerSerie()` lance 10 s au
-    lieu du repos de l'exercice ; coché après coup (repos ordinaire déjà
-    lancé), le clic sur `RP` relance la minuterie à 10 s si plus de 10 s
-    restaient. Le drapeau marque donc la **relance**, pas la série qui la
-    précède.
+  - **Repos de rest-pause plafonné à 10 s du 26 au 29 septembre 2026,
+    retiré ensuite** (remarque de l'utilisateur : « c'était juste une
+    indication pour le .md », ce ne sont pas de vrais rest-pause). Le
+    bouton `RP` reste, simple drapeau sans effet sur le repos, et s'affiche
+    dans la fiche d'historique (« 40×8 @1 RP », `detailSeance()`).
 - **Le signal sonore de fin de récupération est au volume maximal utile**
   depuis le 7 septembre 2026 (gain 0.9 dans `signaler()`, contre 0.3
   auparavant) : jugé trop faible par l'utilisateur pour s'entendre depuis
@@ -552,6 +556,9 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
         `lancerMinuterie()` sautant son affichage différé. Fond : dégradé
         de quatre verts de la famille `--repos` qui glisse lentement
         (`@keyframes repos-degrade`, coupé sous `prefers-reduced-motion`).
+      - **Fondu retiré le 29 septembre 2026** (remarque « fini la
+        transparence ») : le plein écran reste opaque jusqu'à 30 s de la
+        fin, puis `battre()` le masque d'un coup.
     - **Bug trouvé en testant, pas en salle** : `lancerMinuterie()` peut
       tomber en plein milieu d'un clic déjà commencé sur une flèche
       d'exercice — la validation implicite d'une série par sortie de champ
@@ -1415,6 +1422,30 @@ que soit le sous-menu ensuite ouvert.
     qui défile, halo qui grésille, étincelle en bout de barre
     (`.jauge-pilule-remplissage-accent`), coupés sous
     `prefers-reduced-motion`. Remplace le gris du 17-18 septembre.
+  - **Charte graphique tirée d'une photo depuis le 29 septembre 2026**
+    (remarque de l'utilisateur : « uniquement ces couleurs dans toute
+    l'appli », photo de cinq couleurs fournie, puis « pas de fond noir,
+    ajoute un blanc ou écru qui se marie »). `charte/palette.jpg` (cinq
+    bandes verticales : rose, violet, bleu, menthe, encre, dans cet ordre)
+    est lue par `outils/charte.py`, qui remplit `charte/modele.css` et
+    écrit `css/charte.css` — **jamais édité à la main**. Changer de charte :
+    remplacer la photo par une bande de cinq couleurs aux mêmes rôles,
+    relancer le script. Dérivés calculés : fond blanc à peine teinté du
+    violet, versions « encre » assombries vers la couleur la plus sombre
+    jusqu'à 4,6:1 sur le fond de champ pour le texte (les couleurs vives
+    telles quelles ne servent qu'aux aplats, halos, jauges, dégradés),
+    versions pâles pour l'état musculaire, neuf rangs d'interférence du
+    gainage (`--interference-N`, repli sur les teintes d'origine hors
+    charte). Le fichier ne s'applique que sous `html[data-charte="photo"]`,
+    posé par `appliquerDegradeAccueil()` quand le réglage « Couleurs de
+    l'application » vaut « Charte (photo) » (défaut) ; les quatre fonds
+    vivants prennent alors la palette `charte`, décalés dans leur rotation
+    (`animation-delay`). Choisir une ancienne palette (Desert Bloom…) rend
+    toute l'application à ses couleurs d'avant, restées intactes dans
+    `css/style.css` (demande : « conserve les anciennes pour rebasculer »).
+    Une couleur ajoutée plus tard dans `css/style.css` doit aussi recevoir
+    son équivalent dans `charte/modele.css`, sans quoi elle échappe à la
+    charte.
   - **Minuterie de repos différenciée de --danger le 17 septembre 2026**
     (demande de l'utilisateur : « différencie les deux rouges ») : voir
     `--repos` plus bas, section Séance.
@@ -1813,6 +1844,13 @@ autres sous-écrans via `afficher()`.
     fois n'a rien à comparer). Deux boutons (`TONNAGE_PERIODES`, variable
     `tonnagePeriodeJours`, 30 ou 182 jours) remplacent l'ancienne constante
     `TONNAGE_PERIODE_JOURS`.
+  - **Axes gradués et exercices actifs seulement, le 29 septembre 2026**
+    (remarque de l'utilisateur) : les courbes du détail portent dates en
+    abscisse et valeurs en ordonnée (`courbe()` avec son troisième
+    paramètre `dates`, passé par `progressionPremiereSerie(..., true)` ;
+    les autres courbes de l'application restent sans axes). Un exercice
+    sans série faite depuis `SURCHARGE_ACTIF_JOURS` (14 jours,
+    `exerciceActif()`) n'est plus affiché ni compté dans l'écart de sa zone.
 - **Remarque**, septième et dernier contenu, ajouté le 17 septembre 2026
   (demande de l'utilisateur) : envoyer une remarque libre au développeur
   sans passer par un exercice ni une fin de séance, seuls chemins qui le
@@ -1828,6 +1866,9 @@ autres sous-écrans via `afficher()`.
   remarque repart au prochain appel de `synchroniser()`. **Nécessite le
   redéploiement du pont** (nouvelle action `remarque` dans `doPost`), comme
   les évolutions précédentes de cette liste — voir « Chantiers ouverts ».
+  **Bouton d'envoi animé depuis le 29 septembre 2026** (remarque de
+  l'utilisateur) : même `.bouton-sync` et mêmes phases que la fin de
+  séance, `envoyerRemarqueSuivi()`, remis à « Envoyer » 2,5 s après.
 
 ### Chantiers évalués et écartés ce jour-là
 

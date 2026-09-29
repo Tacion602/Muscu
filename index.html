@@ -11,6 +11,8 @@
 <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icones/icone-192.png">
 <link rel="stylesheet" href="css/style.css">
+<!-- Charte graphique générée depuis charte/palette.jpg (outils/charte.py). -->
+<link rel="stylesheet" href="css/charte.css">
 </head>
 <body>
 
@@ -296,7 +298,16 @@
       <span>Remarque</span>
       <textarea id="remarque-suivi-champ" class="consigne-champ" rows="5" placeholder="Ce que vous voulez signaler."></textarea>
     </label>
-    <button id="bouton-remarque-suivi-envoyer" class="principal grand">Envoyer</button>
+    <!-- Même bouton animé que la fin de séance (29 septembre 2026). -->
+    <button id="bouton-remarque-suivi-envoyer" type="button" class="bouton-sync">
+      <span class="bouton-sync-cercle" aria-hidden="true">
+        <span class="bouton-sync-icone">&#8595;</span>
+        <span class="bouton-sync-carre"></span>
+      </span>
+      <span class="bouton-sync-orbite" aria-hidden="true"><span class="bouton-sync-point"></span></span>
+      <span class="bouton-sync-pastille" aria-hidden="true"></span>
+      <span id="bouton-remarque-suivi-texte" class="bouton-sync-texte">Envoyer</span>
+    </button>
     <p id="remarque-suivi-statut" class="message"></p>
   </main>
 </section>
@@ -615,8 +626,9 @@
       <input id="reglage-secret" type="text" autocomplete="off" placeholder="celui inscrit dans le script">
     </label>
     <label class="champ-large">
-      <span>Dégradé de l'accueil</span>
+      <span>Couleurs de l'application</span>
       <select id="reglage-degrade-accueil">
+        <option value="charte">Charte (photo)</option>
         <option value="desert">Desert Bloom</option>
         <option value="voltage">Quiet Voltage</option>
         <option value="filtered">Filtered Reality</option>
