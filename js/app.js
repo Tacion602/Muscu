@@ -150,6 +150,8 @@ const MOUVEMENTS_GAINAGE = {
   },
   marche_ours: {
     nom: "Marche de l'ours", mode: 'chrono', prescription: '45 s', repos: 45,
+    // Pas de champ poids (remarque du 1er octobre 2026), voir celluleSerie.
+    sansPoids: true,
     interference: 8, couleur: '#D73027', couleurTexte: '#cc2e25',
     consigne: 'Genoux à quelques centimètres du sol, dos plat, bassin qui ne bascule '
       + 'pas latéralement.',
@@ -162,6 +164,11 @@ const MOUVEMENTS_GAINAGE = {
   },
   farmer_walk: {
     nom: 'Farmer walk une main', mode: 'charge', prescription: '20-30 m par côté', repos: 60,
+    // Retiré de la séance de gainage le 1er octobre 2026 (remarque de
+    // l'utilisateur, « le laisser en cardio ») : le cardio le couvre déjà par
+    // l'Incliné, option farmer walk, d'où son absence de CATEGORIES_GAINAGE.
+    // Gardé ici pour relire l'historique déjà enregistré.
+    cardioSeul: true,
     interference: 9, couleur: '#A50026',
     consigne: "Départ 18 à 20 kg. Épaules horizontales, arrêt dès l'inclinaison, quelle "
       + 'que soit la distance restante.',
@@ -189,7 +196,7 @@ const CATEGORIES_GAINAGE = [
   { cle: 'anti_rotation', nom: 'Anti-rotation', series: 3,
     mouvements: ['pallof_press', 'bird_dog', 'marche_ours'] },
   { cle: 'anti_lateroflexion', nom: 'Anti-latéroflexion', series: 3,
-    mouvements: ['planche_laterale', 'farmer_walk'] },
+    mouvements: ['planche_laterale'] },
   { cle: 'flexion_chargee', nom: 'Flexion chargée', series: 3,
     mouvements: ['crunch_inverse', 'releve_genoux'] },
 ];
@@ -934,31 +941,6 @@ function rendreDemarrage(jour) {
     liste.map((item) => '<li>' + echapper(item) + '</li>').join('');
 }
 
-/* Vague de couleur qui part du point d'appui et envahit l'écran (demande de
-   l'utilisateur le 16 septembre 2026), avant de révéler la fiche du premier
-   exercice déjà rendue dessous. Calée sur un délai fixe (durée de la
-   transition CSS, voir .vague-demarrage) plutôt que sur `transitionend` :
-   ce dernier se redéclenche quand la classe est retirée (la vague reflue
-   aussi en transition), et un `{ once: true }` posé avant le premier
-   déclenchement peut alors manquer la fin de la croissance et laisser
-   l'écran couvert. Un délai fixe n'a pas cette ambiguïté. */
-function lancerAnimationDemarrage(x, y, suite) {
-  const vague = $('vague-demarrage');
-  vague.style.setProperty('--x', x + 'px');
-  vague.style.setProperty('--y', y + 'px');
-  // Force le navigateur à peindre le disque à l'échelle 0, positionné au
-  // point d'appui, avant de déclencher sa mise à l'échelle : sans ce
-  // rafraîchissement forcé, les deux changements (position, puis transform)
-  // posés dans le même tick peuvent se retrouver combinés dans la même
-  // image, et la croissance démarre alors d'un état incohérent.
-  void vague.offsetWidth;
-  vague.classList.add('actif');
-  setTimeout(() => {
-    suite();
-    vague.classList.remove('actif');
-  }, 600);
-}
-
 function nouvelleSeance(jour) {
   const neuve = {
     id: 'S' + Date.now(),
@@ -1593,7 +1575,7 @@ function celluleSerie(mouvement, cle, series, index, valeur, precedente) {
     bouton.addEventListener('click', () => demarrerTenue(cle, index));
     cellule.appendChild(bouton);
   }
-  cellule.appendChild(etiquettePoids);
+  if (!mouvement.sansPoids) cellule.appendChild(etiquettePoids);
 
   // Le repos part à la confirmation, **quel que soit le mode**. Une tenue
   // tapée à la main ne le lançait pas jusqu'au 12 septembre 2026, là où des
@@ -3092,7 +3074,7 @@ function appliquerDegradeAccueil() {
   const themeCouleur = document.querySelector('meta[name="theme-color"]');
   if (themeCouleur) themeCouleur.content = getComputedStyle(document.documentElement).getPropertyValue('--fond').trim();
   if (charte) {
-    ['menu', 'accueil', 'suivi', 'reglages'].forEach((ecran) => { $('ecran-' + ecran).dataset.palette = 'charte'; });
+    ['menu', 'accueil', 'suivi', 'reglages', 'demarrage'].forEach((ecran) => { $('ecran-' + ecran).dataset.palette = 'charte'; });
     return;
   }
   // Un dégradé différent par page (même jour) : l'accueil prend le choix,
@@ -3100,6 +3082,8 @@ function appliquerDegradeAccueil() {
   $('ecran-menu').dataset.palette = reglages.degradeAccueil;
   const autres = PALETTES_FOND.filter((p) => p !== reglages.degradeAccueil);
   ['accueil', 'suivi', 'reglages'].forEach((ecran, i) => { $('ecran-' + ecran).dataset.palette = autres[i]; });
+  // Échauffement (4 octobre 2026) : même palette que Sport, d'où l'on vient.
+  $('ecran-demarrage').dataset.palette = autres[0];
 }
 const PALETTES_FOND = ['desert', 'cosmic', 'voltage', 'filtered'];
 
@@ -4646,11 +4630,11 @@ function brancher() {
     rendreAccueil();
     afficher('accueil');
   });
-  $('bouton-demarrage-commencer').addEventListener('click', (evenement) => {
-    lancerAnimationDemarrage(evenement.clientX, evenement.clientY, () => {
-      afficher('seance');
-      rendreExercice();
-    });
+  // Plus de vague plein écran depuis le 4 octobre 2026 (« je n'aime pas ton
+  // animation qui envahit l'écran ») : la fiche s'ouvre directement.
+  $('bouton-demarrage-commencer').addEventListener('click', () => {
+    afficher('seance');
+    rendreExercice();
   });
 
   $('bouton-terminer').addEventListener('click', terminer);

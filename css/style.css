@@ -265,7 +265,7 @@ body { display: flex; flex-direction: column; }
    distinctes de l'accueil et entre elles). Propriétés communes
    (géométrie, flou, échelle) regroupées sur `.fond-vivant` nu plutôt que
    répétées par écran ; seule la couleur change, voir plus bas. */
-#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages {
+#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages, #ecran-demarrage {
   position: relative;
   overflow: hidden;
   background: var(--fond);
@@ -273,7 +273,8 @@ body { display: flex; flex-direction: column; }
 #ecran-menu > *:not(.fond-vivant),
 #ecran-accueil > *:not(.fond-vivant),
 #ecran-suivi > *:not(.fond-vivant),
-#ecran-reglages > *:not(.fond-vivant) { position: relative; z-index: 1; }
+#ecran-reglages > *:not(.fond-vivant),
+#ecran-demarrage > *:not(.fond-vivant) { position: relative; z-index: 1; }
 /* Recalé sur l'original le 26 septembre 2026 (capture du CodePen fournie
    par l'utilisateur : « un peu trop zoomé », « bord noir, rotation un peu
    plus rapide », « peut-être le tourner à 90° » ; code lu sur la page
@@ -308,9 +309,9 @@ body { display: flex; flex-direction: column; }
    l'accueil prenant le choix des réglages et les trois autres les trois
    palettes restantes. Les variables --fv1 à --fv6 descendent jusqu'à la
    couche et au fond de chaque écran. */
-#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages { background: var(--fv1); }
+#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages, #ecran-demarrage { background: var(--fv1); }
 #ecran-menu .fond-vivant, #ecran-accueil .fond-vivant,
-#ecran-suivi .fond-vivant, #ecran-reglages .fond-vivant {
+#ecran-suivi .fond-vivant, #ecran-reglages .fond-vivant, #ecran-demarrage .fond-vivant {
   background: conic-gradient(from 0deg,
     var(--fv1), var(--fv2), var(--fv3), var(--fv4), var(--fv5), var(--fv6), var(--fv1));
 }
@@ -1118,38 +1119,6 @@ body { display: flex; flex-direction: column; }
 .demarrage-nom { font-size: 26px; margin: 4px 0 16px; }
 #bouton-demarrage-commencer { margin-top: 24px; }
 
-/* Vague de couleur qui envahit l'écran au démarrage d'une séance (demande de
-   l'utilisateur le 16 septembre 2026) : un cercle qui part du point d'appui
-   (--x/--y, posés par lancerAnimationDemarrage()) et couvre tout l'écran,
-   révélant la fiche du premier exercice déjà rendue dessous. `pointer-events:
-   none` : elle ne doit jamais intercepter un geste.
-
-   Redessiné le 16 septembre 2026 (signalé saccadé) : un `clip-path: circle()`
-   qui grandit oblige le navigateur à recalculer la forme du découpage à
-   chaque image, repeint par le thread principal plutôt que le compositeur —
-   coûteux sur un cercle qui finit par couvrir tout l'écran. Un disque à
-   taille fixe (300vmax, largement plus grand que n'importe quel écran dans
-   n'importe quelle orientation) positionné au point d'appui et mis à l'échelle
-   via `transform: scale()` obtient le même effet visuel en ne bougeant qu'une
-   propriété compositée, sans jamais retoucher la géométrie. */
-.vague-demarrage {
-  position: fixed;
-  top: var(--y, 50%);
-  left: var(--x, 50%);
-  width: 300vmax;
-  height: 300vmax;
-  margin: -150vmax 0 0 -150vmax;
-  z-index: 50;
-  pointer-events: none;
-  border-radius: 50%;
-  /* Dégradé néon (27 septembre 2026), même famille que l'écran de séance :
-     conique pour que les couleurs tournent autour du point d'appui. */
-  background: conic-gradient(from 0deg, #6a00ff, #0050e6, #00e5ff, #ff2bd6, #6a00ff);
-  transform: scale(0);
-  transition: transform .6s ease-out;
-  will-change: transform;
-}
-.vague-demarrage.actif { transform: scale(1); }
 
 .comparaison-tonnage {
   position: fixed;
@@ -1733,15 +1702,13 @@ body { display: flex; flex-direction: column; }
 .jauge-pilule-remplissage-accent { background: var(--texte-faible); }
 
 /* Plein écran repris le 16 septembre 2026, à la demande de l'utilisateur,
-   sur le même principe que .vague-demarrage (position:fixed, inset:0) :
+   en couche position:fixed, inset:0 :
    la panne du 27 août 2026 venait du clavier virtuel qui poussait une
    couche plein écran hors du cadre visible une fois ouvert. Cette
    fois-ci, lancerMinuterie() ferme le clavier avant de l'afficher plutôt
    que d'essayer de suivre sa hauteur (suivreClavier/visualViewport,
    fragile et déjà abandonné une fois) : sans clavier ouvert, rien ne
-   pousse la couche hors du viewport. z-index au-dessus de la vague de
-   démarrage (50), qui ne peut de toute façon pas être active en même
-   temps qu'un repos.
+   pousse la couche hors du viewport.
 
    Bloquant tout le repos, il aurait aussi empêché de travailler sur la
    fiche suivante pendant que la minuterie tourne par-dessus (décision du
@@ -2418,7 +2385,7 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
    bulles ») : le texte principal reste bien au-dessus du seuil, le texte
    secondaire foncé (#3b4643) tombe vers ~4,8:1 au pire point, toujours AA. */
 :root { --verre: rgba(255, 255, 255, .7); }
-#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages {
+#ecran-menu, #ecran-accueil, #ecran-suivi, #ecran-reglages, #ecran-demarrage {
   --texte-faible: #3b4643;
   --accent-clair: #226059;
 }
@@ -2426,7 +2393,12 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
    cours, étiquettes de Réglages — même verre plutôt que du texte posé à nu
    sur un fond qui passe du clair au presque noir. */
 #ecran-accueil .reprise,
-#ecran-reglages .corps {
+#ecran-reglages .corps,
+/* Échauffement (4 octobre 2026, « tu as oublié les pages d'échauffement ») :
+   même fond vivant que les menus, seuls les blocs de texte sur le verre
+   (tout le corps en verre délavait le fond). */
+#ecran-demarrage .demarrage-nom { padding: 8px 12px; border-radius: var(--rayon); }
+#ecran-demarrage .corps > :not(button) {
   background: var(--verre);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);

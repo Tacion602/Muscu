@@ -244,6 +244,10 @@ def mouvements_de_gainage(source=None):
             classes.setdefault(cle, []).append(cle_cat)
     for cle in sorted(mouvements):
         cats = classes.get(cle, [])
+        # Un mouvement marque cardioSeul (le farmer walk depuis le 1er octobre
+        # 2026) ne vit qu'aux jours de cardio et n'appartient a aucune categorie.
+        if 'cardioSeul: true' in mouvements[cle] and not cats:
+            continue
         if len(cats) != 1:
             controle.alerte('%s appartient a %d categorie(s) : %s'
                             % (cle, len(cats), ', '.join(cats) or 'aucune'))

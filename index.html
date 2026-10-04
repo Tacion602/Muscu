@@ -319,6 +319,7 @@
      pas affiché ici. Sauté à la reprise d'une séance déjà commencée : voir
      commencer() dans js/app.js. -->
 <section id="ecran-demarrage" class="ecran">
+  <div class="fond-vivant" aria-hidden="true"></div>
   <header class="barre">
     <button id="bouton-demarrage-retour" class="icone" aria-label="Retour">&#8592;</button>
     <div class="barre-titre"><span id="demarrage-jour"></span></div>
@@ -500,9 +501,6 @@
 <input id="amorce-clavier" class="amorce-clavier" type="text"
        inputmode="decimal" tabindex="-1" aria-hidden="true">
 
-<!-- Vague de couleur au démarrage d'une séance, demande de l'utilisateur le
-     16 septembre 2026 : voir lancerAnimationDemarrage() dans js/app.js. -->
-<div id="vague-demarrage" class="vague-demarrage" aria-hidden="true"></div>
 
 <!-- Écart de tonnage avec la même série la semaine passée, affiché 2 s après
      chaque série validée (demande de l'utilisateur le 16 septembre 2026) :

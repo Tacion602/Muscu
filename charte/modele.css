@@ -49,10 +49,12 @@ html[data-charte="photo"] [data-palette="charte"] {
 html[data-charte="photo"] #ecran-accueil .fond-vivant { animation-delay: -6s; }
 html[data-charte="photo"] #ecran-suivi .fond-vivant { animation-delay: -12s; }
 html[data-charte="photo"] #ecran-reglages .fond-vivant { animation-delay: -18s; }
+html[data-charte="photo"] #ecran-demarrage .fond-vivant { animation-delay: -9s; }
 html[data-charte="photo"] #ecran-menu,
 html[data-charte="photo"] #ecran-accueil,
 html[data-charte="photo"] #ecran-suivi,
-html[data-charte="photo"] #ecran-reglages {
+html[data-charte="photo"] #ecran-reglages,
+html[data-charte="photo"] #ecran-demarrage {
   --texte-faible: {{TEXTE_FAIBLE}};
   --accent-clair: {{VIOLET_ENCRE}};
 }
@@ -79,11 +81,6 @@ html[data-charte="photo"] #ecran-sommeil {
   background: linear-gradient(180deg, {{BLEU_ENCRE}} 0%, {{VIOLET_ENCRE}} 45%, {{VIOLET_SOMBRE}} 75%, {{VIOLET_NUIT}} 100%);
 }
 html[data-charte="photo"] .sommeil-creneau.sommeil { background: {{BLEU}}; }
-
-/* Vague de démarrage. */
-html[data-charte="photo"] .vague-demarrage {
-  background: conic-gradient(from 0deg, {{VIOLET}}, {{BLEU}}, {{MENTHE}}, {{NOIR}}, {{VIOLET}});
-}
 
 /* Bouton d'envoi animé. */
 html[data-charte="photo"] .bouton-sync {

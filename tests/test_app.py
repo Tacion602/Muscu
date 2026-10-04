@@ -89,9 +89,6 @@ def ouvrir_jour(page, code):
     bouton = page.locator("#bouton-demarrage-commencer")
     if bouton.is_visible():
         bouton.click()
-        # La vague de couleur retarde l'affichage de la fiche d'un exercice
-        # (transition CSS de 0.6 s avant rendreExercice()) : attendre l'ecran
-        # plutot que de lire l'etat trop tot.
         page.wait_for_selector("#ecran-seance.actif")
 
 
@@ -1066,7 +1063,9 @@ def test_le_nom_du_mouvement_est_colore_sans_pastille(page):
 
 def test_le_mouvement_par_defaut_est_celui_de_la_derniere_seance(page):
     """Pas d'alternance automatique : chaque categorie reprend le mouvement
-    de la seance precedente, et montre ses dernieres valeurs."""
+    de la seance precedente, et montre ses dernieres valeurs. Le farmer walk,
+    retire du gainage le 1er octobre 2026, retombe sur le premier mouvement
+    de sa categorie."""
     precedente = {
         "id": "G1", "jour": "G", "titre": "Gainage", "type": "gainage",
         "fin": "2026-09-05T18:00:00.000Z", "envoye": True,
@@ -1077,7 +1076,7 @@ def test_le_mouvement_par_defaut_est_celui_de_la_derniere_seance(page):
     page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", [precedente])
     ouvrir_gainage(page)
     choisis = page.locator("#gainage-categories .type-course.choisi").all_text_contents()
-    assert choisis == ["Planche", "Bird dog", "Farmer walk une main", "Relevé de genoux suspendu"]
+    assert choisis == ["Planche", "Bird dog", "Planche latérale", "Relevé de genoux suspendu"]
     assert "Dernière fois : 40 s" in carte_gainage(page, 0).text_content()
 
 
@@ -1096,20 +1095,14 @@ def test_une_tenue_se_chronometre_et_s_interrompt(page):
     assert "Repos" in page.text_content("#gainage-chrono")
 
 
-def test_le_farmer_walk_partage_son_historique_avec_le_footing(page):
-    """Decision du 11 septembre 2026 : un seul historique pour le farmer
-    walk, qu'il ait ete fait en footing ou en seance de gainage."""
-    footing = {
-        "id": "F1", "jour": "J2", "titre": "J2 & J6 FOOTING", "type": "footing",
-        "fin": "2026-09-05T18:00:00.000Z", "envoye": True, "footing": {},
-        "mouvements": {"farmer_walk": [{"poids": 20, "distance": 25, "vitesse": 4.5}, None, None]},
-    }
-    page.evaluate("h => localStorage.setItem('muscu.historique', JSON.stringify(h))", [footing])
+def test_le_farmer_walk_n_est_plus_dans_le_gainage(page):
+    """1er octobre 2026, remarque de l'utilisateur : farmer walk retire de la
+    seance de gainage (le cardio le couvre par l'Incline, option farmer
+    walk), et plus de champ poids sur la marche de l'ours."""
     ouvrir_gainage(page)
-    carte_gainage(page, 2).locator(".type-course", has_text="Farmer walk").click()
-    carte = carte_gainage(page, 2)
-    assert "Dernière fois : 20 kg, 25 m, 4.5 km/h" in carte.text_content()
-    assert carte.locator("input[data-champ='poids']").first.get_attribute("placeholder") == "20"
+    assert "Farmer walk" not in page.text_content("#gainage-categories")
+    carte_gainage(page, 1).locator(".type-course", has_text="Marche de l").click()
+    assert carte_gainage(page, 1).locator(".gainage-champ-poids").count() == 0
 
 
 def test_la_seance_de_gainage_s_enregistre_et_se_relit(page):

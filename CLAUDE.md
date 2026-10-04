@@ -338,6 +338,13 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     dans une page `Gainage` : le pont n'a pas à connaître les mouvements.
   - **La rotation externe est abandonnée**, décision de l'utilisateur le
     11 septembre 2026.
+  - **Farmer walk retiré de la séance de gainage le 1er octobre 2026**
+    (remarque de l'utilisateur, « le laisser en cardio » : le cardio le
+    couvre déjà par l'Incliné, option farmer walk, depuis le 13 septembre
+    2026) : `cardioSeul`
+    dans `MOUVEMENTS_GAINAGE`, plus dans `CATEGORIES_GAINAGE` (dérogation
+    prévue par `outils/verifier_code.py`). **La marche de l'ours n'a plus de
+    champ poids** (`sansPoids`), même remarque.
   - **Poids par série pour les mouvements en répétitions et en tenue,
     depuis le 26 septembre 2026** (« ajouter le poids mis à chaque
     répétition ») : petit champ `kg` sous chaque série (`celluleSerie()`),
@@ -657,28 +664,15 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
   Le chrono de séance démarre déjà en arrière-plan à ce stade
   (`demarrerChronoSeance()`, appelée par `commencer()`) mais n'est pas
   affiché sur cet écran. Sauté à la reprise d'une séance déjà commencée.
-  - **Vague de couleur au démarrage** (`#vague-demarrage`,
-    `lancerAnimationDemarrage()`) : part du point d'appui du bouton et
-    couvre l'écran avant de révéler la fiche du premier exercice, déjà
-    rendue dessous. Calée sur un délai fixe (600 ms, durée de la transition
-    CSS) plutôt que sur l'événement `transitionend`, qui se redéclenche
-    quand la classe est retirée (la vague reflue aussi en transition) et
-    peut alors manquer la fin de la croissance avec un `{ once: true }` posé
-    avant le premier déclenchement, laissant l'écran couvert. Signalée
-    saccadée par l'utilisateur le même jour et corrigée aussitôt :
-    `clip-path: circle()` oblige le navigateur à recalculer la forme du
-    découpage à chaque image (repaint du thread principal) ; remplacé par un
-    disque à taille fixe (300vmax, couvre l'écran dans n'importe quelle
-    orientation) positionné au point d'appui et mis à l'échelle via
-    `transform: scale()`, seule propriété garantie de ne jamais déclencher
-    de repaint. Un rafraîchissement forcé (`void vague.offsetWidth`) sépare
-    la pose de la position de son déclenchement, sans quoi les deux
-    changements posés dans le même tick peuvent se combiner dans la même
-    image.
-    **Dégradé néon depuis le 27 septembre 2026** (demande de l'utilisateur) :
-    le disque uni `--accent` devient un `conic-gradient` violet, bleu, cyan,
-    magenta, les teintes de la palette néon de l'écran de séance, centré
-    sur le point d'appui.
+  - **Une vague de couleur plein écran a existé du 16 septembre au
+    4 octobre 2026** entre l'échauffement et la première fiche (disque
+    agrandi par `transform: scale()` depuis le point d'appui, néon le 27).
+    **Retirée** à la demande de l'utilisateur (« je n'aime pas ton animation
+    qui envahit l'écran ») : « Commencer » ouvre directement la fiche.
+  - **Fond vivant sur l'écran d'échauffement depuis le 4 octobre 2026**
+    (« tu as oublié les pages d'échauffement » dans la refonte des
+    couleurs) : même couche `.fond-vivant` et même verre que les menus, la
+    palette de Sport hors charte, celle de la charte sinon.
 - **La touche Entrée sur le RIR valide directement la série** (appelle
   `.click()` sur le bouton plutôt que de se contenter du focus) : un clavier
   virtuel ne renvoie pas de second appui sur Entrée une fois le focus déplacé
