@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-10-16T07:23:12+00:00",
+ "importe_le": "2026-10-16T12:36:11+00:00",
  "jours": [
   {
    "code": "J1",
@@ -221,20 +221,19 @@
     },
     {
      "numero": 5,
-     "nom": "Elevation laterale poulie unilaterale",
-     "prescription": "4X12-15 - RIR 2 / 2 / 1 / 1",
-     "series": 4,
-     "reps_min": 12,
-     "reps_max": 15,
+     "nom": "Elevation laterale halteres",
+     "prescription": "3 X 15-20 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 15,
+     "reps_max": 20,
      "rir": [
-      2,
       2,
       1,
       1
      ],
-     "consigne": "Poulie basse, coude légèrement fléchi et fixe. Monter jusqu'à l'horizontale, pas plus haut (au-delà, la charge part vers le trapèze). Petit doigt légèrement plus haut que le pouce en haut du mouvement, pour cibler le deltoïde latéral plutôt que l'antérieur. Contrôler la descente.",
+     "consigne": "Charge legere, tempo controle. Pas de balancier.",
      "muscle": "Deltoide lateral",
-     "repos_s": 75,
+     "repos_s": 60,
      "historique": [
       {
        "seance": 0,
@@ -531,53 +530,6 @@
     },
     {
      "numero": 2,
-     "nom": "Extension jambes unilatéral",
-     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
-     "series": 3,
-     "reps_min": 12,
-     "reps_max": 15,
-     "rir": [
-      2,
-      1,
-      1
-     ],
-     "consigne": "Amplitude complete. Pause courte en contraction haute.",
-     "muscle": "Quadriceps",
-     "repos_s": 90,
-     "historique": [
-      {
-       "seance": 0,
-       "date": "",
-       "deload": false,
-       "total": 885,
-       "series": [
-        {
-         "note": "pos :3 / 1 / 5",
-         "charge": 20,
-         "reps": 12,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 20,
-         "reps": 16,
-         "rir": null,
-         "echauffement": false
-        },
-        {
-         "note": "",
-         "charge": 25,
-         "reps": 13,
-         "rir": null,
-         "echauffement": false
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "numero": 3,
      "nom": "SOULEVE DE TERRE ROUMAIN",
      "prescription": "3 X 8-10 RIR 2 / 2 / 1",
      "series": 3,
@@ -617,6 +569,53 @@
          "charge": 60,
          "reps": 11,
          "rir": 2,
+         "echauffement": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "numero": 3,
+     "nom": "Extension jambes unilatéral",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Amplitude complete. Pause courte en contraction haute.",
+     "muscle": "Quadriceps",
+     "repos_s": 90,
+     "historique": [
+      {
+       "seance": 0,
+       "date": "",
+       "deload": false,
+       "total": 885,
+       "series": [
+        {
+         "note": "pos :3 / 1 / 5",
+         "charge": 20,
+         "reps": 12,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 20,
+         "reps": 16,
+         "rir": null,
+         "echauffement": false
+        },
+        {
+         "note": "",
+         "charge": 25,
+         "reps": 13,
+         "rir": null,
          "echauffement": false
         }
        ]
