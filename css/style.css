@@ -1915,6 +1915,27 @@ body { display: flex; flex-direction: column; }
   transition: width .7s cubic-bezier(.33, 1, .68, 1), border-color .2s ease;
 }
 .bouton-sync[disabled] { pointer-events: none; }
+/* Envoi isolé (16 octobre 2026, remarque de l'utilisateur : « plus que ce
+   bouton affiché, fond blanc classique, toute la largeur de l'écran ») :
+   `.envoi-isole` sur l'écran pendant l'envoi masque tout le reste (la
+   visibilité se rétablit sur le seul bouton) et le pose au centre, sur
+   toute la largeur hors marges ; il garde ses phases (rond pendant
+   l'envoi, pilule ensuite). */
+.ecran.envoi-isole { background: #fff; }
+.ecran.envoi-isole * { visibility: hidden; }
+.ecran.envoi-isole .bouton-sync,
+.ecran.envoi-isole .bouton-sync * { visibility: visible; }
+.ecran.envoi-isole .bouton-sync {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 70;
+  margin: 0;
+  width: calc(100vw - 2 * var(--marge, 16px));
+  transform: translate(-50%, -50%);
+}
+.ecran.envoi-isole .bouton-sync.envoi { width: 64px; }
+.ecran.envoi-isole .bouton-sync.envoi.complet { width: calc(100vw - 2 * var(--marge, 16px)); }
 .bouton-sync-cercle {
   position: absolute;
   top: 50%;
@@ -2403,8 +2424,41 @@ hr { border: 0; border-top: 1px solid var(--trait); margin: 24px 0; }
 /* Hors cartes, sur le fond lui-même : pied de Sport, bloc des séances en
    cours, étiquettes de Réglages — même verre plutôt que du texte posé à nu
    sur un fond qui passe du clair au presque noir. */
-#ecran-accueil .reprise,
+/* Le sélecteur de cette règle avait été coupé le 4 octobre 2026 par
+   l'ajout de l'échauffement (une règle insérée en plein milieu de la liste),
+   ce qui retirait en silence le verre de `.reprise` et du corps de
+   Réglages ; rétabli le 16 octobre 2026. Réglages n'en a plus besoin (voir
+   juste en dessous). */
+#ecran-accueil .reprise {
+  background: var(--verre);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+/* Réglages, 16 octobre 2026 (remarque de l'utilisateur : « illisible, ce
+   qui n'a pas de fond passe-le en blanc ») : le texte posé directement sur
+   le fond vivant passe en blanc, avec une ombre portée pour les passages
+   clairs du dégradé ; les champs gardent leur verre et leur texte sombre. */
 #ecran-reglages .corps,
+#ecran-reglages .corps .discret,
+#ecran-reglages .corps .note,
+#ecran-reglages .corps .message,
+#ecran-reglages .champ-large > span,
+#ecran-reglages .champ-large small,
+#ecran-reglages .bascule span,
+#ecran-reglages .bascule small {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+#ecran-reglages .corps .discret { border-color: rgba(255, 255, 255, .7); }
+/* Barre de Réglages sans fond blanc (16 octobre 2026, même demande) : le
+   fond vivant passe dessous, titre et retour en blanc. */
+#ecran-reglages .barre { background: transparent; border-bottom: none; box-shadow: none; }
+#ecran-reglages .barre, #ecran-reglages .barre .icone {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+#ecran-reglages .corps code { color: var(--texte); text-shadow: none; }
+#ecran-reglages .corps hr { border-color: rgba(255, 255, 255, .4); }
 /* Échauffement (4 octobre 2026, « tu as oublié les pages d'échauffement ») :
    même fond vivant que les menus, seuls les blocs de texte sur le verre
    (tout le corps en verre délavait le fond). */

@@ -2784,6 +2784,7 @@ function preparerEcranFin() {
   $('fin-message').className = 'message';
   $('bouton-enregistrer').disabled = false;
   $('bouton-enregistrer').classList.remove('envoi', 'complet', 'envoye');
+  $('ecran-fin').classList.remove('envoi-isole');
   $('bouton-enregistrer-texte').textContent = 'Synchronisation';
   $('fin-remarque').value = seance.remarque || '';
 
@@ -2874,6 +2875,7 @@ function enregistrerEtSynchroniser() {
   // redéploie en vert avec « Envoyé », tenu un moment avant de quitter.
   const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
   const debut = Date.now();
+  $('ecran-fin').classList.add('envoi-isole');
   bouton.classList.add('envoi');
   message.className = 'message';
   message.textContent = 'Envoi vers le classeur...';
@@ -2891,6 +2893,7 @@ function enregistrerEtSynchroniser() {
       rendreAccueil();
       setTimeout(() => afficherSeanceEnregistree(idEnregistre), 2000);
     })).catch((erreur) => {
+    $('ecran-fin').classList.remove('envoi-isole');
     bouton.classList.remove('envoi', 'complet');
     bouton.disabled = false;
     message.className = 'message erreur';
@@ -3039,6 +3042,7 @@ async function envoyerRemarqueSuivi() {
   const debut = Date.now();
   bouton.disabled = true;
   bouton.classList.remove('envoye');
+  $('ecran-remarque').classList.add('envoi-isole');
   bouton.classList.add('envoi');
   await synchroniserRemarques();
   await attendre(Math.max(0, DUREE_MIN_ENVOI_MS - (Date.now() - debut)));
@@ -3049,6 +3053,7 @@ async function envoyerRemarqueSuivi() {
   bouton.classList.add('envoye');
   texteBouton.textContent = a_jour && a_jour.envoyee ? 'Envoyé' : 'En attente';
   setTimeout(() => {
+    $('ecran-remarque').classList.remove('envoi-isole');
     bouton.classList.remove('envoye');
     bouton.disabled = false;
     texteBouton.textContent = 'Envoyer';

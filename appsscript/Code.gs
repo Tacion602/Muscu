@@ -143,7 +143,9 @@ function ongletPret(classeur, nom) {
     onglet.appendRow(ENTETES[nom]);
     onglet.setFrozenRows(1);
     onglet.getRange(1, 1, 1, ENTETES[nom].length).setFontWeight('bold');
-  } else if (onglet.getRange(1, ENTETES[nom].length).getValue() === '') {
+  } else if (onglet.getMaxColumns() < ENTETES[nom].length
+      || onglet.getRange(1, ENTETES[nom].length).getValue() === '') {
+    garantirDimensions(onglet, 1, ENTETES[nom].length);
     // Colonnes ajoutees apres coup (Calories le 18, HIIT le 26 septembre
     // 2026), toujours en fin de ligne : la premiere ligne d'un onglet deja
     // cree les recoit ici, sans quoi les valeurs arriveraient sans titre.
@@ -154,6 +156,7 @@ function ongletPret(classeur, nom) {
 
 function ajouterLignes(onglet, lignes) {
   if (!lignes.length) return;
+  garantirDimensions(onglet, onglet.getLastRow() + lignes.length, lignes[0].length);
   onglet.getRange(onglet.getLastRow() + 1, 1, lignes.length, lignes[0].length).setValues(lignes);
 }
 
@@ -286,18 +289,34 @@ function feuilleJour(classeur, jour, titre) {
  * partagent le meme groupe plutot que d'en ouvrir un second. */
 const MAX_GROUPES_DATE = 150;    // environ trois ans de seances hebdomadaires
 
+/* Agrandit la feuille si besoin (16 octobre 2026). Une feuille creee par
+ * insertSheet n'a que 26 colonnes : J1 et J3 les ont remplies en six dates
+ * (colonnes C a Z), et la septieme seance faisait echouer toute la
+ * synchronisation sur « Les coordonnees de la plage sont en dehors des
+ * dimensions de la feuille ». La seance etant renvoyee la premiere a chaque
+ * essai, plus aucune n'atteignait le classeur. */
+function garantirDimensions(feuille, lignes, colonnes) {
+  const maxLignes = feuille.getMaxRows();
+  if (maxLignes < lignes) feuille.insertRowsAfter(maxLignes, lignes - maxLignes);
+  const maxColonnes = feuille.getMaxColumns();
+  if (maxColonnes < colonnes) feuille.insertColumnsAfter(maxColonnes, colonnes - maxColonnes);
+}
+
 function colonneGroupeDate(feuille, texteDate) {
   // Les groupes occupent des colonnes fixes (3, 7, 11...) : on les lit
   // directement plutot que de deduire leur nombre de getLastColumn(), dont
-  // le comportement face aux cellules fusionnees n'est pas garanti.
-  const largeur = MAX_GROUPES_DATE * LARGEUR_GROUPE_DATE;
-  const ligne2 = feuille.getRange(2, PREMIERE_COLONNE_DATE, 1, largeur).getValues()[0];
+  // le comportement face aux cellules fusionnees n'est pas garanti. On ne
+  // lit que les colonnes existantes, la feuille etant agrandie a la demande.
+  const largeur = Math.min(MAX_GROUPES_DATE * LARGEUR_GROUPE_DATE,
+    feuille.getMaxColumns() - PREMIERE_COLONNE_DATE + 1);
+  const ligne2 = largeur > 0 ? feuille.getRange(2, PREMIERE_COLONNE_DATE, 1, largeur).getValues()[0] : [];
 
   for (let i = 0; i < MAX_GROUPES_DATE; i++) {
     const col = PREMIERE_COLONNE_DATE + i * LARGEUR_GROUPE_DATE;
-    const valeur = ligne2[i * LARGEUR_GROUPE_DATE];
+    const valeur = i * LARGEUR_GROUPE_DATE < ligne2.length ? ligne2[i * LARGEUR_GROUPE_DATE] : '';
     if (valeur === texteDate) return col;
     if (valeur === '') {
+      garantirDimensions(feuille, 3, col + LARGEUR_GROUPE_DATE - 1);
       ecrireEnteteGroupeDate(feuille, col, texteDate);
       return col;
     }
@@ -332,14 +351,16 @@ function ligneBlocExercice(feuille, nomExercice) {
   // ne compte que les lignes reellement remplies, or un bloc de six lignes
   // dont trois series seulement sont ecrites en laisse trois vides : le bloc
   // suivant se serait alors pose en plein milieu du precedent.
-  const hauteur = MAX_BLOCS_EXERCICE * RANGEES_PAR_EXERCICE;
-  const colonneA = feuille.getRange(PREMIERE_LIGNE_BLOC, 1, hauteur, 1).getValues();
+  const hauteur = Math.min(MAX_BLOCS_EXERCICE * RANGEES_PAR_EXERCICE,
+    feuille.getMaxRows() - PREMIERE_LIGNE_BLOC + 1);
+  const colonneA = hauteur > 0 ? feuille.getRange(PREMIERE_LIGNE_BLOC, 1, hauteur, 1).getValues() : [];
 
   for (let i = 0; i < MAX_BLOCS_EXERCICE; i++) {
     const ligne = PREMIERE_LIGNE_BLOC + i * RANGEES_PAR_EXERCICE;
-    const valeur = colonneA[i * RANGEES_PAR_EXERCICE][0];
+    const valeur = i * RANGEES_PAR_EXERCICE < colonneA.length ? colonneA[i * RANGEES_PAR_EXERCICE][0] : '';
     if (valeur === nomExercice) return ligne;
     if (valeur === '') {
+      garantirDimensions(feuille, ligne + RANGEES_PAR_EXERCICE - 1, 1);
       ecrireEnteteBlocExercice(feuille, ligne, nomExercice);
       return ligne;
     }
@@ -444,11 +465,13 @@ function blocTypeCourse(feuille, type) {
     // vide (fin de feuille), soit deja le titre du bloc suivant : ecrire
     // dessus grignoterait la separation entre deux blocs au fil de seances
     // de types differents entrelacees dans le temps.
+    garantirDimensions(feuille, curseur, entetes.length);
     feuille.insertRowBefore(curseur);
     return { ligne: curseur, colonnes: entetes.length };
   }
 
   const ligneTitre = derniereLigne > 1 ? derniereLigne + 2 : 1;
+  garantirDimensions(feuille, ligneTitre + 2, entetes.length);
   feuille.getRange(ligneTitre, 1).setValue(titre).setFontWeight('bold').setFontSize(12);
   feuille.getRange(ligneTitre + 1, 1, 1, entetes.length)
     .setValues([entetes])

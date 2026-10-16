@@ -920,6 +920,14 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
       (`DUREE_MIN_ENVOI_MS`, 2,2 s) même si le réseau répond plus vite,
       0,9 s de rebond, puis 2 s sur « Envoyé » avant d'ouvrir la fiche.
       Plus d'anneau SVG ni de coche : ce n'était pas l'original.
+    - **Seul à l'écran pendant l'envoi depuis le 16 octobre 2026** (remarque
+      de l'utilisateur : « plus que ce bouton affiché, fond blanc classique,
+      toute la largeur ») : classe `.envoi-isole` sur `#ecran-fin` et
+      `#ecran-remarque`, posée au départ de l'envoi, retirée sur échec et à
+      la réouverture (`preparerEcranFin()`, retour du bouton Remarque).
+      Tout le reste passe en `visibility: hidden`, le bouton seul redevient
+      visible, fixé au centre sur toute la largeur hors marges ; ses phases
+      ne changent pas (rond pendant l'envoi, pilule ensuite).
   - **Un `<details>` natif plutôt qu'une bascule maison** : l'ouverture et la
     fermeture ne demandent alors aucun état à tenir côté script.
   - **La suppression demande confirmation**, contrairement à la croix des
@@ -988,6 +996,17 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     dont trois séries seulement sont écrites en laisse trois vides, et le
     bloc suivant se serait posé en plein milieu du précédent. Défaut trouvé
     par relecture le 27 août 2026, avant qu'il ne se manifeste ;
+  - **la feuille s'agrandit à la demande** (`garantirDimensions()`, 16 octobre
+    2026) : une page créée par `insertSheet` n'a que 26 colonnes, que J1 et
+    J3 ont remplies en six dates (C à Z). La septième séance échouait sur
+    « Les coordonnées de la plage sont en dehors des dimensions de la
+    feuille », et comme la séance en échec repart en tête à chaque essai,
+    plus aucune n'atteignait le classeur (remarque de l'utilisateur :
+    « systématiquement »). Les lectures à taille fixe (`colonneGroupeDate`,
+    `ligneBlocExercice`) ne lisent plus que les cellules existantes ;
+    groupes de dates, blocs d'exercice, ajouts aux pages plates et blocs de
+    `Course` agrandissent la feuille avant d'écrire. **Nécessite le
+    redéploiement du pont** ;
   - **un exercice qui dépasse les 6 lignes réservées voit son détail tronqué,
     jamais débordé** sur le bloc suivant. Le tonnage, lui, porte sur toutes
     les séries : mieux vaut un total juste et un détail incomplet que
@@ -1371,6 +1390,13 @@ que soit le sous-menu ensuite ouvert.
         toute la hauteur (`justify-content: space-evenly`), cartes à la
         taille de `.carte-jour` (emoji 42px, 14px 16px de marge intérieure).
         Réglages garde sa barre, non demandé.
+      - **Réglages lisible le 16 octobre 2026** (« illisible, ce qui n'a pas
+        de fond passe-le en blanc », puis « pas de fond blanc derrière la
+        bannière ») : texte posé sur le fond vivant en blanc avec ombre
+        portée, champs gardant leur verre, barre transparente au titre
+        blanc. Le verre du corps de Réglages et de `.reprise` (Sport) avait
+        disparu depuis le 4 octobre : une règle de l'échauffement insérée au
+        milieu de leur sélecteur l'avait coupé. Rétabli pour `.reprise`.
 - **Direction visuelle : mode clair, référence Strava**, choisi via
   `impeccable.style` (outillage de conception introduit ce jour-là, voir
   « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
