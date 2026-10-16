@@ -70,7 +70,10 @@ function doPost(requete) {
       ecrireSeance(corps.seance);
       return reponse({ ok: true });
     } catch (e) {
-      return reponse({ ok: false, erreur: String(e) });
+      // Ligne du plantage jointe au message (16 octobre 2026) : sans elle,
+      // une erreur de dimensions ne disait pas quelle page ni quelle
+      // fonction, et le diagnostic passait par des suppositions.
+      return reponse({ ok: false, erreur: String(e) + ' [' + VERSION_PONT + ' ' + lieuErreur(e) + ']' });
     }
   }
 
@@ -126,8 +129,20 @@ function doPost(requete) {
   return reponse({ ok: false, erreur: 'action inconnue' });
 }
 
+/* Version du code deploye, renvoyee par doGet : l'adresse du pont ouverte
+ * dans un navigateur dit alors quelle version tourne vraiment, sans avoir a
+ * deviner si le dernier redeploiement a pris (16 octobre 2026). A changer a
+ * chaque modification de ce fichier. */
+const VERSION_PONT = '2026-10-16b';
+
+function lieuErreur(e) {
+  const pile = String((e && e.stack) || '');
+  const lignes = pile.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+  return lignes.slice(0, 3).join(' < ');
+}
+
 function doGet() {
-  return reponse({ ok: true, message: 'Pont actif. Utilisez POST.' });
+  return reponse({ ok: true, version: VERSION_PONT, message: 'Pont actif. Utilisez POST.' });
 }
 
 function reponse(objet) {
