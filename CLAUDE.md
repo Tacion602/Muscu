@@ -1096,6 +1096,16 @@ reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
     `dureeTotaleEstimeeS()`, voir juste au-dessus) — ce n'est pas ce texte
     qui revient, juste un poids sur la jauge déjà en place. `#jauge-remplie`
     suit le même calcul, les deux venant de la même fonction.
+- **Le retour d'Android (geste ou bouton système) remonte d'un écran depuis
+  le 16 octobre 2026** (remarque de l'utilisateur : « tous les boutons retour
+  ne fonctionnent pas, ou mal ») : l'application n'utilisait pas
+  l'historique du navigateur, et le retour système quittait la PWA. Les
+  flèches ← à l'écran, elles, marchaient (vérifié). `afficher()` empile une
+  seule entrée « garde » hors de l'accueil (`poserGardeHistorique()`) et la
+  retire en revenant à l'accueil ; `popstate` referme d'abord le repos plein
+  écran s'il est ouvert, sinon rejoue le bouton `[aria-label="Retour"]` de
+  l'écran affiché — même chemin que le doigt, aucun parent à maintenir à
+  part. Depuis l'accueil, le retour suivant quitte l'application.
 - **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
   plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
   qui arrive constamment en salle (verrouillage du téléphone, changement
@@ -2030,6 +2040,17 @@ un bug si le sujet revient.
    (`images-exercices/`, téléchargé une fois, jamais hotlinké), même
    fragilité qu'`ANCIENS_NOMS` : un exercice renommé au prochain import perd
    son image tant que la table n'est pas mise à jour à la main.
+   **Schémas à la place des photos depuis le 16 octobre 2026** (demande de
+   l'utilisateur : « des illustrations schématiques plutôt que photo ») :
+   dessins au trait d'Everkinetic (github.com/everkinetic/data, **CC BY-SA
+   4.0**, crédit affiché sous l'image, obligatoire), deux positions par
+   exercice (`-relaxation`/`-tension`) qui alternent chaque seconde dans
+   `rendreImageExercice()`, copiées dans `images-exercices/schemas/`.
+   Correspondances choisies par l'utilisateur sur un aperçu ; `schema`
+   remplace `fichier` dans `IMAGES_EXERCICES`, `generique` y devient
+   « Illustration approchée ». **Le face pull garde sa photo** : aucun
+   dessin de la base ne convient (refusé par l'utilisateur). Les photos
+   restent dans `images-exercices/` pour un retour en arrière.
 8. **Lien Garmin Connect**, bloqué sur l'accès à leur API officielle,
    fermée à candidature (même section).
 9. **Accueil et sous-menus jugés trop statiques**, noté par l'utilisateur le

@@ -508,9 +508,52 @@ function ouvrirDepuisAccueil(idBouton, ouvrir) {
   setTimeout(ouvrir, DUREE_SERPENT_APPUI_MS);
 }
 
+/* Retour d'Android (geste ou bouton système), 16 octobre 2026 (remarque de
+   l'utilisateur : « tous les boutons retour ne fonctionnent pas, ou mal ») :
+   l'application ne touchait jamais à l'historique du navigateur, si bien que
+   le retour système quittait la PWA au lieu de remonter d'un écran. Une
+   seule entrée « garde » est empilée dès qu'on quitte l'accueil ; le retour
+   système la consomme, et `popstate` rejoue alors le bouton ← de l'écran
+   affiché (même chemin que le doigt, donc même comportement), puis remet
+   une garde tant qu'on n'est pas revenu à l'accueil. Sur l'accueil, plus de
+   garde : le retour suivant quitte l'application, comme attendu. */
+let gardeHistorique = false;
+let ignorerPopstate = false;
+
+function poserGardeHistorique() {
+  if (gardeHistorique) return;
+  history.pushState({ muscuGarde: true }, '');
+  gardeHistorique = true;
+}
+
+function retirerGardeHistorique() {
+  if (!gardeHistorique) return;
+  gardeHistorique = false;
+  ignorerPopstate = true;
+  history.back();
+}
+
+window.addEventListener('popstate', () => {
+  if (ignorerPopstate) { ignorerPopstate = false; return; }
+  gardeHistorique = false;
+  // Le repos plein écran se referme d'abord, comme sous le doigt.
+  const plein = document.getElementById('minuterie-plein-ecran');
+  if (plein && !plein.hidden) {
+    plein.hidden = true;
+  } else {
+    const actif = document.querySelector('.ecran.actif');
+    const retour = actif && actif.querySelector('[aria-label="Retour"]');
+    if (retour) retour.click();
+  }
+  const actifApres = document.querySelector('.ecran.actif');
+  if (actifApres && actifApres.id !== 'ecran-menu') poserGardeHistorique();
+});
+
 function afficher(nom) {
   document.querySelectorAll('.ecran').forEach((e) => e.classList.remove('actif'));
   $('ecran-' + nom).classList.add('actif');
+  if (nom === 'menu') retirerGardeHistorique();
+  else poserGardeHistorique();
   if (nom === 'menu' && derniereBulleAccueil) jouerSerpent($(derniereBulleAccueil), 'retour');
   window.scrollTo(0, 0);
   const corps = $('ecran-' + nom).querySelector('.corps');
@@ -644,41 +687,69 @@ const ANCIENS_NOMS = {
    laisser croire que c'est le bon (voir `.exo-image-badge` dans
    css/style.css). */
 const IMAGES_EXERCICES = {
-  'Abduction de hanche machine': { fichier: 'abduction-de-hanche-machine.jpg' },
-  'Curl incline halteres': { fichier: 'curl-incline-halteres.jpg' },
-  'Curl marteau': { fichier: 'curl-marteau.jpg' },
-  'Curl pupitre': { fichier: 'curl-pupitre.jpg' },
-  'Developpe incline banc': { fichier: 'developpe-incline-machine.jpg', generique: true },
-  'Developpe machine': { fichier: 'developpe-machine.jpg' },
-  'Dips buste penche': { fichier: 'dips-buste-penche.jpg' },
-  'Ecarte poulie horizontale hauteur poitrine': { fichier: 'ecarte-poulie-horizontale-hauteur-poitrine.jpg' },
-  'Elevation laterale halteres': { fichier: 'elevation-laterale-halteres.jpg' },
-  'Elevation laterale poulie unilaterale': { fichier: 'elevation-laterale-poulie-unilaterale.jpg', generique: true },
-  'Extension de hanche machine': { fichier: 'extension-de-hanche-machine.jpg', generique: true },
-  'Extension jambes unilatéral': { fichier: 'extension-jambes-unilateral.jpg' },
-  'Extension triceps overhead corde': { fichier: 'extension-triceps-overhead-corde.jpg' },
-  'Extension triceps poulie barre': { fichier: 'extension-triceps-poulie-barre.jpg' },
-  'Extension triceps unilaterale poulie': { fichier: 'extension-triceps-unilaterale-poulie.jpg', generique: true },
+  'Abduction de hanche machine': { schema: 'thigh-abductor' },
+  'Curl incline halteres': { schema: 'alternating-incline-curl-with-dumbbell' },
+  'Curl marteau': { schema: 'biceps-hammer-curl-with-dumbbell' },
+  'Curl pupitre': { schema: 'preacher-curl-with-machine' },
+  'Developpe incline banc': { schema: 'incline-bench-press' },
+  'Developpe machine': { schema: 'machine-bench-press' },
+  'Dips buste penche': { schema: 'chest-dips' },
+  'Ecarte poulie horizontale hauteur poitrine': { schema: 'crossover-bands', generique: true },
+  'Elevation laterale halteres': { schema: 'lateral-dumbbell-raises' },
+  'Elevation laterale poulie unilaterale': { schema: 'lateral-dumbbell-raises', generique: true },
+  'Extension de hanche machine': { schema: 'one-legged-cable-kickback', generique: true },
+  'Extension jambes unilatéral': { schema: 'leg-extensions' },
+  'Extension triceps overhead corde': { schema: 'standing-triceps-extension-with-towel', generique: true },
+  'Extension triceps poulie barre': { schema: 'triceps-pushdown-with-cable' },
+  'Extension triceps unilaterale poulie': { schema: 'triceps-pushdown-with-cable' },
   'FACE PULL': { fichier: 'face-pull.jpg' },
-  'LEG CURL ALLONGE': { fichier: 'leg-curl-allonge-unilateral.jpg' },
-  'Lat pull-in unilateral poulie a genoux': { fichier: 'lat-pull-in-unilateral-poulie-a-genoux.jpg', generique: true },
-  'Mollets debout unilatéral': { fichier: 'mollets-debout-unilateral.jpg' },
-  'Oiseau inverse machine': { fichier: 'oiseau-inverse-machine.jpg', generique: true },
-  'PRESSE A CUISSE / HACK SQUAT': { fichier: 'presse-a-cuisse-hack-squat.jpg' },
-  'Rowing unilateral machine ou haltere': { fichier: 'rowing-unilateral-machine-ou-haltere.jpg' },
-  'SOULEVE DE TERRE ROUMAIN': { fichier: 'souleve-de-terre-roumain.jpg' },
-  'Tirage vertical prise large': { fichier: 'tirage-vertical-prise-large.jpg' },
-  'Traction prise neutre machine assistee': { fichier: 'traction-prise-neutre-machine-assistee.jpg', generique: true },
+  'LEG CURL ALLONGE': { schema: 'lying-leg-curl-machine' },
+  'Lat pull-in unilateral poulie a genoux': { schema: 'straight-arm-push-down', generique: true },
+  'Mollets debout unilatéral': { schema: 'standing-calf-raises-using-machine' },
+  'Oiseau inverse machine': { schema: 'bent-over-rear-deltoid-raise-with-head-on-bench', generique: true },
+  'PRESSE A CUISSE / HACK SQUAT': { schema: 'leg-press' },
+  'Rowing unilateral machine ou haltere': { schema: 'seated-cable-rows', generique: true },
+  'SOULEVE DE TERRE ROUMAIN': { schema: 'romanian-dead-lift' },
+  'Tirage vertical prise large': { schema: 'underhand-pull-downs', generique: true },
+  'Traction prise neutre machine assistee': { schema: 'narrow-parallel-grip-chin-ups', generique: true },
 };
+
+/* Schémas plutôt que photos depuis le 16 octobre 2026 (demande de
+   l'utilisateur, choix exercice par exercice sur un aperçu) : dessins
+   Everkinetic (github.com/everkinetic/data, CC BY-SA 4.0, crédit affiché
+   sous l'image), deux positions par exercice qui alternent chaque seconde,
+   copiées dans images-exercices/schemas/. `schema` remplace `fichier` ; un
+   exercice sans schéma convenable (face pull) garde sa photo. */
+let alternanceSchema = null;
 
 function rendreImageExercice(nom) {
   const info = IMAGES_EXERCICES[nom];
   const bloc = $('exo-image-bloc');
+  if (alternanceSchema) { clearInterval(alternanceSchema); alternanceSchema = null; }
   if (!info) { bloc.hidden = true; return; }
   bloc.hidden = false;
-  $('exo-image').src = 'images-exercices/' + info.fichier;
-  $('exo-image').alt = nom;
+  const image = $('exo-image');
+  image.alt = nom;
+  bloc.classList.toggle('schema', !!info.schema);
+  $('exo-image-credit').hidden = !info.schema;
+  $('exo-image-generique').textContent = info.schema ? 'Illustration approchée' : 'Photo générique';
   $('exo-image-generique').hidden = !info.generique;
+  if (!info.schema) {
+    image.src = 'images-exercices/' + info.fichier;
+    return;
+  }
+  const poses = ['relaxation', 'tension'].map((p) => 'images-exercices/schemas/' + info.schema + '-' + p + '.svg');
+  let indice = 0;
+  image.src = poses[0];
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  alternanceSchema = setInterval(() => {
+    // Plus affichée (écran quitté) : on arrête plutôt que de tourner à vide.
+    if (!bloc.isConnected || !document.getElementById('ecran-seance').classList.contains('actif')) {
+      clearInterval(alternanceSchema); alternanceSchema = null; return;
+    }
+    indice = 1 - indice;
+    image.src = poses[indice];
+  }, 1000);
 }
 
 function formeDuNom(nom) {

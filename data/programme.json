@@ -1,6 +1,6 @@
 {
  "origine": "classeur 1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE, onglet 1138168114",
- "importe_le": "2026-09-29T19:26:24+00:00",
+ "importe_le": "2026-10-16T07:23:12+00:00",
  "jours": [
   {
    "code": "J1",
@@ -374,23 +374,6 @@
     },
     {
      "numero": 3,
-     "nom": "Oiseau inverse machine",
-     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
-     "series": 3,
-     "reps_min": 12,
-     "reps_max": 15,
-     "rir": [
-      2,
-      1,
-      1
-     ],
-     "consigne": "Bras quasi tendus, pas d'elan du buste.",
-     "muscle": "Deltoide posterieur",
-     "repos_s": 75,
-     "historique": []
-    },
-    {
-     "numero": 4,
      "nom": "Curl incline halteres",
      "prescription": "3 X 10-12 RIR 2 / 1 / 1",
      "series": 3,
@@ -407,7 +390,7 @@
      "historique": []
     },
     {
-     "numero": 5,
+     "numero": 4,
      "nom": "Elevation laterale halteres",
      "prescription": "3 X 15-20 RIR 2 / 1 / 1",
      "series": 3,
@@ -421,6 +404,23 @@
      "consigne": "Charge legere, tempo controle. Pas de balancier.",
      "muscle": "Deltoide lateral",
      "repos_s": 60,
+     "historique": []
+    },
+    {
+     "numero": 5,
+     "nom": "Oiseau inverse machine",
+     "prescription": "3 X 12-15 RIR 2 / 1 / 1",
+     "series": 3,
+     "reps_min": 12,
+     "reps_max": 15,
+     "rir": [
+      2,
+      1,
+      1
+     ],
+     "consigne": "Bras quasi tendus, pas d'elan du buste.",
+     "muscle": "Deltoide posterieur",
+     "repos_s": 75,
      "historique": []
     },
     {
@@ -438,6 +438,24 @@
      "consigne": "Prise neutre. Cible le brachial/brachio-radial",
      "muscle": "Biceps",
      "repos_s": 75,
+     "historique": []
+    },
+    {
+     "numero": 7,
+     "nom": "Traction prise neutre machine assistee",
+     "prescription": "4 X 8-10 RIR 2 / 2 / 1 / 1",
+     "series": 4,
+     "reps_min": 8,
+     "reps_max": 10,
+     "rir": [
+      2,
+      2,
+      1,
+      1
+     ],
+     "consigne": "pas ajout de repetitions au dela de 10.",
+     "muscle": "Grand dorsal",
+     "repos_s": 150,
      "historique": []
     }
    ]
