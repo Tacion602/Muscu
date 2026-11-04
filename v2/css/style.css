@@ -223,14 +223,16 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 
 /* ---------- Séance ---------- */
 
-.progression { height: 4px; background: var(--fond-2); flex: none; }
-.progression > div { height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+.ligne-progression { display: flex; align-items: center; gap: var(--marge); padding: 8px var(--marge); background: var(--carte); border-bottom: 1px solid var(--trait); flex: none; }
+.jauge-pilule { flex: 1; height: 14px; border-radius: 7px; border: 1.5px solid var(--texte-2); background: var(--fond-2); overflow: hidden; }
+.jauge-pilule > div { display: block; height: 100%; border-radius: 7px; background: var(--accent); width: 0; transition: width .25s; }
+.ligne-progression .num { font-size: 14px; min-width: 52px; text-align: right; }
 .exo-entete { display: flex; align-items: flex-start; gap: 10px; }
 .exo-entete h3 { font-size: 22px; font-weight: 700; line-height: 1.15; flex: 1; text-wrap: balance; }
 .exo-muscle { font-size: 13px; color: var(--texte-2); margin-top: 2px; }
 .objectif { display: flex; align-items: flex-end; gap: 12px; margin-top: 12px; }
-.objectif .val { font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-.objectif .val small { font-size: 15px; font-weight: 500; color: var(--texte-2); margin-left: 4px; letter-spacing: 0; }
+.objectif .val { font-size: 26px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.objectif .val small { font-size: 13px; font-weight: 500; color: var(--texte-2); margin-left: 4px; letter-spacing: 0; }
 .objectif .why { font-size: 12px; color: var(--texte-2); flex: 1; padding-bottom: 4px; }
 .objectif.monte .val { color: var(--hausse); }
 .exo-image { margin-top: 12px; border-radius: var(--rayon-petit); overflow: hidden; background: var(--carte); border: 1px solid var(--trait); display: flex; align-items: center; justify-content: center; height: 96px; position: relative; }
@@ -453,3 +455,18 @@ details.seance-h .detail { padding: 0 0 12px; }
 @media (min-width: 600px) {
   .grille-suivi { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Accueil : salutation, phrase du jour, prochaine séance. */
+.accueil-entete { padding: calc(env(safe-area-inset-top, 0px) + 22px) 0 6px; }
+.accueil-entete h1 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+.accueil-entete p { color: var(--texte-2); font-size: 14px; margin-top: 2px; }
+.accueil-phrase { background: var(--accent); color: #fff; border-radius: var(--rayon); padding: 18px 16px; margin-top: 14px; }
+.accueil-phrase .titre { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; opacity: .85; margin-bottom: 6px; }
+.accueil-phrase .texte { font-size: 19px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
+.accueil-phrase .source { font-size: 12px; opacity: .8; margin-top: 8px; }
+.accueil-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.accueil-stats .carte { padding: 12px 10px; text-align: center; }
+.accueil-stats .n { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.accueil-stats .l { display: block; font-size: 12px; color: var(--texte-2); margin-top: 2px; }
+.saviez-vous { margin-top: 10px; }
+.saviez-vous .titre { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 4px; font-weight: 600; }

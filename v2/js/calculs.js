@@ -217,6 +217,59 @@ const PHRASES_OUVERTURE = [
   'Technique d\'abord, charge ensuite, ego nulle part.',
 ];
 
+/* Phrases de motivation de l'accueil et faits d'entraînement de l'écran de
+   démarrage (demande du 4 novembre 2026 : « phrases motivantes et
+   intéressantes »). Les faits sont restreints à ce qui est établi par des
+   méta-analyses ou des essais contrôlés sur des pratiquants récréatifs ou
+   intermédiaires ; aucun chiffre inventé. */
+const PHRASES_MOTIVATION = [
+  'Tu ne rates pas une séance. Tu la reportes, et le report a un coût.',
+  'Le corps ne compte pas les excuses, il compte les séries.',
+  'Chaque séance faite est un vote pour la personne que tu deviens.',
+  'La charge ne monte pas toute seule : elle monte parce que tu reviens.',
+  'Fais la séance moyenne. Les séances moyennes empilées font les progrès.',
+  'Personne ne se souvient de la série facile. Fais la difficile proprement.',
+  'La motivation est passagère ; la discipline est un rendez-vous tenu.',
+  "Tu n'as pas besoin d'être prêt. Tu as besoin d'être là.",
+  'Le programme est écrit. Il ne reste plus que toi.',
+  'Le muscle se construit entre les séances. La séance, elle, se gagne maintenant.',
+  'Une répétition de plus que la dernière fois, c\'est déjà le plan.',
+  'Pas de hâte : la surcharge progressive se compte en mois.',
+  'Ce que tu notes honnêtement aujourd\'hui, tu le dépasseras demain.',
+  'Le repos est un outil, pas une récompense.',
+  "L'échauffement est la première série. Ne la saute pas.",
+  'La régularité bat l\'intensité ponctuelle, toutes les semaines.',
+];
+
+const FAITS_ENTRAINEMENT = [
+  'Le volume hebdomadaire par muscle (nombre de séries dures) est le principal levier de l\'hypertrophie dans les méta-analyses : plus de séries, plus de gains, avec des rendements décroissants.',
+  'S\'arrêter à 1 à 3 répétitions de l\'échec donne des gains d\'hypertrophie comparables à l\'échec systématique, pour une fatigue moindre. C\'est ce que code le RIR.',
+  'Des charges de 30 % à 85 % du 1RM produisent une hypertrophie similaire si les séries sont menées près de l\'échec. Les charges lourdes restent meilleures pour la force.',
+  'Deux séances par muscle et par semaine font au moins aussi bien qu\'une seule à volume égal : la fréquence sert surtout à répartir le volume.',
+  'Des repos de 2 à 3 minutes sur les exercices lourds permettent plus de répétitions aux séries suivantes qu\'un repos d\'une minute, et un peu plus d\'hypertrophie.',
+  'Le 1RM estimé par la formule d\'Epley perd en fiabilité au-delà de 10 à 12 répétitions : d\'où la règle de fourchette sur les séries longues.',
+  'La force progresse d\'abord par adaptation nerveuse : les premières semaines d\'un mouvement nouveau montent vite sans que le muscle ait beaucoup grossi.',
+  'L\'amplitude complète, en particulier la position étirée, donne autant ou plus d\'hypertrophie que l\'amplitude partielle raccourcie.',
+  'Dormir moins de 6 heures réduit la récupération et la performance en force dès le lendemain ; le sommeil est un paramètre d\'entraînement.',
+  'Une semaine de deload planifiée ne fait pas perdre de muscle : la masse musculaire se maintient plusieurs semaines sans entraînement, la force encore plus longtemps.',
+  'Les courbatures ne mesurent pas la qualité d\'une séance : elles signalent surtout un geste nouveau ou une phase excentrique inhabituelle.',
+  'La protéine autour de 1,6 g par kilo de poids de corps et par jour couvre l\'essentiel du bénéfice pour l\'hypertrophie chez le pratiquant entraîné.',
+  'Le tempo contrôlé n\'ajoute pas d\'hypertrophie en soi au-delà d\'une excentrique maîtrisée ; des répétitions de 2 à 8 secondes font aussi bien.',
+  'L\'ordre des exercices compte : ce que tu fais en premier progresse le plus. Place en tête la priorité du cycle.',
+];
+
+function phraseMotivation(graine) {
+  let h = 0; const s = String(graine);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return PHRASES_MOTIVATION[h % PHRASES_MOTIVATION.length];
+}
+
+function faitEntrainement(graine) {
+  let h = 7; const s = String(graine);
+  for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) >>> 0;
+  return FAITS_ENTRAINEMENT[h % FAITS_ENTRAINEMENT.length];
+}
+
 function phraseOuverture(graine) {
   let h = 0;
   for (const c of String(graine)) h = (h * 31 + c.charCodeAt(0)) % 100003;

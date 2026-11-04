@@ -52,18 +52,25 @@ def page(navigateur, adresse):
     erreurs = []
     onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
     onglet.goto(adresse)
-    onglet.wait_for_selector(".carte-jour")
+    ouvrir_sport(onglet)
     # Temoin structurel : six jours dans l'ordre de la semaine plus le bonus.
-    codes = onglet.eval_on_selector_all(".carte-jour .code", "c => c.map(x => x.textContent.trim())")
+    codes = onglet.eval_on_selector_all("#ecran-sport .carte-jour .code", "c => c.map(x => x.textContent.trim())")
     assert codes == ["J1", "J2", "J3", "J4", "J5", "J6", "Bonus"], "accueil incomplet : " + str(codes)
     yield onglet
     contexte.close()
     assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
 
 
+def ouvrir_sport(page):
+    """L'accueil est la racine depuis le 4 novembre 2026 : Sport par l'onglet."""
+    page.wait_for_selector("#accueil-programme")
+    page.locator('.onglet[data-onglet="sport"]').click()
+    page.wait_for_selector(".carte-jour")
+
+
 def ouvrir_jour(page, code, forme=None):
     """`code` est le code du classeur (J1 = Push, J5 = Haut max)."""
-    page.locator('.carte-jour[data-jour="%s"]' % code).click()
+    page.locator('#ecran-sport .carte-jour[data-jour="%s"]' % code).click()
     bouton = page.locator("#demarrage-commencer")
     if bouton.is_visible():
         if forme:
@@ -255,7 +262,7 @@ def test_l_historique_v1_est_repris_une_fois(adresse, navigateur):
     contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
     onglet = contexte.new_page()
     onglet.goto(adresse)
-    onglet.wait_for_selector(".carte-jour")
+    onglet.wait_for_selector("#accueil-programme")
     seance_v1 = {
         "id": "S1", "jour": "J2", "titre": "J2 & J6 FOOTING", "type": "footing",
         "debut": "2026-10-01T10:00:00.000Z", "fin": "2026-10-01T10:40:00.000Z", "envoye": True,
@@ -263,14 +270,14 @@ def test_l_historique_v1_est_repris_une_fois(adresse, navigateur):
     }
     onglet.evaluate("(s) => { localStorage.clear(); localStorage.setItem('muscu.historique', JSON.stringify([s])); }", seance_v1)
     onglet.reload()
-    onglet.wait_for_selector(".carte-jour")
+    onglet.wait_for_selector("#accueil-programme")
     repris = onglet.evaluate("historique()")
     assert len(repris) == 1 and repris[0]["type"] == "cardio"
     assert repris[0]["cardio"]["ef"][0]["distance_km"] == 5
     # Une seconde ouverture ne reprend rien de plus, meme si la v1 change.
     onglet.evaluate("() => localStorage.setItem('muscu.historique', JSON.stringify([]))")
     onglet.reload()
-    onglet.wait_for_selector(".carte-jour")
+    onglet.wait_for_selector("#accueil-programme")
     assert len(onglet.evaluate("historique()")) == 1
     contexte.close()
 

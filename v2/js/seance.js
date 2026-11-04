@@ -379,6 +379,7 @@ function focaliserProchaineSerie() {
 /* ---------- Minuterie de repos ---------- */
 
 function brancherMinuterie() {
+  $('seance-abandonner').addEventListener('click', abandonnerSeanceCourante);
   $('minuterie-fermer').addEventListener('click', () => { $('minuterie-plein').hidden = true; });
   $('minuterie-plein').addEventListener('click', (e) => { if (e.target === $('minuterie-plein')) $('minuterie-plein').hidden = true; });
   $('minuterie-moins').addEventListener('click', () => { if (minuterie) { minuterie.fin -= 15000; battre(); } });
@@ -529,6 +530,22 @@ async function enregistrerEtSynchroniser() {
 }
 
 /* Quitter la séance par le retour ne l'efface pas : elle reste en cours. */
+/* Abandon depuis la barre de la fiche (croix à droite du titre, demande du
+   4 novembre 2026 : « en position haute »), avec confirmation ; même geste
+   que la croix du bloc « Séances en cours » de Sport. */
+function abandonnerSeanceCourante() {
+  if (!seance) return;
+  confirmer('Abandonner cette séance ?', 'Les séries saisies seront perdues.', 'Abandonner', () => {
+    arreterMinuterie();
+    if (alternanceSchema) { clearInterval(alternanceSchema); alternanceSchema = null; }
+    if (chronoTictac) clearInterval(chronoTictac);
+    oublierSeance(seance.jour);
+    seance = null;
+    pile = ['sport'];
+    afficher('sport');
+  }, true);
+}
+
 function avantRetour() {
   if (ecranActif() === 'seance') {
     arreterMinuterie();

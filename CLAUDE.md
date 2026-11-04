@@ -281,6 +281,37 @@ taille ni de trait, le SVG prenait toute la largeur en noir plein. Règle
 `.alerte svg` (20 px, trait, pas de remplissage). `VERSION` passée à
 `muscu2-2026-11-04-3`.
 
+### Retours Pixel du 4 novembre 2026 (après-midi)
+
+Cinq demandes de l'utilisateur, après ses premières captures de la v2 :
+
+- **Jauge de séance en pilule** (« comme précédemment ») : la fine ligne de
+  4 px sous la barre cède la place à la pilule de la v1 (`.jauge-pilule`
+  dans `.ligne-progression`, remplissage bleu, chrono de séance à sa
+  droite). Même valeur qu'avant (`rendreJauge()`, séries pondérées par le
+  repos).
+- **Abandon depuis la fiche** (« en position haute, proche de la croix ») :
+  croix à droite du titre de `#ecran-seance` (`#seance-abandonner`,
+  `abandonnerSeanceCourante()`), confirmation puis retour à Sport. La croix
+  du bloc « Séances en cours » de Sport reste.
+- **Écran d'accueil** (« une page d'accueil principale et une page d'entrée
+  dans le programme avec des phrases motivantes et intéressantes ») :
+  quatrième onglet `Accueil`, racine de démarrage (`rendreAccueil()` dans
+  `v2/js/sport.js`) : salutation selon l'heure, phrase de motivation du
+  jour (`PHRASES_MOTIVATION`, hachage de la date), séances de la semaine,
+  total, jours depuis la dernière, carte de la prochaine séance ou de la
+  séance en cours, bouton « Entrer dans le programme » vers Sport. L'écran
+  de démarrage d'une séance ajoute un « Le saviez-vous »
+  (`FAITS_ENTRAINEMENT`, hachage de l'identifiant de séance) sous la phrase
+  d'ouverture : faits restreints à ce qui est établi par méta-analyses ou
+  essais contrôlés, sans chiffre inventé. Les tests passent par l'onglet
+  Sport (`ouvrir_sport()`), le témoin des sept cartes est scopé à
+  `#ecran-sport` : l'accueil réutilise `.carte-jour`.
+- **Objectif moins gros** : `.objectif .val` de 40 à 26 px.
+- **Triangles noirs de Suivi** : corrigés le matin même (`.alerte svg`, voir
+  « Garde-fou gainage » ci-dessus), le téléphone n'avait pas encore reçu la
+  version. `VERSION` passée à `muscu2-2026-11-04-4`.
+
 ### Chantiers ouverts de la v2
 
 1. ~~Créer le nouveau classeur~~ **Fait par l'utilisateur le 4 novembre 2026** (classeur, onglet Programme, pont déployé, connexion testée). Pour mémoire : coller

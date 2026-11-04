@@ -159,7 +159,8 @@ function rendreDemarrage(jour) {
   if (!jour) return;
   $('demarrage-titre').textContent = libelleJour(jour) + ' ' + jour.nom;
   const corps = $('demarrage-corps');
-  let html = '<div class="carte"><p class="phrase">' + echapper(phraseOuverture(seance.id)) + '</p></div>';
+  let html = '<div class="carte"><p class="phrase">' + echapper(phraseOuverture(seance.id)) + '</p>' +
+    '<div class="saviez-vous"><div class="titre">Le saviez-vous</div><p class="petit texte-2">' + echapper(faitEntrainement(seance.id)) + '</p></div></div>';
 
   // Avertissements du jour : espacement, exercices en recul, douleurs.
   const avert = [];
@@ -241,3 +242,45 @@ function ouvrirSeance(options) {
   else if (seance.type === 'gainage') afficher('seance', Object.assign({ parametres: 'gainage' }, options || {}));
   else afficher('seance', Object.assign({ parametres: 'muscu' }, options || {}));
 }
+
+
+/* ---------- Accueil ---------- */
+
+/* Écran racine d'entrée (4 novembre 2026) : salutation, phrase de
+   motivation du jour (change chaque jour, par hachage de la date), chiffres
+   de la semaine, prochaine séance et accès au programme. */
+function rendreAccueil() {
+  const corps = $('accueil-corps');
+  const maintenant = new Date();
+  const h = maintenant.getHours();
+  const salut = h < 5 ? 'Bonne nuit' : (h < 12 ? 'Bonjour' : (h < 18 ? 'Bon après-midi' : 'Bonsoir'));
+  const terminees = seancesTerminees();
+  const semaine = semaineIso(maintenant);
+  const cetteSemaine = terminees.filter((s) => semaineIso(new Date(s.fin)) === semaine).length;
+  const derniere = terminees[0];
+  const ouvertes = Object.values(lireSeancesEnCours()).filter((s) => s && !s.fin);
+  const prochain = prochainJour();
+  const jour = prochain ? jourDe(prochain) : null;
+
+  let html = '<div class="accueil-entete"><h1>' + salut + '</h1><p>' + echapper(maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + ' · semaine ' + semaine + '</p></div>';
+  html += '<div class="accueil-phrase"><div class="titre">Aujourd\'hui</div><div class="texte">' + echapper(phraseMotivation(cleDate(maintenant))) + '</div></div>';
+  html += '<div class="accueil-stats">' +
+    '<div class="carte"><span class="n num">' + cetteSemaine + '</span><span class="l">séance' + (cetteSemaine > 1 ? 's' : '') + ' cette semaine</span></div>' +
+    '<div class="carte"><span class="n num">' + terminees.length + '</span><span class="l">au total</span></div>' +
+    '<div class="carte"><span class="n num">' + (derniere ? joursDepuis(derniere.fin) : '–') + '</span><span class="l">jour' + (derniere && joursDepuis(derniere.fin) > 1 ? 's' : '') + ' depuis la dernière</span></div></div>';
+
+  html += '<p class="titre-section">' + (ouvertes.length ? 'Séance en cours' : 'Prochaine séance') + '</p>';
+  if (ouvertes.length) {
+    const s = ouvertes[0]; const j = jourDe(s.jour);
+    html += '<button class="carte-jour ' + (j ? j.type : 'muscu') + ' encours" data-accueil-jour="' + s.jour + '"><span class="code">' + echapper(libelleJour(j)) + '</span><span class="tx"><b>' + echapper(j ? j.nom : s.jour) + '</b><span class="encours">Commencée ' + ilYA(s.debut) + ' · reprendre</span></span><span class="chev">' + svgIcone('chevron') + '</span></button>';
+  } else if (jour) {
+    const detail = jour.type === 'cardio' ? 'Course et HIIT' : (jour.exercices || []).length + ' exercices · ' + musclesDuJour(jour);
+    html += '<button class="carte-jour ' + jour.type + ' prochaine" data-accueil-jour="' + jour.code + '"><span class="code">' + echapper(libelleJour(jour)) + '</span><span class="tx"><b>' + echapper(jour.nom) + '</b><span>' + echapper(detail) + '</span></span><span class="chev">' + svgIcone('chevron') + '</span></button>';
+  }
+  html += '<div style="margin-top:12px"><button class="bouton primaire large" id="accueil-programme">Entrer dans le programme</button></div>';
+  corps.innerHTML = html;
+  poserIcones(corps);
+  corps.querySelectorAll('[data-accueil-jour]').forEach((b) => b.addEventListener('click', () => { afficher('sport'); commencer(b.dataset.accueilJour); }));
+  $('accueil-programme').addEventListener('click', () => afficher('sport'));
+}
+rendus.accueil = rendreAccueil;

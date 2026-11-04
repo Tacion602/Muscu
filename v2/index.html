@@ -19,7 +19,11 @@
      d'onglets. -->
 <div id="app">
 
-  <section id="ecran-sport" class="ecran racine actif">
+  <section id="ecran-accueil" class="ecran racine actif">
+    <div class="corps avec-onglets" id="accueil-corps"></div>
+  </section>
+
+  <section id="ecran-sport" class="ecran racine">
     <div class="barre barre-grande"><h2>Sport<span class="sous" id="sport-sous"></span></h2></div>
     <div class="corps avec-onglets" id="sport-corps"></div>
   </section>
@@ -40,8 +44,8 @@
   </section>
 
   <section id="ecran-seance" class="ecran">
-    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="seance-titre"></h2><span class="num texte-2" id="seance-chrono"></span></div>
-    <div class="progression"><div id="seance-progression"></div></div>
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="seance-titre"></h2><button class="icone" id="seance-abandonner" aria-label="Abandonner la séance" data-icone="fermer"></button></div>
+    <div class="ligne-progression"><div class="jauge-pilule" aria-hidden="true"><div id="seance-progression"></div></div><span class="num texte-2" id="seance-chrono"></span></div>
     <div class="corps" id="seance-corps"></div>
     <input id="amorce-clavier" type="text" inputmode="decimal" aria-hidden="true" tabindex="-1"
       style="position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0;">
@@ -104,7 +108,8 @@
   </section>
 
   <nav class="onglets" id="onglets" aria-label="Navigation principale">
-    <button class="onglet actif" data-onglet="sport"><span class="pastille-onglet" data-icone="halteres"></span>Sport</button>
+    <button class="onglet actif" data-onglet="accueil"><span class="pastille-onglet" data-icone="maison"></span>Accueil</button>
+    <button class="onglet" data-onglet="sport"><span class="pastille-onglet" data-icone="halteres"></span>Sport</button>
     <button class="onglet" data-onglet="suivi"><span class="pastille-onglet" data-icone="courbe"></span>Suivi</button>
     <button class="onglet" data-onglet="reglages"><span class="pastille-onglet" data-icone="reglages"></span>Réglages</button>
   </nav>

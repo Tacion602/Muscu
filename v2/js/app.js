@@ -6,13 +6,13 @@ async function demarrer() {
   try {
     await chargerProgramme();
   } catch (e) {
-    $('sport-corps').innerHTML = '<p class="vide">Le programme n\'a pas pu être chargé.</p>';
+    $('accueil-corps').innerHTML = '<p class="vide">Le programme n\'a pas pu être chargé.</p>';
     return;
   }
   brancherNavigation();
   brancherMinuterie();
   brancherReglages();
-  rendreSport();
+  rendreAccueil();
   if (migree) {
     const m = lire(CLES.migration, {});
     toast('Historique repris de l\'ancienne application : ' + m.seances + ' séances.', 4000);
