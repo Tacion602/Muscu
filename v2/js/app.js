@@ -27,11 +27,11 @@ async function demarrer() {
     let dejaControle = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!dejaControle) { dejaControle = true; return; }
-      if (ecranActif() === 'seance') { toast('Mise à jour prête : elle s\'appliquera au prochain lancement.', 4000); return; }
+      if (seance || ['seance', 'fin', 'demarrage'].includes(ecranActif())) { toast('Mise à jour prête : elle s\'appliquera au prochain lancement.', 4000); return; }
       location.reload();
     });
     navigator.serviceWorker.addEventListener('message', (e) => {
-      if (e.data && e.data.version) versionApp = e.data.version;
+      if (e.data && e.data.version) { versionApp = e.data.version; const v = $('reglages-version'); if (v) v.textContent = versionApp; }
     });
     navigator.serviceWorker.ready.then((r) => { if (r.active) r.active.postMessage('version'); });
   }

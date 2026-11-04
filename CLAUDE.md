@@ -376,10 +376,26 @@ sont vides sur le téléphone. Jamais d'écrasement d'une saisie plus
 récente. `VERSION` passée à `muscu2-2026-11-04-9`.
 **Icônes explicites, même soir** (« une haltère pour les jours muscu et
 un bonhomme pour les endurances, je veux plus explicite ») : une icône par
-jour de musculation (`ICONE_JOUR_MUSCU`, par code canonique : push, pull,
+jour de musculation (par le nom du jour depuis la revue du soir, voir plus bas : push, pull,
 jambes, hautmax) et une par type de cardio (`ICONE_CARDIO`, premier type
 renseigné de la séance), étiquette courte sous l'icône quand le jour n'a
 qu'une séance (`iconeSeance()`). `VERSION` passée à `muscu2-2026-11-04-10`.
+
+### Revue de code du soir (4 novembre 2026)
+
+Revue indépendante des commits du jour, sept constats, tous traités :
+l'abandon depuis la fiche ne changeait pas d'écran (`pile` préfixée avant
+`afficher('sport')`, qui prenait sa branche « même écran » ; test ajouté,
+`test_l_abandon_depuis_la_fiche_ramene_a_sport`) ; le rechargement
+automatique de mise à jour est bloqué dès qu'une séance est ouverte (fin,
+démarrage compris) ; la version du pied de Réglages se met à jour à la
+réception du message du service worker ; la restauration fusionne les
+objets champ par champ (le pont revient même si un réglage a été touché
+avant) et recharge `reglages` en mémoire ; un seul hachage
+(`choixHache()`) pour les trois listes de phrases ; l'accueil ignore une
+séance en cours dont le jour a disparu du programme ; l'icône d'un jour
+de musculation se lit dans son nom puis ses muscles (`iconeJourMuscu()`),
+plus dans son code. `VERSION` passée à `muscu2-2026-11-04-11`.
 
 ### Chantiers ouverts de la v2
 

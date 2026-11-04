@@ -20,7 +20,7 @@ function rendreReglages() {
     '<div class="champ"><button class="bouton" id="r-reimporter"' + (lireTableau(CLES_V1.historique).length ? '' : ' disabled') + '>Reprendre à nouveau l\'historique v1</button></div>' +
     '<div class="champ"><button class="bouton" id="r-renvoyer">Renvoyer tout l\'historique au classeur</button><p class="petit texte-2">Pour remplir le nouveau classeur avec les séances déjà faites. Le pont ignore ce qu\'il a déjà écrit.</p></div>' +
     '</div>' +
-    '<p class="petit texte-3" style="margin-top:16px;text-align:center">Muscu v2 · version ' + echapper(versionApp || 'non installée') + ' · ' + echapper(programme.nom || 'programme') + ' importé le ' + (programme.importe_le ? dateCourte(programme.importe_le) : '?') + '</p>';
+    '<p class="petit texte-3" style="margin-top:16px;text-align:center">Muscu v2 · version <span id="reglages-version">' + echapper(versionApp || 'non installée') + '</span> · ' + echapper(programme.nom || 'programme') + ' importé le ' + (programme.importe_le ? dateCourte(programme.importe_le) : '?') + '</p>';
   ['pont', 'secret'].forEach((c) => $('r-' + c).addEventListener('change', (e) => { reglages[c] = e.target.value.trim(); sauverReglages(); }));
   corps.querySelectorAll('[data-bascule]').forEach((i) => i.addEventListener('change', () => { reglages[i.dataset.bascule] = i.checked; sauverReglages(); }));
   $('r-tester').addEventListener('click', async () => {
@@ -61,11 +61,18 @@ function rendreReglages() {
           const ajout = d[c].filter((x) => !connus.has(x[k]));
           if (c === CLES.historique) seances = ajout.length;
           ecrire(c, actuel.concat(ajout));
-        } else if (actuel == null || (typeof actuel === 'object' && !Object.keys(actuel).length) || (Array.isArray(actuel) && !actuel.length)) {
+        } else if (actuel == null || (Array.isArray(actuel) && !actuel.length)) {
           ecrire(c, d[c]);
+        } else if (!Array.isArray(actuel) && typeof actuel === 'object' && !Array.isArray(d[c]) && typeof d[c] === 'object') {
+          // Objets (réglages, consignes, réglages machine, douleurs) : champ par
+          // champ, la valeur du téléphone gardée quand elle existe déjà.
+          const fusion = Object.assign({}, d[c]);
+          Object.keys(actuel).forEach((k) => { if (actuel[k] !== undefined && actuel[k] !== null && actuel[k] !== '') fusion[k] = actuel[k]; });
+          ecrire(c, fusion);
         }
       });
       if (!lire(CLES.migration, null)) ecrire(CLES.migration, { quand: new Date().toISOString(), seances: 0, source: 'restauration' });
+      reglages = Object.assign({}, REGLAGES_PAR_DEFAUT, lire(CLES.reglages, {}) || {});
       $('reglages-fichier').value = '';
       toast('Restauré : ' + seances + ' séance' + (seances > 1 ? 's' : '') + ' ajoutée' + (seances > 1 ? 's' : '') + '.', 4000);
       setTimeout(() => location.reload(), 1500);

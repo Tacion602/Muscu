@@ -258,7 +258,7 @@ function rendreAccueil() {
   const semaine = semaineIso(maintenant);
   const cetteSemaine = terminees.filter((s) => semaineIso(new Date(s.fin)) === semaine).length;
   const derniere = terminees[0];
-  const ouvertes = Object.values(lireSeancesEnCours()).filter((s) => s && !s.fin);
+  const ouvertes = Object.values(lireSeancesEnCours()).filter((s) => s && !s.fin && jourDe(s.jour));
   const prochain = prochainJour();
   const jour = prochain ? jourDe(prochain) : null;
 

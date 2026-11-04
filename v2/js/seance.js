@@ -541,8 +541,7 @@ function abandonnerSeanceCourante() {
     if (chronoTictac) clearInterval(chronoTictac);
     oublierSeance(seance.jour);
     seance = null;
-    pile = ['sport'];
-    afficher('sport');
+    afficher('sport');   // racine : afficher() réinitialise la pile lui-même
   }, true);
 }
 

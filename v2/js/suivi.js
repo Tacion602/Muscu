@@ -164,7 +164,20 @@ function lienClasseur(s) {
 /* Icônes du calendrier par type de séance (demande du 4 novembre 2026 :
    « des icônes dans le calendrier »), même jeu de trait que le reste. */
 const ICONE_TYPE = { muscu: 'halteres', cardio: 'course', gainage: 'gainage' };
-const ICONE_JOUR_MUSCU = { J1: 'push', J3: 'pull', J4: 'jambes', J5: 'hautmax' };
+/* Icône d'un jour de musculation lue dans son nom puis ses muscles, jamais
+   dans son code (règle de CLAUDE.md : rien de câblé sur les codes). */
+function iconeJourMuscu(jour) {
+  const nom = formeDuNom(jour && jour.nom || '');
+  if (/push|pouss/.test(nom)) return 'push';
+  if (/pull|tirag|dos/.test(nom)) return 'pull';
+  if (/jambe|bas du corps|leg/.test(nom)) return 'jambes';
+  if (/haut/.test(nom)) return 'hautmax';
+  const m = formeDuNom(((jour && jour.exercices || [])[0] || {}).muscle || '');
+  if (/quadri|ischio|fessier|mollet/.test(m)) return 'jambes';
+  if (/pector/.test(m)) return 'push';
+  if (/dorsal|trap/.test(m)) return 'pull';
+  return 'halteres';
+}
 const ICONE_CARDIO = { ef: 'course', fractionne: 'fractionne', incline: 'incline', seuil: 'seuil', hiit: 'hiit' };
 const LIBELLE_CARDIO = { ef: 'Endurance', fractionne: 'Fractionné', incline: 'Incliné', seuil: 'Seuil', hiit: 'HIIT' };
 
@@ -177,7 +190,7 @@ function iconeSeance(s) {
     return { icone: ICONE_CARDIO[t] || 'course', libelle: t ? LIBELLE_CARDIO[t] + (types.length > 1 ? ' +' + (types.length - 1) : '') : 'Cardio' };
   }
   const jour = jourDe(s.jour);
-  return { icone: ICONE_JOUR_MUSCU[codeCanonique(s.jour)] || 'halteres', libelle: jour ? jour.nom : s.jour };
+  return { icone: iconeJourMuscu(jour), libelle: jour ? jour.nom : s.jour };
 }
 
 let decalageMois = 0;

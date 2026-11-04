@@ -127,6 +127,20 @@ def test_quitter_une_seance_la_garde_en_cours(page):
     assert page.locator("#series .serie.faite").count() == 1
 
 
+def test_l_abandon_depuis_la_fiche_ramene_a_sport(page):
+    ouvrir_jour(page, "J1")
+    saisir_serie_courante(page, 40, 8)
+    page.wait_for_timeout(300)
+    page.locator("#minuterie-fermer").click()
+    page.wait_for_timeout(300)
+    page.locator("#seance-abandonner").click()
+    page.locator("[data-ok]").click()
+    page.wait_for_selector("#ecran-sport.actif")
+    assert not page.locator("#ecran-seance").evaluate("e => e.classList.contains('actif')")
+    assert page.locator("#onglets").is_visible()
+    assert page.evaluate("Object.values(lireSeancesEnCours()).filter((s) => s && !s.fin).length") == 0
+
+
 def test_le_retour_android_remonte_d_un_ecran(page):
     page.locator('.onglet[data-onglet="suivi"]').click()
     page.locator('.tuile[data-ecran="calendrier"]').click()

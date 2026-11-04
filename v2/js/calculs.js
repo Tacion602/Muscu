@@ -258,20 +258,14 @@ const FAITS_ENTRAINEMENT = [
   'L\'ordre des exercices compte : ce que tu fais en premier progresse le plus. Place en tête la priorité du cycle.',
 ];
 
-function phraseMotivation(graine) {
-  let h = 0; const s = String(graine);
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return PHRASES_MOTIVATION[h % PHRASES_MOTIVATION.length];
-}
-
-function faitEntrainement(graine) {
-  let h = 7; const s = String(graine);
-  for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) >>> 0;
-  return FAITS_ENTRAINEMENT[h % FAITS_ENTRAINEMENT.length];
-}
-
-function phraseOuverture(graine) {
-  let h = 0;
+/* Un élément d'une liste choisi par hachage d'une graine (identifiant de
+   séance, date), stable d'un rendu à l'autre ; `sel` décorrèle deux listes
+   tirées sur la même graine. */
+function choixHache(liste, graine, sel) {
+  let h = sel || 0;
   for (const c of String(graine)) h = (h * 31 + c.charCodeAt(0)) % 100003;
-  return PHRASES_OUVERTURE[h % PHRASES_OUVERTURE.length];
+  return liste[h % liste.length];
 }
+function phraseOuverture(graine) { return choixHache(PHRASES_OUVERTURE, graine, 0); }
+function phraseMotivation(graine) { return choixHache(PHRASES_MOTIVATION, graine, 0); }
+function faitEntrainement(graine) { return choixHache(FAITS_ENTRAINEMENT, graine, 7); }
