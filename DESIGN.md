@@ -284,7 +284,7 @@ Coins doux et constants : 12 px pour toute surface (carte, alerte, tuile, fiche,
 - **Champ de série (`.serie input.f`):** 48 px, fond `fond-2`, bordure transparente, texte 19 px 600 centré tabulaire, placeholder gris tertiaire 400 ; courant : bordure `accent` sur blanc ; fait : `hausse-fond` et texte vert, ou `baisse-fond` et rouge, ou `fond-2` si stable ; charge aberrante : bordure et fond ambre.
 
 ### Navigation
-- **Barre d'onglets (`.onglets`):** 64 px plus encoche, blanc bordé de `trait` en haut, trois onglets à parts égales : icône 22 px dans une pastille de 56 par 30 px rayon 15, libellé 11 px 500 0,02 em ; actif en `accent` avec pastille `accent-fond`, inactif en `texte-2`, appui en `fond-2`. Masquée hors des racines.
+- **Barre d'onglets (`.onglets`):** 64 px plus encoche, blanc bordé de `trait` en haut, quatre onglets (Accueil, Sport, Suivi, Réglages, depuis le 4 novembre 2026) à parts égales : icône 22 px dans une pastille de 56 par 30 px rayon 15, libellé 11 px 500 0,02 em ; actif en `accent` avec pastille `accent-fond`, inactif en `texte-2`, appui en `fond-2`. Masquée hors des racines.
 - **Barre d'écran (`.barre`):** 56 px, blanc, bordure basse `trait`, bouton retour rond 44 px à gauche, titre 18 px 600 tronqué avec sous-titre 12 px gris. Les racines prennent la grande barre : fond `fond`, sans bordure, titre 24 px 700, 18 px au-dessus.
 - **Glissement d'écran:** 220 ms `cubic-bezier(.2, 0, 0, 1)` ; écran sortant à -30 % et 60 % d'opacité.
 - **Feuille basse (`.voile` / `.feuille`):** voile `rgba(17, 20, 24, .4)` en fondu 180 ms, feuille blanche rayon 16 en haut, poignée de 36 par 4 px en `trait`, montée en 220 ms ; liste de choix en rangées de 52 px séparées d'un trait.

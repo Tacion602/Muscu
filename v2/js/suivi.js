@@ -179,7 +179,7 @@ function iconeJourMuscu(jour) {
   return 'halteres';
 }
 const ICONE_CARDIO = { ef: 'course', fractionne: 'fractionne', incline: 'incline', seuil: 'seuil', hiit: 'hiit' };
-const LIBELLE_CARDIO = { ef: 'Endurance', fractionne: 'Fractionné', incline: 'Incliné', seuil: 'Seuil', hiit: 'HIIT' };
+const LIBELLE_CARDIO = { ef: 'Endur.', fractionne: 'Fractionné', incline: 'Incliné', seuil: 'Seuil', hiit: 'HIIT' };
 
 /* Icône et étiquette courte d'une séance pour le calendrier. */
 function iconeSeance(s) {
@@ -190,7 +190,8 @@ function iconeSeance(s) {
     return { icone: ICONE_CARDIO[t] || 'course', libelle: t ? LIBELLE_CARDIO[t] + (types.length > 1 ? ' +' + (types.length - 1) : '') : 'Cardio' };
   }
   const jour = jourDe(s.jour);
-  return { icone: iconeJourMuscu(jour), libelle: jour ? jour.nom : s.jour };
+  const nom = jour ? jour.nom : s.jour;
+  return { icone: iconeJourMuscu(jour), libelle: nom.length > 7 ? nom.split(/\s+/)[0] : nom };
 }
 
 let decalageMois = 0;

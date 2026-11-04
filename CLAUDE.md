@@ -396,6 +396,19 @@ avant) et recharge `reglages` en mémoire ; un seul hachage
 séance en cours dont le jour a disparu du programme ; l'icône d'un jour
 de musculation se lit dans son nom puis ses muscles (`iconeJourMuscu()`),
 plus dans son code. `VERSION` passée à `muscu2-2026-11-04-11`.
+**Relecture de finition du soir, accueil et calendrier** (deux captures,
+verdict « fix », six retouches appliquées) : kicker « Aujourd'hui »
+retiré (capitales réservées aux titres de section) ; carte de phrase en
+`accent-fond` plutôt qu'en bleu plein (un seul bleu saturé, celui de
+l'action) ; les trois chiffres en tuiles `fond-2` dans une seule carte,
+libellés raccourcis pour des hauteurs égales ; « Entrer dans le
+programme » en bouton secondaire, la carte de la prochaine séance restant
+l'action principale ; étiquettes du calendrier à 10 px et icônes à 18 px
+trait 1,8 (lisibles à bout de bras) ; icônes Pull (barre et figure
+suspendue) et Haut max (barre au-dessus d'une figure) redessinées, le
+bouclier et l'entonnoir ne se lisaient pas. `DESIGN.md` et le contrat de
+direction notent le quatrième onglet. `VERSION` passée à
+`muscu2-2026-11-04-12`.
 
 ### Chantiers ouverts de la v2
 

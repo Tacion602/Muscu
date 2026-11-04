@@ -14,9 +14,9 @@ Contraintes : hors ligne d'abord, pas de build, cibles larges, chiffres lisibles
 ## Direction contract
 
 THESIS : le standard du marché (Hevy, Strong, Material 3 Android) exécuté à leur niveau de finition, sans costume ; refuse le patchwork d'effets de la v1 (fonds vivants, néon, palettes par page).
-OWN-WORLD : fond gris très clair, cartes blanches à rayon 12 px avec ombre légère, un seul bleu d'action, vert et rouge sémantiques uniquement pour hausse, recul, alerte ; Roboto partout, chiffres tabulaires ; icônes trait 1,8 px d'un seul jeu ; barre d'onglets basse Sport, Suivi, Réglages.
+OWN-WORLD : fond gris très clair, cartes blanches à rayon 12 px avec ombre légère, un seul bleu d'action, vert et rouge sémantiques uniquement pour hausse, recul, alerte ; Roboto partout, chiffres tabulaires ; icônes trait 1,8 px d'un seul jeu ; barre d'onglets basse Accueil, Sport, Suivi, Réglages (Accueil ajouté le 4 novembre 2026 à la demande de l'utilisateur).
 STORY : l'utilisateur ouvre sur ses jours, voit ce qui est en retard, entre dans sa séance en un appui, suit l'objectif de charge calculé, valide par les répétitions, lit sa courbe e1RM ensuite.
-FIRST VIEWPORT : en-tête « Sport » avec la semaine, liste de cartes jour (code, nom, dernière fois, retard en rouge), barre d'onglets en bas ; l'action primaire est la carte du prochain jour.
+FIRST VIEWPORT : écran Accueil (salutation, phrase du jour, chiffres, carte de la prochaine séance en action primaire) ; puis Sport : en-tête avec la semaine, liste de cartes jour (code, nom, dernière fois, retard en rouge), barre d'onglets en bas ; l'action primaire est la carte du prochain jour.
 FORM : canon (standard du marché), choix explicite de l'utilisateur le 4 novembre 2026 après trois cartes ; seed 617246f5 (tirage dégradé, sans challengers).
 FINISH : unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
 

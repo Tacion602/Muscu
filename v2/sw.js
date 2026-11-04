@@ -4,7 +4,7 @@
    cache). Une mise en ligne est prise au lancement suivant : VERSION doit
    changer à chaque livraison, c'est elle qui purge l'ancien cache. */
 
-const VERSION = 'muscu2-2026-11-04-11';
+const VERSION = 'muscu2-2026-11-04-12';
 const FICHIERS = [
   './', './index.html', './manifest.webmanifest', './css/style.css', './data/programme.json',
   './js/tables.js', './js/donnees.js', './js/calculs.js', './js/ui.js', './js/sport.js',

@@ -263,11 +263,12 @@ function rendreAccueil() {
   const jour = prochain ? jourDe(prochain) : null;
 
   let html = '<div class="accueil-entete"><h1>' + salut + '</h1><p>' + echapper(maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + ' · semaine ' + semaine + '</p></div>';
-  html += '<div class="accueil-phrase"><div class="titre">Aujourd\'hui</div><div class="texte">' + echapper(phraseMotivation(cleDate(maintenant))) + '</div></div>';
-  html += '<div class="accueil-stats">' +
-    '<div class="carte"><span class="n num">' + cetteSemaine + '</span><span class="l">séance' + (cetteSemaine > 1 ? 's' : '') + ' cette semaine</span></div>' +
-    '<div class="carte"><span class="n num">' + terminees.length + '</span><span class="l">au total</span></div>' +
-    '<div class="carte"><span class="n num">' + (derniere ? joursDepuis(derniere.fin) : '–') + '</span><span class="l">jour' + (derniere && joursDepuis(derniere.fin) > 1 ? 's' : '') + ' depuis la dernière</span></div></div>';
+  html += '<div class="accueil-phrase"><div class="texte">' + echapper(phraseMotivation(cleDate(maintenant))) + '</div></div>';
+  const depuis = derniere ? joursDepuis(derniere.fin) : null;
+  html += '<div class="carte accueil-stats">' +
+    '<div><span class="n num">' + cetteSemaine + '</span><span class="l">cette semaine</span></div>' +
+    '<div><span class="n num">' + terminees.length + '</span><span class="l">au total</span></div>' +
+    '<div><span class="n num">' + (depuis == null ? '–' : depuis) + '</span><span class="l">' + (depuis == null ? 'dernière' : (depuis > 1 ? 'jours' : 'jour') + ' depuis') + '</span></div></div>';
 
   html += '<p class="titre-section">' + (ouvertes.length ? 'Séance en cours' : 'Prochaine séance') + '</p>';
   if (ouvertes.length) {
@@ -277,7 +278,7 @@ function rendreAccueil() {
     const detail = jour.type === 'cardio' ? 'Course et HIIT' : (jour.exercices || []).length + ' exercices · ' + musclesDuJour(jour);
     html += '<button class="carte-jour ' + jour.type + ' prochaine" data-accueil-jour="' + jour.code + '"><span class="code">' + echapper(libelleJour(jour)) + '</span><span class="tx"><b>' + echapper(jour.nom) + '</b><span>' + echapper(detail) + '</span></span><span class="chev">' + svgIcone('chevron') + '</span></button>';
   }
-  html += '<div style="margin-top:12px"><button class="bouton primaire large" id="accueil-programme">Entrer dans le programme</button></div>';
+  html += '<div style="margin-top:12px"><button class="bouton large" id="accueil-programme">Entrer dans le programme</button></div>';
   corps.innerHTML = html;
   poserIcones(corps);
   corps.querySelectorAll('[data-accueil-jour]').forEach((b) => b.addEventListener('click', () => { afficher('sport'); commencer(b.dataset.accueilJour); }));

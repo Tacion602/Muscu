@@ -361,12 +361,12 @@ svg.courbe .deload { fill: var(--attention); stroke: var(--attention); }
 button.calendrier-case { font: inherit; color: inherit; padding: 0; width: 100%; }
 button.calendrier-case:active { transform: scale(.95); }
 .calendrier-case.aujourdhui { box-shadow: inset 0 0 0 2px var(--accent); }
-.calendrier-case .num { position: absolute; top: 3px; left: 5px; font-size: 10px; color: var(--texte-2); }
+.calendrier-case .num { position: absolute; top: 2px; left: 4px; font-size: 10px; line-height: 1; color: var(--texte-2); }
 .calendrier-case .ico { display: flex; justify-content: center; align-items: center; gap: 2px; margin-top: 10px; max-width: 100%; padding: 0 2px; }
-.calendrier-case .ico svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.calendrier-case .ico svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .calendrier-case .ico.deux svg { width: 16px; height: 16px; }
-.calendrier-case .ico > span { display: flex; flex-direction: column; align-items: center; }
-.calendrier-case .ico small { font-size: 8px; line-height: 1; margin-top: 1px; font-weight: 600; letter-spacing: -.01em; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.calendrier-case .ico > span { display: flex; flex-direction: column; align-items: center; min-width: 0; max-width: 100%; }
+.calendrier-case .ico small { display: block; font-size: 10px; line-height: 1; margin-top: 2px; font-weight: 600; letter-spacing: -.01em; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .calendrier-case .ico .muscu { color: var(--accent); }
 .calendrier-case .ico .cardio { color: #b45309; }
 .calendrier-case .ico .gainage { color: #334155; }
@@ -468,14 +468,12 @@ details.seance-h .detail { padding: 0 0 12px; }
 
 /* Accueil : salutation, phrase du jour, prochaine séance. */
 .accueil-entete { padding: calc(env(safe-area-inset-top, 0px) + 22px) 0 6px; }
-.accueil-entete h1 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+.accueil-entete h1 { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
 .accueil-entete p { color: var(--texte-2); font-size: 14px; margin-top: 2px; }
-.accueil-phrase { background: var(--accent); color: #fff; border-radius: var(--rayon); padding: 18px 16px; margin-top: 14px; }
-.accueil-phrase .titre { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; opacity: .85; margin-bottom: 6px; }
+.accueil-phrase { background: var(--accent-fond); color: #1e3a8a; border-radius: var(--rayon); padding: 18px 16px; margin-top: 14px; }
 .accueil-phrase .texte { font-size: 19px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
-.accueil-phrase .source { font-size: 12px; opacity: .8; margin-top: 8px; }
-.accueil-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-.accueil-stats .carte { padding: 12px 10px; text-align: center; }
+.accueil-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; padding: 10px; }
+.accueil-stats > div { background: var(--fond-2); border-radius: 8px; padding: 10px 6px; text-align: center; }
 .accueil-stats .n { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .accueil-stats .l { display: block; font-size: 12px; color: var(--texte-2); margin-top: 2px; }
 .saviez-vous { margin-top: 10px; }
