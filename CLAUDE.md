@@ -311,6 +311,16 @@ Cinq demandes de l'utilisateur, après ses premières captures de la v2 :
 - **Triangles noirs de Suivi** : corrigés le matin même (`.alerte svg`, voir
   « Garde-fou gainage » ci-dessus), le téléphone n'avait pas encore reçu la
   version. `VERSION` passée à `muscu2-2026-11-04-4`.
+- **Icônes dans le calendrier** (demande suivante, même jour) : les puces
+  texte « J1 » / « G » cèdent la place aux icônes de trait du jeu commun
+  (`ICONE_TYPE` dans `v2/js/suivi.js` : haltères, coureur, planche pour
+  le gainage, icône `gainage` ajoutée à `ICONES`), deux par case au plus,
+  réduites quand elles sont deux ; une nuit renseignée porte une lune en
+  coin en plus du trait bleu, quand la case est cochée.
+- **Alertes de Suivi sous les menus** (« les warnings de suivi en dessous
+  des menus ») : la grille des tuiles vient en premier, les alertes recul
+  ×2 et jour en retard suivent sous un titre « À surveiller ». `VERSION`
+  passée à `muscu2-2026-11-04-5`.
 
 ### Chantiers ouverts de la v2
 

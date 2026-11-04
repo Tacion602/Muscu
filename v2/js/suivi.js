@@ -16,7 +16,7 @@ function rendreSuivi() {
     ['historique', 'liste', 'Séances enregistrées', 'Détail et envoi au classeur'],
     ['remarque', 'message', 'Remarque', 'Un mot au développeur'],
   ];
-  // Alertes du moment en tête : reculs ×2 et jours en retard.
+  // Alertes du moment sous les menus (demande du 4 novembre 2026) : reculs ×2 et jours en retard.
   const alertes = [];
   programme.jours.forEach((j) => (j.exercices || []).forEach((e) => {
     const r = reculDouble(e.nom, e);
@@ -27,9 +27,9 @@ function rendreSuivi() {
     const r = retardDuJour(j.code);
     if (r && r.enRetard) alertes.push('<div class="alerte attention">' + svgIcone('alerte') + '<div><b>' + echapper(j.nom) + '</b> : dernière séance ' + ilYA(r.derniere.fin) + '.</div></div>');
   });
-  corps.innerHTML = (alertes.length ? '<div class="liste-cartes" style="margin-bottom:12px">' + alertes.join('') + '</div>' : '') +
-    '<div class="grille-suivi">' + tuiles.map(([ecran, icone, titre, sous]) =>
-      '<button class="tuile" data-ecran="' + ecran + '"><span class="ic">' + svgIcone(icone) + '</span><b>' + titre + '</b><span>' + sous + '</span></button>').join('') + '</div>';
+  corps.innerHTML = '<div class="grille-suivi">' + tuiles.map(([ecran, icone, titre, sous]) =>
+      '<button class="tuile" data-ecran="' + ecran + '"><span class="ic">' + svgIcone(icone) + '</span><b>' + titre + '</b><span>' + sous + '</span></button>').join('') + '</div>' +
+    (alertes.length ? '<p class="titre-section">À surveiller</p><div class="liste-cartes">' + alertes.join('') + '</div>' : '');
   corps.querySelectorAll('[data-ecran]').forEach((b) => b.addEventListener('click', () => afficher(b.dataset.ecran)));
 }
 rendus.suivi = rendreSuivi;
@@ -161,6 +161,10 @@ function lienClasseur(s) {
 
 /* ---------- Calendrier ---------- */
 
+/* Icônes du calendrier par type de séance (demande du 4 novembre 2026 :
+   « des icônes dans le calendrier »), même jeu de trait que le reste. */
+const ICONE_TYPE = { muscu: 'halteres', cardio: 'course', gainage: 'gainage' };
+
 let decalageMois = 0;
 let afficherNuits = false;
 
@@ -183,7 +187,8 @@ function rendreCalendrier(param) {
     const liste = parJour[cle] || [];
     const type = liste.length ? liste[0].type : '';
     cases += '<span class="calendrier-case ' + type + (decalageMois === 0 && j === maintenant.getDate() ? ' aujourdhui' : '') + (afficherNuits && nuits[cle] ? ' a-sommeil' : '') + '">' +
-      '<span class="num">' + j + '</span>' + (liste.length ? '<span class="ico">' + liste.slice(0, 2).map((s) => '<span class="puce ' + (s.type === 'muscu' ? 'accent' : '') + '">' + echapper(s.type === 'gainage' ? 'G' : (libelleJour(jourDe(s.jour)) || s.type)) + '</span>').join('') + '</span>' : '') +
+      '<span class="num">' + j + '</span>' + (liste.length ? '<span class="ico' + (liste.length > 1 ? ' deux' : '') + '">' + liste.slice(0, 2).map((s) => '<span class="' + s.type + '" title="' + echapper(s.type === 'gainage' ? 'Gainage' : (libelleJour(jourDe(s.jour)) + ' ' + (s.nom || ''))) + '">' + svgIcone(ICONE_TYPE[s.type] || 'halteres') + '</span>').join('') + '</span>' : '') +
+      (afficherNuits && nuits[cle] ? '<span class="nuit">' + svgIcone('lune') + '</span>' : '') +
       (liste.length > 2 ? '<span class="multi">×' + liste.length + '</span>' : '') + '</span>';
   }
   corps.innerHTML = '<div class="carte"><div class="mois-nav"><button class="icone" id="cal-prec" aria-label="Mois précédent">' + svgIcone('retour') + '</button><b>' + premier.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) + '</b><button class="icone" id="cal-suiv" aria-label="Mois suivant"' + (decalageMois === 0 ? ' disabled style="opacity:.3"' : '') + '>' + svgIcone('chevron') + '</button></div>' +

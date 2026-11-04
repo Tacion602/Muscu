@@ -8,6 +8,7 @@ const ICONES = {
   courbe: '<path d="M4 18L10 11l4 4 6-8"/>',
   reglages: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
   retour: '<path d="M15 5l-7 7 7 7"/>',
+  gainage: '<circle cx="5" cy="9" r="1.8"/><path d="M7 11l9 2 5 1M7 11l-2 5M16 13l1 4"/>',
   maison: '<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',
   chevron: '<path d="M9 6l6 6-6 6"/>',
   fermer: '<path d="M6 6l12 12M18 6L6 18"/>',
