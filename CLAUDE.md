@@ -352,6 +352,21 @@ du classeur**, qui reste la source pour les imports suivants. Deux
 illustrations approchées faute de schéma Everkinetic téléchargeable d'ici.
 `VERSION` passée à `muscu2-2026-11-04-7`.
 
+### Mise à jour qui n'arrivait pas sur le téléphone (4 novembre 2026, soir)
+
+Aucune des livraisons du jour n'a été vue sur le Pixel malgré plusieurs
+fermetures. Deux causes possibles, toutes deux traitées sans pouvoir
+vérifier d'ici (GitHub Pages inaccessible depuis le bac à sable) :
+`cache.addAll` passait par le cache HTTP du navigateur, donc un nouveau
+cache `VERSION` pouvait se remplir d'anciens fichiers (`Request` en
+`cache: 'reload'` désormais) ; et le nouveau service worker, une fois
+actif, laissait la page ouverte sur l'ancien code (`controllerchange`
+recharge la page, sauf sur la fiche de séance où un toast reporte au
+lancement suivant). La version installée est visible en pied de Réglages
+(`versionApp`, demandée au service worker par message) : c'est elle qui
+dit si le téléphone a reçu une livraison. `VERSION` passée à
+`muscu2-2026-11-04-8`.
+
 ### Chantiers ouverts de la v2
 
 1. ~~Créer le nouveau classeur~~ **Fait par l'utilisateur le 4 novembre 2026** (classeur, onglet Programme, pont déployé, connexion testée). Pour mémoire : coller

@@ -19,7 +19,7 @@ function rendreReglages() {
     '<div class="champ"><button class="bouton" id="r-reimporter"' + (lireTableau(CLES_V1.historique).length ? '' : ' disabled') + '>Reprendre à nouveau l\'historique v1</button></div>' +
     '<div class="champ"><button class="bouton" id="r-renvoyer">Renvoyer tout l\'historique au classeur</button><p class="petit texte-2">Pour remplir le nouveau classeur avec les séances déjà faites. Le pont ignore ce qu\'il a déjà écrit.</p></div>' +
     '</div>' +
-    '<p class="petit texte-3" style="margin-top:16px;text-align:center">Muscu v2 · ' + echapper(programme.nom || 'programme') + ' importé le ' + (programme.importe_le ? dateCourte(programme.importe_le) : '?') + '</p>';
+    '<p class="petit texte-3" style="margin-top:16px;text-align:center">Muscu v2 · version ' + echapper(versionApp || 'non installée') + ' · ' + echapper(programme.nom || 'programme') + ' importé le ' + (programme.importe_le ? dateCourte(programme.importe_le) : '?') + '</p>';
   ['pont', 'secret'].forEach((c) => $('r-' + c).addEventListener('change', (e) => { reglages[c] = e.target.value.trim(); sauverReglages(); }));
   corps.querySelectorAll('[data-bascule]').forEach((i) => i.addEventListener('change', () => { reglages[i.dataset.bascule] = i.checked; sauverReglages(); }));
   $('r-tester').addEventListener('click', async () => {

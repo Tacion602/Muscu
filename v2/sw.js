@@ -4,7 +4,7 @@
    cache). Une mise en ligne est prise au lancement suivant : VERSION doit
    changer à chaque livraison, c'est elle qui purge l'ancien cache. */
 
-const VERSION = 'muscu2-2026-11-04-7';
+const VERSION = 'muscu2-2026-11-04-8';
 const FICHIERS = [
   './', './index.html', './manifest.webmanifest', './css/style.css', './data/programme.json',
   './js/tables.js', './js/donnees.js', './js/calculs.js', './js/ui.js', './js/sport.js',
@@ -24,12 +24,19 @@ SCHEMAS.forEach((s) => { FICHIERS.push('../images-exercices/schemas/' + s + '-re
 FICHIERS.push('../images-exercices/face-pull.jpg');
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(FICHIERS)).then(() => self.skipWaiting()));
+  // `cache: 'reload'` : le précache part du serveur, jamais du cache HTTP du
+  // navigateur, sinon une nouvelle VERSION pouvait se remplir d'anciens
+  // fichiers (mises à jour du 4 novembre 2026 jamais vues sur le Pixel).
+  e.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(FICHIERS.map((f) => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((noms) => Promise.all(noms.filter((n) => n !== VERSION).map((n) => caches.delete(n))))
     .then(() => self.clients.claim()));
+});
+
+self.addEventListener('message', (e) => {
+  if (e.data === 'version' && e.source) e.source.postMessage({ version: VERSION });
 });
 
 self.addEventListener('fetch', (e) => {

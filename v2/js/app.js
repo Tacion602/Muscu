@@ -1,5 +1,7 @@
 /* Démarrage de la v2. */
 
+let versionApp = '';
+
 async function demarrer() {
   const migree = migrerDepuisV1();
   reglages = Object.assign({}, REGLAGES_PAR_DEFAUT, lire(CLES.reglages, {}) || {});
@@ -19,6 +21,19 @@ async function demarrer() {
   }
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+    // Une nouvelle version installée prend la main tout de suite : la page
+    // se recharge une fois (hors séance en cours de saisie, où l'on attend
+    // le prochain lancement), au lieu d'exiger deux fermetures complètes.
+    let dejaControle = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!dejaControle) { dejaControle = true; return; }
+      if (ecranActif() === 'seance') { toast('Mise à jour prête : elle s\'appliquera au prochain lancement.', 4000); return; }
+      location.reload();
+    });
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.version) versionApp = e.data.version;
+    });
+    navigator.serviceWorker.ready.then((r) => { if (r.active) r.active.postMessage('version'); });
   }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') demanderVeille();
