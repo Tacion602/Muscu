@@ -164,6 +164,21 @@ function lienClasseur(s) {
 /* Icônes du calendrier par type de séance (demande du 4 novembre 2026 :
    « des icônes dans le calendrier »), même jeu de trait que le reste. */
 const ICONE_TYPE = { muscu: 'halteres', cardio: 'course', gainage: 'gainage' };
+const ICONE_JOUR_MUSCU = { J1: 'push', J3: 'pull', J4: 'jambes', J5: 'hautmax' };
+const ICONE_CARDIO = { ef: 'course', fractionne: 'fractionne', incline: 'incline', seuil: 'seuil', hiit: 'hiit' };
+const LIBELLE_CARDIO = { ef: 'Endurance', fractionne: 'Fractionné', incline: 'Incliné', seuil: 'Seuil', hiit: 'HIIT' };
+
+/* Icône et étiquette courte d'une séance pour le calendrier. */
+function iconeSeance(s) {
+  if (s.type === 'gainage') return { icone: 'gainage', libelle: 'Gainage' };
+  if (s.type === 'cardio') {
+    const types = Object.keys(s.cardio || {}).filter((k) => (s.cardio[k] || []).some((c) => c && Object.values(c).some((v) => v != null && v !== '')));
+    const t = types[0];
+    return { icone: ICONE_CARDIO[t] || 'course', libelle: t ? LIBELLE_CARDIO[t] + (types.length > 1 ? ' +' + (types.length - 1) : '') : 'Cardio' };
+  }
+  const jour = jourDe(s.jour);
+  return { icone: ICONE_JOUR_MUSCU[codeCanonique(s.jour)] || 'halteres', libelle: jour ? jour.nom : s.jour };
+}
 
 let decalageMois = 0;
 let afficherNuits = false;
@@ -187,7 +202,7 @@ function rendreCalendrier(param) {
     const liste = parJour[cle] || [];
     const type = liste.length ? liste[0].type : '';
     cases += '<' + (liste.length ? 'button type="button" data-jour-cal="' + cle + '"' : 'span') + ' class="calendrier-case ' + type + (decalageMois === 0 && j === maintenant.getDate() ? ' aujourdhui' : '') + (afficherNuits && nuits[cle] ? ' a-sommeil' : '') + '">' +
-      '<span class="num">' + j + '</span>' + (liste.length ? '<span class="ico' + (liste.length > 1 ? ' deux' : '') + '">' + liste.slice(0, 2).map((s) => '<span class="' + s.type + '" title="' + echapper(s.type === 'gainage' ? 'Gainage' : (libelleJour(jourDe(s.jour)) + ' ' + (s.nom || ''))) + '">' + svgIcone(ICONE_TYPE[s.type] || 'halteres') + '</span>').join('') + '</span>' : '') +
+      '<span class="num">' + j + '</span>' + (liste.length ? '<span class="ico' + (liste.length > 1 ? ' deux' : '') + '">' + liste.slice(0, 2).map((s) => { const ic = iconeSeance(s); return '<span class="' + s.type + '" title="' + echapper(ic.libelle) + '">' + svgIcone(ic.icone) + (liste.length === 1 ? '<small>' + echapper(ic.libelle) + '</small>' : '') + '</span>'; }).join('') + '</span>' : '') +
       (afficherNuits && nuits[cle] ? '<span class="nuit">' + svgIcone('lune') + '</span>' : '') +
       (liste.length > 2 ? '<span class="multi">×' + liste.length + '</span>' : '') + (liste.length ? '</button>' : '</span>');
   }

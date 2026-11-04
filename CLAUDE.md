@@ -374,6 +374,12 @@ identifiant (séances, mensurations, remarques, nuits par `cle`)
 fusionnent sans doublon, les autres clés ne sont reprises que si elles
 sont vides sur le téléphone. Jamais d'écrasement d'une saisie plus
 récente. `VERSION` passée à `muscu2-2026-11-04-9`.
+**Icônes explicites, même soir** (« une haltère pour les jours muscu et
+un bonhomme pour les endurances, je veux plus explicite ») : une icône par
+jour de musculation (`ICONE_JOUR_MUSCU`, par code canonique : push, pull,
+jambes, hautmax) et une par type de cardio (`ICONE_CARDIO`, premier type
+renseigné de la séance), étiquette courte sous l'icône quand le jour n'a
+qu'une séance (`iconeSeance()`). `VERSION` passée à `muscu2-2026-11-04-10`.
 
 ### Chantiers ouverts de la v2
 

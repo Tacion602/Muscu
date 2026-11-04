@@ -9,6 +9,16 @@ const ICONES = {
   reglages: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
   retour: '<path d="M15 5l-7 7 7 7"/>',
   gainage: '<circle cx="5" cy="9" r="1.8"/><path d="M7 11l9 2 5 1M7 11l-2 5M16 13l1 4"/>',
+  // Icônes explicites du calendrier (4 novembre 2026) : une par jour de
+  // musculation et une par type de cardio, plutôt qu'un haltère générique.
+  push: '<path d="M4 15h16M7 12v6M17 12v6M12 15V5M9 8l3-3 3 3"/>',
+  pull: '<path d="M3 4h18M7 4v4l5 4 5-4V4"/><circle cx="12" cy="15.5" r="2"/><path d="M12 17.5V21"/>',
+  jambes: '<circle cx="12" cy="4" r="2"/><path d="M12 6v5M8 11h8M12 11l-4 4 1 6M12 11l4 4-1 6"/>',
+  hautmax: '<path d="M7 4l5 2 5-2v6c0 4-2 7-5 9-3-2-5-5-5-9z"/><path d="M12 6v13"/>',
+  fractionne: '<path d="M3 17l4-10 4 10 4-10 4 10"/><path d="M3 20h18"/>',
+  incline: '<path d="M3 19L21 5M3 19h18"/><circle cx="14" cy="8" r="1.8"/><path d="M12 12l2-2 3 2"/>',
+  seuil: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10z"/><path d="M5 11h4l1.5-2 2 4 1.5-2h5"/>',
+  hiit: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3 1-5 1-9z"/>',
   maison: '<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',
   chevron: '<path d="M9 6l6 6-6 6"/>',
   fermer: '<path d="M6 6l12 12M18 6L6 18"/>',
