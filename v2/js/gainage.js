@@ -65,7 +65,7 @@ function mouvementParDefaut(categorie) {
 }
 
 function texteValeur(m, v) {
-  if (typeof v === 'object') return [v.poids != null ? v.poids + ' kg' : null, v.distance != null ? v.distance + ' m' : null, v.vitesse != null ? v.vitesse + ' km/h' : null].filter(Boolean).join(', ');
+  if (v && typeof v === 'object') return [v.poids != null ? v.poids + ' kg' : null, v.distance != null ? v.distance + ' m' : null, v.vitesse != null ? v.vitesse + ' km/h' : null].filter(Boolean).join(', ');
   return v + (m.mode === 'chrono' ? ' s' : ' reps');
 }
 
@@ -124,11 +124,20 @@ function carteMouvement(categorie) {
   return carte;
 }
 
+/* Une valeur d'historique peut être un objet (mode charge d'un mouvement
+   ancien, farmer walk de la v1) là où le mouvement affiché attend un
+   nombre : on n'affiche jamais un objet tel quel. */
+function nombreAffichable(v) {
+  if (v == null) return '';
+  if (typeof v === 'object') return v.poids != null ? String(v.poids) : '';
+  return String(v);
+}
+
 function champGainage(valeur, suggestion, libelle, aChange) {
   const input = document.createElement('input');
   input.type = 'text'; input.inputMode = 'decimal';
-  input.value = valeur == null ? '' : String(valeur);
-  input.placeholder = suggestion == null ? '' : String(suggestion);
+  input.value = nombreAffichable(valeur);
+  input.placeholder = nombreAffichable(suggestion);
   input.setAttribute('aria-label', libelle);
   input.addEventListener('focus', () => input.select());
   input.addEventListener('input', () => aChange(nombreOuNull(input.value)));
@@ -153,6 +162,8 @@ function celluleSerie(m, cle, series, index, valeur, precedente) {
     });
     return cellule;
   }
+  if (valeur && typeof valeur === 'object') { valeur = null; valeursMouvement(cle, series)[index] = null; }
+  if (precedente && typeof precedente === 'object') precedente = null;
   const input = champGainage(valeur, precedente, libelle + (m.mode === 'chrono' ? ', secondes' : ', répétitions'), (n) => { valeursMouvement(cle, series)[index] = n; enregistrerSeance(); });
   cellule.appendChild(input);
   const poidsAvant = derniersPoidsMouvement(cle);

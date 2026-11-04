@@ -259,6 +259,18 @@ les emoji des puces de Sommeil (sport et raisons) qui échappent au jeu
 d'icônes, les exceptions v1 du détecteur qui restent cantonnées aux
 fichiers v1.
 
+### Garde-fou gainage (4 novembre 2026, soir)
+
+Remarque de l'utilisateur : « bug dans gainage object object ». Non
+reproduit dans le bac à sable (historique v1 injecté avec farmer walk en
+objets, séance de gainage saisie et terminée : rien). Pose d'un garde-fou
+dans `v2/js/gainage.js` (`nombreAffichable()`) : une valeur d'historique de
+type objet n'est jamais écrite telle quelle dans un champ ou un filigrane,
+et une valeur objet rencontrée sur un mouvement en répétitions ou en tenue
+est remise à `null`. **Cause exacte non confirmée** : l'endroit précis
+(carte, « Dernière fois », écran de fin, liste, toast d'envoi) est demandé à
+l'utilisateur. `VERSION` du service worker passée à `muscu2-2026-11-04-2`.
+
 ### Chantiers ouverts de la v2
 
 1. ~~Créer le nouveau classeur~~ **Fait par l'utilisateur le 4 novembre 2026** (classeur, onglet Programme, pont déployé, connexion testée). Pour mémoire : coller
