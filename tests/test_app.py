@@ -23,7 +23,6 @@ import threading
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import sync_playwright
 
 RACINE = Path(__file__).resolve().parent.parent
 
@@ -40,14 +39,6 @@ def adresse():
     threading.Thread(target=serveur.serve_forever, daemon=True).start()
     yield "http://127.0.0.1:" + str(serveur.server_address[1]) + "/"
     serveur.shutdown()
-
-
-@pytest.fixture(scope="session")
-def navigateur():
-    with sync_playwright() as p:
-        chromium = p.chromium.launch()
-        yield chromium
-        chromium.close()
 
 
 @pytest.fixture
