@@ -1,30 +1,29 @@
 Jour,Rang,Nom,Type,Numero,Exercice,Series,Reps min,Reps max,RIR,Repos,Muscle,Consigne,Reglages,Substituts
-J1,5,Push,muscu,1,Developpe incline banc,4,6,8,2 / 2 / 1 / 1,150,Pectoraux,"Inclinaison 30 Amplitude complete, etirement controle en bas.",,
-J1,5,Push,muscu,2,Dips buste penche,3,8,10,2 / 1 / 1,120,Pectoraux,Coudes fixes en legere flexion. Ne pas transformer en presse.,,
-J1,5,Push,muscu,3,Ecarte poulie horizontale hauteur poitrine,3,12,15,2 / 1 / 1,90,Pectoraux,"Coudes légèrement fléchis, angle fixe tout du long (pas de coup de triceps). Amener les mains devant la poitrine, coudes un peu plus bas que les épaules. Contraction pectorale marquée en fin de mouvement, pas juste un rapprochement des mains. Contrôler la phase excentrique plutôt que de laisser les poulies tirer les bras en arrière.",,
-J1,5,Push,muscu,4,Extension triceps overhead corde,3,10,12,2 / 1 / 1,90,Triceps,Bras au dessus de la tete pour etirer la longue portion.,,
-J1,5,Push,muscu,5,Elevation laterale halteres,3,15,20,2 / 1 / 1,60,Deltoide lateral,"Charge legere, tempo controle. Pas de balancier.",,
-J1,5,Push,muscu,6,Extension triceps poulie barre,3,12,15,2 / 1 / 1,75,Triceps,Coudes colles au buste. Verrouillage complet en fin de mouvement.,,
+J1,5,Push,muscu,1,Developpe incline banc,4,6,8,2 / 2 / 1 / 1,150,Pectoraux,"Inclinaison 30 Amplitude complete, etirement controle en bas.",,Developpe machine
+J1,5,Push,muscu,2,Elevation laterale halteres,3,10,12,2 / 1 / 1,60,Deltoide lateral,"Troisieme exo du deltoide lateral, charge legere.",,
+J1,5,Push,muscu,3,Dips buste penche,4,8,10,2 / 2 / 1 / 1,120,Pectoraux,Coudes fixes en legere flexion. Ne pas transformer en presse.,,Developpe machine
+J1,5,Push,muscu,4,Extension triceps overhead corde,3,10,12,2 / 1 / 1,90,Triceps,Bras au dessus de la tete pour etirer la longue portion.,,Extension triceps poulie barre
+J1,5,Push,muscu,5,Developpe machine,3,8,10,2 / 1 / 1,120,Pectoraux,POS 1,,Dips buste penche
 J2,2,Cardio,cardio,,,,,,,,,,,
-J3,3,Pull,muscu,1,Tirage vertical prise large,4,8,10,2 / 2 / 1 / 1,150,Grand dorsal,Amener la barre a la clavicule. Ne pas cambrer excessivement.,,
-J3,3,Pull,muscu,2,Rowing unilateral machine ou haltere,4,8,10,2 / 2 / 1 / 1,120,Grand dorsal,"Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",,
-J3,3,Pull,muscu,3,Curl incline halteres,3,10,12,2 / 1 / 1,90,Biceps,"Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",,
-J3,3,Pull,muscu,4,Elevation laterale halteres,3,15,20,2 / 1 / 1,60,Deltoide lateral,"Charge legere, tempo controle. Pas de balancier.",,
-J3,3,Pull,muscu,5,Oiseau inverse machine,3,12,15,2 / 1 / 1,75,Deltoide posterieur,"Bras quasi tendus, pas d'elan du buste.",,
-J3,3,Pull,muscu,6,Curl marteau,3,12,15,2 / 1 / 1,75,Biceps,Prise neutre. Cible le brachial/brachio-radial,,
-J3,3,Pull,muscu,7,Traction prise neutre machine assistee,4,8,10,2 / 2 / 1 / 1,150,Grand dorsal,pas ajout de repetitions au dela de 10.,,
+J3,3,Pull,muscu,1,Traction prise neutre machine assistee,4,6,8,2 / 2 / 1 / 1,150,Grand dorsal,"Charger des que le haut de la fourchette est atteint, pas de repetition au-dela.",,Tirage vertical prise large
+J3,3,Pull,muscu,2,Oiseau inverse machine,3,12,15,2 / 1 / 1,75,Deltoide posterieur,"Bras quasi tendus, pas d'elan du buste.",,FACE PULL
+J3,3,Pull,muscu,3,Rowing unilateral machine ou haltere,4,8,10,2 / 2 / 1 / 1,120,Grand dorsal,"Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",,
+J3,3,Pull,muscu,4,Curl incline halteres,3,8,10,2 / 1 / 1,90,Biceps,"Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",,Curl pupitre
+J3,3,Pull,muscu,5,Ecarte poulie basse vers le haut,3,12,15,2 / 1 / 1,75,Pectoraux,"Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",,Ecarte poulie horizontale hauteur poitrine
+J3,3,Pull,muscu,6,Elevation laterale halteres,3,10,12,2 / 1 / 1,60,Deltoide lateral,"Troisieme exo du deltoide lateral, charge legere.",,
 J4,4,Jambes,muscu,1,PRESSE A CUISSE / HACK SQUAT,4,8,12,2 / 2 / 1 / 1,150,Quadriceps,Hack squat prioritaire s'il est disponible. Descente jusqu'a 90 degres minimum.,,
-J4,4,Jambes,muscu,2,SOULEVE DE TERRE ROUMAIN,3,8,10,2 / 2 / 1,120,Ischio-jambiers et fessiers,"Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",,
-J4,4,Jambes,muscu,3,Extension jambes unilatéral,3,12,15,2 / 1 / 1,90,Quadriceps,Amplitude complete. Pause courte en contraction haute.,,
-J4,4,Jambes,muscu,4,Extension de hanche machine,3,10,12,2 / 1 / 1,90,Grand fessier,"Par jambe. De dos, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",,
-J4,4,Jambes,muscu,5,Mollets debout unilatéral,4,12,15,2 / 2 / 1 / 1,75,Mollets,Pause 2 secondes en position basse etiree.,,
-J4,4,Jambes,muscu,6,Abduction de hanche machine,3,15,20,2 / 1 / 1,60,Abducteurs et moyen fessier,"Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",,
-J4,4,Jambes,muscu,7,LEG CURL ALLONGE,3,10,12,2 / 1 / 1,90,Ischio-jambiers et fessiers,"Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",,
-J5,1,Haut max,muscu,1,Traction prise neutre machine assistee,4,8,10,2 / 2 / 1 / 1,150,Grand dorsal,pas ajout de repetitions au dela de 10.,,
-J5,1,Haut max,muscu,2,Developpe machine,4,8,10,2 / 2 / 1 / 1,120,Pectoraux,POS 1,,
-J5,1,Haut max,muscu,3,Lat pull-in unilateral poulie a genoux,3,12,15,2 / 1 / 1,90,Grand dorsal,"Bras quasi tendu, adduction pure vers la hanche. Exercice cle largeur",,
-J5,1,Haut max,muscu,4,Elevation laterale halteres,4,15,20,2 / 2 / 1 / 1,75,Deltoïde latéral,"Troisieme exo du deltoide lateral, charge legere.",,
-J5,1,Haut max,muscu,5,FACE PULL,3,15,20,2 / 1 / 1,60,Deltoide posterieur,"Poulie hauteur visage, rotation externe en fin de mouvement.",,
-J5,1,Haut max,muscu,6,Curl pupitre,3,8,12,2 / 1 / 1,90,Biceps,"Bras cales,X triche possible. Ne pas verrouiller les coudes en bas.",,
-J5,1,Haut max,muscu,7,Extension triceps poulie barre,3,12,15,2 / 1 / 1,75,Triceps,Prise inversee ou neutre selon confort du coude.,,
+J4,4,Jambes,muscu,2,LEG CURL ALLONGE,3,8,12,2 / 1 / 1,90,Ischio-jambiers et fessiers,"Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",,
+J4,4,Jambes,muscu,3,Extension jambes unilatéral,3,10,12,2 / 1 / 1,90,Quadriceps,Amplitude complete. Pause courte en contraction haute.,,
+J4,4,Jambes,muscu,4,SOULEVE DE TERRE ROUMAIN,3,8,10,2 / 2 / 1,120,Ischio-jambiers et fessiers,"Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",,
+J4,4,Jambes,muscu,5,Mollets debout unilatéral,4,10,15,2 / 2 / 1 / 1,75,Mollets,Pause 2 secondes en position basse etiree.,,
+J4,4,Jambes,muscu,6,Extension de hanche machine,3,10,12,2 / 1 / 1,90,Grand fessier,"Par jambe. De dos, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",,
+J4,4,Jambes,muscu,7,Abduction de hanche machine,3,12,15,2 / 1 / 1,60,Abducteurs et moyen fessier,"Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",,
+J5,1,Haut max,muscu,1,Developpe machine,3,8,10,2 / 1 / 1,150,Pectoraux,POS 1,,Dips buste penche
+J5,1,Haut max,muscu,2,Traction prise neutre machine assistee,4,8,10,2 / 2 / 1 / 1,150,Grand dorsal,"Charger des que le haut de la fourchette est atteint, pas de repetition au-dela.",,Tirage vertical prise large
+J5,1,Haut max,muscu,3,Developpe couche halteres,3,8,12,2 / 1 / 1,120,Pectoraux,"Banc plat. Descente jusqu'a l'etirement complet des pectoraux, coudes a 45 degres du buste. Depart conseille 2 x 22,5 kg.",,Dips buste penche
+J5,1,Haut max,muscu,4,Tirage vertical prise large,3,10,12,2 / 1 / 1,90,Grand dorsal,Amener la barre a la clavicule. Ne pas cambrer excessivement.,,Lat pull-in unilateral poulie a genoux
+J5,1,Haut max,muscu,5,Elevation laterale halteres,3,10,12,2 / 1 / 1,60,Deltoide lateral,"Troisieme exo du deltoide lateral, charge legere.",,
+J5,1,Haut max,muscu,6,Curl pupitre,3,8,10,2 / 1 / 1,90,Biceps,"Bras cales,X triche possible. Ne pas verrouiller les coudes en bas.",,Curl incline halteres
+J5,1,Haut max,muscu,7,FACE PULL,3,12,15,2 / 1 / 1,60,Deltoide posterieur,"Poulie hauteur visage, rotation externe en fin de mouvement.",,Oiseau inverse machine
+J5,1,Haut max,muscu,8,Extension triceps poulie barre,3,10,12,2 / 1 / 1,75,Triceps,Prise inversee ou neutre selon confort du coude.,,Extension triceps overhead corde
 J6,6,Cardio,cardio,,,,,,,,,,,

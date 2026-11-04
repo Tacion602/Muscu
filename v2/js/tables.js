@@ -296,6 +296,8 @@ const IMAGES_EXERCICES = {
   'Curl pupitre': { schema: 'preacher-curl-with-machine' },
   'Developpe incline banc': { schema: 'incline-bench-press' },
   'Developpe machine': { schema: 'machine-bench-press' },
+  'Developpe couche halteres': { schema: 'incline-bench-press', generique: true },
+  'Ecarte poulie basse vers le haut': { schema: 'crossover-bands', generique: true },
   'Dips buste penche': { schema: 'chest-dips' },
   'Ecarte poulie horizontale hauteur poitrine': { schema: 'crossover-bands', generique: true },
   'Elevation laterale halteres': { schema: 'lateral-dumbbell-raises' },

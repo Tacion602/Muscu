@@ -327,6 +327,31 @@ Cinq demandes de l'utilisateur, après ses premières captures de la v2 :
   résumé que la liste des séances) et un bouton vers la fiche complète.
   `VERSION` passée à `muscu2-2026-11-04-6`.
 
+### Nouveau programme (4 novembre 2026, soir)
+
+Décidé avec l'utilisateur après analyse structurelle du programme (sans
+l'historique du classeur, Google inaccessible depuis le bac à sable ;
+l'export JSON de la v2 fourni ensuite a servi aux charges de départ).
+Règles données par l'utilisateur, à respecter dans tout programme futur :
+**pectoraux priorité 1** (20 séries, trois expositions) ; **tractions au
+moins deux fois par semaine** ; **aucune série au-delà de 15** (seules
+exceptions, mollets et abducteurs 10-15 et 12-15, machines sans crans
+fins) ; **jamais deux exercices de la même zone à la suite** dans une
+séance (les dips comptent comme zone à part, à sa demande) ; **élévation
+latérale uniquement aux haltères, jamais à la poulie**. Dos ramené de 19 à
+13 séries (lat pull-in et curl marteau retirés), ischios remontés en 2e de
+Jambes, bras à 6 séries directes en 8-10. Un exercice neuf, « Developpe
+couche halteres » (J5, choisi contre l'incliné machine : amplitude en
+étirement, stabilisation, charge comparable), avec « Developpe incline
+machine » écarté comme substitut : c'est un ancien nom de l'incliné banc (`ANCIENS_NOMS`), le remplacement retombait sur le même exercice, trouvé par le test de remplacement ; substituts sans banc à la place (développé machine, dips) ; la colonne Substituts est
+remplie sur la plupart des exercices (menu « Remplacer » de la fiche).
+`classeur/Programme.csv` réécrit et importé par
+`outils/importer_programme_v2.py classeur/Programme.csv` (6 jours, 26
+exercices) : **l'utilisateur doit recoller ce CSV dans l'onglet Programme
+du classeur**, qui reste la source pour les imports suivants. Deux
+illustrations approchées faute de schéma Everkinetic téléchargeable d'ici.
+`VERSION` passée à `muscu2-2026-11-04-7`.
+
 ### Chantiers ouverts de la v2
 
 1. ~~Créer le nouveau classeur~~ **Fait par l'utilisateur le 4 novembre 2026** (classeur, onglet Programme, pont déployé, connexion testée). Pour mémoire : coller
