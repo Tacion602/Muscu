@@ -186,10 +186,10 @@ function rendreCalendrier(param) {
     const cle = String(j).padStart(2, '0') + '/' + String(mois + 1).padStart(2, '0') + '/' + annee;
     const liste = parJour[cle] || [];
     const type = liste.length ? liste[0].type : '';
-    cases += '<span class="calendrier-case ' + type + (decalageMois === 0 && j === maintenant.getDate() ? ' aujourdhui' : '') + (afficherNuits && nuits[cle] ? ' a-sommeil' : '') + '">' +
+    cases += '<' + (liste.length ? 'button type="button" data-jour-cal="' + cle + '"' : 'span') + ' class="calendrier-case ' + type + (decalageMois === 0 && j === maintenant.getDate() ? ' aujourdhui' : '') + (afficherNuits && nuits[cle] ? ' a-sommeil' : '') + '">' +
       '<span class="num">' + j + '</span>' + (liste.length ? '<span class="ico' + (liste.length > 1 ? ' deux' : '') + '">' + liste.slice(0, 2).map((s) => '<span class="' + s.type + '" title="' + echapper(s.type === 'gainage' ? 'Gainage' : (libelleJour(jourDe(s.jour)) + ' ' + (s.nom || ''))) + '">' + svgIcone(ICONE_TYPE[s.type] || 'halteres') + '</span>').join('') + '</span>' : '') +
       (afficherNuits && nuits[cle] ? '<span class="nuit">' + svgIcone('lune') + '</span>' : '') +
-      (liste.length > 2 ? '<span class="multi">×' + liste.length + '</span>' : '') + '</span>';
+      (liste.length > 2 ? '<span class="multi">×' + liste.length + '</span>' : '') + (liste.length ? '</button>' : '</span>');
   }
   corps.innerHTML = '<div class="carte"><div class="mois-nav"><button class="icone" id="cal-prec" aria-label="Mois précédent">' + svgIcone('retour') + '</button><b>' + premier.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) + '</b><button class="icone" id="cal-suiv" aria-label="Mois suivant"' + (decalageMois === 0 ? ' disabled style="opacity:.3"' : '') + '>' + svgIcone('chevron') + '</button></div>' +
     '<div class="calendrier-entetes">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => '<span>' + d + '</span>').join('') + '</div><div class="calendrier-grille">' + cases + '</div>' +
@@ -197,6 +197,18 @@ function rendreCalendrier(param) {
   $('cal-prec').addEventListener('click', () => { decalageMois--; rendreCalendrier(null); });
   $('cal-suiv').addEventListener('click', () => { if (decalageMois < 0) { decalageMois++; rendreCalendrier(null); } });
   $('cal-nuits').addEventListener('change', (e) => { afficherNuits = e.target.checked; rendreCalendrier(null); });
+  // Un appui sur un jour ouvre le détail de ses séances (demande du
+  // 4 novembre 2026 : « le détail de la séance sur le dessin »).
+  corps.querySelectorAll('[data-jour-cal]').forEach((b) => b.addEventListener('click', () => {
+    const liste = parJour[b.dataset.jourCal] || [];
+    feuille('<h3>' + echapper(b.dataset.jourCal) + '</h3>' + liste.map((s) => {
+      const jour = jourDe(s.jour);
+      return '<div class="carte" style="margin-top:10px"><div class="resume-exo" style="border-top:0"><b>' + echapper((libelleJour(jour) || '') + ' ' + (s.nom || s.jour)) + (s.deload ? ' <span class="puce attention">deload</span>' : '') + '</b><span class="petit texte-2">' + (s.duree_min ? s.duree_min + ' min' : '') + '</span></div>' + detailSeance(s) +
+        '<div class="actions-serie"><button class="bouton petit" data-ouvrir="' + s.id + '">Ouvrir dans les séances</button></div></div>';
+    }).join(''), (f, fermer) => {
+      f.querySelectorAll('[data-ouvrir]').forEach((o) => o.addEventListener('click', () => { fermer(); afficher('historique', { parametres: { ouvrir: o.dataset.ouvrir } }); }));
+    });
+  }));
 }
 rendus.calendrier = rendreCalendrier;
 

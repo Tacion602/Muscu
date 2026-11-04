@@ -321,6 +321,11 @@ Cinq demandes de l'utilisateur, après ses premières captures de la v2 :
   des menus ») : la grille des tuiles vient en premier, les alertes recul
   ×2 et jour en retard suivent sous un titre « À surveiller ». `VERSION`
   passée à `muscu2-2026-11-04-5`.
+- **Détail de séance depuis le calendrier** (« le détail de la séance sur
+  le dessin ») : un jour qui porte une séance devient un bouton ; l'appui
+  ouvre une feuille avec chaque séance du jour (`detailSeance()`, le même
+  résumé que la liste des séances) et un bouton vers la fiche complète.
+  `VERSION` passée à `muscu2-2026-11-04-6`.
 
 ### Chantiers ouverts de la v2
 
