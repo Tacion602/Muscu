@@ -366,6 +366,14 @@ lancement suivant). La version installée est visible en pied de Réglages
 (`versionApp`, demandée au service worker par message) : c'est elle qui
 dit si le téléphone a reçu une livraison. `VERSION` passée à
 `muscu2-2026-11-04-8`.
+**Restauration depuis un export** (même soir, après l'effacement des
+données du site sur Firefox, qui vide aussi `localStorage`) : bouton
+« Restaurer depuis un fichier JSON » dans Réglages (`#r-importer`,
+`#reglages-fichier`), lit un export de l'application ; les listes à
+identifiant (séances, mensurations, remarques, nuits par `cle`)
+fusionnent sans doublon, les autres clés ne sont reprises que si elles
+sont vides sur le téléphone. Jamais d'écrasement d'une saisie plus
+récente. `VERSION` passée à `muscu2-2026-11-04-9`.
 
 ### Chantiers ouverts de la v2
 

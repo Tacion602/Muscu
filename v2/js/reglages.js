@@ -16,6 +16,7 @@ function rendreReglages() {
     '<p class="titre-section">Données</p><div class="reglages-groupe">' +
     '<div class="champ"><p class="petit texte-2">' + (m ? 'Historique repris de l\'ancienne application le ' + dateCourte(m.quand) + ' (' + m.seances + ' séances).' : 'Aucune reprise effectuée.') + ' ' + historique().length + ' séances sur ce téléphone.</p></div>' +
     '<div class="champ"><button class="bouton" id="r-export">Exporter les données (fichier JSON)</button></div>' +
+    '<div class="champ"><button class="bouton" id="r-importer">Restaurer depuis un fichier JSON</button><p class="petit texte-2">Reprend un export fait depuis cette application. Les séances déjà présentes sont conservées, les doublons ignorés.</p></div>' +
     '<div class="champ"><button class="bouton" id="r-reimporter"' + (lireTableau(CLES_V1.historique).length ? '' : ' disabled') + '>Reprendre à nouveau l\'historique v1</button></div>' +
     '<div class="champ"><button class="bouton" id="r-renvoyer">Renvoyer tout l\'historique au classeur</button><p class="petit texte-2">Pour remplir le nouveau classeur avec les séances déjà faites. Le pont ignore ce qu\'il a déjà écrit.</p></div>' +
     '</div>' +
@@ -40,6 +41,37 @@ function rendreReglages() {
     const blob = new Blob([JSON.stringify(donnees)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'muscu2-' + cleDate(new Date()).replace(/\//g, '-') + '.json'; a.click();
   });
+  // Restauration d'un export (ajouté le 4 novembre 2026, après un
+  // effacement des données du site pour débloquer une mise à jour) : les
+  // listes à identifiant fusionnent sans doublon, le reste n'est repris
+  // que s'il est vide ici, pour ne jamais écraser une saisie plus récente.
+  $('r-importer').addEventListener('click', () => $('reglages-fichier').click());
+  $('reglages-fichier').onchange = () => {
+    const f = $('reglages-fichier').files[0]; if (!f) return;
+    const lecteur = new FileReader();
+    lecteur.onload = () => {
+      let d; try { d = JSON.parse(lecteur.result); } catch (e) { toast('Fichier illisible.'); return; }
+      let seances = 0;
+      Object.values(CLES).forEach((c) => {
+        if (!(c in d) || d[c] == null || c === CLES.migration) return;
+        const actuel = lire(c, null);
+        if (Array.isArray(d[c]) && Array.isArray(actuel) && d[c].length && d[c][0] && (d[c][0].id || d[c][0].cle)) {
+          const k = d[c][0].id ? 'id' : 'cle';
+          const connus = new Set(actuel.map((x) => x[k]));
+          const ajout = d[c].filter((x) => !connus.has(x[k]));
+          if (c === CLES.historique) seances = ajout.length;
+          ecrire(c, actuel.concat(ajout));
+        } else if (actuel == null || (typeof actuel === 'object' && !Object.keys(actuel).length) || (Array.isArray(actuel) && !actuel.length)) {
+          ecrire(c, d[c]);
+        }
+      });
+      if (!lire(CLES.migration, null)) ecrire(CLES.migration, { quand: new Date().toISOString(), seances: 0, source: 'restauration' });
+      $('reglages-fichier').value = '';
+      toast('Restauré : ' + seances + ' séance' + (seances > 1 ? 's' : '') + ' ajoutée' + (seances > 1 ? 's' : '') + '.', 4000);
+      setTimeout(() => location.reload(), 1500);
+    };
+    lecteur.readAsText(f);
+  };
   $('r-reimporter').addEventListener('click', () => confirmer('Reprendre l\'historique v1 ?', 'Les séances v1 absentes de la v2 seront ajoutées ; rien n\'est effacé.', 'Reprendre', () => {
     const connues = new Set(historique().map((s) => s.id));
     const ajout = lireTableau(CLES_V1.historique).filter((s) => !connues.has(s.id)).map(normaliserSeanceV1);
