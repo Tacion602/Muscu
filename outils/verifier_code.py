@@ -152,7 +152,7 @@ def noms_cites(source_doc=None, sources=None):
     qu'une absence de documentation.
     """
     controle = Controle('noms de code cites par CLAUDE.md')
-    doc = lire('CLAUDE.md') if source_doc is None else source_doc
+    doc = (lire('CLAUDE.md') + '\n' + lire('docs/CLAUDE_V1.md')) if source_doc is None else source_doc
     code = ''.join(lire(c) for c in SOURCES) if sources is None else sources
     # Ce fichier-ci nomme les derogations dans ses propres commentaires : les
     # y chercher ferait croire que chaque nom historique est revenu dans le

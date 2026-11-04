@@ -1,0 +1,1986 @@
+# Suivi de musculation, version 1 : mémoire détaillée
+
+Extrait de `CLAUDE.md` le 4 novembre 2026, sans résumé ni retrait : les
+sections ci-dessous décrivent l'application v1 (racine du dépôt) et
+restent la référence pour elle. La v2 (`v2/`) est documentée dans
+`CLAUDE.md`.
+
+## Architecture
+
+- `index.html`, `css/style.css`, `js/app.js` : l'application elle-même, un
+  fichier JavaScript unique, pas de build.
+- `data/programme.json` : sortie de l'import du classeur, lue par
+  l'application au démarrage. Régénérée par `outils/importer_classeur.py`,
+  jamais éditée à la main.
+- `outils/importer_classeur.py` : lit l'onglet du programme en cours (export
+  CSV public du classeur), reconnaît la grille et les quatre informations
+  logées en colonne B de chaque exercice (prescription de séries, RIR cible,
+  consigne technique, muscle et temps de repos), écrit `data/programme.json`.
+- `appsscript/Code.gs` : le pont vers le classeur, à coller dans
+  Extensions > Apps Script **depuis le classeur lui-même** puis à déployer en
+  application web. Écrit une ligne par série validée dans un onglet dédié
+  `Séances (app)`, jamais dans la grille manuelle du programme dont la mise en
+  page ne supporte pas un flux automatique.
+- `charte/palette.jpg`, `charte/modele.css`, `outils/charte.py` : la charte
+  graphique, générée dans `css/charte.css` (voir « Direction visuelle »).
+- `sw.js`, `manifest.webmanifest`, `icones/` : rendent l'application
+  installable et utilisable hors ligne.
+- `PRODUCT.md`, `.impeccable/` : contexte et configuration d'`impeccable.style`
+  (outillage de conception, voir « Décision de départ » ci-dessus), pas de
+  l'application. `.impeccable/config.json` porte aussi les exceptions
+  (`ignoreValues`) aux vérifications automatiques de design de cet outil,
+  chacune avec sa raison — à tenir à jour plutôt qu'à désactiver la règle
+  entière si un futur signalement ne s'applique pas.
+
+## Le classeur
+
+<https://docs.google.com/spreadsheets/d/1JyJSln_sqYnZzsnThiw7sbDcZjtma6n0Hmr-n8fYKiE>
+
+Un seul onglet fait autorité, celui du programme en cours, **nommé
+« semaine 1 »** (gid `1138168114`) : six jours, J1 Push, J2 footing, J3 Pull,
+J4 Bas du corps, J5 Haut prioritaire, J6/J7 repos ou footing. Deux anciens
+onglets ont existé pendant la conception (un programme antérieur en superset,
+un onglet vide) et ont été supprimés par l'utilisateur le 26 août 2026 : **ne
+jamais s'y fier s'ils réapparaissent**, seul l'onglet du programme courant
+compte.
+
+**Un bloc peut servir plusieurs jours.** L'utilisateur a renommé le bloc de
+course « J2 & J6 FOOTING » le 10 septembre 2026 et supprimé le bloc J6, les
+deux jours étant le même entraînement : tenir deux blocs identiques n'aurait
+servi qu'à les désynchroniser. `codes_du_titre()` lit donc **tous** les codes
+du titre, et non le seul premier, et produit un jour par code à partir du
+même bloc ; les jours sont ensuite remis dans l'ordre de leurs codes, un
+second jour se plaçant sinon à la position de son bloc. Seule la
+**définition** est partagée : J2 et J6 restent deux séances indépendantes,
+avec leurs propres chiffres.
+
+**L'application affiche les jours dans un autre ordre que le classeur
+depuis le 26 septembre 2026.** Semaine décidée avec l'utilisateur (voir
+« Posture sur les questions d'entraînement », priorités musculaires) :
+Haut max, Cardio, Pull, Jambes, Push, Cardio, repos ou nouveau cycle selon
+la fatigue. Demande explicite : « renomme juste les bulles dans l'appli,
+pas le classeur ». `ORDRE_JOURS_AFFICHAGE` trie les bulles et
+`codeAffiche()` échange J1 et J5 **à l'affichage seulement** (bulles,
+en-têtes de séance et de démarrage, écran de fin, séances en cours,
+historique) : le classeur garde J1 = Push et J5 = Haut max, et avec lui
+`jour.code`, `seance.jour`, les clés de consignes (`J1|…`) et les pages de
+sortie `J1`/`J5`. Une séance Push s'affiche donc « J5 » dans l'application
+mais s'écrit dans la page `J1` du classeur — voulu. `ouvrir_jour()` des
+tests prend le code du classeur et suit le même ordre d'affichage.
+
+**L'ordre des exercices d'un jour est celui des numéros de la colonne A**, pas
+celui des lignes : `convertir()` trie par `numero` depuis le 10 septembre 2026.
+Jusque-là, l'ordre suivait les lignes et le numéro n'était qu'une étiquette.
+Réordonner un jour se fait donc **en changeant des numéros, sans déplacer de
+ligne**. Motif : deux déplacements à la main avaient laissé les chiffres d'une
+séance sur place pendant que les noms bougeaient (J1, le 9 septembre 2026),
+chaque exercice héritant de l'historique d'un autre. Un exercice retiré se
+supprime **en lignes entières**, jamais en effaçant seulement son numéro :
+sans numéro, ses lignes seraient rattachées au bloc précédent et fausseraient
+sa lecture.
+
+**Le bloc « GAINAGE » de « semaine 1 » est ignoré par l'import**, ajouté
+par l'utilisateur le 11 septembre 2026. Son titre ne commençant pas par un
+code de jour, ses lignes étaient rattachées à J5 avec des numéros déjà pris.
+`decouper_en_jours()` y coupe le jour en cours. La séance de gainage est
+définie dans l'application (catégories, mouvements au choix, modes de
+saisie), ce que la grille ne sait pas représenter : ce bloc n'est qu'un aide-
+mémoire, le modifier ne change rien.
+
+**C'est le seul onglet en entrée. Tous les autres sont des sorties**, écrites
+par le pont et jamais relues pour alimenter l'application : les grilles de
+jour `J1`, `J3`, `J4`, `J5`, la page `Course`, les pages plates
+`Exercices (app)` et `Séances (app)`, les pages `Remarques`, `Blessures`,
+`Gainage`, `Consignes` et `Mensurations` (ces trois dernières en attente du
+redéploiement du pont, voir « Chantiers ouverts »). Y modifier quoi que ce
+soit ne change rien dans l'application, et
+peut au contraire casser l'écriture suivante : les grilles de jour attendent
+un bloc d'exercice **toutes les 6 lignes à partir de la ligne 4**
+(`ligneBlocExercice`), et un déplacement de lignes y fait perdre cet
+alignement. Cas réel, le 9 septembre 2026 : l'utilisateur a réordonné des
+exercices dans l'onglet de sortie `J3` en croyant modifier le programme, sans
+effet côté application, et a dû restaurer une version du classeur.
+
+Chaque jour de musculation loge sept groupes de cinq colonnes
+(`Exo, Charge, Reps, RIR, Total`), un par séance à venir, le septième portant
+la mention `DELOAD`. La colonne B, sous le nom de l'exercice, porte dans un
+ordre non garanti la prescription de séries, le RIR cible, une consigne
+technique, et le muscle travaillé avec son temps de repos : l'import les
+reconnaît par leur forme (une notation `4x 6-8`, un temps `2'30`, le mot
+`RIR`), pas par leur position.
+
+## Pièges déjà rencontrés côté import
+
+- **RIR et temps de repos peuvent partager la même ligne** : `FACE PULL` porte
+  `3 X 15-20 RIR 1'00`. La prescription de séries l'emporte toujours ; le
+  temps qui l'accompagne ne sert que si aucune autre ligne du bloc n'en donne.
+- **Le classeur mélange les libellés de repos** : `REPOS` et sa coquille
+  `REOIS` cohabitent, parfois accolés au muscle sans espace (`1'15BICEPS`).
+- **Les footings (J2, J6) n'ont ni exercice numéroté ni charge** : l'import
+  les marque `type: "footing"` plutôt que de produire une liste vide qui
+  laisserait croire à un jour sans contenu.
+- **Le deload ne doit jamais nourrir la comparaison de progression.**
+  `derniereFois()` dans `js/app.js` écarte les séances marquées `deload` en
+  cherchant la dernière séance normale, sans quoi une charge allégée
+  semblerait une régression.
+
+## Comportements côté application, à ne pas défaire sans y repenser
+
+- **L'identité d'un exercice est son nom, jamais le jour où il est fait**
+  (décision de l'utilisateur le 13 septembre 2026). « Élévation latérale
+  haltères » apparaît en J3 et en J5 : c'est le même exercice, et il ne doit
+  suivre qu'une seule progression. `derniereFois(nomExo)` cherche donc dans
+  toutes les séances enregistrées, sans filtrer par jour ; même règle dans
+  `progressionPremiereSerie()` pour la courbe de l'historique. C'est aussi ce
+  qui permet de remplacer un exercice un temps puis de le remettre plus tard
+  sans rien perdre : l'historique du téléphone (`muscu.historique`) est
+  indépendant du programme du moment, et n'importe quelle séance passée
+  portant ce nom est retrouvée dès qu'il réapparaît dans un jour, quel qu'il
+  soit. Aucune modification du classeur ni de `appsscript/Code.gs` n'est donc
+  nécessaire pour ce geste : les pages du classeur sont des sorties
+  d'écriture, jamais relues (voir plus haut, « Le classeur »).
+  - **La correspondance est exacte au caractère près.** Un nom ressaisi
+    autrement (accent oublié, casse différente, espace en trop) démarre en
+    silence un second historique au lieu de rejoindre le premier : rien dans
+    l'application ne le signale, la nouvelle fiche paraît juste vide de
+    passé. `outils/verifier_import.py` (`noms_ambigus`) compare les noms d'un
+    même import une fois accents, casse et espaces neutralisés, et alerte sur
+    toute paire proche mais non identique — sans confondre ce cas avec celui,
+    désormais normal, de deux jours qui partagent vraiment le même nom.
+  - **Les consignes techniques ne suivent pas ce regroupement** : elles
+    restent indexées par jour et par nom (`cleConsigne`), pas seulement par
+    nom. Un même exercice peut donc afficher une consigne différente sur
+    deux jours si elle a été modifiée sur l'un et pas l'autre ; non demandé,
+    à revoir si ça gêne à l'usage. **Elles suivent en revanche
+    `ANCIENS_NOMS` depuis le 26 septembre 2026** (`consigneAffichee()`) :
+    le renommage du développé incliné, le 23, avait laissé la note de J1
+    sous l'ancienne clé, invisible dans l'application — repéré dans la page
+    `Consignes` du classeur. Une consigne ressaisie après le renommage
+    s'enregistre sous le nouveau nom et prend le dessus.
+  - **`ANCIENS_NOMS` (`js/app.js`) fait exception à la correspondance
+    exacte, pour un renommage délibéré du classeur dont l'historique doit
+    continuer.** Table nouveau nom → liste d'anciens noms (formes
+    normalisées, `formeDuNom()`), consultée par `memeExercice()`, elle-même
+    utilisée partout où `derniereFois()` cherchait jusque-là une égalité
+    stricte (`progressionPremiereSerie()`, `surchargeExercice()`, la courbe
+    de la fiche d'historique). Deux cas déjà rencontrés : le 13 septembre
+    2026, le développé machine unilatéral devient bilatéral et garde ses
+    valeurs ; le 23 septembre 2026, `Developpe incline machine` devient
+    `Developpe incline banc` — l'utilisateur a toujours fait cet exercice à
+    la barre ou aux haltères, le classeur portait la mauvaise machine
+    depuis le départ, ce n'est pas un changement de mouvement mais une
+    correction du programme. Le 26 septembre 2026, `LEG CURL ALLONGE
+    UNILATERAL` devient `LEG CURL ALLONGE` (passage en bilatéral, placé en
+    fin de J4 par renumérotation : mollets 5, abduction 6, leg curl 7) ;
+    l'utilisateur garde l'historique unilatéral en connaissance de cause
+    (première comparaison faussée, charge d'une jambe contre deux). La
+    liste d'anciens noms y porte aussi `leg curl allonge` lui-même : une
+    séance et la consigne de J4 existent sous « Leg curl allongé », même
+    forme normalisée mais pas le même texte exact. Renommer sans cette table démarrerait un
+    historique vide (voir la sous-puce ci-dessus) ; `IMAGES_EXERCICES` est à
+    mettre à jour séparément avec la même fragilité, sans passer par
+    `ANCIENS_NOMS` (voir « Image par exercice » dans les chantiers) — pour
+    ce cas précis, l'ancienne photo (machine) est réutilisée en
+    `generique: true`, faute d'une vraie photo de développé incliné banc à
+    portée dans `free-exercise-db`.
+    Le 29 septembre 2026, `Extension triceps unilaterale poulie` (J5) devient
+    `Extension triceps poulie barre`, le nom déjà porté par J1 : faite
+    depuis toujours à deux bras à la barre, même mouvement, l'utilisateur
+    choisit une seule progression commune aux deux jours. **Le renommage
+    dans « semaine 1 » est à faire par l'utilisateur**, suivi d'un import.
+
+- **Plusieurs séances peuvent être en cours en même temps, une par jour.**
+  Décision de l'utilisateur le 27 août 2026 : entrer dans J3 ne doit rien
+  effacer de ce qui a été saisi dans J1. Elles vivent dans une carte indexée
+  par code de jour sous `muscu.seances` (`lireSeancesEnCours()` dans
+  `js/app.js`), là où une seule séance tenait sous `muscu.seance`. Points à
+  connaître :
+  - **`commencer(code)` reprend, il ne recrée pas** : une séance déjà ouverte
+    sur ce jour est rouverte à l'exercice où la saisie s'était arrêtée
+    (`positionDeReprise()`), jamais remplacée par une neuve ;
+  - **quitter une séance (←) ne l'efface pas.** L'abandon est explicite, une
+    ligne par jour dans le bloc « Séances en cours » de l'accueil : avec
+    plusieurs jours ouverts, un bouton unique ne saurait pas lequel il
+    abandonne. Les cartes de jour portent une pastille « en cours » ;
+  - **`lireSeancesEnCours()` relit l'ancienne clé** `muscu.seance` si la
+    nouvelle est absente, pour ne pas perdre une séance en cours au moment
+    de la mise à jour.
+- **Il n'y a plus de bouton de validation sur une série depuis le 27 août
+  2026.** Décision de l'utilisateur : **ce sont les répétitions qui valident
+  la série** (`rendreSeries()` dans `js/app.js`), et les effacer l'annule, sur
+  un principe symétrique. `validerSerie()` reprend l'essentiel de l'ancien
+  `basculerSerie()` : elle reprend les chiffres de la dernière fois si charge
+  ou reps manquent, lance la minuterie, et pose le focus sur la prochaine
+  série non validée (`focaliserProchaineSerie()`).
+  - **Le RIR ne valide rien, il est purement indicatif** (décision de
+    l'utilisateur le 6 septembre 2026). C'est lui qui validait du 27 août au
+    6 septembre 2026 : d'où l'ancien nom `validerParRir()` qu'on peut encore
+    croiser dans un historique git. Il ne fait plus qu'enregistrer son
+    chiffre.
+  - **La validation attend la confirmation du champ, pas la frappe**
+    (précision de l'utilisateur le 27 août 2026, après un premier essai trop
+    pressé) : la saisie se contente d'enregistrer le chiffre, et c'est
+    `change` (sortie du champ) ou Entrée qui valide. Sans cela, taper le 1
+    de 10 validait la série au passage, puis sautait au champ suivant. Le
+    champ des répétitions est pour cette raison **exclu de la navigation
+    générique par Entrée** (`dataset.role === 'reps'`), qui déplacerait le
+    focus au lieu de valider.
+  - **Conséquence à connaître** : la validation étant déclenchée par le champ
+    du milieu, le focus part vers la série suivante avant le RIR, qui reste
+    saisissable mais seulement en le touchant. Sur la **dernière série d'un
+    exercice**, le basculement automatique vers l'exercice suivant emporte
+    même la ligne : le RIR doit y être saisi **avant** de confirmer les
+    répétitions.
+- **La consigne s'enregistre à la frappe** depuis le 10 septembre 2026, comme
+  le reste de la séance. Elle n'était auparavant écrite que sur appui du bouton
+  « Enregistrer », et `rendreExercice()` refermait l'éditeur en jetant son
+  contenu : **changer d'exercice en cours de saisie perdait le texte sans rien
+  dire**, et le passage automatique à l'exercice suivant rendait ce cas
+  courant. L'utilisateur y a perdu toutes ses notes de J4. Le bouton
+  « Annuler » réécrit la valeur retenue à l'ouverture de l'éditeur, seul moyen
+  de défaire ce que la frappe a déjà enregistré.
+- **Séance de gainage optionnelle**, carte `G` de l'accueil, spécifiée le
+  11 septembre 2026 par le récapitulatif de programme de l'utilisateur.
+  Définie dans le code (`MOUVEMENTS_GAINAGE`, `CATEGORIES_GAINAGE`) et ajoutée
+  aux jours au démarrage (`JOUR_GAINAGE`), jamais importée : le bloc
+  « GAINAGE » du classeur n'est qu'un aide-mémoire.
+  - **Quatre catégories, un mouvement au choix**, par défaut celui de la
+    dernière séance de gainage pour cette catégorie (`mouvementParDefaut`) :
+    pas d'alternance automatique, la progression se suit sur un mouvement.
+  - **Historique par mouvement**, toutes séances confondues
+    (`derniereFoisMouvement`, sur `seance.mouvements`). Le farmer walk partage
+    le sien entre la séance de gainage et les footings, décision de
+    l'utilisateur le 11 septembre 2026, **vitesse saisie**, pas calculée.
+  - **Trois modes** : `chrono` (minuteur de tenue de 45 s, interruptible, qui
+    note le temps réellement tenu puis lance le repos), `reps`, `charge`
+    (poids, distance, vitesse). **Le repos part à la confirmation d'une valeur
+    quel que soit le mode** (`serieSaisie()`), et pas seulement au bout du
+    minuteur : une tenue se tape à la main dès qu'on a chronométré au mur ou
+    qu'on corrige après coup. Le cas du bouton ▶ reste juste, le `blur` du
+    champ précédant le `click` : un repos démarre une fraction de seconde
+    avant que la tenue ne le remplace. **Le dead bug est en répétitions** : le
+    récapitulatif le disait chrono dans un tableau et « 6-8 par côté » dans
+    l'autre, tranché ainsi, le tempo 3-1-3 faisant de chaque répétition la
+    mesure utile.
+  - **Un minuteur à part** (`#gainage-chrono`, collé en haut de l'écran)
+    pour la tenue et le repos (45 s, 60 s pour le farmer walk et le relevé de
+    genoux), indépendant de la minuterie de musculation ; `arreterMinuterie()`
+    l'arrête aussi, comme `commencer()`.
+    - **Durée de tenue réglable depuis l'écran, le 18 septembre 2026**
+      (demande de l'utilisateur, « comment je peux augmenter le chrono »),
+      15 à 120 s par pas de 5 (`dureeTenueGainage`, boutons `#gainage-duree-
+      moins`/`#gainage-duree-plus`) : l'ancienne constante fixe à 45 s
+      devient un réglage persisté à part (`CLES.dureeGainage`), sans passer
+      par `reglages`/`sauverReglages()` qui réécrit tout le formulaire de la
+      page Réglages d'un bloc et l'aurait effacé à chaque sauvegarde. Ne
+      touche que la tenue, pas le repos qui reste fixe par mouvement (45 ou
+      60 s) : ce n'est pas ce qui a été demandé.
+  - **Le nom du mouvement porte la couleur d'interférence avec la course**,
+    du vert au rouge (`nomMouvementColore()`) : plus de pastille à côté,
+    décision de l'utilisateur le 13 septembre 2026 qui inverse celle du
+    11 (pastille préférée en pensant les teintes pâles illisibles en texte).
+    Mesuré sur les fonds réels de l'écran : c'est l'inverse qui est vrai, les
+    teintes pâles du dégradé sont très lisibles sur fond sombre (12 à 15:1),
+    et seules les deux plus sombres tombent sous le seuil WCAG AA de 4,5:1
+    (`farmer_walk` 1,9:1, `marche_ours` 3,2:1) : `couleurTexte` les éclaircit
+    pour l'affichage sans changer `couleur`. Sur le bouton choisi, les neuf
+    teintes perdent toute lisibilité sur le fond turquoise de la sélection
+    (1 à 3,8:1) : le nom y reste blanc (`.type-course.choisi
+    .gainage-nom-mouvement` dans `css/style.css`), la sélection étant déjà
+    dite par ce fond.
+  - **Vers le classeur**, `lignesGainage()` met les séries à plat dans
+    `seance.lignesGainage` à l'enregistrement, et `ecrireGainage()` les écrit
+    dans une page `Gainage` : le pont n'a pas à connaître les mouvements.
+  - **La rotation externe est abandonnée**, décision de l'utilisateur le
+    11 septembre 2026.
+  - **Farmer walk retiré de la séance de gainage le 1er octobre 2026**
+    (remarque de l'utilisateur, « le laisser en cardio » : le cardio le
+    couvre déjà par l'Incliné, option farmer walk, depuis le 13 septembre
+    2026) : `cardioSeul`
+    dans `MOUVEMENTS_GAINAGE`, plus dans `CATEGORIES_GAINAGE` (dérogation
+    prévue par `outils/verifier_code.py`). **La marche de l'ours n'a plus de
+    champ poids** (`sansPoids`), même remarque.
+  - **Poids par série pour les mouvements en répétitions et en tenue,
+    depuis le 26 septembre 2026** (« ajouter le poids mis à chaque
+    répétition ») : petit champ `kg` sous chaque série (`celluleSerie()`),
+    rangé à part dans `seance.poidsMouvements` plutôt que de transformer les
+    valeurs de `seance.mouvements` en objets — tout le reste (historique
+    déjà enregistré, État musculaire, `valeurRenseignee`) les lit comme de
+    simples nombres. Suggestion en grisé : le poids de la dernière fois
+    (`derniersPoidsMouvement()`), à défaut `poidsDefaut` du mouvement (10 kg
+    pour le Pallof press, remarque du 18 septembre 2026 « prérempli à
+    10 kg ») ; une série confirmée sans poids tapé reprend cette suggestion,
+    comme les séries de musculation reprennent la dernière fois. Part au
+    classeur dans la colonne `poids` déjà présente de la page `Gainage`
+    (`lignesGainage()`), rien à redéployer pour ça.
+- **Le retour depuis l'écran de fin réaffiche la séance selon son type**
+  (`rendreSeanceCourante`). Il appelait l'affichage de musculation quel que
+  soit le jour, et plantait donc sur un footing. L'erreur avait été vue dans
+  la console dès le 8 septembre 2026 et prise à tort pour un artefact de
+  test : une exception vue en vérifiant se reproduit avant d'être écartée.
+- **L'indicateur de progression est la première série de travail**, charge ×
+  répétitions, depuis le 11 septembre 2026 (récapitulatif de programme de
+  l'utilisateur, `Desktop\PROGRAMME_RECAP.md` sur sa machine) : courbes de la
+  fiche de séance (`progressionPremiereSerie`) et comparaison de fin de
+  séance, sur l'exercice 1. **Le tonnage n'y sert plus** : il monte
+  mécaniquement quand la charge baisse et que les répétitions montent, et
+  ferait passer un recul pour un progrès. La comparaison se dit indicative si
+  les deux premières séries n'ont pas le même RIR, la mesure ne valant qu'à
+  RIR constant. Le tonnage reste affiché comme simple chiffre, sans
+  comparaison. Un test le garde, sur un cas où le tonnage monte pendant que
+  la première série recule.
+- **`validerSerie()` marque la série faite avant d'amorcer le clavier.**
+  Déplacer le focus fait perdre le sien au champ des répétitions, dont le
+  `change` rappelle alors la validation ; placé en tête jusqu'au 10 septembre
+  2026, l'amorçage provoquait une validation imbriquée, et la dernière série
+  validée par Entrée faisait sauter **deux** exercices. Trouvé par
+  `tests/test_app.py`, pas à la main.
+- **Les flèches d'exercice comptent leur pas depuis l'exercice regardé au
+  moment où le doigt se pose**, pas depuis `indexExo` au moment du clic.
+  Défaut signalé par l'utilisateur le 10 septembre 2026 et reproduit : un
+  champ de saisie perd le focus **avant** que le clic n'arrive, ce qui
+  déclenche son `change` ; si c'était la dernière série non confirmée, sa
+  validation faisait déjà passer à l'exercice suivant, puis le clic en
+  ajoutait un second. Un appui sur → sautait donc **deux** exercices, et un
+  appui sur ← ne faisait rien de visible, les deux mouvements s'annulant.
+  `pointerdown` précède le `blur` : c'est lui qui donne le point de départ.
+- **La dernière série d'un exercice fait passer au suivant immédiatement**,
+  sans attendre la fin de la récupération (décision de l'utilisateur le
+  27 août 2026, dans `validerSerie()`). La minuterie continue de tourner
+  par-dessus la fiche suivante : elle appartient à la série qu'on vient de
+  finir, pas à la fiche qu'on regarde. C'est aussi pourquoi **changer
+  d'exercice à la main (← / →) n'arrête plus la minuterie**. Le temps de
+  repos est lu **avant** le changement d'exercice, sinon ce serait celui du
+  nouveau. `minuterieTerminee()` ne change donc plus d'exercice, elle ne
+  garde que l'arrêt du chronomètre de séance sur le dernier exercice fini.
+- **Plus aucun échauffement ne peut être créé depuis l'application**, décision
+  de l'utilisateur le 2 septembre 2026 : il n'en veut pas dans son suivi, et
+  il a retiré les lignes `ECH` correspondantes du classeur. Le geste qui
+  servait à en marquer un (appui long sur le champ charge, hérité du bouton
+  de validation supprimé la veille) a été retiré : c'était devenu un piège,
+  un appui long involontaire faisant sortir en silence une vraie série du
+  tonnage et du classeur.
+  - **Le reste du code sur l'échauffement doit rester en place.** Il ne
+    fabrique plus rien, mais il protège les données déjà là : une séance
+    enregistrée avant ce jour, ou un historique importé, peut encore porter
+    des séries marquées. Retirer les filtres (`!s.echauffement` dans
+    `tonnageDesSeries`, `derniereFois`, la grille du classeur) les ferait
+    silencieusement recompter et gonflerait les comparaisons.
+  - **Une série marquée avant ce jour n'est plus démarquable** depuis
+    l'application, faute de geste. Cas peu probable, mais s'il se présente
+    (ligne aux bordures tiretées, exclue du tonnage), il faut un nettoyage
+    ponctuel plutôt qu'un rétablissement du geste.
+- **Valider une série sans chiffres saisis reprend ceux de la dernière fois**
+  plutôt que d'enregistrer un vide : l'utilisateur peut confirmer d'un geste
+  qu'il a reproduit sa performance précédente sans retaper les nombres.
+- **Une série en trop se supprime d'une croix**, ajoutée le 7 septembre 2026
+  à la demande de l'utilisateur (`.ligne-serie-suppr` dans `rendreSeries()`),
+  sans confirmation : la série se rajoute d'un geste (`+ Ajouter une série`)
+  et rien n'est encore synchronisé pendant la séance, contrairement au
+  nettoyage de l'historique qui, lui, demande confirmation.
+- **Une série peut être marquée « rest-pause » depuis le 23 septembre 2026**
+  (demande de l'utilisateur, après question coach : outil légitime
+  d'accumulation de volume proche de l'échec, comparaisons directes plus
+  minces que sur le tempo mais cohérentes — voir la réponse donnée dans la
+  conversation) : bouton bascule `RP` (`.ligne-serie-restpause` dans
+  `rendreSeries()`), même registre que la croix de suppression juste à côté.
+  Chaque relance d'un bloc rest-pause reste sa propre ligne de série,
+  charge/reps/RIR suffisant à la décrire ; le drapeau (`serie.restPause`)
+  ne fait que la signaler comme telle. **Simple drapeau local pour
+  l'instant** : suit la séance dans `muscu.historique` comme le reste, mais
+  n'est pas encore remonté au classeur (aucune colonne dédiée dans
+  `appsscript/Code.gs`) — pas demandé, à ajouter si le besoin se confirme à
+  l'usage.
+  - **Repos de rest-pause plafonné à 10 s du 26 au 29 septembre 2026,
+    retiré ensuite** (remarque de l'utilisateur : « c'était juste une
+    indication pour le .md », ce ne sont pas de vrais rest-pause). Le
+    bouton `RP` reste, simple drapeau sans effet sur le repos, et s'affiche
+    dans la fiche d'historique (« 40×8 @1 RP », `detailSeance()`).
+- **Le signal sonore de fin de récupération est au volume maximal utile**
+  depuis le 7 septembre 2026 (gain 0.9 dans `signaler()`, contre 0.3
+  auparavant) : jugé trop faible par l'utilisateur pour s'entendre depuis
+  l'autre bout de la salle. 0.9 plutôt que 1 pour garder une marge avant
+  écrêtage du haut-parleur du téléphone.
+- **Retour tactile bref à chaque série validée depuis le 23 septembre
+  2026** (demande de l'utilisateur), en plus de la vibration de fin de
+  repos déjà présente dans `signaler()` : `navigator.vibrate(30)` dans
+  `validerSerie()`, sur le même réglage `reglages.vibration` que celle-ci,
+  mais un tapotement court plutôt que le motif en trois temps
+  (`[180, 90, 180]`) qui reste propre à la fin de récupération — les deux
+  moments n'ont pas à se confondre au toucher.
+- **La minuterie se lance après chaque série validée**, échauffement compris
+  dès qu'un temps de repos est connu pour l'exercice, jamais sinon.
+- **La minuterie a un bandeau compact depuis le 27 août 2026** (60px,
+  `.minuterie` dans `css/style.css`), **et de nouveau un plein écran depuis
+  le 16 septembre 2026** (voir la puce dédiée plus bas) : le bandeau reste
+  seul visible en transparence hors de tout repos actif, le plein écran
+  prenant le relais dès qu'un repos démarre. Le bandeau a changé de place
+  le 27 août : d'abord posée sous le chrono de séance, tout
+  en haut de la page, elle y restait invisible sur mobile une fois le clavier
+  ouvert et la page défilée pour atteindre le champ en cours de saisie —
+  `hidden` ne devenait jamais vrai, mais le bandeau sortait du cadre visible.
+  **Il vit depuis à côté de la consigne technique** (`.ligne-consigne`
+  dans `index.html`, un flex qui met les deux côte à côte) : masqué
+  (`[hidden]`), il sort du flux flex et la consigne reprend toute la
+  largeur ; actif, il prend 128px fixes sur la droite. Aucun repère fixe
+  n'est garanti à 100 % sur toutes les hauteurs d'écran une fois le clavier
+  ouvert, mais une position au fil du texte plutôt qu'en tête de page limite
+  le risque de scroll qui l'emporte hors champ.
+  - **Fond rouge, même hauteur que le chrono de séance (71px)**, et plus
+    aucun texte de détail (« Ensuite : série X sur Y » a disparu), demande de
+    l'utilisateur le 7 septembre 2026 : la minuterie doit se voir de loin, un
+    seul gros chiffre en gras remplissant tout le cadre plutôt qu'un petit
+    compteur secondaire à côté d'un libellé.
+    - **Le chiffre a cédé la place à une jauge le 16 septembre 2026**
+      (`.jauge-pilule`, pilule blanche à contour noir, remplissage `--hausse`
+      qui grandit avec le temps écoulé) : jugé peu fiable en fond de tâche
+      par l'utilisateur, remplacé par un repère visuel de progression plutôt
+      qu'un compte à rebours exact à lire. Repris (le chiffre exact, pas la
+      jauge) le 17 septembre 2026, mais seulement sur le dernier repos d'un
+      exercice (`minuterie.bilan`, voir « bilan du dernier repos » plus
+      bas) : là, le temps exact compte pour régler la machine suivante, ce
+      qui ne vaut pas pour un repos ordinaire. **Chiffre repris partout le
+      17 septembre 2026, même jour, deuxième demande** (« pas de bulle au
+      milieu droit, retour en arrière, décompte comme au début ») : la
+      pilule sur le bandeau compact (`#minuterie`) cède la place à
+      `#minuterie-chiffres` (`.minuterie-chiffres`, 34px pour tenir dans les
+      128px fixes du cadre), tenu à jour par `battre()`. Elle reste seule en
+      plein écran (`#minuterie-plein-ecran`), non visée par cette dernière
+      demande.
+    - **Fond repassé du teal (`--accent`) à une teinte proche du rouge le
+      17 septembre 2026** (demande de l'utilisateur, « remets le chrono
+      visible ») : le fond avait pourtant été changé en sens inverse le
+      16 septembre à la demande explicite de l'utilisateur (« pas fond
+      rouge sur blanc »). D'abord réutilisé `--danger` tel quel (déjà
+      adouci le même jour, palette générale plus claire moins saturée, voir
+      « Direction visuelle »), puis séparé en **`--repos`**, une teinte
+      bordeaux dédiée, dans la foulée le même jour (« différencie les deux
+      rouges ») : la minuterie de repos et les vraies alertes (blessure,
+      suppression, `--danger`) ne partagent plus une seule teinte. Le fond
+      de `#minuterie` et `#minuterie-plein-ecran` porte désormais `--repos`,
+      pas `--danger`.
+    - **Rouge abandonné pour du vert le 18 septembre 2026** (demande de
+      l'utilisateur : « il ne doit pas être en rouge, mais en vert dégradé
+      progressif »), revenant sur la demande du 17 ci-dessus : `--repos`
+      passe du bordeaux à un vert foncé (`#1d5c3a`, 7,9:1 avec le texte
+      blanc), sans toucher `--danger` ni la distinction entre les deux
+      obtenue la veille. **Jauge pilule remplacée par un anneau qui se
+      réduit** (« schéma de montre, cercle qui se réduit »), en plein écran
+      seulement (le bandeau compact garde son simple chiffre sur fond
+      recoloré, déjà sans oblong) : cercle SVG (`.minuterie-anneau`, rayon
+      45, `stroke-dasharray` = sa circonférence), la part visible du tracé
+      pilotée par `stroke-dashoffset` selon la fraction de temps qui RESTE
+      (`CIRCONFERENCE_ANNEAU` dans `js/app.js`, tenue à jour par `battre()`
+      à chaque tick) — un cercle plein au départ du repos, vide à zéro.
+      Tracé en dégradé (`--repos-anneau` → `--repos-anneau-fin`, deux verts
+      plus vifs que le fond, purement décoratifs) plutôt qu'une teinte
+      plate, pour le « dégradé » demandé. Le chiffre ordinaire
+      (`#minuterie-plein-ecran-chiffres`) et celui du bilan du dernier repos
+      (`#minuterie-bilan-chiffres`, voir plus bas) partagent désormais le
+      même cercle, `rendreBilanMinuterie()` bascule l'un contre l'autre :
+      jamais les deux visibles à la fois.
+  - **Plein écran repris le 16 septembre 2026** (`#minuterie-plein-ecran`
+    dans `index.html`, `position:fixed; inset:0`, même principe que
+    `.vague-demarrage`), demande de l'utilisateur, après l'avoir vu abandonné
+    le 27 août faute de tenir sous le clavier virtuel une fois ouvert.
+    Résolu cette fois en **fermant le clavier à chaque repos** plutôt qu'en
+    suivant sa hauteur (`suivreClavier`/`visualViewport`, fragile, déjà
+    abandonné une fois) : sans clavier ouvert, rien ne pousse la couche hors
+    du viewport. Le réglage `clavierPendantRecup` (voir plus bas) n'a donc
+    plus d'effet visible tant que le repos reste plein écran.
+    - **Ne bloque que les 80 % premiers du repos.** Tout bloquer aurait
+      aussi empêché de travailler sur la fiche suivante pendant que la
+      minuterie tourne par-dessus (décision du 27 août 2026, voir plus bas),
+      demande explicite de l'utilisateur après l'avoir vu tout bloquer une
+      première fois. `battre()` repasse `#minuterie-plein-ecran` en `hidden`
+      dès les 20 % de temps restant, le bandeau compact reprenant la main
+      pour préparer la série suivante avant la fin.
+      - **Un appui referme aussi le plein écran sans attendre les 80 %**,
+        depuis le 22 septembre 2026 (demande de l'utilisateur : « on
+        atterrit sur la page exo, le décompte continu et visible », pas
+        fermé). Jusque-là, le même geste appelait `minuterieTerminee()`
+        comme sur le bandeau compact et **annulait tout le repos** — cohérent
+        avec « toute la surface ferme le repos » (voir plus bas), mais pas
+        ce que l'utilisateur voulait ici : juste revenir à la fiche pendant
+        que le repos continue en arrière-plan, comme le fait déjà `battre()`
+        de lui-même à 20 %. Le clic sur `#minuterie-plein-ecran` ne fait
+        donc plus que le masquer (`hidden = true`), sans toucher `minuterie`
+        ni `arreterMinuterie()`. **Le bandeau compact, lui, garde son
+        comportement d'origine** (un appui annule le repos, ou en lance un
+        manuel s'il est inactif) : seul le plein écran a changé.
+      - **Fondu progressif à la place du seuil de 20 %, le 26 septembre
+        2026** (demande de l'utilisateur : « dégradé dynamique monochrome
+        ou animation, qui progressivement devient transparente pour qu'à
+        −30 s elle soit complètement invisible ») : `battre()` pose
+        l'opacité de `#minuterie-plein-ecran` de 1 au départ à 0 à
+        `REPOS_FONDU_FIN_S` (30 s) de la fin, puis la masque. Un repos plus
+        court que ce seuil (rest-pause à 10 s) ne l'affiche jamais,
+        `lancerMinuterie()` sautant son affichage différé. Fond : dégradé
+        de quatre verts de la famille `--repos` qui glisse lentement
+        (`@keyframes repos-degrade`, coupé sous `prefers-reduced-motion`).
+      - **Fondu retiré le 29 septembre 2026** (remarque « fini la
+        transparence ») : le plein écran reste opaque jusqu'à 30 s de la
+        fin, puis `battre()` le masque d'un coup.
+    - **Bug trouvé en testant, pas en salle** : `lancerMinuterie()` peut
+      tomber en plein milieu d'un clic déjà commencé sur une flèche
+      d'exercice — la validation implicite d'une série par sortie de champ
+      arrive entre le `pointerdown` et le `mouseup` du bouton (voir plus
+      bas, « Les flèches d'exercice comptent leur pas... »). Afficher le
+      plein écran tout de suite y volait le `mouseup`/`click` de la cible,
+      qui ne se terminait jamais — la même panne que le plein écran cherche
+      à éviter côté clavier, déplacée sur un nouveau geste. Corrigé en
+      différant l'affichage d'un tick (`setTimeout(fn, 0)`, gardé par une
+      comparaison d'instance pour ignorer un affichage devenu obsolète), le
+      temps que le clic en cours atteigne sa cible en premier.
+- **La minuterie se ferme d'elle-même à zéro**, sans afficher de temps
+  écoulé en trop-plein (décision de l'utilisateur le 26 août 2026). Fermeture
+  naturelle et appui sur le bandeau partagent `minuterieTerminee()` : si la
+  série qui vient de récupérer était la dernière de l'exercice, l'exercice
+  suivant s'affiche automatiquement, plutôt que de laisser l'utilisateur sur
+  une fiche entièrement complétée sans rien à y faire. **Le focus se pose sur
+  le champ charge de la prochaine série non validée**
+  (`focaliserProchaineSerie`) à chaque fermeture, pour reprendre la saisie
+  sans toucher l'écran.
+- **Le clavier virtuel s'ouvre via un champ d'amorce permanent**
+  (`#amorce-clavier` dans `index.html`, `amorcerClavier()` dans `js/app.js`),
+  ajouté le 27 août 2026 parce que Firefox Android n'ouvrait pas le clavier en
+  fermant la minuterie. Deux causes se cumulaient : le champ visé venait
+  parfois d'être recréé par `rendreExercice()`, et l'élément porteur du geste
+  disparaissait au même instant. L'amorce existe depuis le chargement de la
+  page et est focalisée **en tout premier**, avant même la fermeture, tant que
+  le geste est encore actif ; le transfert vers le vrai champ, d'un champ
+  texte à un autre, garde ensuite le clavier ouvert.
+  - **Ne jamais lui donner `display:none` ni `visibility:hidden`** : elle
+    deviendrait infocusable et tout le mécanisme tomberait en silence. Elle
+    est rendue invisible par `opacity: 0` et sortie du flux, avec
+    `font-size: 16px` pour éviter le zoom automatique à la mise au point.
+  - **Toute la surface du bandeau de récupération ferme et redonne le
+    clavier.** Les boutons ±15 ont existé un temps, exclus de la délégation ;
+    retirés le 27 août 2026, le geste porte maintenant sur tout le bandeau
+    sans exception. C'est la seule réponse possible à la fermeture
+    automatique à zéro : **aucun navigateur mobile n'ouvre le clavier sans
+    geste de l'utilisateur**, c'est une restriction volontaire de la
+    plateforme, pas un défaut contournable. Élargir la cible du geste donne
+    au moins le chemin le plus court vers la saisie.
+  - **Le clavier peut rester ouvert pendant toute la récupération**, réglage
+    `clavierPendantRecup` activé par défaut depuis le 27 août 2026 : c'est la
+    seule façon d'être prêt à saisir dès zéro sans geste, puisque le clavier
+    ne peut pas s'ouvrir seul. Le mécanisme de repositionnement au-dessus du
+    clavier (`suivreClavier()`, sur `visualViewport`) a disparu le 27 août
+    2026 avec la couche plein écran : dans le flux normal de la page, il n'y
+    a plus de couche à recaler.
+    - **Jusqu'au 7 septembre 2026, le focus était posé sur l'amorce, jamais
+      sur un champ de série**, pour qu'une frappe accidentelle pendant le
+      repos n'écrive dans aucune donnée. Mais la charge de la série
+      suivante restait de ce fait impossible à remplir tant que le décompte
+      n'atteignait pas zéro, ce que l'utilisateur a signalé comme une gêne :
+      il voulait pouvoir pré-remplir la charge pendant le repos lui-même.
+      `validerSerie()` amorce désormais le clavier **avant** son propre rendu
+      (`amorcerClavier()` en tout premier, ajouté le 7 septembre 2026 pour la
+      même raison que pour les boutons ← / →), puis focalise directement le
+      champ charge de la série suivante via `focaliserProchaineSerie()` :
+      c'est ce champ, pas l'amorce, qui garde le focus pendant toute la
+      récupération. `lancerMinuterie()` ne touche plus au focus dans ce cas ;
+      le réglage ne sert plus qu'à fermer volontairement le clavier
+      (`document.activeElement.blur()`) quand il est décoché, pour qui ne
+      veut pas du clavier pendant le repos.
+  - **Changer d'exercice (← / →) amorce aussi le clavier**, sur le même
+    principe : appelée dans les gestionnaires de `bouton-precedent` et
+    `bouton-suivant`, avant même `rendreExercice()`, pendant que le geste est
+    encore actif. Le focus se pose ensuite sur le champ charge de la première
+    série non validée du nouvel exercice (`focaliserProchaineSerie()`), pour
+    arriver prêt à saisir sans toucher l'écran.
+- **La touche Entrée du clavier numérique avance au champ suivant** (charge →
+  reps → RIR, puis la ligne suivante), construit dans `rendreSeries()` via un
+  tableau `enchainement` reconstitué à chaque rendu : ne pas oublier de le
+  repeupler si la structure de la ligne change. Depuis la suppression du
+  bouton de validation, tous les éléments de ce tableau sont des champs de
+  saisie ; Entrée n'y sert plus qu'à sauter au champ suivant sans attendre la
+  frappe, la validation elle-même passant par les répétitions confirmées.
+- **Une série validée se colore selon son tonnage face à la même série la
+  semaine passée** (`appliquerCouleurTonnage` dans `js/app.js`) : rouge
+  désaturé à -5 % ou moins, vert désaturé à +6 % ou plus, neutre entre les
+  deux. Éprouvé sur J1 puis étendu à tous les jours le 26 août 2026. **Le
+  vert reprend `--accent-clair`** (le vert-bleu du bouton de récupération
+  et du chronomètre de séance en marche), désaturé et transparent plutôt
+  qu'un vert franc : décision de l'utilisateur le 26 août 2026 pour que
+  les trois se lisent comme une même famille de couleur.
+- **L'échauffement (`ECHAUFFEMENT_PAR_JOUR` dans `js/app.js`) vit sur un écran
+  à part avant la séance depuis le 16 septembre 2026** (`#ecran-demarrage`,
+  `rendreDemarrage()`), demande de l'utilisateur. Jusque-là il s'affichait au-
+  dessus de la consigne technique du premier exercice ; cet ancien
+  emplacement (`echauffement-jour`/`echauffement-liste` dans `index.html`,
+  la branche `indexExo === 0` de `rendreExercice()`) a été **retiré en
+  doublon** le même jour, signalé par l'utilisateur après avoir vu
+  l'échauffement deux fois. Rédigé à la main pour les zones travaillées ce
+  jour-là, pas généré à partir du champ `muscle` : chaque jour suit la même
+  trame, mobilité de l'articulation la plus sollicitée, activation des
+  stabilisateurs, puis montée en charge sur le geste du premier exercice.
+  Le chrono de séance démarre déjà en arrière-plan à ce stade
+  (`demarrerChronoSeance()`, appelée par `commencer()`) mais n'est pas
+  affiché sur cet écran. Sauté à la reprise d'une séance déjà commencée.
+  - **Une vague de couleur plein écran a existé du 16 septembre au
+    4 octobre 2026** entre l'échauffement et la première fiche (disque
+    agrandi par `transform: scale()` depuis le point d'appui, néon le 27).
+    **Retirée** à la demande de l'utilisateur (« je n'aime pas ton animation
+    qui envahit l'écran ») : « Commencer » ouvre directement la fiche.
+  - **Fond vivant sur l'écran d'échauffement depuis le 4 octobre 2026**
+    (« tu as oublié les pages d'échauffement » dans la refonte des
+    couleurs) : même couche `.fond-vivant` et même verre que les menus, la
+    palette de Sport hors charte, celle de la charte sinon.
+- **La touche Entrée sur le RIR valide directement la série** (appelle
+  `.click()` sur le bouton plutôt que de se contenter du focus) : un clavier
+  virtuel ne renvoie pas de second appui sur Entrée une fois le focus déplacé
+  vers un bouton, la récupération ne démarrait donc jamais sans cette
+  invocation explicite.
+- **Les jours de course (J2, J6) ont leur propre écran**, activé le 26 août
+  2026 : durée et distance, allure au kilomètre calculée, comparaison à la
+  dernière sortie. **Il n'y a volontairement pas de chronomètre** : présent
+  au départ, retiré le jour même à la demande de l'utilisateur, qui saisit
+  ses chiffres après coup plutôt que de laisser l'application tourner.
+- **Quatre types de séance de course** (`TYPES_COURSE` dans `js/app.js`),
+  décidés le 26 août 2026 : endurance fondamentale, fractionné, incliné avec
+  option lesté ou farmer walk, et séance au seuil.
+  - **Ce sont quatre exercices distincts, pas quatre modes d'un même
+    exercice** (correction de l'utilisateur le 27 août 2026). Les quatre
+    peuvent être faits le même jour, chacun avec ses propres chiffres :
+    `seance.footing` est une **carte indexée par type**, remplie à la
+    demande. Les boutons choisissent l'exercice affiché, ils n'effacent plus
+    rien — la première version supprimait les champs de l'ancien type au
+    changement, ce qui rendait impossible d'en faire deux le même jour.
+    `indexExo` sert d'index dans `TYPES_COURSE`, comme il sert d'index
+    d'exercice en musculation.
+  - **J2 et J6 partagent les mêmes données** : c'est le même entraînement,
+    seul le jour de la semaine change. `derniereSortie()` cherche donc la
+    dernière sortie **du même type, tous jours de course confondus**, et le
+    classeur les range dans la même page `Course`, par type. Comparer une
+    endurance du mardi à une endurance du samedi a du sens ; les séparer par
+    jour n'en aurait aucun.
+  - **`footingParType()` relit les anciens formats** (une seule sortie à
+    plat avec un champ `type`, jusqu'au 27 août 2026 ; un seul passage par
+    type sans tableau, jusqu'au 8 septembre 2026) sous forme d'un tableau
+    d'un seul cycle, côté application comme côté Apps Script : sans cela, les
+    séances antérieures seraient silencieusement illisibles.
+  - **Chaque type a son échauffement**, parce que l'exigence diffère : une
+    endurance fondamentale se lance presque à froid, un fractionné demande un
+    corps déjà chaud sous peine de blessure.
+  - **Le type précis part dans le classeur**, jamais un `footing` uniforme :
+    comparer l'allure d'une endurance et celle d'un fractionné n'aurait pas
+    de sens, et les colonnes dédiées (répétitions, récup, pente, charge
+    portée, durée au seuil) restent traçables en graphique là où un champ
+    texte libre ne le serait pas. Une **ligne par passage renseigné**, pas
+    une par séance ni une par type.
+  - **Calories pour les quatre types, vitesse moyenne pour Endurance et
+    Incliné, ajoutées le 18 septembre 2026** (demande de l'utilisateur, « il
+    manque des données », relayant l'affichage d'un tapis de course) :
+    `calories` rejoint `CHAMPS_FOOTING` (communs aux quatre types, comme
+    durée et distance), `vitesse_moy_kmh` rejoint `type.champs` de `ef` et
+    `incline` seulement — Fractionné et Seuil n'ont pas de vitesse moyenne
+    stable sur toute la sortie, portée par nature. **Une saisie manuelle,
+    pas un calcul** : l'allure affichée sous chaque passage (distance ÷
+    durée) reste le repère qui fait foi pour la progression, ce nouveau
+    champ ne fait que reprendre ce qu'un tapis de course affiche
+    directement, sans repasser par le calcul. Colonnes ajoutées en
+    conséquence dans le classeur (`ENTETES`, `ENTETES_TYPE_COURSE` et les
+    lignes de `ecrireSeance()`/`ecrireCourseGrille()` dans
+    `appsscript/Code.gs`) : `Calories` juste après `Allure (min/km)` pour
+    les quatre, `Vitesse moyenne (km/h)` en fin de bloc pour Endurance et
+    Incliné. **Nécessite le redéploiement du pont**, comme les évolutions
+    précédentes de cette liste — voir « Chantiers ouverts ».
+- **Les bulles J2/J6 s'appellent « Cardio » depuis le 26 septembre 2026**
+  (demande de l'utilisateur, le HIIT rejoignant la course) : renommage à
+  l'affichage seulement, dans `nomDuJour()` ; le bloc du classeur (« J2 &
+  J6 FOOTING »), `type: "footing"` et tout le code qui s'appuie dessus
+  restent tels quels — renommer le type aurait touché l'historique déjà
+  enregistré et le pont pour un gain purement visuel.
+- **Cinquième type : HIIT (Body Attack ou Body Combat), le 26 septembre
+  2026** (demande de l'utilisateur : « même hiérarchie que fractionné,
+  incliné », avec durée totale, calories, battements moyens et max).
+  `TYPES_COURSE` gagne deux options : `sansDistance` (la distance commune
+  disparaît du formulaire, pas d'allure, écarté de l'écran Évolution
+  course qui trace une vitesse) et `choix` (le cours suivi, un seul parmi
+  des options, en boutons — `choixCycle()`, posé par défaut sur celui de la
+  dernière sortie pour ne jamais partir vide au classeur). Champs propres :
+  `fc_moy`, `fc_max`. Résumé de fin et fiche d'historique affichent
+  calories et fréquences à la place de distance/allure. Côté classeur,
+  bloc `HIIT` sur la page `Course` et trois colonnes en fin de
+  `Séances (app)` (`Activite`, `FC moyenne (bpm)`, `FC max (bpm)`) ;
+  `ongletPret()` complète désormais la ligne d'en-tête d'un onglet déjà
+  créé quand des colonnes ont été ajoutées en fin de ligne (Calories et
+  Vitesse moyenne, le 18, arrivaient jusque-là sans titre). **Nécessite le
+  redéploiement du pont** — voir « Chantiers ouverts ».
+- **Un type peut compter plusieurs passages depuis le 8 septembre 2026**,
+  demande de l'utilisateur : refaire l'Incliné à une autre charge dans la
+  même séance, sans écraser le premier passage. `seance.footing[cle]` est
+  donc un **tableau de cycles** (`cyclesCourse()` dans `js/app.js`), chacun
+  avec ses propres champs communs (durée, distance) et propres au type
+  (pente, charge portée...), plutôt qu'un objet plat limité à un seul
+  passage.
+  - **Le bouton « + Ajouter un passage »** pousse un cycle vide dans le
+    tableau du type affiché ; chaque passage au delà du premier porte une
+    croix de suppression, sur le même principe que les séries de musculation
+    en trop (voir plus haut). Aucune confirmation, pour la même raison :
+    rien n'est encore synchronisé pendant la séance.
+  - **Seul le premier passage se compare à la dernière sortie**
+    (`majAllureCycle()`) : les passages suivants n'ont pas d'équivalent fixe
+    d'une séance à l'autre, leur nombre pouvant varier. Ils affichent leur
+    propre allure, sans comparaison.
+  - **Côté classeur, `ecrireCourseGrille()` et la construction des lignes de
+    `ecrireSeance()` itèrent sur les cycles**, pas sur les seuls types : un
+    passage supplémentaire écrit une ligne de plus dans le bloc de son type
+    (`Course`) et dans l'onglet `Seances`, jamais une case écrasée.
+- **Les jours de footing ont porté du gainage** du 6 au 11 septembre 2026 :
+  planches frontale et latérale d'abord, pallof press et rotation externe
+  ensuite, retirés de J4 parce que trop peu fatigants pour une séance de
+  jambes. Le tout se saisissait en secondes de tenue, une case par série.
+  **Remplacé le 11 septembre 2026** par la séance de gainage à part (voir
+  plus haut) : seul le farmer walk reste aux jours de course, et la rotation
+  externe est abandonnée.
+  - **Ce qui en subsiste dans le code est en lecture seule** :
+    `GAINAGE_FOOTING_ANCIEN` et `uniteGainage()`. Les séances de cette
+    semaine-là portent encore leurs valeurs dans `seance.gainage`, que le
+    résumé de fin et la fiche d'historique savent afficher. Ne plus rien y
+    écrire de neuf.
+  - **La raison de le loger dans le code plutôt que dans le classeur vaut
+    toujours**, et c'est elle qui a fait loger la séance de gainage au même
+    endroit : les blocs J2 et J6 de « semaine 1 » sont dessinés en colonnes
+    TEMPS et DISTANCE, celles-là mêmes où l'importateur lirait charge et reps
+    d'une ligne numérotée. Les deux lectures entreraient en collision, et
+    `convertir()` bascule de surcroît un jour en `type: "muscu"` dès qu'il
+    trouve un exercice numéroté, ce qui ferait disparaître tout le bloc de
+    course.
+  - **Ce gainage-là ne remontait pas au classeur**, faute de colonne pour une
+    tenue en secondes. Ce n'est plus vrai de ce qui lui succède :
+    `ecrireGainage()` écrit le farmer walk des jours de course dans la page
+    `Gainage`, à côté des séries de la séance de gainage.
+- **Le garde-fou anti-doublon du pont est sectionné**, une marque par page
+  écrite par ajout et non une seule pour la séance entière
+  (`cleEcriture()`, `dejaEcrite(id, section)`). Sans cela le trou du 27 août
+  2026 restait ouvert pour `Remarques`, `Blessures` et `Gainage` : ces trois
+  pages s'écrivent **avant** la grille, la partie fragile, et la marque unique
+  n'était posée qu'après elle. Une exception sur la mise en forme laissait
+  donc la séance « en attente » côté téléphone avec sa remarque, sa blessure
+  et ses douze lignes de gainage déjà ajoutées, que le renvoi ajoutait une
+  seconde fois. Trouvé par relecture le 12 septembre 2026, **jamais observé en
+  production** : le classeur n'en porte aucune trace. Les écrire en premier
+  reste juste, une séance sans série validée pouvant n'avoir qu'une blessure à
+  raconter ; c'est la marque qui devait suivre, pas l'ordre.
+- **Remarque libre de fin de séance**, ajoutée le 8 septembre 2026 : un
+  champ `#fin-remarque` sur `ecran-fin`, commun aux deux types de séance,
+  pour signaler une douleur, une gêne ou une idée d'amélioration à
+  destination du développeur, en dehors de toute conversation.
+  - **Liée à `seance.remarque`, enregistrée à la frappe** comme le reste de
+    la séance en cours (`preparerEcranFin()` la relit à chaque passage sur
+    l'écran de fin) : elle survit à un aller-retour vers l'écran précédent,
+    et à la fermeture de l'application avant l'enregistrement.
+  - **Part avec la séance dans `envoyer({ action: 'seance', seance })`**,
+    sans plomberie dédiée côté requête : `seance` part déjà en entier.
+  - **Côté classeur, `ecrireRemarque()` l'écrit dans un onglet `Remarques`
+    dédié** (`feuilleRemarques()` dans `appsscript/Code.gs`, créé à la
+    première remarque envoyée), jamais dans les grilles de jour ou de
+    course qui restent des tableaux de chiffres. Une remarque vide n'écrit
+    rien, pour ne pas remplir l'onglet d'une ligne blanche par séance sans
+    rien à signaler. Écrite **avant tout retour anticipé** dans
+    `ecrireSeance()` (aucune série faite, aucun passage de course
+    renseigné) : une séance sans rien d'autre à écrire peut tout de même
+    porter une remarque.
+  - **C'est le développeur (Claude) qui doit la lire**, à chaque session de
+    travail sur l'application, pour en tenir compte dans ses propositions.
+    `python outils/lire_remarques.py` affiche les onglets `Remarques` et
+    `Blessures`, **sans rien demander à l'utilisateur**.
+  - **La lecture se fait par nom d'onglet, pas par gid**, via l'API de
+    visualisation (`/gviz/tq?tqx=out:csv&sheet=<nom>`). Le gid d'un onglet
+    créé automatiquement n'est connu qu'une fois l'onglet ouvert à la main,
+    ce qui obligeait à le réclamer ; le nom, lui, est fixé par le code qui
+    crée l'onglet. Éprouvé le 10 septembre 2026 sur les deux onglets.
+- **Blessure du jour**, ajoutée le 9 septembre 2026 sous la remarque, sur
+  l'écran de fin : la série concernée et la description de ce qui a été
+  ressenti, rangées dans un onglet `Blessures` à part (date, jour, série,
+  blessure).
+  - **Page distincte des remarques, volontairement.** Les deux sont des
+    champs libres de fin de séance, mais ils ne se relisent pas dans le même
+    esprit : la remarque s'adresse au développeur et se périme une fois
+    traitée, la blessure suit le corps dans le temps et gagne à se relire
+    seule, sans le bruit des demandes d'évolution.
+  - **La description fait foi** (`ecrireBlessure` dans `appsscript/Code.gs`) :
+    une série renseignée sans description ne décrit aucune blessure et
+    n'écrit rien.
+  - **La série se saisit librement**, les exercices du jour n'étant proposés
+    qu'en suggestions (`<datalist>` rempli par `nomsDesExercices()`) : une
+    douleur peut ne tenir à aucune série, et une liste fermée obligerait à
+    en désigner une faussement.
+- **Les séances enregistrées se déplient et se suppriment**, demandes de
+  l'utilisateur le 9 septembre 2026 (`rendreHistorique()` dans `js/app.js`).
+  - **Le détail reprend la matière du résumé de fin de séance**, plus la
+    blessure : c'est le seul endroit d'où la relire depuis le téléphone une
+    fois la séance enregistrée. **La remarque, elle, n'y figure pas**
+    (décision de l'utilisateur le 10 septembre 2026) : elle s'adresse au
+    développeur et n'a plus d'intérêt une fois partie au classeur, là où une
+    douleur se relit d'une séance à l'autre. Elle reste écrite dans l'onglet
+    `Remarques`, mais devient de ce fait **illisible depuis le téléphone**.
+  - **Chaque exercice y porte sa courbe de progression**
+    (`progressionPremiereSerie()` et `courbe()`), demandée par l'utilisateur
+    le 10 septembre 2026 sur cette page précisément. Elle trace l'indicateur
+    retenu, charge × répétitions de la première série de travail, et non le
+    tonnage (voir plus haut). Dessinée en SVG à la main : quelques points et une
+    ligne ne justifient pas une bibliothèque, et l'application doit rester
+    utilisable hors ligne sans rien télécharger. Deux partis pris :
+    - **seules les séances du téléphone comptent**, pas l'historique repris du
+      classeur : celui-ci est une reprise ponctuelle et non un journal, et ses
+      valeurs ont déjà été désalignées de leurs exercices par une manipulation
+      de la grille ;
+    - **la courbe s'arrête à la séance affichée** : rouvrir une séance
+      ancienne montre la progression telle qu'elle était ce jour-là, pas des
+      points postérieurs qui n'existaient pas encore. En dessous de deux
+      points, rien n'est dessiné.
+  - **C'est la page d'atterrissage après l'envoi** depuis le même jour :
+    `enregistrerEtSynchroniser()` ouvre la fiche de la séance qu'on vient de
+    finir (`afficherSeanceEnregistree()`) au lieu de renvoyer à l'accueil.
+    Sa pastille dit si elle a atteint le classeur. **Seule l'erreur d'envoi
+    reste sur l'écran de fin** : son message nomme la cause, ce que la
+    pastille « en attente » ne dirait pas.
+  - **Bouton d'envoi animé depuis le 23 septembre 2026** (demande de
+    l'utilisateur, lien CodePen fourni — "download button animation" de
+    Denis Pasko) : technique reprise (cercle qui tourne pendant l'envoi,
+    coche à la fin), pas le code lui-même, qui dépend de GSAP et de
+    plugins payants (CustomEase, DrawSVG) incompatibles avec une PWA hors
+    ligne sans build. `.bouton-sync` (`css/style.css`) remplace
+    `.principal.grand` sur `#bouton-enregistrer` : cercle à gauche avec un
+    anneau SVG (même principe que `.minuterie-anneau`, mais tournant en
+    boucle plutôt qu'à décompte, la durée réelle de l'envoi n'étant pas
+    connue à l'avance). Classes `.envoi` (texte "Synchronisation" résorbé
+    à rien, anneau qui tourne) et `.envoye` (coche, texte "Envoyé", fond
+    `--hausse`) basculées dans `enregistrerEtSynchroniser()`, remises à
+    zéro par `preparerEcranFin()` à chaque ouverture de l'écran de fin.
+    Retirée sur échec (`.envoi` enlevée, bouton réactivé) : avant cette
+    évolution, un échec laissait le bouton désactivé sans retour possible
+    sauf à quitter l'écran, jamais corrigé faute d'avoir été signalé.
+    - **Recalé sur l'original le 26 septembre 2026** (remarque de
+      l'utilisateur : « l'icône n'est pas la même », « ne pas le bloquer sur
+      la première phase, ralentir la progression générale », puis « n'adapte
+      pas à la largeur de l'écran », code source du CodePen collé par
+      l'utilisateur, la page étant bloquée par Cloudflare). L'anneau qui
+      tournait en boucle jusqu'à la réponse donnait l'impression d'un
+      bouton figé, et la page partait aussitôt la réponse reçue. Même
+      chronologie que l'original désormais, en CSS pur : pilule bordée
+      cyan (`#00cffc`) de 300px fixes, rond plein + flèche à gauche ;
+      `.envoi` la resserre en rond, la flèche devient un carré blanc qui
+      pivote, le rond se remplit par le bas (`#00afd3`) et un point tourne
+      sur l'anneau ; `.complet` (ajoutée par-dessus) redéploie la pilule
+      et fait rebondir un point vert (`#02fc86`) ; `.envoye` borde en vert
+      et fait revenir le texte « Envoyé » (ou « En attente » si rien n'est
+      parti), en `--hausse` — le vert de l'original, lisible sur son fond
+      noir, ne l'est pas en texte sur le fond clair de l'écran de fin.
+      Cadencé par `enregistrerEtSynchroniser()` : durée minimale d'envoi
+      (`DUREE_MIN_ENVOI_MS`, 2,2 s) même si le réseau répond plus vite,
+      0,9 s de rebond, puis 2 s sur « Envoyé » avant d'ouvrir la fiche.
+      Plus d'anneau SVG ni de coche : ce n'était pas l'original.
+    - **Seul à l'écran pendant l'envoi depuis le 16 octobre 2026** (remarque
+      de l'utilisateur : « plus que ce bouton affiché, fond blanc classique,
+      toute la largeur ») : classe `.envoi-isole` sur `#ecran-fin` et
+      `#ecran-remarque`, posée au départ de l'envoi, retirée sur échec et à
+      la réouverture (`preparerEcranFin()`, retour du bouton Remarque).
+      Tout le reste passe en `visibility: hidden`, le bouton seul redevient
+      visible, fixé au centre sur toute la largeur hors marges ; ses phases
+      ne changent pas (rond pendant l'envoi, pilule ensuite).
+  - **Un `<details>` natif plutôt qu'une bascule maison** : l'ouverture et la
+    fermeture ne demandent alors aucun état à tenir côté script.
+  - **La suppression demande confirmation**, contrairement à la croix des
+    séries en trop d'une séance en cours : la donnée est ici définitive côté
+    téléphone. Le message distingue les deux cas, **une séance déjà envoyée
+    restant dans le classeur** : l'application n'y écrit que par ajout et ne
+    reprend jamais ce qu'elle y a mis.
+- **Les exercices oubliés sont signalés sur l'écran de fin, jamais
+  bloquants** (`#fin-alerte`, rempli par `preparerEcranFin()`), demande de
+  l'utilisateur le 10 septembre 2026 : la liste des exercices restés sans
+  aucune série validée s'affiche au-dessus du bouton, mais **l'envoi reste
+  possible**. Une séance écourtée est une séance, et l'oubli se voit mieux là
+  qu'une fois le classeur rempli. Les jours de course n'ont pas d'exercices
+  numérotés : le résumé y dit déjà « Aucune sortie renseignée ».
+- **Le classeur reçoit deux familles de pages** (`ecrireSeance` dans
+  `appsscript/Code.gs`), refondues une première fois le 26 août 2026 en trois
+  onglets plats, jugés illisibles à l'usage par l'utilisateur le lendemain
+  malgré leur intérêt pour les graphiques ; puis refaites le 27 août 2026 en
+  ajoutant les pages de lecture humaine ci-dessous, **sans supprimer les
+  premières** :
+  - `Exercices (app)`, `Séances (app)` : une ligne par observation, sans mise
+    en forme. Ce sont elles qu'on utilise pour un graphique Sheets classique
+    (sélectionner deux colonnes, Insérer > Graphique).
+  - **`J1`, `J3`, `J4`, `J5`, `Course`** : une page par jour d'entraînement,
+    dans le format de la grille manuelle d'origine de l'utilisateur — celui
+    qu'il a lui-même reconstitué à la main dans l'ancien onglet `Séries (app)`
+    pour me montrer ce qu'il voulait. Un bloc par exercice (nom en colonne A,
+    fusionné sur `RANGEES_PAR_EXERCICE` = 6 lignes), un groupe de quatre
+    colonnes (Charge, Reps, RIR, Total) par date de séance, le total posé sur
+    la première ligne du bloc. La page `Course` reprend le même principe,
+    mais avec un bloc par **type** de sortie plutôt que par exercice, chaque
+    type ayant ses propres colonnes (répétitions, pente...).
+
+  Points structurants à ne pas défaire :
+  - **chaque page plate porte une colonne `Semaine`** au format ISO
+    (`2026-S35`) : un programme est hebdomadaire, et sans elle chaque
+    graphique devrait recalculer le regroupement par formule ;
+  - **l'échauffement ne figure nulle part dans les pages agrégées** (ni les
+    plates, ni les grilles par jour) : une montée en charge gonflerait le
+    volume sans correspondre à du travail effectif ;
+  - **un bloc de la page `Course` s'étend par insertion de ligne**
+    (`insertRowBefore`), jamais en écrivant sur la ligne trouvée : la première
+    version écrivait directement sur la ligne vide de séparation entre deux
+    blocs, qui finissait par disparaître si des types de course différents
+    s'entremêlaient dans le temps. Défaut trouvé à la relecture, avant tout
+    test, le 27 août 2026 ;
+  - **`formatDateCourte` n'appelle aucune API de fuseau horaire**, ni
+    `SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone()` ni
+    `Session.getScriptTimeZone()` : les deux ont fait échouer
+    `Utilities.formatDate` en production le 27 août 2026 avec la même
+    exception (« argument incorrect : timeZone, doit être de type String »),
+    sans reproduction possible hors de l'éditeur Apps Script. Le contexte
+    d'exécution d'un web app déployé semble ne pas exposer ces API
+    normalement. Les accesseurs natifs de `Date()` n'en dépendent pas ;
+  - **le titre d'une page de jour n'est jamais fusionné sur plusieurs
+    colonnes.** Il l'était au départ, et Sheets refusait alors de figer la
+    colonne A : « vous ne pouvez pas figer des colonnes contenant seulement
+    une partie d'une cellule fusionnée ». L'exception faisait échouer toute
+    la synchronisation. Le texte déborde visuellement sur les colonnes
+    voisines vides, ce qui donne le même rendu sans la contrainte. Erreur
+    rencontrée en production le 27 août 2026 ;
+  - **les blocs et les groupes de dates sont à des positions fixes** (lignes
+    4, 10, 16... et colonnes 3, 7, 11...), lues directement plutôt que
+    déduites de `getLastRow()` / `getLastColumn()`. Ces deux fonctions ne
+    comptent que les cellules réellement remplies : un bloc de six lignes
+    dont trois séries seulement sont écrites en laisse trois vides, et le
+    bloc suivant se serait posé en plein milieu du précédent. Défaut trouvé
+    par relecture le 27 août 2026, avant qu'il ne se manifeste ;
+  - **la feuille s'agrandit à la demande** (`garantirDimensions()`, 16 octobre
+    2026) : une page créée par `insertSheet` n'a que 26 colonnes, que J1 et
+    J3 ont remplies en six dates (C à Z). La septième séance échouait sur
+    « Les coordonnées de la plage sont en dehors des dimensions de la
+    feuille », et comme la séance en échec repart en tête à chaque essai,
+    plus aucune n'atteignait le classeur (remarque de l'utilisateur :
+    « systématiquement »). Les lectures à taille fixe (`colonneGroupeDate`,
+    `ligneBlocExercice`) ne lisent plus que les cellules existantes ;
+    groupes de dates, blocs d'exercice, ajouts aux pages plates et blocs de
+    `Course` agrandissent la feuille avant d'écrire. **Nécessite le
+    redéploiement du pont** ;
+  - **un exercice qui dépasse les 6 lignes réservées voit son détail tronqué,
+    jamais débordé** sur le bloc suivant. Le tonnage, lui, porte sur toutes
+    les séries : mieux vaut un total juste et un détail incomplet que
+    l'inverse ;
+  - **l'écriture est idempotente** (`dejaEcrite` / `marquerEcrite`, via
+    `PropertiesService`). Les pages plates s'écrivent par ajout : une séance
+    envoyée deux fois y compterait double. C'est arrivé le 27 août 2026,
+    l'exception sur la mise en forme survenant après l'écriture des pages
+    plates, laissant la séance « en attente » côté téléphone. **La grille
+    s'écrit désormais en premier** (partie fragile, mais naturellement
+    idempotente puisqu'elle cherche le groupe de dates et le bloc avant
+    d'écrire), les pages plates ensuite, le marquage en dernier.
+
+  Les colonnes `Debut seance` et `Fin seance` de l'ancien onglet unique ont
+  été retirées, redondantes avec `Date` et `Duree (min)`.
+- **Les pages J1, J3 et J4 portent une colonne « Référence »**, semée le
+  27 août 2026 avec `semerReference()` (`appsscript/Code.gs`), reprenant les
+  valeurs déjà importées de l'ancien classeur manuel (celles qui alimentaient
+  `derniereFois()` avant la première vraie séance de chaque jour). But :
+  repartir avec un premier point de comparaison plutôt que des pages vides.
+  **J5 n'a pas de colonne Référence** : aucun historique n'a été importé pour
+  ce jour (fiches vides au moment de l'import du 26 août 2026), et
+  `Rotation externe poulie` / `Gainage anti-extension et anti-rotation` sur
+  J4 en sont dépourvues pour la même raison. `semerReference()` est un
+  utilitaire à lancer une fois depuis l'éditeur Apps Script, jamais appelé
+  par le pont ; sans effet si rejoué, puisqu'elle retrouve le groupe et les
+  blocs déjà créés plutôt que d'en recréer.
+- **Un chronomètre mesure la séance entière** : un seul bouton vert, à droite
+  du titre de l'exercice (pas un bandeau pleine largeur, revenu en arrière le
+  27 août 2026 après un essai trop grand pour tenir sur un Pixel 9). Comme
+  celui du footing, il compte depuis son horodatage de départ et survit donc
+  au verrouillage du téléphone. **La durée qu'il mesure fait foi** dans le
+  classeur si le chronomètre a servi : elle reflète le temps réellement passé
+  à s'entraîner, là où l'écart début/fin compterait aussi les interruptions.
+  **Pas de bouton d'arrêt manuel** : le chronomètre s'arrête de lui-même,
+  toujours par l'un de ces trois chemins, tous dans `minuterieTerminee()` ou
+  `terminer()` de `js/app.js` :
+  1. un second appui sur le bouton vert (`basculerChronoSeance`) ;
+  2. l'enregistrement de la séance (`terminer()`) ;
+  3. la fermeture de la minuterie de récupération de la dernière série du
+     dernier exercice — le seul des trois qui ne dépend d'aucun geste dédié.
+
+  **Il démarre de lui-même à l'ouverture d'un jour de musculation**
+  (`demarrerChronoSeance()`, appelée dans `commencer()`) : décidé le 27 août
+  2026, pour ne pas avoir à y penser en plein échauffement. Volontairement
+  pas un bascule comme `basculerChronoSeance()` : appelée alors qu'il tourne
+  déjà, elle ne fait rien, plutôt que de le mettre en pause par accident. Ne
+  concerne que les jours de musculation, `bloc-footing` n'ayant pas ce
+  bouton. Ne joue pas à la reprise d'une séance déjà en cours (`reprendre()`)
+  : un chronomètre qu'on a arrêté volontairement ne doit pas repartir tout
+  seul.
+- **Une jauge pilule en tête d'écran affiche la progression totale de la
+  séance depuis le 17 septembre 2026** (demande de l'utilisateur : « le
+  curseur de progression n'est pas le chrono de repos mais la progression
+  totale de la séance ») : `#jauge-seance-remplissage`, dans
+  `#ligne-progression`, tenue à jour par `rendreJauge()` avec la même
+  valeur que la fine ligne `#jauge-remplie` juste au-dessus
+  (`proportionFaite()`, la fraction de séries validées sur l'ensemble de la
+  séance, pas seulement l'exercice affiché) — la même pilule que la
+  minuterie de repos (`.jauge-pilule`). Remplace le texte d'estimation
+  « ~Xmin restant » qui vivait au même endroit depuis le 16 septembre 2026
+  (temps total estimé de la séance moins le temps écoulé) :
+  `dureeTotaleEstimeeS()`, `dureeEstimeeSerie()` et
+  `EXERCICES_POLYARTICULAIRES`, qui ne servaient qu'à ce calcul, ont été
+  retirés avec lui plutôt que laissés morts dans le fichier.
+  - **Recolorée le même jour, deuxième demande** (« pas satisfaisant... un
+    classique, tu as compris ») : contour gris foncé (`--texte-faible`) et
+    fond gris clair (`--fond-champ`) plutôt que noir et blanc, remplissage
+    blanc plutôt que teal — un remplissage de la même teinte que celui de
+    la minuterie de repos aurait rendu les deux pilules indissociables au
+    premier coup d'œil. `.jauge-pilule-seance`/`.jauge-pilule-remplissage-
+    accent` dans `css/style.css`.
+    - **Ne grandissait pas du tout, corrigé le 18 septembre 2026** (signalé
+      par l'utilisateur, « le oblong ne grandit pas », confirmé par deux
+      captures d'écran successives) : `#jauge-seance-remplissage` est un
+      `<span>`, et un élément inline ignore purement `width`/`height` en
+      CSS quelle que soit la valeur posée par `rendreJauge()` —
+      `getBoundingClientRect()` donnait `width: 0` malgré un `style.width`
+      non nul. Un premier correctif (remplissage blanc sur fond gris clair,
+      1,15:1 de contraste, quasi invisible) avait semblé plausible sur le
+      moment mais ne changeait rien au fond : `.jauge-pilule-remplissage`
+      manquait `display: block`, seule vraie cause. Les deux corrections
+      sont restées (`--texte-faible` en remplissage, 5,56:1, et `display:
+      block`) : la première améliore la lisibilité une fois la seconde en
+      place. Sans effet sur l'ancien remplissage en `<div>` de la minuterie
+      de repos plein écran, déjà block par défaut, remplacé depuis par
+      l'anneau qui se réduit — jamais concerné par ce bug.
+    - **Largeur fixe (64px) abandonnée le même jour, demande suivante**
+      (« bulle plus grande, jusqu'à séance, avec le même espace que sa
+      distance avec le bord gauche ») : `.jauge-pilule-seance` passe à
+      `flex: 1`, `justify-content: space-between` retiré de
+      `.ligne-progression` au profit de `gap: var(--marge)` — l'espace
+      auparavant laissé vide entre la pilule et le texte "Séance HH:MM"
+      revient à la pilule, avec un espacement fixe avant le texte égal à la
+      marge de gauche de la ligne.
+  - **`proportionFaite()` pondérée par le temps de repos le 18 septembre
+    2026** (demande de l'utilisateur : « les exo du début prennent
+    légèrement plus de temps, soit proportionnel ») : un compte de séries à
+    plat faisait avancer la pilule au même rythme sur un poly-articulaire à
+    90-120 s de repos (souvent en début de séance) que sur un exercice
+    d'isolation à 45 s, alors que le premier occupe bien plus de temps réel.
+    Chaque série pèse désormais le `repos_s` de son exercice (plancher
+    30 s) plutôt que 1 : plus proche du temps réellement passé, sans
+    ressusciter l'estimation complète de durée retirée la veille
+    (`EXERCICES_POLYARTICULAIRES`, `dureeEstimeeSerie()`,
+    `dureeTotaleEstimeeS()`, voir juste au-dessus) — ce n'est pas ce texte
+    qui revient, juste un poids sur la jauge déjà en place. `#jauge-remplie`
+    suit le même calcul, les deux venant de la même fonction.
+- **Le retour d'Android (geste ou bouton système) remonte d'un écran depuis
+  le 16 octobre 2026** (remarque de l'utilisateur : « tous les boutons retour
+  ne fonctionnent pas, ou mal ») : l'application n'utilisait pas
+  l'historique du navigateur, et le retour système quittait la PWA. Les
+  flèches ← à l'écran, elles, marchaient (vérifié). `afficher()` empile une
+  seule entrée « garde » hors de l'accueil (`poserGardeHistorique()`) et la
+  retire en revenant à l'accueil ; `popstate` referme d'abord le repos plein
+  écran s'il est ouvert, sinon rejoue le bouton `[aria-label="Retour"]` de
+  l'écran affiché — même chemin que le doigt, aucun parent à maintenir à
+  part. Depuis l'accueil, le retour suivant quitte l'application.
+- **Le verrou d'écran (`wakeLock`) se redemande à chaque retour au premier
+  plan** : le système le relâche dès que l'onglet passe en arrière-plan, ce
+  qui arrive constamment en salle (verrouillage du téléphone, changement
+  d'application pour la calculatrice de plaques).
+- **Le pont Apps Script reçoit son corps en `text/plain`**, pas en
+  `application/json` : Apps Script ne répond pas à la requête préalable CORS
+  qu'un en-tête JSON déclenche, et l'appel échouerait silencieusement en
+  production tout en fonctionnant dans les outils de développement.
+- **Une séance sans série validée se synchronise quand même, sans rien écrire**
+  dans le classeur : `ecrireSeance` (`appsscript/Code.gs`) ignore silencieusement
+  les séries dont `faite` est faux, et renvoie `ok:true` même quand elle n'a
+  rien à écrire. L'application affiche alors « Classeur mis à jour », ce qui
+  peut induire en erreur si l'utilisateur a saisi charge et reps sans jamais
+  renseigner le RIR : depuis le 27 août 2026, c'est ce dernier qui valide (il
+  n'y a plus de bouton), et une série sans RIR reste donc non validée.
+- **Les consignes techniques modifiées depuis l'application ont le téléphone
+  pour source**, décision de l'utilisateur le 26 août 2026 : la cellule
+  d'origine dans le classeur mélange plusieurs informations (prescription,
+  RIR, muscle, repos), et y écrire automatiquement risquerait de la casser.
+  Stockées dans `localStorage` sous `muscu.consignes`, une clé par
+  `jour|nom d'exercice` (`cleConsigne` dans `js/app.js`), **jamais relues par
+  l'import ni réécrites dans « semaine 1 »**.
+  - **Code écrit le 13 septembre 2026 pour les sauvegarder vers le
+    classeur** (`synchroniserConsignes()`), après avoir constaté qu'elles
+    n'avaient jusque-là aucune copie hors du téléphone : un appareil perdu ou
+    vidé les effaçait sans recours, contrairement à l'historique des
+    séances, lui synchronisé. **Inactif tant que `appsscript/Code.gs` n'a
+    pas été redéployé** (voir « Chantiers ouverts » ci-dessous) : jusque-là,
+    ce risque reste entier. L'ensemble courant part à chaque synchronisation, dans une
+    page `Consignes` à part (`feuilleConsignes`/`ecrireConsignes` dans
+    `appsscript/Code.gs`), une ligne par `(jour, exercice)` mise à jour sur
+    place plutôt qu'ajoutée à chaque envoi. **C'est une sauvegarde de secours,
+    pas une seconde source** : elle n'est relue ni par l'application, ni par
+    l'import, qui continue de ne connaître que « semaine 1 ». Un échec de
+    cette sauvegarde n'empêche jamais l'envoi des séances, qui reste
+    l'essentiel de `synchroniser()`.
+- **« Ne garder que les séances d'aujourd'hui »** (réglages, à côté de
+  l'export) purge `muscu.historique` en local uniquement, après confirmation
+  et avec le compte de séances retirées annoncé à l'avance. Ajouté le 27 août
+  2026 pour nettoyer les séances de test accumulées pendant le
+  développement. Ne touche jamais au classeur, qui a ses propres pages.
+
+## Menu Sport/Suivi (16 septembre 2026)
+
+**Écran d'accueil scindé en deux** (`#ecran-menu`, deux cartes), demande de
+l'utilisateur : « Sport » ouvre l'ancien accueil (les sept bulles J1-J6 et
+Bonus, inchangé) ; « Suivi » ouvre un sous-menu à six contenus, détaillés
+ci-dessous. `Réglages` vit sur ce premier écran, accessible d'un geste quel
+que soit le sous-menu ensuite ouvert.
+
+- **Troisième carte « Réglages » depuis le 18 septembre 2026**, à la place
+  de l'engrenage isolé dans l'en-tête (demande de l'utilisateur : « supprime
+  l'engrenage, tous les réglages arrivent dans ce menu ») : même style que
+  « Sport » et « Suivi » (`#bouton-menu-reglages`, classe `.carte-menu`),
+  ouvre le même écran `#ecran-reglages` qu'avant, rien n'a changé côté
+  contenu des réglages eux-mêmes. `.entete-accueil` ne porte donc plus que
+  le titre "Muscu", sans bouton à droite.
+  - **Cases à cocher de cet écran agrandies le même jour** (signalé par
+    l'utilisateur : « toutes les cases à cocher de réglages ont la même
+    taille » — 22px, tranchant avec les cibles larges du reste de
+    l'application) : 30px, `.bascule input` dans `css/style.css`. Restent
+    uniformes entre elles, choix confirmé par l'utilisateur plutôt que de
+    les hiérarchiser par importance.
+
+- **Les deux cartes du premier écran sont centrées, largeur resserrée à
+  300px**, pas étalées sur toute la hauteur disponible (signalé par
+  l'utilisateur : `.liste-menu { flex: 1 }` étirait le conteneur, mais les
+  cartes elles-mêmes restaient collées en haut faute de `flex-grow`,
+  laissant un grand vide en dessous). Centrage horizontal par
+  `margin-inline: auto` sur chaque carte plutôt que par `align-items:
+  center` sur le conteneur : ce dernier casse la largeur en pourcentage des
+  cartes dans ce navigateur (chacune retombe à sa largeur de contenu au lieu
+  de 100 %, inégale entre « Sport » et « Suivi ») — constaté à l'essai, pas
+  une règle générale à appliquer ailleurs sans revérifier. Scopé à
+  `#ecran-menu` : le sous-menu Suivi (cinq puis six puis sept entrées,
+  pleine largeur) n'est pas concerné.
+  - **Contenu centré sur l'icône depuis le 17 septembre 2026** (demande de
+    l'utilisateur, « centré sur la bulle ») : `align-items` et `text-align`
+    passés à `center` sur ces deux grandes cartes (`#ecran-menu .carte-menu`
+    uniquement), qui étaient alignées à gauche depuis leur création. La
+    variante `.carte-menu-petite` du sous-menu Suivi, déjà en ligne
+    icône-puis-texte, n'est pas concernée.
+  - **Dégradé dynamique le 17 septembre 2026** (même demande), **vertical
+    depuis la même journée** (précision de l'utilisateur : « plus sombre en
+    bas, plus clair en haut », même lecture que le dégradé de Sommeil) : un
+    dégradé deux fois plus haut que l'écran (`background-size: 100% 160%`)
+    dont seule la fenêtre de position dérive lentement. Coupé sous
+    `prefers-reduced-motion` comme le reste des animations de l'application.
+    Les cartes restent sur `--fond-carte`, opaque, la lisibilité du texte
+    n'est pas concernée.
+    - **Remplacé par un « fond vivant » le 22 septembre 2026** (demande de
+      l'utilisateur, lien CodePen fourni — "Living Palette System" de
+      Vanessa Victorino, technique reprise) : `.fond-vivant`, un
+      `conic-gradient` très flouté (`blur(70px) saturate(120%)`) en rotation
+      lente (45 s, `@keyframes fond-vivant-rotation`), plutôt que le
+      glissement vertical précédent. Couche à part (`<div class="fond-
+      vivant">` dans `index.html`) plutôt qu'un `background` sur
+      `#ecran-menu` lui-même : une rotation demande `transform`, que
+      `background-position` ne permet pas. Toujours coupé sous
+      `prefers-reduced-motion`, cartes et en-tête toujours opaques
+      au-dessus. Premier geste du chantier « accueil et sous-menus trop
+      statiques » noté la veille (voir « Chantiers ouverts ») — le reste
+      (sous-menus, `impeccable.style`) n'est pas encore entamé.
+      - **Les cinq palettes du CodePen, sélectionnables, deuxième demande le
+        même jour** (« switch pour choisir entre les 5 propositions de
+        dégradé », défaut Desert Bloom) : reprises telles quelles cette
+        fois — Horizon Shift, Quiet Voltage, Filtered Reality, Desert
+        Bloom, Cosmic Ink —, pas la palette pastel de l'application comme
+        au premier essai. `--fv1` à `--fv6` définies par palette via un
+        attribut `data-degrade` sur `<html>` (`[data-degrade="desert"]`
+        etc. dans `css/style.css`) plutôt qu'une variable CSS unique :
+        `.fond-vivant` n'a besoin de connaître que les six noms de
+        variable, jamais les couleurs elles-mêmes ;
+        `appliquerDegradeAccueil()` (`js/app.js`) ne fait que poser
+        l'attribut depuis `reglages.degradeAccueil`, appelée au démarrage
+        et à chaque sauvegarde des réglages. Premier et dernier arrêt du
+        dégradé identiques (`--fv1` répété en fin de liste), même besoin
+        qu'au premier essai. Choix mémorisé dans `reglages` comme les
+        autres réglages (`#reglage-degrade-accueil` sur l'écran Réglages,
+        un `<select>` plutôt que cinq cases : un seul choix possible à la
+        fois) — à ne pas isoler à part comme `dureeTenueGainage`
+        (gainage), qui vit ailleurs pour une tout autre raison.
+      - **Réduit en taille pour un dégradé plus fin, même demande** :
+        `transform: scale(.55)` sur `.fond-vivant`, combiné à la rotation
+        dans `@keyframes fond-vivant-rotation` (l'échelle doit être répétée
+        dans les deux étapes du keyframe, sans quoi l'animation repartirait
+        de l'échelle 1 au premier tour). La couche reste centrée et couvre
+        toujours l'écran une fois floutée, mais en occupant moins d'espace
+        visuel, plus proche d'un halo que d'un aplat.
+        - **Bord clair aux coins, corrigé le même jour** (signalé par
+          l'utilisateur : un bord presque blanc — `--fond` — apparaissait
+          selon l'angle de rotation) : `inset: -25%` dimensionnait la
+          couche à partir de la largeur ET de la hauteur du conteneur
+          séparément, plus petit que sa diagonale une fois réduit à
+          l'échelle .55 — insuffisant pour couvrir les coins d'un écran de
+          téléphone (portrait, très étroit) à toutes les rotations.
+          `width`/`height: 220vmax` (basé sur la plus grande dimension du
+          viewport) donne un carré nettement plus grand que la diagonale
+          de l'écran même une fois réduit à l'échelle, couvrant les coins
+          quel que soit l'angle.
+      - **Serpent autour des bulles de l'accueil, le 26 septembre 2026**
+        (demande de l'utilisateur, CodePen « Snake highlight » de Mikael
+        Ainalem, code collé par l'utilisateur ; « uniquement dans la page
+        d'accueil »). Un segment de trait en dégradé `#ff00ff` → `#ff0000`
+        glisse le long du contour de la bulle puis s'allonge jusqu'à le
+        fermer, comme l'original (segment ≈ 17 % du tracé, ralenti
+        easeOutQuart), en keyframes CSS plutôt qu'anime.js (`.serpent`,
+        `jouerSerpent()`). SVG injecté dans la carte à la première
+        animation, rectangle normalisé par `pathLength="100"` et dimensionné
+        par les propriétés CSS de SVG 2. **Deux moments, choisis par
+        l'utilisateur** : à l'appui, un tour de 0,8 s avant d'ouvrir
+        l'écran (`ouvrirDepuisAccueil()`, `DUREE_SERPENT_APPUI_MS`, qui
+        **retarde donc la navigation** de ce délai) ; au retour sur
+        l'accueil (`afficher('menu')`), ~3 s autour de la dernière bulle
+        choisie, deux tours puis fermeture et fondu. Coupé, sans délai,
+        sous `prefers-reduced-motion`.
+      - **Les trois cartes transparentes le 23 septembre 2026** (demande de
+        l'utilisateur, pour laisser voir le fond vivant tourner derrière) :
+        `#ecran-menu .carte-menu { background: rgba(255,255,255, X); }`
+        plutôt que `--fond-carte` telle quelle. 60 % d'abord (alpha .4),
+        puis **70 % au deuxième réglage, même jour** (alpha .3, valeur
+        actuelle). `backdrop-filter: blur(16px)` ajouté en plus, pas
+        demandé mais nécessaire : sans lui le texte perdait toute
+        lisibilité dès que le dégradé passait une teinte sombre dessous
+        (Cosmic Ink, Quiet Voltage).
+      - **Étendu à Sport, Suivi et Réglages, même jour** (demande de
+        l'utilisateur : « même principe pour la page exercices, suivi et
+        réglage », « dégradé couleur différente qu'en page d'accueil »,
+        « fond transparent organisé comme la page d'accueil ») :
+        `#ecran-accueil`, `#ecran-suivi` et `#ecran-reglages` reçoivent
+        chacun leur propre `<div class="fond-vivant">` et leur propre
+        palette **fixe** (pas de `<select>` comme l'accueil, non demandé
+        ici) parmi les quatre restantes du CodePen — Horizon Shift pour
+        Sport, Quiet Voltage pour Suivi, Filtered Reality pour Réglages —
+        choisies pour rester visuellement distinctes de l'accueil et entre
+        elles. Les propriétés communes (géométrie, flou, échelle,
+        `@keyframes fond-vivant-rotation`) ont été regroupées sur
+        `.fond-vivant` nu plutôt que répétées par écran ; seul le
+        `background` (les couleurs) change par sélecteur d'écran.
+        `.carte-jour` (Sport) et `.carte-menu-petite` (Suivi) reprennent le
+        même traitement transparent que `.carte-menu`, plus **largeur
+        plafonnée à 300px et centrée** (« même largeur, centrée »),
+        revenant sur le plein-largeur du 14 septembre 2026 pour
+        `.carte-jour` — cette fois pour laisser voir le dégradé sur les
+        côtés, raison qui n'existait pas alors. Réglages n'a pas de
+        « bulles » à recentrer (un formulaire) : seuls ses champs
+        (`.champ-large input`/`select`, scopé à `#ecran-reglages` pour ne
+        pas toucher les mêmes classes sur l'écran de fin ou les
+        mensurations) passent en transparent flouté, même esprit.
+      - **Sport : plus de barre ni de titre depuis le 23 septembre 2026**
+        (demande de l'utilisateur, capture Pixel 9 à l'appui : « supprimer
+        la bande blanche en haut pour que le dégradé prenne 100 % de
+        l'écran », « supprimer le nom Sport ») : même geste que Sommeil le
+        17 septembre 2026 (voir plus bas, `#ecran-sommeil`), seul le retour
+        reste, flottant (`.icone-retour-flottant`, absolu, calé sur
+        `env(safe-area-inset-top)`). Fond transparent-flou plutôt que blanc
+        plein comme sur Sommeil : la palette de cet écran (Horizon Shift)
+        n'est pas toujours sombre, contrairement au dégradé fixe nuit de
+        Sommeil, un icône uni n'y resterait donc pas lisible partout — même
+        traitement que `.carte-jour`. `#ecran-accueil` gagne un
+        `padding-top` compensant l'absence de barre, scopé à lui seul (les
+        trois autres écrans du chantier gardent leur barre).
+        **Cartes espacées sur toute la hauteur et agrandies, même
+        capture** (« bulles espacement pour prendre toute la hauteur de
+        l'écran et agrandissement ») : `.liste-jours` passe de
+        `align-content: start` à `space-evenly`, qui retombe sur le même
+        comportement que `start` si les sept cartes finissent par déborder
+        (plus de jours, écran plus petit) — l'espace à distribuer devient
+        nul, le défilement déjà en place prend le relais sans rien de plus
+        à gérer. `.carte-jour` (padding, emoji, nom, détail) et l'espace
+        entre cartes agrandis en proportion.
+      - **Recalé sur l'original du CodePen le 26 septembre 2026**
+        (capture de l'original fournie par l'utilisateur : « un peu trop
+        zoomé », « bord noir, rotation un peu plus rapide », « peut-être
+        le tourner à 90° » ; CSS lu sur la page debug du CodePen,
+        `cdpn.io/pen/debug/…`, que Cloudflare ne bloque pas). L'original
+        fait tourner une couche **de la taille de l'écran** sur un fond de
+        la couleur la plus sombre de la palette : les coins qui se
+        découvrent donnent le « bord noir », voulu. Le 23, on avait fait
+        l'inverse (couche 220vmax réduite à .55, fond clair, opacité 60 %)
+        pour cacher ces coins, d'où l'effet zoomé et délavé. Désormais :
+        rectangle **paysage** (100vh × 100vw) centré et tourné de 90° au
+        départ, pour retrouver les proportions de l'aperçu paysage du
+        CodePen sur un écran portrait ; opacité pleine ; flou 60px (80px
+        au-delà de 600px) et saturation 120/130 % comme l'original ; un tour
+        en 25 s au lieu de 45 ; fond de chaque écran à la couleur la plus
+        sombre de sa palette (`--fv1` pour l'accueil). **Revient sur la
+        correction « bord blanc » du 23** : c'était le fond clair qui
+        gênait, pas le principe des coins découverts.
+        - **Verre des cartes passé de 30 % à 80 % de blanc** (`--verre`),
+          conséquence directe : sur un fond désormais presque noir par
+          endroits, le texte sombre des cartes devenait illisible (constaté
+          sur Sport). 80 % remet le pire cas au-dessus de WCAG AA ; sur ces
+          quatre écrans, `--texte-faible` et `--accent-clair` sont
+          redéfinis un cran plus sombres. Pied de Sport, bloc des séances
+          en cours et corps de Réglages reçoivent le même verre plutôt que
+          du texte posé à nu sur le fond.
+      - **Même jour, plusieurs retouches successives** (demandes de
+        l'utilisateur) :
+        - **Accueil plein écran** : plus d'en-tête blanc ni de titre
+          « Muscu » (`.entete-accueil` retiré de `index.html`).
+        - **Pied de Sport sans fond** : « Séances enregistrées » en simple
+          texte blanc (`.lien-historique`) ; l'état de synchronisation
+          (`#etat-sync`, « Classeur à jour »…) quitte Sport pour l'écran
+          des séances enregistrées, rafraîchi par `rendreHistorique()`.
+        - **Verre des bulles à 70 %** au lieu de 80 % (« légèrement plus
+          transparent »), texte secondaire toujours AA au pire point.
+        - **Horizon Shift retiré de l'application** (« n'utilise pas
+          Horizon Shift ») : option supprimée du choix de l'accueil, un
+          choix déjà enregistré retombe sur Desert Bloom.
+        - **Un dégradé différent par page, garanti** : `data-palette` posé
+          sur chacun des quatre écrans par `appliquerDegradeAccueil()` —
+          l'accueil prend le choix des réglages, Sport, Suivi et Réglages
+          les trois palettes restantes de `PALETTES_FOND` dans l'ordre.
+          Remplace l'attribut unique `data-degrade` sur `<html>` et les
+          couleurs figées par écran, qui laissaient l'accueil tomber sur la
+          même palette qu'une autre page selon le choix fait.
+      - **Suivi aligné sur Sport le 26 septembre 2026** (« bulles suivi
+        même mise en page que les bulles sport ») : plus de barre ni de
+        titre, même retour flottant (`.icone-retour-flottant`, renommée
+        depuis `.icone-sport-flottant` pour servir aux deux), même
+        `padding-top` ; `.liste-menu-petite` répartit ses sept cartes sur
+        toute la hauteur (`justify-content: space-evenly`), cartes à la
+        taille de `.carte-jour` (emoji 42px, 14px 16px de marge intérieure).
+        Réglages garde sa barre, non demandé.
+      - **Réglages lisible le 16 octobre 2026** (« illisible, ce qui n'a pas
+        de fond passe-le en blanc », puis « pas de fond blanc derrière la
+        bannière ») : texte posé sur le fond vivant en blanc avec ombre
+        portée, champs gardant leur verre, barre transparente au titre
+        blanc. Le verre du corps de Réglages et de `.reprise` (Sport) avait
+        disparu depuis le 4 octobre : une règle de l'échauffement insérée au
+        milieu de leur sélecteur l'avait coupé. Rétabli pour `.reprise`.
+- **Direction visuelle : mode clair, référence Strava**, choisi via
+  `impeccable.style` (outillage de conception introduit ce jour-là, voir
+  « Décision de départ » plus haut) et consigné dans `PRODUCT.md` (section
+  Brand Commitments). Toute la palette de `css/style.css` est calculée
+  (contraste WCAG) plutôt qu'estimée à l'œil, contre les trois fonds de
+  l'application (voir l'en-tête du fichier). Remplace un mode sombre qui
+  faisait référence jusque-là ; aucune bascule automatique, un seul thème
+  livré.
+  - **Palette retouchée le 17 septembre 2026** (demande de l'utilisateur,
+    « plus clair, moins saturé », déclenchée par l'État musculaire mais
+    étendue à toute l'application puisque les six couleurs vives
+    (`--accent`, `--accent-clair`, `--hausse`, `--baisse`, `--danger`,
+    `--mesure-bras`) sont des variables CSS partagées) : saturation -16,
+    luminosité +1,5 à +6 selon la marge disponible sur chacune, calculée
+    pour rester ≥ 4,55:1 (WCAG AA avec une petite marge, pas seulement
+    ≥ 4,5) contre les trois fonds de l'application — la palette d'origine
+    étant déjà au plus juste, l'assouplir davantage aurait fait tomber au
+    moins une teinte sous le seuil contre le plus sombre des trois
+    (`--fond-champ`). Les valeurs `rgba()` à la main qui reprenaient les
+    anciens RGB de `--accent`/`--hausse`/`--baisse` (fonds teintés d'un
+    badge, d'une ligne validée...) ont été mises à jour avec.
+  - **État musculaire passé à une échelle à part, quatre teintes, le
+    17 septembre 2026** (demande de l'utilisateur : « tu n'as pas changé les
+    couleurs », puis « rouge orange-jaune et vert ») : la retouche
+    ci-dessus, appliquée à `--danger`/`--baisse`/`--hausse` partagées,
+    restait trop proche des teintes d'origine pour se voir d'un coup d'œil,
+    et ces trois variables servent par ailleurs à de vraies alertes ou
+    comparaisons qui n'avaient pas à changer plus. `--muscu-fatigue`,
+    `--muscu-charge`, `--muscu-recuperation`, `--muscu-pret` : quatre pastel
+    dédiés (rouge, orange, jaune, vert), quatre paliers au lieu de trois
+    (`couleurEtat()` dans `js/app.js`, seuils 0,25/0,55/0,85). Texte sombre
+    (`--texte`) plutôt que blanc sur les quatre : le jaune n'offre pas assez
+    de contraste avec du blanc, un seul traitement de texte pour les quatre
+    plutôt qu'un cas particulier. Classes `.muscu-*`, à ne pas confondre
+    avec `.zone-fatigue`/`.zone-recup`/`.zone-prete` qui restent en place et
+    inchangées pour le calendrier du mois de Sommeil (qualité de nuit, pas
+    récupération musculaire — même mot, sens différent, deux échelles).
+  - **Écran de séance en palette électrique / néon depuis le 26 septembre
+    2026** (remarque du 25 : « le vert est trop classique / académique, plus
+    dynamique / sport », direction choisie par l'utilisateur parmi trois
+    proposées). Limitée à `#ecran-seance` et `#minuterie-plein-ecran`
+    (bloc en fin de `css/style.css`) : `--accent`, `--accent-clair`,
+    `--repos` et les deux teintes de l'anneau y sont redéfinies, les règles
+    existantes suivent. Violet `#6a00ff` (6,0:1) et bleu `#0050e6` (5,6:1)
+    pour ce qui porte du texte ; cyan `#00e5ff` et magenta `#ff2bd6`, trop
+    clairs pour du texte sur fond clair, réservés aux halos, à la jauge, à
+    la barre des séries faites et à l'anneau. Le plein écran de repos passe
+    du dégradé vert à une nuit indigo/violette, anneau cyan → magenta
+    lumineux. Remplace, sur ces deux écrans seulement, le vert de repos
+    demandé le 18 septembre.
+    **Barre de progression de séance en néon électrique le 27 septembre
+    2026** (demande de l'utilisateur) : remplissage cyan, violet, magenta
+    qui défile, halo qui grésille, étincelle en bout de barre
+    (`.jauge-pilule-remplissage-accent`), coupés sous
+    `prefers-reduced-motion`. Remplace le gris du 17-18 septembre.
+  - **Charte graphique tirée d'une photo depuis le 29 septembre 2026**
+    (remarque de l'utilisateur : « uniquement ces couleurs dans toute
+    l'appli », photo de cinq couleurs fournie, puis « pas de fond noir,
+    ajoute un blanc ou écru qui se marie »). `charte/palette.jpg` (cinq
+    bandes verticales : rose, violet, bleu, menthe, encre, dans cet ordre)
+    est lue par `outils/charte.py`, qui remplit `charte/modele.css` et
+    écrit `css/charte.css` — **jamais édité à la main**. Changer de charte :
+    remplacer la photo par une bande de cinq couleurs aux mêmes rôles,
+    relancer le script. Dérivés calculés : fond blanc à peine teinté du
+    violet, versions « encre » assombries vers la couleur la plus sombre
+    jusqu'à 4,6:1 sur le fond de champ pour le texte (les couleurs vives
+    telles quelles ne servent qu'aux aplats, halos, jauges, dégradés),
+    versions pâles pour l'état musculaire, neuf rangs d'interférence du
+    gainage (`--interference-N`, repli sur les teintes d'origine hors
+    charte). Le fichier ne s'applique que sous `html[data-charte="photo"]`,
+    posé par `appliquerDegradeAccueil()` quand le réglage « Couleurs de
+    l'application » vaut « Charte (photo) » (défaut) ; les quatre fonds
+    vivants prennent alors la palette `charte`, décalés dans leur rotation
+    (`animation-delay`). Choisir une ancienne palette (Desert Bloom…) rend
+    toute l'application à ses couleurs d'avant, restées intactes dans
+    `css/style.css` (demande : « conserve les anciennes pour rebasculer »).
+    Une couleur ajoutée plus tard dans `css/style.css` doit aussi recevoir
+    son équivalent dans `charte/modele.css`, sans quoi elle échappe à la
+    charte.
+    **Retouches du 30 septembre 2026** (« ajoute du noir quand même, réduis
+    la quantité de rose, toutes les couleurs légèrement plus foncées ») :
+    `ASSOMBRIR` (12 %) dans `outils/charte.py` rapproche les quatre
+    couleurs vives de l'encre avant tout calcul ; le noir entre dans les
+    fonds vivants et la vague, le rose n'y apparaît plus qu'une fois et
+    quitte la vague et la barre de progression. **Le téléphone ne recevait
+    pas la charte** : un réglage enregistré avant elle gardait son ancienne
+    palette. `reglages.charteAdoptee` fait basculer une seule fois vers la
+    charte au démarrage ; un retour choisi ensuite reste respecté.
+  - **Minuterie de repos différenciée de --danger le 17 septembre 2026**
+    (demande de l'utilisateur : « différencie les deux rouges ») : voir
+    `--repos` plus bas, section Séance.
+
+L'écran de séance et le pont Apps Script ne sont pas concernés par ce
+chantier : tout ce qui suit vit dans le sous-menu Suivi, jamais relu par
+l'import ni par `ecrireSeance()`.
+
+### Suivi : sept contenus
+
+Chaque écran a sa propre fonction de rendu (`rendreCalendrier()`,
+`rendreEtatMusculaire()`, `rendreSommeil()`, `rendreMensurations()`,
+`rendreEvolutionCourse()`, `rendreTonnageMuscles()`, `rendreRemarque()`) et
+son `<section>` dédiée dans `index.html`, ouverts et refermés comme les
+autres sous-écrans via `afficher()`.
+
+- **Calendrier** : une case par jour du mois en cours, l'icône du type de la
+  première séance enregistrée ce jour-là (`iconeJour()`, déjà utilisée pour
+  les bulles de l'accueil). Ne distingue pas J1 de J3, ce niveau de détail
+  vivant dans l'historique.
+  - **Badge `×N` pour un jour à plusieurs séances, le 18 septembre 2026**
+    (signalé par l'utilisateur : une deuxième séance le même jour restait
+    invisible, `parJour` ne gardant que la première trouvée) : chaque jour
+    garde désormais toutes ses séances, la première fixe toujours l'icône,
+    un badge en coin (`.calendrier-multi`) s'ajoute dès la deuxième.
+  - **Deux icônes par jour et navigation de mois en mois, le 26 septembre
+    2026** (demande de l'utilisateur) : les deux premières séances du jour
+    s'affichent côte à côte, réduites (`.calendrier-icones.deux`), et le
+    badge `×N` ne sert plus qu'au-delà de deux. Flèches ‹ › au-dessus de la
+    grille (`#calendrier-precedent`/`#calendrier-suivant`, déclarées dans
+    `index.html` comme l'exige `outils/verifier_code.py`), décalage
+    `decalageMoisCalendrier` remis à zéro à chaque ouverture ; pas de mois
+    futur (flèche › désactivée sur le mois en cours). « Aujourd'hui » n'est
+    plus marqué que sur le mois en cours : le numéro du jour suffisait
+    jusque-là, faute de navigation.
+  - **Fond bleu si une nuit a été renseignée ce jour-là, même demande,
+    même jour** : indépendant de toute séance de sport (`lireSommeil()`,
+    `nuit.cle`), coloré du bleu le plus clair du dégradé de fond de l'écran
+    Sommeil (`#5a7aa8`, voir `#ecran-sommeil` dans `css/style.css`) plutôt
+    qu'une couleur de la palette de ce calendrier-ci, pour rester
+    reconnaissable comme « du sommeil » d'un coup d'œil. Classe `.a-sommeil`
+    sur `.calendrier-case`, à ne pas confondre avec `.zone-fatigue`/
+    `.zone-recup`/`.zone-prete`, réutilisées par un tout autre écran (la vue
+    mensuelle de Sommeil elle-même, voir plus bas).
+    **Masqué par défaut depuis le 27 septembre 2026** (demande de
+    l'utilisateur) : case « Afficher les nuits renseignées » au-dessus du
+    calendrier (`#calendrier-sommeil`), choix gardé sur le téléphone
+    (`muscu.calendrierSommeil`, `lireSommeilCalendrier()`).
+- **État musculaire**, gadget **indicatif, pas une mesure** : chaque zone
+  récupère à une vitesse forfaitaire (`ZONES_MUSCULAIRES` dans `js/app.js`,
+  48 h les petits groupes, 72 h les gros) depuis la dernière série validée
+  qui l'a travaillée, tous exercices confondus, coloré du rouge (fatigué) au
+  vert (prêt) en passant par l'amber. Le champ `muscle` du classeur porte
+  parfois le même muscle sous deux graphies (« Deltoide lateral » et
+  « Deltoïde latéral » coexistent dans le programme actuel) : la
+  comparaison passe par `formeDuNom()`, pas par égalité stricte, pour ne pas
+  en perdre une — testé avec une paire fabriquée exprès.
+  - **Mannequin de dos ajouté le 16 septembre 2026** (`FORMES_MANNEQUIN_
+    ARRIERE`, à côté du mannequin de face) : les six zones qui n'avaient
+    jusque-là qu'une liste de texte (dos, épaules arrière, triceps,
+    fessiers, ischio-jambiers, mollets, faute d'une vue de dos) ont
+    maintenant aussi un repère visuel. La liste de texte reste en dessous
+    des deux mannequins : le nom d'une zone ne doit pas dépendre d'un
+    survol ou d'un appui long sur mobile. Même mannequin de dos réutilisé
+    par Tonnage par muscle (voir plus bas).
+  - **Mannequin réaliste depuis le 17 septembre 2026**, à la demande de
+    l'utilisateur (« cherche un corps avec tous les muscles, schéma
+    réaliste ») : les cercles et rectangles dessinés à la main cèdent la
+    place à des polygones anatomiques repris de `react-body-highlighter`
+    (github.com/giavinh79/react-body-highlighter, licence MIT),
+    `MANNEQUIN_AVANT`/`MANNEQUIN_ARRIERE` dans `js/app.js`, repère
+    1000 x 2000. Rendus par une fonction commune aux trois mannequins de
+    l'application, `rendreMannequinPolygones()` : silhouette neutre pour
+    les polygones sans zone suivie, couleur d'état pour les zones de
+    `ZONES_MUSCULAIRES` (voir la puce suivante pour leur liste à jour).
+    Triceps et mollets ont un polygone sur les deux vues (visibles de face
+    comme de dos dans la source) : les deux sont colorés, plus fidèle qu'un
+    seul côté choisi arbitrairement. `dos` regroupe trois paires de la
+    source (trapèze, haut et bas du dos) sous une seule couleur, même
+    simplification qu'avant. `FORMES_MANNEQUIN_ARRIERE` et
+    `SILHOUETTE_MANNEQUIN` (ci-dessus) sont retirés, remplacés par ces deux
+    tables.
+  - **Treize zones depuis le 17 septembre 2026** (« il manque de nombreux
+    muscles », dix jusque-là) : le mannequin réaliste laissait de larges
+    pans du corps en silhouette neutre en permanence, faute d'exercice du
+    programme ciblant ces polygones-là. Deux causes distinctes, deux
+    corrections différentes :
+    - **Trois polygones existants portaient une donnée déjà suivie sous une
+      autre zone**, jamais reliée à eux : les deux polygones LEFT_SOLEUS/
+      RIGHT_SOLEUS de la source (mollet au sens courant du terme) rejoignent
+      `mollets`, et le polygone ABDUCTORS côté face (qui, malgré son nom
+      côté source, correspond à l'abducteur/moyen fessier, pas à
+      l'adducteur) rejoint `fessiers`, qui suit déjà `Abducteurs et moyen
+      fessier`. Aucune zone créée, juste un polygone de plus coloré par une
+      zone existante.
+    - **Trois zones neuves, sourcées du gainage plutôt que du champ
+      `muscle`** : `abdominaux` (catégories `anti_extension` +
+      `flexion_chargee`, dead bug/planche/crunch inversé/relevé de genoux),
+      `obliques` (`anti_rotation` + `anti_lateroflexion`, pallof press/bird
+      dog/marche de l'ours/planche latérale), `avant-bras` (farmer walk
+      seul, footings compris via `derniereFoisMouvement`). `ZONES_MUSCULAIRES`
+      porte pour elles un champ `mouvements` au lieu de `muscles` ;
+      `derniereFoisZone()` bascule vers `derniereFoisZoneGainage()`, qui lit
+      `s.fin` faute d'un horodatage par mouvement (`seance.mouvements` ne
+      garde qu'un tableau de valeurs, pas de série individuelle comme en
+      musculation). Ces trois zones n'ont pas de tonnage kg : exclues du
+      mannequin de Tonnage par muscle (voir plus bas), qui ne suit que les
+      dix zones adossées à `muscle`. Restent en silhouette neutre, faute de
+      donnée : tête, cou, genoux, adducteurs (vrai sens anatomique, aucun
+      exercice du programme ne les cible).
+  - **Toutes les zones dans la liste depuis le 17 septembre 2026** (« il
+    manque les pecs, biceps ») : un ancien champ `vue` réservait la liste
+    texte aux zones jugées "pas évidentes sur le mannequin de face" (dos,
+    épaules arrière...), en excluant pectoraux/épaules/biceps/quadriceps —
+    bien coloriées sur le mannequin, mais absentes de la liste où
+    l'utilisateur les cherchait. Champ retiré, `ZONES_MUSCULAIRES` n'a plus
+    besoin de le porter ; même correction sur la liste de Tonnage par
+    muscle (devenue Surcharge progressive, voir plus bas), qui souffrait du
+    même défaut.
+  - **Palette plus claire et moins saturée le 17 septembre 2026** (demande
+    de l'utilisateur, déclenchée par cet écran mais appliquée à
+    l'ensemble) : voir « Direction visuelle » plus haut, la retouche vit
+    dans les variables CSS (`--accent`, `--accent-clair`, `--hausse`,
+    `--baisse`, `--danger`, `--mesure-bras`) et cascade donc à toute
+    l'application sans logique dédiée ici.
+- **Sommeil**, écran neuf sans lien avec le programme : une frise de la
+  nuit en cases de 30 min, le cœur (23h30-8h) bleu par défaut sans rien à
+  saisir pour une nuit ordinaire, un appui bascule un créneau en rouge
+  (insomnie). Raisons d'insomnie, repères de la journée (alcool, café,
+  pipi nocturne, écran tardif, repas tardif), vue du mois.
+  - **Étendue à 24h le 16 septembre 2026** (48 créneaux, `creneauxSommeil()`),
+    demande de l'utilisateur : la fenêtre d'origine (22h-11h, 26 créneaux)
+    n'avait pas de place pour un sport ou un repère de l'après-midi
+    (`indexCreneauPourHeure` renvoyait -1). 20 créneaux par ligne plutôt que
+    13 : la première ligne couvre alors 22h-7h30 pile
+    (`SOMMEIL_COEUR_FIN`), si bien que la session de sommeil 00h-8h tient
+    entière dessus, jamais coupée par un retour à la ligne.
+    - **Réduit à 17 par ligne le 17 septembre 2026** (demande de
+      l'utilisateur, « le plus grand possible »), au prix de cette garantie :
+      00h-8h peut désormais déborder sur la deuxième ligne. Compromis
+      assumé par l'utilisateur, la taille du créneau comptant plus ici que
+      la continuité visuelle du bloc de sommeil.
+    - **Passée de flex-wrap + largeur en `calc()` à `grid-template-columns:
+      repeat(17, 1fr)` le même jour** (signalé par l'utilisateur : la frise
+      éclatait en 4 lignes inégales au lieu de 3 sur certaines largeurs
+      d'écran) : l'arrondi au pixel de 17 largeurs calculées individuellement
+      pouvait déborder de quelques dixièmes de pixel et faire passer un
+      dix-septième créneau à la ligne suivante — une grille répartit la
+      largeur déterministiquement, le nombre par ligne ne peut plus varier.
+      `align-items: start` sur `.sommeil-frise` évite l'étirement vertical
+      par défaut d'une grille, qui aurait sinon écrasé `aspect-ratio` sur
+      les créneaux (déjà vu une fois, voir juste en dessous, « pas un
+      problème de grille... »).
+    - **Réduit à 12 par ligne, quatre lignes, le 18 septembre 2026** (demande
+      de l'utilisateur : « 3 lignes, j'en veux 4 ») : 48 créneaux ÷ 12 tombe
+      juste, quatre lignes pleines plutôt que 17/17/14 (trois lignes, la
+      dernière incomplète). Moins de colonnes agrandit encore chaque
+      créneau, même logique que le passage de 20 à 17 la veille, au prix
+      d'un bloc plus haut — compromis assumé par l'utilisateur, comme les
+      précédents de cette liste.
+    - **Fenêtre décalée à 23h le 18 septembre 2026** (demande de
+      l'utilisateur : « première ligne démarre à 23h »), 22h à l'origine :
+      `SOMMEIL_DEBUT_MIN` passe à `23 * 60`, `SOMMEIL_COEUR_DEBUT`/`_FIN`
+      décalés d'un cran (1 et 17 au lieu de 3 et 19) pour que le cœur de
+      nuit (23h30-8h) tombe toujours au bon endroit sur la fenêtre glissée.
+      Toujours 24h couvertes, seul le point de départ change.
+  - **Sans barre ni titre depuis le 17 septembre 2026** (remarque de
+    l'utilisateur) : seul le retour reste, `.icone-sommeil-flottant`,
+    flottant tout en haut de l'écran (niveau caméra selfie, `position:
+    absolute` sur `#ecran-sommeil`) plutôt que dans une barre opaque qui
+    aurait coupé le dégradé de fond en haut, et un peu plus grand que
+    `.icone` ailleurs (52px contre 44px) pour rester facile à toucher sans
+    le confort d'une barre pleine largeur autour de lui. Remonté trois fois
+    de plus le même jour (« encore plus haut », répété) : le plancher hors
+    encoche est passé de 6 à 2px puis à 0, `env(safe-area-inset-top)`
+    restant la seule protection contre une encoche ou une caméra selfie
+    réelle.
+  - **Dégradé de fond intensifié le 17 septembre 2026** (remarque de
+    l'utilisateur, « plus foncé et plus clair aux extrémités ») :
+    l'extrémité haute est éclaircie juste assez pour rester au-dessus de
+    4,3:1 de contraste avec le texte blanc au pire point, la bascule vers
+    les tons sombres du milieu se faisant avant que le premier texte (le
+    titre de la nuit) n'apparaisse ; l'extrémité basse, jamais sous du texte
+    critique, est poussée bien plus loin (quasi noir).
+  - **Cœur de nuit (23h30-8h) agrandi le 17 septembre 2026** (`.sommeil-
+    creneau.coeur`, `aspect-ratio: 1 / 1.35`) : plus haut que large plutôt
+    que plus large, pour ne pas changer le nombre de créneaux par ligne.
+  - **Trois appuis distincts sur la frise, ajoutés le 17 septembre 2026**
+    (remarque de l'utilisateur) : un appui simple sur un créneau nu bascule
+    l'insomnie (dans le cœur, voir plus bas pour hors du cœur) ; un appui
+    sur une puce « La journée » (ou de sport) puis sur une case de la frise
+    y pose un repère à l'heure visée ; un appui simple sur un créneau qui en
+    porte déjà un le retire directement. Voir le câblage du clic dans
+    `rendreSommeil()`, `js/app.js`. **Un quatrième geste (appui long de
+    550 ms pour retirer) a existé quelques heures le même jour avant d'être
+    simplifié** en appui simple (« pas 3 ») : un geste de trop pour un
+    résultat identique.
+    - **Sélection puis dépose au clic, plutôt que glissement, depuis le
+      18 septembre 2026** (demande de l'utilisateur : « le cliqué-glissé ne
+      fonctionne pas, il lâche les émoticônes à mi-chemin ») : le premier
+      appui-glissé au doigt (17 septembre 2026, `demarrerGlissementRepere`/
+      `deposerGlissementRepere`, retirés) s'est révélé peu fiable sur
+      certains appareils réels. Un appui sur une puce l'arme
+      (`armementFriseSommeil`, surlignée en pointillé blanc — voir
+      `.journee-item.arme` dans `css/style.css`), un second sur une case de
+      la frise y dépose le repère (ou l'heure du sport) et désarme ; un
+      appui sur la puce déjà armée la désarme sans rien déposer. N'annule
+      pas le comportement existant de la puce (bascule ou compteur), qui se
+      déclenche au même appui que l'armement plutôt qu'à un appui distinct.
+    - **Trois états en boucle hors du cœur depuis le 18 septembre 2026**
+      (demande de l'utilisateur : « en dehors des heures de sommeil pré
+      rempli, 1 clic bleu, +1 clique rouge, +1 clique grisé ») : rien
+      n'étant pré-rempli hors du cœur, un appui simple ne pouvait jusque-là
+      que créer une insomnie (rouge), sans moyen de marquer un vrai sommeil
+      en dehors de la fenêtre bleue par défaut (s'endormir avant 23h30, se
+      réveiller après 8h). `basculerCreneauSommeil()` boucle désormais
+      grisé → bleu (`nuit.sommeilHorsCoeur`, nouveau tableau, même principe
+      que `nuit.insomnies`) → rouge → grisé, hors du cœur.
+      - **Le cœur suit la même boucle depuis la demande suivante, même
+        jour** (« le bleu activé par défaut doit aussi pouvoir se
+        désactiver ») : jusque-là seuls bleu et rouge y existaient, sans
+        moyen de désactiver le bleu par défaut. `nuit.horsServiceCoeur`
+        (nouveau tableau) code ce "grisé" par une **absence** au lieu d'une
+        présence : le cœur étant bleu par défaut, marquer une case grisée
+        s'y fait en l'ajoutant à cette liste plutôt qu'en la retirant d'une
+        liste de bleus qui n'existe pas. `etatCreneauSommeil()` centralise
+        cette différence de représentation, `insomnies` restant commun aux
+        deux zones et prioritaire sur l'affichage. Colonnes `Sommeil hors
+        coeur (heures)` et `Coeur desactive (heures)` ajoutées à la page
+        `Sommeil` du classeur en conséquence (`ecrireSommeil` dans
+        `appsscript/Code.gs`) — nécessite le redéploiement du pont, comme
+        les autres évolutions de cette page (voir « Chantiers ouverts »).
+    - Les repères de `JOURNEE_SOMMEIL` (café, alcool, pipi nocturne, écran
+      tardif, repas tardif) tolèrent plusieurs occurrences (café à 1h puis
+      à 3h) et vivent dans `nuit.reperesFrise`, une liste plutôt qu'une
+      carte par type.
+    - **Les puces de sport (`SPORT_JOURNEE`) se posent aussi sur la frise
+      depuis le 17 septembre 2026** (« possible appuyé glisser pour placer
+      tous les icônes de journée », jusque-là réservé aux cinq puces
+      ci-dessus) : déposer un sport pose directement son heure dans
+      `nuit.sports` (une seule occurrence par type, voir la puce suivante)
+      plutôt que dans `reperesFrise`. Le champ `<input type="time">` à côté
+      de la puce reste disponible pour une saisie manuelle précise ; les
+      deux cohabitent, l'un n'annule pas l'autre. Un appui sur un sport posé
+      sur la frise le retire aussi (`supprimerSportFrise()`), même geste que
+      pour les autres repères.
+  - **Muscu et footing dissociés le même jour** (même date), autre demande
+    du même soir : un seul `sportType` empêchait de noter les deux (ex.
+    J2/J6 avec du gainage, ou une sortie en plus d'une séance). `nuit.sports`
+    est désormais une carte par type (`{ muscu: '23:00', footing: '' }`).
+  - **Sauvegarde classeur écrite le 16 septembre 2026** (`ecrireSommeil`,
+    page `Sommeil`), repérée en relisant le pont qu'aucune page ne la
+    couvrait jusque-là — contrairement aux consignes et aux mensurations,
+    qui ont eu ce filet dès leur ajout. Même principe que les consignes,
+    pas que les mensurations : une nuit se corrige après coup (insomnie
+    ajoutée le lendemain, raison oubliée), le téléphone renvoie donc
+    l'ensemble courant à chaque synchronisation plutôt qu'un envoi une fois
+    pour toutes par nuit. En attente du prochain redéploiement du pont
+    (voir « Chantiers ouverts »).
+  - **La frise débordait de l'écran**, signalé par l'utilisateur.
+    Longtemps pris pour un problème de mise en page (grille CSS, puis
+    flexbox, puis `aspect-ratio` lui-même — plusieurs pistes essayées puis
+    écartées) avant de trouver la vraie cause, sans rapport : les créneaux
+    « pas encore marqués » portaient la classe `vide`, qui existe déjà
+    ailleurs dans l'application pour les messages d'état vide (`<p
+    class="vide">`, `padding: 40px 0`) et leur imposait donc 80px de haut.
+    **Renommée `.sommeil-creneau.libre`** plutôt que réutilisée : deux sens
+    différents de « vide » n'avaient pas à partager la même classe. Retenir
+    la leçon : un nom de classe générique et court (`vide`, `actif`,
+    `choisi`...) posé sur un nouveau composant mérite une vérification
+    qu'il n'est pas déjà pris ailleurs pour un sens différent.
+  - **Heure incrustée un créneau sur deux** dans la frise (demande de
+    l'utilisateur), les index pairs tombant toujours sur l'heure pile
+    (créneaux de 30 min depuis 22h).
+  - **Sport du jour choisi à la main, pas déduit seul de l'historique**
+    (demande de l'utilisateur le 16 septembre 2026 : l'ancien badge auto,
+    `sportDuJour()`, n'était qu'un texte fixe, pas sélectionnable). Deux
+    puces muscu/footing (`SPORT_JOURNEE`), un seul à la fois, avec une heure
+    une fois choisi (`<input type="time">`, ou par glissement de la puce
+    depuis le 17 septembre 2026, voir plus haut) pour le retrouver sur la
+    frise : l'icône y **remplace le numéro d'heure** sur son créneau
+    (`indexCreneauPourHeure()`), la fenêtre affichée couvrant les 24h depuis
+    le 16 septembre 2026 (voir plus haut).
+- **Mensurations**, à partir de captures d'applications tierces envoyées
+  comme référence par l'utilisateur (silhouette à repères de mesure,
+  comparaison photo avant/après par curseur) — jamais recopiées telles
+  quelles, l'inspiration d'interaction seulement, puis affinées une seconde
+  fois sur les mêmes captures renvoyées en clair après une perte à la
+  compaction du contexte plus tôt dans la session.
+  - **Six mesures (`MENSURATION_CHAMPS`) plus le poids**, chacune associée à
+    une catégorie de couleur (torse, bras, jambe) réutilisant deux teintes
+    déjà posées ailleurs dans l'application (`--accent`, `--baisse`) et une
+    seule couleur neuve pour les bras (`--mesure-bras`, contraste calculé
+    comme le reste de la palette). Le mannequin porte un repère par mesure
+    en **ligne pointillée reliant deux points**, pas un cercle numéroté :
+    une mesure est une circonférence, la ligne s'en rapproche plus qu'un
+    numéro arbitraire. La liste de champs en dessous reprend cette même
+    couleur en pastille.
+  - **Mannequin réaliste et vue de dos ajoutés le 17 septembre 2026**,
+    demande de l'utilisateur : la silhouette de face dessinée à la main
+    (140x240, coordonnées de repères fixées à l'œil) cède la place au même
+    mannequin polygonal que l'État musculaire et le Tonnage par muscle
+    (`MANNEQUIN_AVANT`/`ARRIERE`, 1000x2000, voir plus haut), en silhouette
+    neutre partout — cet écran ne suit aucun état, seulement des mesures.
+    Avant et arrière côte à côte (`.mannequin-paire`, réutilisée telle
+    quelle), l'arrière restant sans repère : aucune des six mesures ne lui
+    est propre, il ne sert qu'à compléter la vue demandée. Les coordonnées
+    des repères de mesure (`reperesMensurations()`) sont recalculées à
+    partir des mêmes polygones (bord du pectoral pour la poitrine, des
+    obliques pour la taille…), pas ré-estimées à l'œil sur le nouveau
+    corps : lues directement dans les coordonnées de la source à la
+    hauteur voulue. Un `<g>` par mesure, pas par ligne : bras, cuisse et
+    mollet portent chacun deux paires (gauche + droite) dans le même
+    groupe, comme l'ancien repère.
+  - **Photo du jour, compressée côté client** (`compresserImage()`, 900px
+    de large au plus, JPEG qualité 0.75) avant d'être gardée : `localStorage`
+    n'est pas fait pour des images en pleine résolution.
+  - **Stockage des photos résolu via le pont existant**, comme les
+    consignes techniques, plutôt qu'un service tiers : `ecrireMensuration()`
+    dans `appsscript/Code.gs` décode la data URL reçue et la dépose dans un
+    dossier Drive dédié (`Muscu - Mensurations`), le lien seul rejoignant la
+    feuille `Mensurations`. Un échec de la photo (Drive pas encore autorisé,
+    par exemple) n'empêche pas l'écriture des valeurs. **Nécessite une
+    autorisation Drive en plus de celle déjà accordée pour Sheets**,
+    redemandée au premier appel qui suivra le redéploiement (voir
+    « Chantiers ouverts »).
+  - **Curseur de comparaison avant/après**, à partir de deux photos datées
+    minimum (sinon un message dit qu'il en manque). Affiche depuis le
+    16 septembre 2026 les écarts chiffrés en bas de la photo comparée
+    (poids, taille, ex. « 88 → 80 kg »), sur un scrim sombre fixe pour
+    rester lisible quelle que soit la photo dessous — n'apparaît que si les
+    deux dates comparées portent une valeur pour la mesure concernée.
+- **Évolution course** : distance et durée existaient déjà dans
+  `muscu.historique` (saisies sur l'écran de footing), cet écran n'est
+  qu'un nouvel affichage. Un type de course à la fois (mêmes boutons
+  `.type-course` que l'écran de footing), seul le premier passage de chaque
+  sortie comptant, comme pour la comparaison à la dernière fois
+  (`majAllureCycle`). J2 et J6 partagent déjà leurs données via
+  `footingParType()`, rien à filtrer ici par jour.
+  - **La courbe trace la vitesse (km/h), pas l'allure** : « plus haut =
+    plus rapide » suit la même lecture que les autres courbes de
+    l'application (plus haut = mieux), là où l'allure en minutes par km
+    ferait descendre la ligne en progressant. Le texte sous la courbe reste
+    en allure, repère habituel du coureur, avec le même écart en s/km et la
+    même coloration hausse/baisse que l'écran de footing.
+- **Surcharge progressive par muscle, mannequin cliquable** (« Tonnage par
+  muscle » jusqu'au 17 septembre 2026), à partir des mêmes captures de
+  référence, passé aux mêmes polygones réalistes que l'État musculaire le
+  17 septembre 2026 (voir la puce dédiée plus haut) : les dix zones à
+  charge (celles adossées au champ `muscle`, `ZONES_MUSCULAIRES.filter(z =>
+  z.muscles)`) y sont cliquables, sur l'une des deux vues ou les deux
+  (triceps, mollets). Réutilise `ZONES_MUSCULAIRES` plutôt qu'une table
+  muscle → exercices séparée : même simplification déjà en place pour
+  l'État musculaire, un seul muscle par exercice.
+  - **Reconverti d'une somme de tonnage kg à un écart de progression en %,
+    le 17 septembre 2026** (demande de l'utilisateur : « tonnage par muscle
+    devient surcharge progressive ») : la somme par zone donnait un volume
+    de travail, pas une progression — un piège déjà écarté ailleurs (voir
+    plus haut, « L'indicateur de progression est la première série de
+    travail ») : le tonnage monte mécaniquement quand la charge baisse et
+    que les répétitions montent, qu'une zone soit en réalité en train de
+    stagner ou reculer. `surchargeExercice()` reprend l'indicateur déjà
+    retenu partout ailleurs dans l'application (première série de travail,
+    charge × répétitions, voir `indicateur()`/`premiereSerieDeTravail()`) et
+    calcule son écart en % entre la première et la dernière séance de
+    l'exercice dans la fenêtre choisie ; `surchargeZone()` moyenne cet écart
+    sur les exercices de la zone qui en ont un. `null` (pas de couleur, pas
+    de chiffre inventé, « Pas assez de données ») si moins de deux séances
+    de l'exercice tombent dans la fenêtre — un écart à 0 % aurait
+    laissé croire à une stagnation mesurée plutôt qu'à une absence de
+    mesure. Les noms `tonnage*` (fonctions, classes CSS, ids) restent tels
+    quels : renommer tout ça aurait été du remue-ménage pour un
+    changement qui porte sur ce qui est affiché, pas sur l'architecture.
+  - Coloré en continu (`fill-opacity` proportionnelle à l'ampleur de
+    l'écart, 20 % servant de plafond visuel plutôt que de seuil de
+    jugement), vert (`--hausse`) en progression, orange (`--baisse`) en
+    recul, gris neutre (`--fond-champ`) sans donnée suffisante. Chaque zone
+    (sur le mannequin ou dans la liste, dos compris depuis le même
+    mannequin de dos que l'État musculaire, **toutes affichées depuis le
+    17 septembre 2026**, voir plus haut « il manque les pecs, biceps ») est
+    cliquable et ouvre le détail par exercice en dessous ; la zone au plus
+    grand écart absolu (progrès ou recul) s'ouvre par défaut — « la plus
+    chargée » n'avait plus de sens une fois le tonnage remplacé. Les trois
+    zones sourcées du gainage (`abdominaux`, `obliques`, `avant-bras`, voir
+    État musculaire) n'ont pas cet indicateur : exclues de ce mannequin-ci,
+    en silhouette neutre, plutôt qu'un chiffre inventé.
+  - **Fenêtre choisie (1 mois / 6 mois) plutôt que fixée à 7 jours**,
+    changé le 17 septembre 2026 : sur un programme où chaque jour ne revient
+    qu'une fois par semaine, un léger décalage (jambes faites 8 jours plus
+    tôt plutôt que 7) suffisait à faire disparaître toute la zone de l'écran
+    (« Rien sur les 7 derniers jours »), alors qu'elle avait bien été
+    travaillée — signalé par l'utilisateur comme un bogue, c'était en
+    réalité la fenêtre trop étroite pour un programme hebdomadaire, et une
+    fenêtre trop courte pour la surcharge progressive ne laisse de toute
+    façon pas le temps à un écart de se former (un exercice fait une seule
+    fois n'a rien à comparer). Deux boutons (`TONNAGE_PERIODES`, variable
+    `tonnagePeriodeJours`, 30 ou 182 jours) remplacent l'ancienne constante
+    `TONNAGE_PERIODE_JOURS`.
+  - **Axes gradués et exercices actifs seulement, le 29 septembre 2026**
+    (remarque de l'utilisateur) : les courbes du détail portent dates en
+    abscisse et valeurs en ordonnée (`courbe()` avec son troisième
+    paramètre `dates`, passé par `progressionPremiereSerie(..., true)` ;
+    les autres courbes de l'application restent sans axes). Un exercice
+    sans série faite depuis `SURCHARGE_ACTIF_JOURS` (14 jours,
+    `exerciceActif()`) n'est plus affiché ni compté dans l'écart de sa zone.
+- **Remarque**, septième et dernier contenu, ajouté le 17 septembre 2026
+  (demande de l'utilisateur) : envoyer une remarque libre au développeur
+  sans passer par un exercice ni une fin de séance, seuls chemins qui le
+  permettaient jusque-là (`#fin-remarque`). Même destination (l'onglet
+  `Remarques` du classeur) et même lecture (`outils/lire_remarques.py`),
+  aucun second système : `envoyerRemarqueSuivi()` construit un objet
+  `{id, texte, date}` et réutilise `ecrireRemarque()` côté
+  `appsscript/Code.gs` (qui ne regarde que `seance.remarque`/`jour`/`id`),
+  avec `jour: '(Suivi)'` pour distinguer ces lignes des remarques de fin de
+  séance dans la feuille. File d'attente locale (`CLES.remarques`, un
+  tableau `{id, texte, date, envoyee}`) sur le même principe que les
+  mensurations : hors ligne d'abord, un échec d'envoi n'efface rien, la
+  remarque repart au prochain appel de `synchroniser()`. **Nécessite le
+  redéploiement du pont** (nouvelle action `remarque` dans `doPost`), comme
+  les évolutions précédentes de cette liste — voir « Chantiers ouverts ».
+  **Bouton d'envoi animé depuis le 29 septembre 2026** (remarque de
+  l'utilisateur) : même `.bouton-sync` et mêmes phases que la fin de
+  séance, `envoyerRemarqueSuivi()`, remis à « Envoyer » 2,5 s après.
+
+### Chantiers évalués et écartés ce jour-là
+
+- **Icônes des cartes de jour → silhouettes de muscles travaillés** :
+  envisagé une fois le mannequin de dos disponible (aurait couvert les dix
+  zones), mais évalué et **volontairement écarté** : à la taille réelle de
+  l'icône d'une carte (34px), un mannequin — face ou dos — serait trop
+  exigu pour se lire, moins clair que l'émoji actuel. Pas un blocage
+  d'outillage, un choix de qualité : forcer cette icône aurait dégradé
+  l'écran plutôt que l'améliorer.
+- **Image par exercice** (illustration des 26 exercices du programme
+  actuel) : reste hors de portée, aucun outil de génération d'image
+  disponible dans cette session. Le mannequin dessiné à la main (cercles et
+  rectangles arrondis) reste la seule option réaliste pour ce genre de
+  visuel dans ce projet.
+- **Lien Garmin Connect** : API officielle fermée à candidature (Garmin
+  Connect Developer Program), pas un accès libre. Rien à construire tant
+  que l'accès n'est pas accordé ; en attendant, le champ de remarque libre
+  existant (voir plus haut) couvre déjà le repli (coller un lien d'activité
+  ou ressaisir les chiffres à la main).
+
+## Chantiers ouverts
+
+1. ~~Redéployer `appsscript/Code.gs`~~ **Fait par l'utilisateur le
+   16 septembre 2026, en soirée** : les quatre évolutions qui étaient en
+   attente (garde-fou anti-doublon sectionné par page, écriture de la
+   séance de gainage dans une page `Gainage`, sauvegarde des consignes
+   techniques dans une page `Consignes`, écriture des mensurations valeurs
+   et photo Drive dans une page `Mensurations`) sont désormais en ligne.
+   **Trois évolutions attendent maintenant leur tour** : la sauvegarde du
+   sommeil dans une page `Sommeil` (`ecrireSommeil`), écrite dans la foulée
+   du redéploiement du 16 — repérée en relisant le pont qu'aucune page ne
+   couvrait le sommeil jusque-là, contrairement aux consignes et aux
+   mensurations (voir « Sommeil » plus haut) — l'action `remarque` de
+   `doPost` pour la remarque libre du menu Suivi (17 septembre 2026, voir
+   « Remarque » plus haut), qui réutilise l'onglet `Remarques` existant, et
+   les colonnes Calories/Vitesse moyenne des jours de course (18 septembre
+   2026, voir « Les jours de course... » plus haut), auxquelles s'ajoute le
+   type HIIT (26 septembre 2026, bloc `HIIT` de la page `Course`, trois
+   colonnes de `Séances (app)`, en-têtes complétés par `ongletPret()`). Un
+   nouveau redéploiement sera nécessaire pour que les quatre atteignent le
+   classeur ;
+   l'application reste par ailleurs utilisable en local sans cette étape,
+   l'adresse et le secret du pont restant ceux déjà en place dans les
+   réglages.
+2. **Graphiques de progression côté classeur**, une fois plusieurs semaines
+   accumulées. Côté application, c'est fait depuis le 10 septembre 2026 : la
+   fiche d'une séance enregistrée porte la courbe de chaque exercice
+   (`progressionPremiereSerie()`).
+3. ~~Mensurations et poids de corps~~ **Fait le 16 septembre 2026** (voir
+   « Menu Sport/Suivi » plus haut) : valeurs, photo comparée par curseur,
+   sauvegarde Drive via le pont, dont le redéploiement (point 1 ci-dessus)
+   a eu lieu le même jour en soirée — à vérifier à l'usage que les valeurs
+   et la photo atteignent réellement le classeur.
+4. **Programmes multiples** : le programme est aujourd'hui unique et fixe. Le
+   basculer vers un autre bloc d'entraînement demandera de relancer l'import
+   sur un autre onglet, geste manuel pour l'instant.
+5. ~~Sortir ce dépôt de `C:\Users\Utilisateur\.claude\`~~ **Fait le
+   13 septembre 2026** (voir en tête de ce document) : le dossier a été
+   dupliqué tel quel vers `C:\Users\Utilisateur\Musculation`, `.git` compris,
+   `origin` restant `Tacion602/Muscu` sur GitHub. Décidé par l'utilisateur le
+   9 septembre 2026 pour ne plus risquer de confusion avec l'autre projet
+   hébergé dans `.claude`, qui est par ailleurs le dossier de configuration
+   de Claude Code lui-même, mauvais emplacement pour du code.
+   - **Reste à faire** : supprimer l'ancienne copie sous `.claude\MUSCU` une
+     fois le nouvel emplacement éprouvé à l'usage (suppression volontairement
+     non faite le jour du déplacement, pour garder un filet le temps de
+     vérifier), et recopier la mémoire de travail liée à ce projet, encore
+     rangée sous la clé de session de l'autre projet (`.claude\APPLI`) faute
+     d'avoir pu être déplacée par un outil de fichiers.
+   - Ce `CLAUDE.md` **se charge automatiquement** depuis qu'une session
+     Claude Code s'ouvre directement sur `C:\Users\Utilisateur\Musculation`,
+     ce que ce déplacement permet sans risque de confusion avec l'autre
+     projet — vérifié en pratique le 16 septembre 2026.
+6. **Trois consignes techniques restent vides dans « semaine 1 »**, jamais
+   remplies côté classeur : `Ecarté poulie horizontale hauteur poitrine` et
+   `Elévation latérale poulie unilatérale` en J1, `Leg curl allongé
+   unilatéral` en J4. Un contenu à écrire par l'utilisateur (ou à proposer,
+   sur demande, sans l'inventer sans le dire) ; `outils/verifier_import.py`
+   ne le détecte pas, une consigne vide n'étant pas une anomalie qu'il sache
+   reconnaître.
+7. ~~Image par exercice~~ **Fait le 17 septembre 2026**, débloqué autrement
+   que prévu le 16 (voir « Menu Sport/Suivi » plus haut, « Chantiers évalués
+   et écartés ») : pas de génération d'image, mais une base libre
+   (`free-exercise-db`, licence Unlicense) dont les photos couvrent 25 des
+   26 exercices du programme, avec une correspondance d'appareil fidèle
+   pour 19 d'entre eux — les 6 autres (variantes poulie unilatérale, machine
+   précise, prise neutre, absentes de la base) affichent quand même une
+   photo générique, étiquetée comme telle plutôt que rien. `IMAGES_EXERCICES`
+   dans `js/app.js` fait la correspondance nom exact → fichier local
+   (`images-exercices/`, téléchargé une fois, jamais hotlinké), même
+   fragilité qu'`ANCIENS_NOMS` : un exercice renommé au prochain import perd
+   son image tant que la table n'est pas mise à jour à la main.
+   **Schémas à la place des photos depuis le 16 octobre 2026** (demande de
+   l'utilisateur : « des illustrations schématiques plutôt que photo ») :
+   dessins au trait d'Everkinetic (github.com/everkinetic/data, **CC BY-SA
+   4.0**, crédit affiché sous l'image, obligatoire), deux positions par
+   exercice (`-relaxation`/`-tension`) qui alternent chaque seconde dans
+   `rendreImageExercice()`, copiées dans `images-exercices/schemas/`.
+   Correspondances choisies par l'utilisateur sur un aperçu ; `schema`
+   remplace `fichier` dans `IMAGES_EXERCICES`, `generique` y devient
+   « Illustration approchée ». **Le face pull garde sa photo** : aucun
+   dessin de la base ne convient (refusé par l'utilisateur). Les photos
+   restent dans `images-exercices/` pour un retour en arrière.
+8. **Lien Garmin Connect**, bloqué sur l'accès à leur API officielle,
+   fermée à candidature (même section).
+9. **Accueil et sous-menus jugés trop statiques**, noté par l'utilisateur le
+   18 septembre 2026 pour plus tard : « page d'accueil, et sous-menu plus
+   dynamique, couleurs et mise en page, aucune couleur unie sur les fonds ».
+   **Premier geste fait le 22 septembre 2026** : fond de l'accueil remplacé
+   par un dégradé conique flouté en rotation (« fond vivant », voir « Menu
+   Sport/Suivi » plus haut), technique reprise d'un CodePen fourni par
+   l'utilisateur. **Étendu le 23 septembre 2026** à Sport, Suivi et
+   Réglages (même section) : chacun son propre fond vivant, une palette
+   fixe différente de l'accueil, cartes/champs transparents assortis.
+   **Reste à faire** : les écrans du sous-menu Suivi eux-mêmes (Calendrier,
+   État musculaire, Sommeil...) restent chacun sur leur fond propre, aucun
+   fond vivant ; la question posée le 18 n'est toujours pas tranchée —
+   passer par `impeccable.style` (déjà l'outillage de la refonte du
+   16 septembre 2026) plutôt qu'à la main.
+
