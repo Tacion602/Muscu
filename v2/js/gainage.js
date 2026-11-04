@@ -3,7 +3,14 @@
 
 let minuteurGainage = null;
 let tictacGainage = null;
-let dureeTenueGainage = lire(CLES.dureeGainage, 45) || 45;
+/* La v1 rangeait la durée en objet `{ secondes }` ; la migration l'a
+   recopiée telle quelle. On accepte les deux formes et on borne (15 à 120). */
+function lireDureeTenue() {
+  const brut = lire(CLES.dureeGainage, 45);
+  const n = Number(brut && typeof brut === 'object' ? brut.secondes : brut);
+  return Number.isFinite(n) ? Math.max(15, Math.min(120, n)) : 45;
+}
+let dureeTenueGainage = lireDureeTenue();
 
 function valeurRenseignee(v) {
   if (v == null) return false;

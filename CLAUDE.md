@@ -270,6 +270,16 @@ et une valeur objet rencontrée sur un mouvement en répétitions ou en tenue
 est remise à `null`. **Cause exacte non confirmée** : l'endroit précis
 (carte, « Dernière fois », écran de fin, liste, toast d'envoi) est demandé à
 l'utilisateur. `VERSION` du service worker passée à `muscu2-2026-11-04-2`.
+**Cause trouvée sur capture Pixel, même jour** : la v1 range la durée de
+tenue en objet `{ secondes }` (`muscu.dureeGainage`), recopié tel quel par
+la migration ; la v2 le lisait comme un nombre, d'où « ▶ [object Object] s »
+sur chaque bouton de tenue et un minuteur à `NaN:NaN`. `lireDureeTenue()`
+accepte les deux formes et borne à 15-120 s ; le garde-fou ci-dessus reste.
+**Triangles d'alerte géants sur Suivi, même capture** (« trop gros pas
+clair ») : `svgIcone('alerte')` dans `.alerte` n'avait aucune règle de
+taille ni de trait, le SVG prenait toute la largeur en noir plein. Règle
+`.alerte svg` (20 px, trait, pas de remplissage). `VERSION` passée à
+`muscu2-2026-11-04-3`.
 
 ### Chantiers ouverts de la v2
 

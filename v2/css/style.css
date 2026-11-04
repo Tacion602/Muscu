@@ -155,6 +155,7 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .alerte.baisse { background: var(--baisse-fond); color: #7f1d1d; }
 .alerte.attention { background: var(--attention-fond); color: #7c3a03; }
 .alerte.info { background: var(--accent-fond); color: #1e3a8a; }
+.alerte svg { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-top: 1px; }
 .alerte b { font-weight: 600; }
 
 .segments { display: flex; gap: 6px; flex-wrap: wrap; }
