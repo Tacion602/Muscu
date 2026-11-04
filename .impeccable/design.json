@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-04T00:00:00Z",
+  "title": "Design System: Muscu v2",
+  "extensions": {
+    "colorMeta": {
+      "fond": {
+        "role": "neutral",
+        "displayName": "Fond d'écran",
+        "canonical": "oklch(97.3% 0.003 265)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#242526",
+          "#414243",
+          "#606163",
+          "#818284",
+          "#a4a5a7",
+          "#c8c9cb",
+          "#edeef0"
+        ]
+      },
+      "carte": {
+        "role": "neutral",
+        "displayName": "Surface de carte",
+        "canonical": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "fond-2": {
+        "role": "neutral",
+        "displayName": "Fond creux",
+        "canonical": "oklch(94.9% 0.006 265)",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#242528",
+          "#404245",
+          "#5f6165",
+          "#808286",
+          "#a3a5a9",
+          "#c7c9cd",
+          "#eceef2"
+        ]
+      },
+      "trait": {
+        "role": "neutral",
+        "displayName": "Trait",
+        "canonical": "oklch(92.4% 0.008 261)",
+        "tonalRamp": [
+          "#090b0e",
+          "#232529",
+          "#404246",
+          "#5f6166",
+          "#808287",
+          "#a2a5aa",
+          "#c6c9ce",
+          "#eceff4"
+        ]
+      },
+      "texte": {
+        "role": "neutral",
+        "displayName": "Texte",
+        "canonical": "oklch(19.0% 0.009 256)",
+        "tonalRamp": [
+          "#090b0f",
+          "#22252a",
+          "#3f4247",
+          "#5e6267",
+          "#7f8388",
+          "#a1a5ab",
+          "#c5c9cf",
+          "#eaeff5"
+        ]
+      },
+      "texte-2": {
+        "role": "neutral",
+        "displayName": "Texte secondaire",
+        "canonical": "oklch(50.8% 0.018 257)",
+        "tonalRamp": [
+          "#070b13",
+          "#20252e",
+          "#3c424c",
+          "#5b626c",
+          "#7c838d",
+          "#9ea6b1",
+          "#c2cad5",
+          "#e7effb"
+        ]
+      },
+      "texte-3": {
+        "role": "neutral",
+        "displayName": "Texte tertiaire",
+        "canonical": "oklch(65.1% 0.015 258)",
+        "tonalRamp": [
+          "#070b12",
+          "#21252d",
+          "#3d424a",
+          "#5c626a",
+          "#7d838c",
+          "#9fa5af",
+          "#c3cad3",
+          "#e8eff9"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Bleu d'action",
+        "canonical": "oklch(54.6% 0.215 263)",
+        "tonalRamp": [
+          "#00003c",
+          "#031d5e",
+          "#1d3d81",
+          "#3b5ea5",
+          "#5b81ca",
+          "#7da4f0",
+          "#a0c9ff",
+          "#c4efff"
+        ]
+      },
+      "accent-fond": {
+        "role": "primary",
+        "displayName": "Bleu d'action, fond pâle",
+        "canonical": "oklch(94.9% 0.020 267)",
+        "tonalRamp": [
+          "#080b14",
+          "#21252f",
+          "#3d424d",
+          "#5c616d",
+          "#7d828f",
+          "#9fa5b2",
+          "#c3c9d7",
+          "#e8eefc"
+        ]
+      },
+      "accent-fonce": {
+        "role": "primary",
+        "displayName": "Bleu d'action, appui",
+        "canonical": "oklch(48.8% 0.217 264)",
+        "tonalRamp": [
+          "#01003c",
+          "#061c5e",
+          "#203d81",
+          "#3e5ea5",
+          "#5e80ca",
+          "#7fa3f0",
+          "#a2c8ff",
+          "#c6eeff"
+        ]
+      },
+      "hausse": {
+        "role": "tertiary",
+        "displayName": "Vert de hausse",
+        "canonical": "oklch(52.7% 0.137 150)",
+        "tonalRamp": [
+          "#001500",
+          "#003300",
+          "#00521a",
+          "#1e733a",
+          "#45965b",
+          "#6aba7c",
+          "#8edfa0",
+          "#b3ffc4"
+        ]
+      },
+      "hausse-fond": {
+        "role": "tertiary",
+        "displayName": "Vert de hausse, fond pâle",
+        "canonical": "oklch(95.7% 0.020 160)",
+        "tonalRamp": [
+          "#050e08",
+          "#1d2822",
+          "#39453e",
+          "#58655d",
+          "#79867e",
+          "#9ba9a1",
+          "#bfcdc5",
+          "#e4f3ea"
+        ]
+      },
+      "baisse": {
+        "role": "tertiary",
+        "displayName": "Rouge de recul",
+        "canonical": "oklch(50.5% 0.190 28)",
+        "tonalRamp": [
+          "#2d0000",
+          "#510000",
+          "#751f1b",
+          "#9a423a",
+          "#c0635a",
+          "#e7867b",
+          "#ffaa9e",
+          "#ffcfc2"
+        ]
+      },
+      "baisse-fond": {
+        "role": "tertiary",
+        "displayName": "Rouge de recul, fond pâle",
+        "canonical": "oklch(95.7% 0.018 17)",
+        "tonalRamp": [
+          "#120808",
+          "#2e2222",
+          "#4b3e3e",
+          "#6b5d5d",
+          "#8d7e7e",
+          "#b0a1a1",
+          "#d5c5c5",
+          "#fbeaea"
+        ]
+      },
+      "attention": {
+        "role": "tertiary",
+        "displayName": "Ambre d'attention",
+        "canonical": "oklch(55.5% 0.146 49)",
+        "tonalRamp": [
+          "#2c0000",
+          "#4e0100",
+          "#712700",
+          "#964816",
+          "#bb6a3c",
+          "#e18d5f",
+          "#ffb182",
+          "#ffd6a6"
+        ]
+      },
+      "attention-fond": {
+        "role": "tertiary",
+        "displayName": "Ambre d'attention, fond pâle",
+        "canonical": "oklch(96.9% 0.028 79)",
+        "tonalRamp": [
+          "#110a01",
+          "#2c2415",
+          "#4a4031",
+          "#6a604f",
+          "#8b8170",
+          "#afa392",
+          "#d3c8b5",
+          "#f9edda"
+        ]
+      },
+      "repos": {
+        "role": "secondary",
+        "displayName": "Bleu nuit de repos",
+        "canonical": "oklch(37.9% 0.138 266)",
+        "tonalRamp": [
+          "#02003c",
+          "#081c5e",
+          "#233c81",
+          "#405da5",
+          "#607fca",
+          "#81a3f1",
+          "#a4c7ff",
+          "#c8edff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Objectif de charge sur la fiche d'exercice (40 px) ; 64 px en plein écran de repos, 30 px sur le bandeau."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Titre des trois écrans racines dans la grande barre ; nom de l'exercice en séance à 22 px."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Titre des sous-écrans dans la barre de 56 px et des feuilles basses."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texte courant ; boutons en 600, titres de rangée en 500."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Titres de section et en-têtes de colonnes, capitales espacées, gris ; 11 px pour les colonnes et le RIR."
+      },
+      "numeric": {
+        "displayName": "Numeric",
+        "purpose": "Tuiles de chiffres et bilan ; les champs de série saisissent en 19 px 600 tabulaire."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ombre",
+        "value": "0 1px 2px rgba(17, 20, 24, .06), 0 1px 1px rgba(17, 20, 24, .04)",
+        "purpose": "Ourlet de toute carte, tuile et groupe ; la seule ombre de surface."
+      },
+      {
+        "name": "ombre-haute",
+        "value": "0 8px 24px -8px rgba(17, 20, 24, .25)",
+        "purpose": "Le toast seul, qui flotte au-dessus de la barre d'onglets."
+      },
+      {
+        "name": "contour-selection",
+        "value": "0 0 0 2px var(--accent), var(--ombre)",
+        "purpose": "Carte du prochain jour ou en cours, fiche du point de courbe choisi."
+      },
+      {
+        "name": "anneau-focus",
+        "value": "outline: 2px solid var(--accent); outline-offset: 1px",
+        "purpose": "Focus clavier sur champs et boutons."
+      }
+    ],
+    "motion": [
+      {
+        "name": "glissement-ecran",
+        "value": "transform .22s cubic-bezier(.2, 0, 0, 1)",
+        "purpose": "Entrée d'un sous-écran depuis la droite ; l'écran quitté recule de 30 % à 60 % d'opacité. Coupé sous prefers-reduced-motion."
+      },
+      {
+        "name": "vite",
+        "value": ".18s cubic-bezier(.2, 0, 0, 1)",
+        "purpose": "Micro-transitions de fond, de bordure, d'échelle à l'appui, du toast et du voile."
+      },
+      {
+        "name": "feuille-basse",
+        "value": "transform .22s cubic-bezier(.2, 0, 0, 1)",
+        "purpose": "Montée de la feuille basse sous un voile en fondu .18s."
+      },
+      {
+        "name": "progression",
+        "value": "width .25s",
+        "purpose": "Filet de progression de séance (4 px) et stroke-dashoffset de l'anneau de repos (.25s linear)."
+      },
+      {
+        "name": "appui",
+        "value": "transform: scale(.98) / scale(.985)",
+        "purpose": "Enfoncement d'un bouton (.98) ou d'une carte cliquable (.985) ; aucun état hover."
+      },
+      {
+        "name": "spinner",
+        "value": "tourner .8s linear infinite",
+        "purpose": "Attente d'envoi au classeur ; arrêté sous prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "app-max",
+        "value": "640px"
+      },
+      {
+        "name": "grille-3",
+        "value": "600px"
+      }
+    ],
+    "icons": {
+      "viewBox": "0 0 24 24",
+      "strokeWidth": 1.8,
+      "linecap": "round",
+      "linejoin": "round",
+      "fill": "none",
+      "renderedSize": "22px",
+      "source": "v2/js/ui.js ICONES"
+    }
+  },
+  "components": [
+    {
+      "name": "Bouton primaire",
+      "kind": "button",
+      "refersTo": "bouton-primaire",
+      "description": "L'action principale d'un écran : commencer, valider, enregistrer. Pilule bleue pleine, 48 px.",
+      "html": "<button class=\"ds-bouton ds-bouton-primaire\">Commencer la séance</button>",
+      "css": ".ds-bouton { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 20px; border:0; border-radius:24px; font:600 15px/1.45 Roboto, system-ui, sans-serif; background:var(--fond-2, #eceef2); color:var(--texte, #111418); cursor:pointer; transition: background .18s cubic-bezier(.2,0,0,1), transform .18s cubic-bezier(.2,0,0,1); } .ds-bouton:active { transform: scale(.98); } .ds-bouton-primaire { background: var(--accent, #2563eb); color: #fff; } .ds-bouton-primaire:active { background: var(--accent-fonce, #1d4ed8); } .ds-bouton[disabled] { opacity:.5; pointer-events:none; } .ds-bouton:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Bouton secondaire",
+      "kind": "button",
+      "refersTo": "bouton-secondaire",
+      "description": "Action non principale (ajouter une série, passage précédent) : même pilule, fond gris creux.",
+      "html": "<button class=\"ds-bouton\">+ Ajouter une série</button>",
+      "css": ".ds-bouton { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 20px; border:0; border-radius:24px; font:600 15px/1.45 Roboto, system-ui, sans-serif; background:var(--fond-2, #eceef2); color:var(--texte, #111418); cursor:pointer; transition: background .18s cubic-bezier(.2,0,0,1), transform .18s cubic-bezier(.2,0,0,1); } .ds-bouton:active { transform: scale(.98); background: #e3e6eb; } .ds-bouton:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Bouton danger et discret",
+      "kind": "button",
+      "refersTo": "bouton-danger",
+      "description": "Danger : texte rouge sur fond rose pour une suppression. Discret : texte bleu sans fond, 40 px.",
+      "html": "<button class=\"ds-bouton ds-bouton-danger\">Supprimer</button> <button class=\"ds-bouton ds-bouton-discret\">Annuler</button>",
+      "css": ".ds-bouton { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 20px; border:0; border-radius:24px; font:600 15px/1.45 Roboto, system-ui, sans-serif; cursor:pointer; transition: background .18s cubic-bezier(.2,0,0,1), transform .18s cubic-bezier(.2,0,0,1); } .ds-bouton:active { transform: scale(.98); } .ds-bouton-danger { background: var(--baisse-fond, #fdecec); color: var(--baisse, #b91c1c); } .ds-bouton-discret { background: none; color: var(--accent, #2563eb); min-height: 40px; } .ds-bouton:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Carte de jour",
+      "kind": "card",
+      "refersTo": "carte",
+      "description": "La carte de l'écran Sport : code du jour, nom, dernière fois ou retard en rouge, chevron ; contour bleu quand c'est le prochain jour.",
+      "html": "<div class=\"ds-liste\"><button class=\"ds-carte-jour ds-prochaine\"><span class=\"ds-code\">J5</span><span class=\"ds-tx\"><b>Haut max</b><span class=\"ds-retard\">En retard de 2 jours</span></span><span class=\"ds-chev\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round\"><path d=\"M9 6l6 6-6 6\"/></svg></span></button><button class=\"ds-carte-jour\"><span class=\"ds-code ds-cardio\">J2</span><span class=\"ds-tx\"><b>Cardio</b><span>Il y a 3 jours, 5,2 km</span></span><span class=\"ds-chev\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round\"><path d=\"M9 6l6 6-6 6\"/></svg></span></button></div>",
+      "css": ".ds-liste { display:flex; flex-direction:column; gap:10px; background:var(--fond, #f5f6f8); padding:16px; font-family: Roboto, system-ui, sans-serif; } .ds-carte-jour { display:flex; align-items:center; gap:12px; width:100%; padding:14px; border:0; text-align:left; background:var(--carte, #fff); color:var(--texte, #111418); border-radius:12px; box-shadow: 0 1px 2px rgba(17,20,24,.06), 0 1px 1px rgba(17,20,24,.04); cursor:pointer; transition: transform .18s cubic-bezier(.2,0,0,1); } .ds-carte-jour:active { transform: scale(.985); } .ds-prochaine { box-shadow: 0 0 0 2px var(--accent, #2563eb), 0 1px 2px rgba(17,20,24,.06), 0 1px 1px rgba(17,20,24,.04); } .ds-code { width:44px; height:44px; border-radius:12px; background:var(--accent-fond, #e8eefc); color:var(--accent, #2563eb); font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; flex:none; } .ds-code.ds-cardio { background:#fff3e0; color:#b45309; } .ds-tx { flex:1; min-width:0; } .ds-tx b { display:block; font-size:16px; font-weight:600; } .ds-tx span { display:block; font-size:13px; color:var(--texte-2, #5f6670); } .ds-tx .ds-retard { color: var(--baisse, #b91c1c); font-weight:500; } .ds-chev { color: var(--texte-3, #8a9099); display:flex; } .ds-carte-jour:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Rangée de liste",
+      "kind": "card",
+      "refersTo": "carte",
+      "description": "Rangée de 56 px dans une carte : icône carrée bleue pâle, titre, sous-texte, chevron ; séparées d'un trait.",
+      "html": "<div class=\"ds-carte\"><button class=\"ds-rangee\"><span class=\"ds-ic\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M4 18L10 11l4 4 6-8\"/></svg></span><span class=\"ds-tx\"><b>Progression</b><span>Courbes par exercice</span></span><span class=\"ds-chev\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round\"><path d=\"M9 6l6 6-6 6\"/></svg></span></button><button class=\"ds-rangee\"><span class=\"ds-ic\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z\"/></svg></span><span class=\"ds-tx\"><b>Sommeil</b><span>Frise de la nuit</span></span><span class=\"ds-chev\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round\"><path d=\"M9 6l6 6-6 6\"/></svg></span></button></div>",
+      "css": ".ds-carte { background:var(--carte, #fff); border-radius:12px; box-shadow: 0 1px 2px rgba(17,20,24,.06), 0 1px 1px rgba(17,20,24,.04); padding:0 14px; font-family: Roboto, system-ui, sans-serif; color:var(--texte, #111418); } .ds-rangee { display:flex; align-items:center; gap:12px; min-height:56px; padding:8px 0; width:100%; border:0; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer; } .ds-rangee + .ds-rangee { border-top:1px solid var(--trait, #e3e6eb); } .ds-rangee:active { background: var(--fond-2, #eceef2); margin:0 -14px; padding-left:14px; padding-right:14px; width:calc(100% + 28px); } .ds-ic { width:40px; height:40px; border-radius:10px; background:var(--accent-fond, #e8eefc); color:var(--accent, #2563eb); display:flex; align-items:center; justify-content:center; flex:none; } .ds-tx { flex:1; min-width:0; } .ds-tx b { display:block; font-weight:500; font-size:15px; } .ds-tx span { display:block; font-size:13px; color:var(--texte-2, #5f6670); } .ds-chev { color:var(--texte-3, #8a9099); display:flex; } .ds-rangee:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Puces sémantiques",
+      "kind": "chip",
+      "refersTo": "puce",
+      "description": "Étiquette en lecture seule : neutre par défaut, verte pour une hausse, rouge pour un recul, ambre pour une attention, bleue pour un repère.",
+      "html": "<span class=\"ds-puce\">Stable</span> <span class=\"ds-puce ds-hausse\">+4 %</span> <span class=\"ds-puce ds-baisse\">-6 %</span> <span class=\"ds-puce ds-attention\">Deload</span> <span class=\"ds-puce ds-accent\">J5</span>",
+      "css": ".ds-puce { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font:600 12px/1.45 Roboto, system-ui, sans-serif; background:var(--fond-2, #eceef2); color:var(--texte-2, #5f6670); } .ds-puce.ds-hausse { background:var(--hausse-fond, #e6f5ec); color:var(--hausse, #15803d); } .ds-puce.ds-baisse { background:var(--baisse-fond, #fdecec); color:var(--baisse, #b91c1c); } .ds-puce.ds-attention { background:var(--attention-fond, #fff3e0); color:var(--attention, #b45309); } .ds-puce.ds-accent { background:var(--accent-fond, #e8eefc); color:var(--accent, #2563eb); }"
+    },
+    {
+      "name": "Segments de choix",
+      "kind": "chip",
+      "refersTo": "segment",
+      "description": "Choix exclusif (type de cardio, période) : pilules de 40 px bordées, la choisie en bleu plein ; un segment rempli non choisi porte un point vert.",
+      "html": "<div class=\"ds-segments\"><button class=\"ds-segment ds-choisi\">Endurance</button><button class=\"ds-segment ds-rempli\">Incliné</button><button class=\"ds-segment\">Seuil</button></div>",
+      "css": ".ds-segments { display:flex; gap:6px; flex-wrap:wrap; font-family: Roboto, system-ui, sans-serif; } .ds-segment { min-height:40px; padding:0 14px; border-radius:20px; background:var(--carte, #fff); border:1px solid var(--trait, #e3e6eb); color:var(--texte, #111418); font:500 14px/1.45 inherit; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background .18s cubic-bezier(.2,0,0,1), border-color .18s cubic-bezier(.2,0,0,1); } .ds-segment.ds-choisi { background:var(--accent, #2563eb); border-color:var(--accent, #2563eb); color:#fff; } .ds-segment.ds-rempli:not(.ds-choisi)::after { content:\"\"; width:7px; height:7px; border-radius:50%; background:var(--hausse, #15803d); } .ds-segment:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Champ de saisie",
+      "kind": "input",
+      "refersTo": "champ",
+      "description": "Champ ordinaire : libellé gris 13 px au-dessus, bordure fine, 48 px, texte 17 px, anneau bleu au focus.",
+      "html": "<label class=\"ds-champ\"><span>Distance (km)</span><input type=\"text\" inputmode=\"decimal\" value=\"5,2\"></label>",
+      "css": ".ds-champ { display:flex; flex-direction:column; gap:4px; font-family: Roboto, system-ui, sans-serif; max-width:240px; } .ds-champ > span { font-size:13px; color:var(--texte-2, #5f6670); } .ds-champ input { width:100%; min-height:48px; border:1px solid var(--trait, #e3e6eb); background:var(--carte, #fff); color:var(--texte, #111418); border-radius:8px; padding:10px 12px; font:400 17px/1.45 inherit; font-variant-numeric: tabular-nums; } .ds-champ input:focus { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Ligne de série",
+      "kind": "custom",
+      "refersTo": "champ",
+      "description": "Une série en séance : numéro, charge, répétitions, deux petits boutons, sous-ligne RIR. Courante en bordure bleue, faite en vert si meilleure, rouge si moins bonne, grise si stable.",
+      "html": "<div class=\"ds-series\"><div class=\"ds-entete\"><span>#</span><span>Charge</span><span>Reps</span><span></span><span></span></div><div class=\"ds-serie ds-faite\"><span class=\"ds-n\">1</span><input class=\"ds-f\" value=\"60\"><input class=\"ds-f\" value=\"8\"><button class=\"ds-plus\">RP</button><button class=\"ds-plus\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg></button></div><div class=\"ds-serie ds-courante\"><span class=\"ds-n\">2</span><input class=\"ds-f\" placeholder=\"60\"><input class=\"ds-f\" placeholder=\"8\"><button class=\"ds-plus\">RP</button><button class=\"ds-plus\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg></button><div class=\"ds-rir\"><span class=\"ds-rir-l\">RIR</span><button>0</button><button class=\"ds-cible\">1</button><button class=\"ds-choisi\">2</button><button>3</button><button>4</button></div></div></div>",
+      "css": ".ds-series { font-family: Roboto, system-ui, sans-serif; color:var(--texte, #111418); background:var(--carte, #fff); padding:14px; border-radius:12px; } .ds-entete, .ds-serie { display:grid; grid-template-columns:28px 1fr 1fr 40px 40px; gap:6px 8px; align-items:center; } .ds-entete { font-size:11px; color:var(--texte-2, #5f6670); text-transform:uppercase; letter-spacing:.06em; padding-bottom:4px; } .ds-serie { padding:8px 0; border-top:1px solid var(--trait, #e3e6eb); } .ds-n { color:var(--texte-2, #5f6670); font-weight:500; text-align:center; font-variant-numeric: tabular-nums; } .ds-f { width:100%; min-height:48px; text-align:center; font:600 19px/1.45 inherit; font-variant-numeric: tabular-nums; background:var(--fond-2, #eceef2); border:1px solid transparent; border-radius:8px; padding:0 4px; color:inherit; } .ds-f::placeholder { color:var(--texte-3, #8a9099); font-weight:400; } .ds-faite .ds-f { background:var(--hausse-fond, #e6f5ec); color:var(--hausse, #15803d); } .ds-courante .ds-f { border-color:var(--accent, #2563eb); background:var(--carte, #fff); } .ds-f:focus { outline:2px solid var(--accent, #2563eb); outline-offset:1px; } .ds-plus { width:40px; height:48px; border:0; border-radius:8px; font:700 12px/1 inherit; color:var(--texte-2, #5f6670); background:var(--fond-2, #eceef2); display:flex; align-items:center; justify-content:center; cursor:pointer; } .ds-plus svg { width:18px; height:18px; stroke-width:2; } .ds-rir { grid-column: 2 / -1; display:flex; gap:6px; align-items:center; } .ds-rir-l { font-size:11px; color:var(--texte-2, #5f6670); text-transform:uppercase; letter-spacing:.06em; width:28px; flex:none; } .ds-rir button { flex:1; min-height:44px; border:0; border-radius:8px; background:var(--fond-2, #eceef2); font:600 15px/1 inherit; color:var(--texte-2, #5f6670); cursor:pointer; } .ds-rir button.ds-choisi { background:var(--accent, #2563eb); color:#fff; } .ds-rir button.ds-cible:not(.ds-choisi) { box-shadow: inset 0 0 0 1.5px var(--accent, #2563eb); }"
+    },
+    {
+      "name": "Barre d'onglets",
+      "kind": "nav",
+      "refersTo": "onglet-actif",
+      "description": "Navigation principale, 64 px en bas d'écran : trois onglets, pastille bleue pâle sous l'icône active.",
+      "html": "<nav class=\"ds-onglets\"><button class=\"ds-onglet ds-actif\"><span class=\"ds-pastille\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M4 9v6M20 9v6M7 7v10M17 7v10M7 12h10\"/></svg></span>Sport</button><button class=\"ds-onglet\"><span class=\"ds-pastille\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M4 18L10 11l4 4 6-8\"/></svg></span>Suivi</button><button class=\"ds-onglet\"><span class=\"ds-pastille\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" style=\"width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round\"><path d=\"M4 7h10M18 7h2M4 17h4M12 17h8\"/><circle cx=\"16\" cy=\"7\" r=\"2.2\"/><circle cx=\"10\" cy=\"17\" r=\"2.2\"/></svg></span>Réglages</button></nav>",
+      "css": ".ds-onglets { display:flex; height:64px; background:var(--carte, #fff); border-top:1px solid var(--trait, #e3e6eb); font-family: Roboto, system-ui, sans-serif; } .ds-onglet { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:none; font:500 11px/1.45 inherit; letter-spacing:.02em; color:var(--texte-2, #5f6670); cursor:pointer; } .ds-pastille { display:flex; align-items:center; justify-content:center; width:56px; height:30px; border-radius:15px; transition: background .18s cubic-bezier(.2,0,0,1); } .ds-onglet.ds-actif { color:var(--accent, #2563eb); } .ds-onglet.ds-actif .ds-pastille { background:var(--accent-fond, #e8eefc); } .ds-onglet:active .ds-pastille { background:var(--fond-2, #eceef2); } .ds-onglet:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 1px; }"
+    },
+    {
+      "name": "Bandeau de minuterie",
+      "kind": "custom",
+      "refersTo": "minuterie",
+      "description": "Repos en cours, collé en haut du corps : bleu nuit, chiffre 30 px tabulaire, libellé de la prochaine série.",
+      "html": "<div class=\"ds-minuterie\"><span class=\"ds-t\">1:28</span><span class=\"ds-l\">Ensuite : série 3 sur 4</span></div>",
+      "css": ".ds-minuterie { background:var(--repos, #1e3a8a); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:10px 16px; font-family: Roboto, system-ui, sans-serif; } .ds-t { font-size:30px; font-weight:700; font-variant-numeric: tabular-nums; line-height:1; } .ds-l { font-size:12px; opacity:.9; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Confirmation brève : fond texte, blanc dessus, ombre haute, 2,2 s à l'écran.",
+      "html": "<div class=\"ds-toast\">Séance enregistrée</div>",
+      "css": ".ds-toast { display:inline-block; background:var(--texte, #111418); color:#fff; border-radius:8px; padding:12px 16px; font:400 14px/1.45 Roboto, system-ui, sans-serif; box-shadow: 0 8px 24px -8px rgba(17,20,24,.25); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La salle sous lumière crue",
+    "overview": "Muscu v2 joue le standard Android du marché (Hevy, Strong, Material 3) sans costume ni effet : un fond gris très clair, des cartes blanches posées dessus par une ombre à peine visible, un seul bleu pour tout ce qui agit, et deux couleurs sémantiques qui ne parlent que quand un chiffre monte, recule ou pose problème. L'application vit dans un seul thème clair, pensé pour un écran lu à bout de bras entre deux séries, un doigt moite et un regard pressé. Tout ce qui est décoratif dans la v1 (fonds vivants, néon, palettes par page, vague plein écran) est refusé ici, ce refus étant le choix explicite de l'utilisateur le 4 novembre 2026.\n\nLa densité est celle d'une liste native : rangées de 56 px, cartes de 14 px de marge intérieure séparées de 10 px, gouttière de 16 px, barre d'onglets basse de 64 px. Les chiffres sont la matière première de l'écran, toujours en chiffres tabulaires, grands quand ils comptent (objectif de charge à 40 px, minuterie plein écran à 64 px) et gris quand ils ne font que contextualiser. Le mouvement se limite à un glissement latéral de 220 ms entre écrans et à des micro-transitions de 180 ms sur les fonds ; tout est coupé sous `prefers-reduced-motion`.",
+    "keyCharacteristics": [
+      "Un seul thème clair, fond gris `fond` et cartes blanches `carte`, aucune bascule sombre.",
+      "Un seul bleu d'action (`accent`), avec son fond pâle et sa version foncée pour l'appui.",
+      "Vert et rouge réservés à la sémantique : hausse, recul, alerte. Le stable reste neutre.",
+      "Roboto système partout, chiffres tabulaires sur toute valeur numérique.",
+      "Un seul jeu d'icônes au trait, viewBox 24, trait 1,8 px, bouts ronds.",
+      "Rayons 12 px pour les surfaces, 8 px pour les champs et petites cases, pilule pour les boutons."
+    ],
+    "rules": [
+      {
+        "name": "La règle du seul bleu",
+        "body": "Tout ce qui est interactif et neutre s'exprime en `accent`. Aucune deuxième couleur d'action, aucun dégradé, aucun halo.",
+        "section": "colors"
+      },
+      {
+        "name": "La règle de la sémantique muette",
+        "body": "Vert et rouge ne colorent qu'un chiffre comparé (hausse, recul), une alerte ou une action destructrice. Une série stable garde le gris `fond-2` et le texte normal : l'absence de couleur est l'information.",
+        "section": "colors"
+      },
+      {
+        "name": "La règle du fond pâle",
+        "body": "Chaque couleur sémantique a son fond pastel dédié (`*-fond`) et son texte sombre ; une couleur vive n'est jamais posée en texte sur blanc à moins de 4,5:1, et jamais en aplat sous du texte blanc hormis `accent` et `repos`.",
+        "section": "colors"
+      },
+      {
+        "name": "La règle du chiffre tabulaire",
+        "body": "Toute valeur numérique qui peut changer (charge, répétitions, chrono, allure, écart) porte `tabular-nums`, pour que rien ne bouge latéralement quand le chiffre change.",
+        "section": "typography"
+      },
+      {
+        "name": "La règle des capitales rares",
+        "body": "Les capitales espacées ne servent qu'aux titres de section et en-têtes de colonnes en 11 à 13 px gris ; jamais sur un titre, un bouton ou un libellé de champ.",
+        "section": "typography"
+      },
+      {
+        "name": "La règle de l'ourlet",
+        "body": "L'ombre de carte est la seule ombre de surface. Une carte plus importante ne reçoit pas plus d'ombre ; elle reçoit un contour bleu.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** poser toute surface sur `fond` en carte blanche rayon 12 px avec l'ombre de carte, séparée de 10 px de la suivante et de 16 px des bords.",
+      "**Do** réserver `accent` à ce qui agit ou est sélectionné, et le fond `accent-fond` à ce qui le signale au repos (onglet actif, code de jour, puce).",
+      "**Do** colorer un chiffre comparé en `hausse` ou `baisse` sur son fond pâle, et laisser une valeur stable en gris `fond-2` texte normal.",
+      "**Do** garder 48 px de hauteur sur tout bouton et champ de saisie, 44 px sur un bouton d'icône, 56 px sur une rangée, 40 px sur un segment.",
+      "**Do** écrire chaque valeur numérique en chiffres tabulaires, en 700 dès qu'elle est la raison d'être de l'écran.",
+      "**Do** dessiner toute icône nouvelle dans `ICONES` : viewBox 24, trait 1,8 px, bouts ronds, sans remplissage.",
+      "**Do** faire arriver un sous-écran par glissement de 220 ms et un dialogue par feuille basse, et couper ces mouvements sous `prefers-reduced-motion`."
+    ],
+    "donts": [
+      "**Don't** introduire une deuxième couleur d'action, un dégradé, un halo ou un fond animé : la v1 les a eus, la v2 les refuse par choix explicite.",
+      "**Don't** ajouter un thème sombre ni une palette par écran ; `repos` est la seule surface saturée et n'existe que pendant un repos.",
+      "**Don't** utiliser vert ou rouge pour décorer, hiérarchiser ou marquer un état neutre ; ils ne disent que hausse, recul, alerte ou suppression.",
+      "**Don't** monter une carte par une ombre plus forte ; une mise en avant est un contour `accent` de 2 px.",
+      "**Don't** poser des capitales espacées ailleurs que sur un titre de section ou un en-tête de colonne en 11 à 13 px gris.",
+      "**Don't** charger une police web ni une icône d'un autre jeu : la pile Roboto système et `ICONES` suffisent."
+    ]
+  }
+}

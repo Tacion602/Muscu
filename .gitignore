@@ -15,3 +15,6 @@ sauvegardes/
 # (reference/, SKILL.md, agents/) sont versionnees.
 .claude/skills/impeccable/scripts/bin/
 .claude/skills/impeccable/scripts/data/
+
+# Captures de revue impeccable, regenerees a chaque passage (voir CLAUDE.md, Version 2)
+.impeccable/review/

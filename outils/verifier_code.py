@@ -29,12 +29,22 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent.parent
 
-FICHIERS_JS = ['js/app.js', 'sw.js', 'appsscript/Code.gs']
+FICHIERS_JS = ['js/app.js', 'sw.js', 'appsscript/Code.gs',
+               # Version 2 (4 novembre 2026), memes controles de syntaxe.
+               'v2/sw.js', 'appsscript/Code_v2.gs', 'v2/js/tables.js', 'v2/js/donnees.js',
+               'v2/js/calculs.js', 'v2/js/ui.js', 'v2/js/sport.js', 'v2/js/seance.js',
+               'v2/js/cardio.js', 'v2/js/gainage.js', 'v2/js/suivi.js', 'v2/js/sommeil.js',
+               'v2/js/mensurations.js', 'v2/js/reglages.js', 'v2/js/app.js']
 
 SOURCES = ['js/app.js', 'sw.js', 'index.html', 'css/style.css', 'appsscript/Code.gs',
            'outils/importer_classeur.py', 'outils/verifier_import.py',
            'outils/sauvegarder_classeur.py', 'outils/lire_remarques.py',
-           'outils/verifier_code.py', 'tests/test_app.py']
+           'outils/verifier_code.py', 'tests/test_app.py',
+           'v2/index.html', 'v2/css/style.css', 'v2/sw.js', 'appsscript/Code_v2.gs',
+           'v2/js/tables.js', 'v2/js/donnees.js', 'v2/js/calculs.js', 'v2/js/ui.js',
+           'v2/js/sport.js', 'v2/js/seance.js', 'v2/js/cardio.js', 'v2/js/gainage.js',
+           'v2/js/suivi.js', 'v2/js/sommeil.js', 'v2/js/mensurations.js', 'v2/js/reglages.js',
+           'v2/js/app.js', 'outils/importer_programme_v2.py', 'tests/test_v2.py']
 
 # Noms que CLAUDE.md cite alors qu'ils n'existent plus, et c'est voulu : le
 # texte les presente explicitement comme anciens, pour qu'on s'y retrouve dans

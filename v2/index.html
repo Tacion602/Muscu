@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#f5f6f8">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Muscu</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icones/icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icones/icone-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- Muscu v2 (4 novembre 2026). Chaque écran est une <section class="ecran">
+     dont le contenu est rendu par js/*.js ; afficher() dans js/ui.js les
+     empile avec un glissement de 220 ms et tient l'historique Android.
+     Les trois écrans racine (Sport, Suivi, Réglages) portent la barre
+     d'onglets. -->
+<div id="app">
+
+  <section id="ecran-sport" class="ecran racine actif">
+    <div class="barre barre-grande"><h2>Sport<span class="sous" id="sport-sous"></span></h2></div>
+    <div class="corps avec-onglets" id="sport-corps"></div>
+  </section>
+
+  <section id="ecran-suivi" class="ecran racine">
+    <div class="barre barre-grande"><h2>Suivi<span class="sous">Progression, corps, sommeil</span></h2></div>
+    <div class="corps avec-onglets" id="suivi-corps"></div>
+  </section>
+
+  <section id="ecran-reglages" class="ecran racine">
+    <div class="barre barre-grande"><h2>Réglages<span class="sous">Classeur, son, veille</span></h2></div>
+    <div class="corps avec-onglets" id="reglages-corps"></div>
+  </section>
+
+  <section id="ecran-demarrage" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="demarrage-titre"></h2></div>
+    <div class="corps" id="demarrage-corps"></div>
+  </section>
+
+  <section id="ecran-seance" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="seance-titre"></h2><span class="num texte-2" id="seance-chrono"></span></div>
+    <div class="progression"><div id="seance-progression"></div></div>
+    <div class="corps" id="seance-corps"></div>
+    <input id="amorce-clavier" type="text" inputmode="decimal" aria-hidden="true" tabindex="-1"
+      style="position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0;">
+  </section>
+
+  <section id="ecran-fin" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="fin-titre">Fin de séance</h2></div>
+    <div class="corps" id="fin-corps"></div>
+  </section>
+
+  <section id="ecran-exercice" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="exercice-titre"></h2></div>
+    <div class="corps" id="exercice-corps"></div>
+  </section>
+
+  <section id="ecran-surcharge" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>Surcharge progressive</h2></div>
+    <div class="corps" id="surcharge-corps"></div>
+  </section>
+
+  <section id="ecran-calendrier" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>Calendrier</h2></div>
+    <div class="corps" id="calendrier-corps"></div>
+  </section>
+
+  <section id="ecran-etat" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>État musculaire</h2></div>
+    <div class="corps" id="etat-corps"></div>
+  </section>
+
+  <section id="ecran-sommeil" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="sommeil-titre">Sommeil</h2></div>
+    <div class="corps" id="sommeil-corps"></div>
+  </section>
+
+  <section id="ecran-mensurations" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2 id="mensurations-titre">Mensurations</h2></div>
+    <div class="corps" id="mensurations-corps"></div>
+    <input id="mensurations-photo-fichier" type="file" accept="image/*" capture="environment" hidden>
+  </section>
+
+  <section id="ecran-cardio-evolution" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>Évolution cardio</h2></div>
+    <div class="corps" id="cardio-evolution-corps"></div>
+  </section>
+
+  <section id="ecran-bilan" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>Bilan mensuel</h2></div>
+    <div class="corps" id="bilan-corps"></div>
+  </section>
+
+  <section id="ecran-remarque" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>Remarque</h2></div>
+    <div class="corps" id="remarque-corps"></div>
+  </section>
+
+  <section id="ecran-historique" class="ecran">
+    <div class="barre"><button class="icone" data-retour aria-label="Retour"></button><h2>Séances enregistrées</h2></div>
+    <div class="corps" id="historique-corps"></div>
+  </section>
+
+  <nav class="onglets" id="onglets" aria-label="Navigation principale">
+    <button class="onglet actif" data-onglet="sport"><span class="pastille-onglet" data-icone="halteres"></span>Sport</button>
+    <button class="onglet" data-onglet="suivi"><span class="pastille-onglet" data-icone="courbe"></span>Suivi</button>
+    <button class="onglet" data-onglet="reglages"><span class="pastille-onglet" data-icone="reglages"></span>Réglages</button>
+  </nav>
+
+  <div id="minuterie-plein" class="minuterie-plein" hidden>
+    <button class="icone fermer" id="minuterie-fermer" aria-label="Revenir à la fiche" data-icone="fermer"></button>
+    <div class="centre">
+      <svg class="anneau" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="fond" cx="60" cy="60" r="52"></circle>
+        <circle class="progres" id="minuterie-anneau" cx="60" cy="60" r="52"></circle>
+      </svg>
+      <div class="t num" id="minuterie-plein-t">0:00</div>
+    </div>
+    <div class="suivant" id="minuterie-suivant"></div>
+    <div class="bilan" id="minuterie-bilan"></div>
+    <div class="actions">
+      <button class="bouton" id="minuterie-moins">-15 s</button>
+      <button class="bouton" id="minuterie-plus">+15 s</button>
+      <button class="bouton" id="minuterie-stop">Passer</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="js/tables.js"></script>
+<script src="js/donnees.js"></script>
+<script src="js/calculs.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/sport.js"></script>
+<script src="js/seance.js"></script>
+<script src="js/cardio.js"></script>
+<script src="js/gainage.js"></script>
+<script src="js/suivi.js"></script>
+<script src="js/sommeil.js"></script>
+<script src="js/mensurations.js"></script>
+<script src="js/reglages.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

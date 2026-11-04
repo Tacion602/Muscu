@@ -81,6 +81,15 @@ que timide. Remplace le mode sombre (voir Accessibility & Inclusion) ; le
 teal déjà en place dans l'application (`--accent`/`--accent-clair`) reste
 l'accent de marque plutôt que d'en adopter un nouveau.
 
+**Version 2, décidée le 4 novembre 2026** : refonte complète dans `v2/`,
+l'ancienne application restant intacte à la racine. Direction choisie par
+l'utilisateur parmi trois cartes (pile de poids, plan d'architecte, standard
+du marché) : **le standard du marché joué sans détour**, barre de finition
+Hevy et Strong sur Android (Material 3). Fond gris très clair, cartes
+blanches, un seul bleu d'action, vert et rouge sémantiques, Roboto, barre
+d'onglets basse. Remplace la direction Strava du 16 septembre et tout le
+patchwork d'effets de la v1 (fonds vivants, néon, palettes par page).
+
 Aucune autre identité de marque formelle au-delà de ça : outil personnel,
 pas de logo ni de charte au-delà du nom du dépôt (« Muscu ») et de l'intitulé « Suivi de
 musculation ». Pas de public externe à satisfaire.

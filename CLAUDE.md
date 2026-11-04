@@ -50,6 +50,233 @@ fichiers servis tels quels, sans étape de compilation. `.impeccable/` (config,
 ignores) et `PRODUCT.md` (contexte produit pour cet outil) sont versionnés
 mais ne participent à rien côté téléphone.
 
+## Version 2 (4 novembre 2026)
+
+**Refonte complète dans `v2/`, l'ancienne application restant intacte à la
+racine.** Décidée avec l'utilisateur le 4 novembre 2026 après un rapport
+d'optimisation en trois familles (qualité d'entraînement, fluidité,
+cohérence visuelle) : il voulait garder l'ancienne version, repartir sur une
+version indépendante, et un classeur neuf « mieux structuré, plus clair ».
+Tout ce qui suit dans cette section date de ce jour-là, sauf mention.
+Le reste de ce fichier décrit la v1 et reste vrai pour elle.
+
+**Pas de partage entre les deux versions.** La v2 copie une fois
+l'historique de la v1 à son premier lancement (`migrerDepuisV1()` dans
+`v2/js/donnees.js` : séances, consignes, sommeil, mensurations, remarques,
+durée de tenue, réglages de son et de veille, jamais l'adresse du pont) et
+vit ensuite sur ses propres clés `muscu2.*`. Les séances de cardio v1
+(`type: "footing"`, carte `footing`) sont normalisées en `type: "cardio"`,
+carte `cardio` (`normaliserSeanceV1()`). Un bouton de Réglages permet de
+reprendre à nouveau les séances v1 absentes de la v2, sans rien effacer.
+
+### Direction artistique
+
+Trois cartes présentées (la pile de poids, le plan d'architecte, le standard
+du marché), tirage `impeccable` dégradé (service de challengers hors de
+portée du bac à sable, seed 617246f5). **Choix de l'utilisateur : le
+standard du marché joué sans détour**, barre de finition Hevy et Strong sur
+Android (Material 3). Fond gris très clair, cartes blanches à rayon 12 px,
+un seul bleu d'action, vert et rouge sémantiques réservés à hausse, recul,
+alerte, Roboto, icônes trait d'un seul jeu (plus d'emoji en interface, sauf
+les puces de sommeil héritées), barre d'onglets basse Sport, Suivi,
+Réglages, glissement de 220 ms entre écrans (`afficher()`/`retour()` dans
+`v2/js/ui.js`). Un seul thème clair. Contrat de direction dans
+`.impeccable/surfaces/v2-index-html.md`, décision consignée dans
+`PRODUCT.md`. Ce choix abandonne, pour la v2 seulement : les fonds vivants
+et le choix de palette, le néon de la séance, le dégradé nuit de Sommeil,
+les couleurs CodePen du bouton de synchro, le serpent et son délai, l'écran
+Menu à trois cartes.
+
+### Classeur neuf et pont v2
+
+**Un classeur neuf, à créer par l'utilisateur**, onglets plats, une ligne
+par observation : `Séances`, `Séries` (une ligne par série, avec e1RM),
+`Course`, `Gainage`, `Douleurs`, `Remarques`, `Consignes`, `Réglages
+machine`, `Sommeil`, `Mensurations`, `Programme (sauvegarde)`. Plus de grille
+de jour à blocs de six lignes. Pont : `appsscript/Code_v2.gs`, à coller dans
+le nouveau classeur et à déployer (geste de l'utilisateur, jamais fait
+d'ici). Actions : `ping` (renvoie l'identifiant du classeur et les gid des
+onglets), `seance`, `historique` (lot de séances, pour la reprise),
+`consignes`, `reglages`, `douleurs`, `sommeil`, `mensuration`, `remarque`,
+`programme`. **La réponse à `seance` renvoie les numéros de lignes écrites**
+(`lignes.series`, `lignes.seance`) : l'application les garde sur la séance
+(`seance.lignes`) et construit un lien `#gid=…&range=…` vers la ligne du
+classeur depuis la fiche d'un point de courbe (`lienClasseur()` dans
+`v2/js/suivi.js`). Idempotence par identifiant de séance
+(`PropertiesService`, 400 dernières). L'application envoie les séances par
+lots de 20 via `historique` (`synchroniser()` dans `v2/js/reglages.js`).
+
+**Source du programme : l'onglet `Programme` du nouveau classeur**, lu par
+colonnes nommées (`outils/importer_programme_v2.py`, colonnes Jour, Rang,
+Nom, Type, Numero, Exercice, Series, Reps min, Reps max, RIR, Repos, Muscle,
+Consigne, Reglages, Substituts). Plus de reconnaissance de forme : les
+pièges d'import de la v1 disparaissent. `CLASSEUR_ID` et `GID_PROGRAMME` y
+sont vides tant que le classeur n'existe pas ; `--depuis-v1` convertit
+`data/programme.json` et `--csv` écrit `classeur/Programme.csv` à coller
+dans le nouvel onglet (fait ce jour-là : 6 jours, 27 exercices). Sortie :
+`v2/data/programme.json`, jamais édité à la main. L'import vérifie
+lui-même prescriptions complètes, fourchettes cohérentes, nombre de cibles
+RIR, et noms proches mais différents (l'équivalent de `noms_ambigus`).
+`Rang` porte l'ordre de la semaine (Haut max, Cardio, Pull, Jambes, Push,
+Cardio), `code` reste l'identité des séances (J1 = Push dans le classeur)
+et `libelleJour()` affiche « J » suivi du rang : plus de table d'échange de
+codes.
+
+### Qualité d'entraînement
+
+- **Indicateur de progression : 1RM estimé (Epley, `e1rm()` dans
+  `v2/js/calculs.js`) de la première série de travail**, à la place de
+  charge × répétitions. Motif donné par l'utilisateur : après une hausse de
+  charge, le tonnage baisse alors que l'engagement monte (40 × 8 puis
+  42,5 × 6 : 320 contre 255, mais e1RM stable). Epley perd sa fiabilité
+  au-delà de 10 à 12 répétitions : **les exercices prescrits en séries
+  longues (`reps_max` > 12) se jugent par la règle de fourchette**
+  (`comparerSeries()` : charge montée et répétitions restées dans la
+  fourchette = progrès ; charge égale et plus de répétitions = progrès ;
+  l'inverse = recul). La comparaison se dit indicative quand le RIR diffère
+  de deux crans ou plus. Couleur des séries, bilan de fin, courbes et
+  surcharge par muscle utilisent tous `indicateur()`.
+- **Charge suggérée, double progression** (`objectifExercice()`) : si la
+  dernière fois toutes les séries de travail ont atteint `reps_max` avec un
+  RIR réel inférieur ou égal à la cible (ou non saisi), charge + un pas
+  (`pasDeCharge()` : 5 kg sur les grosses machines, 2,5 kg ailleurs, lu
+  dans le nom) et viser `reps_min` ; sinon même charge, une répétition de
+  plus sur la première série. Affichée en tête de fiche, et en filigrane
+  de la première série (les suivantes montrent la dernière fois). Rien sans
+  historique, rien en deload.
+- **RIR par quatre boutons 0 à 3**, cible du programme présélectionnée
+  (contour) et retenue si rien n'est touché : fini les 1,3 saisis au
+  clavier, inexploitables.
+- **Garde-fou de saisie** (`chargeAberrante()`) : une charge hors de 0,6 à
+  1,4 fois la dernière surligne le champ et demande confirmation à la
+  validation (cas réel : 25 puis 55 kg à l'extension jambes). Le `change`
+  du champ repart quand le dialogue prend le focus : un drapeau
+  (`confirmationEnCours`) empêche un second dialogue par-dessus le premier,
+  trouvé par `tests/test_v2.py`.
+- **Deload depuis l'application** : bascule sur l'écran de démarrage
+  (`seance.deload`), filigrane à 70 % de la dernière fois, séance écartée
+  de `occurrences()` donc de toutes les comparaisons, marquée dans le
+  classeur et l'historique.
+- **Alerte recul ×2** (`reculDouble()`) : première série en baisse deux
+  séances de suite, signalée sur l'écran de démarrage, dans Suivi et dans
+  le bilan mensuel, avec la conduite écrite ici le 26 septembre (alléger
+  la séance qui précède). **Jour en retard** : plus de 9 jours depuis la
+  dernière séance du jour (`retardDuJour()`), en rouge sur la carte, et
+  fréquence « n des 7 dernières semaines » quand elle est basse.
+  **Espacement** : avertissement si l'autre jour de pectoraux date de moins
+  de 3 jours (`avertissementEspacement()`), lu dans le programme par le
+  champ muscle, pas câblé sur des codes.
+- **Écran de démarrage** : phrase d'ouverture tirée de `PHRASES_OUVERTURE`
+  (ton de coach, différente d'une séance à l'autre par hachage de
+  l'identifiant), forme du jour sur 5 et deload, conseil de deload si forme
+  basse et mauvaise nuit (lue dans le sommeil saisi), échauffement du jour
+  complété par une montée en charge chiffrée sur le premier exercice (50 %
+  puis 75 % de la dernière charge).
+- **Réglages de machine** par exercice (`muscu2.reglagesMachine`,
+  indexés par nom, repli sur la colonne Reglages du programme), affichés
+  sur la fiche et rappelés sur le plein écran de repos avant l'exercice
+  suivant. **Douleur rattachée à l'exercice** (`muscu2.douleurs`) : saisie
+  depuis la fiche, rappelée sur la fiche et à l'échauffement pendant trois
+  semaines, envoyée à l'onglet `Douleurs`. **Remplacement d'exercice en
+  séance** (menu de la fiche) : substituts du programme, puis même muscle,
+  puis tout le catalogue des noms connus ; le nom choisi retrouve son
+  propre historique (identité par nom conservée), `exo.remplace` garde
+  l'original, retour possible.
+- **Bilan mensuel** (pas hebdomadaire, choix de l'utilisateur) : séances
+  des quatre dernières semaines, jours faits sur quatre attendus, séries
+  par semaine et par muscle prescrites contre réalisées dans l'ordre de ses
+  priorités (`volumeParMuscle()`), progression par exercice, reculs,
+  douleurs. Constat au passage, à partir du programme : 19 séries de dos
+  contre 14 de pectoraux par semaine, inversion par rapport à la priorité
+  1 ; c'est une décision de programme, pas de code.
+- **Courbes lisibles** (`courbeSvg()` dans `v2/js/ui.js`) : ordonnées
+  graduées en kilos, abscisses datées, un appui sur un point ouvre la
+  fiche de la séance (séries, remarque, douleur, lien vers la ligne du
+  classeur quand elle est connue).
+
+### Ce qui est conservé de la v1
+
+Les règles de saisie éprouvées en salle : les répétitions valident à la
+confirmation du champ, le clavier est amorcé avant tout rendu
+(`#amorce-clavier`), la dernière série passe à l'exercice suivant, la
+minuterie appartient à la série finie et continue par-dessus la fiche
+suivante, le plein écran de repos se masque à 10 s de la fin ou d'un appui,
+quitter une séance la laisse en cours, plusieurs séances en cours à la fois
+(une par jour), la validation sans chiffres reprend le filigrane, le retour
+Android remonte d'un écran (une entrée d'historique « garde », `popstate`).
+Les cinq types de cardio, la séance de gainage et ses règles, le sommeil,
+les mensurations et les mannequins sont portés tels quels
+(`v2/js/tables.js` reprend les tables de la v1 sans réécriture). Le signal
+sonore, la vibration et le verrou d'écran restent.
+
+### Fluidité
+
+`v2/sw.js` sert **le cache d'abord** pour tout ce qui est listé, avec
+revalidation en arrière-plan ; une mise en ligne est prise au lancement
+suivant, et `VERSION` (`muscu2-AAAA-MM-JJ-n`) **doit changer à chaque
+livraison**, c'est elle qui purge l'ancien cache. Les 44 schémas Everkinetic
+et la photo du face pull sont précachés. L'historique est mémoïsé en
+mémoire (`historique()`), invalidé à chaque écriture.
+
+### Vérifications de la v2
+
+`pytest tests/test_v2.py` (20 tests, mêmes règles que `tests/test_app.py` :
+saisies réelles, témoin structurel des sept cartes, échec sur toute
+exception). `outils/verifier_code.py` analyse aussi la syntaxe des fichiers
+de `v2/` et de `appsscript/Code_v2.gs`, et cherche les noms cités ici dans
+les sources v2. Le détecteur `impeccable` ne remonte plus rien sur
+`v2/index.html` ; deux exceptions motivées dans `.impeccable/config.json`
+(Roboto voulu par la direction choisie, marge de `.barre` lue sans la
+feuille de style).
+
+### Revue de finition (impeccable, 4 novembre 2026)
+
+Relecteur de finition lancé sur six captures (390 et 1440 px) : verdict
+« fix », huit retouches matérielles appliquées en un lot puis scorées
+résolues, verdict « ship » sur ce périmètre. Ce qui a changé : carte du
+prochain jour mise en avant (`prochainJour()` dans `v2/js/sport.js`, anneau
+bleu et puce « Prochaine », le jour qui suit le dernier fait) ; RIR sur sa
+propre sous-ligne avec des cibles de 44 px et RP/suppression à 40 × 48 px
+(l'ancienne grille donnait 24 px aux boutons RIR) ; écart nul neutre (plus
+de « +0 kg » en vert, `classeEcart()`) ; dernière étiquette de date ancrée
+à droite, point choisi plus gros, courbe plafonnée à 420 px sur grand
+écran ; image d'exercice sur fond blanc ; ligne « Machine » (plus
+« Réglages », même mot que l'onglet) et icône de l'onglet Réglages en deux
+curseurs. **Deux pièges de navigation trouvés à cette occasion** : l'écran
+sortant restait à -30 % (puis, une fois la classe retirée, regagnait 100 %
+en restant visible 220 ms : il faut forcer une mise en page entre
+`transition: none` et le retrait de la classe) ; et `#app` en
+`overflow: hidden` devenait défilable par programme, un `focus()` le
+décalait de 16 px : `overflow: clip`. Restent, non matériels et hors de ce
+passage : couche d'état M3 à l'appui, élévation de la barre au défilement,
+suppression de série par geste, bouton « Suivant » loin du pouce en bas
+d'une longue fiche. `DESIGN.md` et `.impeccable/design.json` sont écrits
+par le documenteur à partir du code livré (17 jetons de couleur, règles
+nommées). Écarts notés et non corrigés : des couleurs littérales hors
+jetons (cardio, gainage, mesures, sommeil, pastels de l'état musculaire),
+les emoji des puces de Sommeil (sport et raisons) qui échappent au jeu
+d'icônes, les exceptions v1 du détecteur qui restent cantonnées aux
+fichiers v1.
+
+### Chantiers ouverts de la v2
+
+1. **Créer le nouveau classeur** (utilisateur) : coller
+   `classeur/Programme.csv` dans un onglet `Programme`, coller
+   `appsscript/Code_v2.gs`, changer `SECRET`, déployer, renseigner
+   `CLASSEUR_ID` et `GID_PROGRAMME` dans `outils/importer_programme_v2.py`,
+   puis l'adresse et le mot de passe dans Réglages de la v2 et « Tester la
+   connexion » (qui mémorise les gid pour le lien profond). Puis « Renvoyer
+   tout l'historique au classeur ».
+2. **Publier la v2** : le dossier `v2/` se sert tel quel à côté de la v1
+   (même domaine GitHub Pages, adresse `/v2/`).
+3. **Composeur de programmes** (le « sélecteur d'exercice » de
+   l'utilisateur) : à faire après validation de la v2, selon les crédits.
+   Architecture retenue dans le rapport : programme sur le téléphone,
+   composé depuis un catalogue de noms canoniques, classeur en sauvegarde,
+   import conservé comme autre façon d'ajouter un programme.
+4. Vérifier sur le Pixel 9 ce que le bac à sable ne mesure pas : clavier
+   virtuel et plein écran de repos, vibration, verrou d'écran, installation.
+
 ## Architecture
 
 - `index.html`, `css/style.css`, `js/app.js` : l'application elle-même, un

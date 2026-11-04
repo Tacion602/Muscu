@@ -71,6 +71,24 @@
         ],
         "createdAt": "2026-09-26T17:40:42.209Z",
         "reason": "User confirmed 26/09/2026: lien blanc 'Séances enregistrées' sans fond sur le fond vivant de Sport, gardé tel quel (section peu utilisée)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          "v2/index.html"
+        ],
+        "createdAt": "2026-11-04T00:00:00.000Z",
+        "reason": "Direction v2 choisie par l'utilisateur le 4 novembre 2026 : le standard du marche Android (Hevy, Strong, Material 3), police systeme Roboto voulue, pas un defaut."
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "v2/index.html"
+        ],
+        "createdAt": "2026-11-04T00:00:00.000Z",
+        "reason": ".barre : 12px de marge interieure, et le premier enfant est un bouton rond de 44px (retour) dont le trait est centre ; le detecteur lit le HTML statique sans la feuille v2/css/style.css et conclut a tort a un contenu colle au bord."
       }
     ]
   }

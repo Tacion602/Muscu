@@ -1,0 +1,521 @@
+{
+  "version": 2,
+  "origine": "converti depuis data/programme.json",
+  "importe_le": "2026-11-04T08:14:43+00:00",
+  "jours": [
+    {
+      "code": "J5",
+      "rang": 1,
+      "nom": "Haut max",
+      "type": "muscu",
+      "exercices": [
+        {
+          "numero": 1,
+          "nom": "Traction prise neutre machine assistee",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 150,
+          "muscle": "Grand dorsal",
+          "consigne": "pas ajout de repetitions au dela de 10.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 2,
+          "nom": "Developpe machine",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 120,
+          "muscle": "Pectoraux",
+          "consigne": "POS 1",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 3,
+          "nom": "Lat pull-in unilateral poulie a genoux",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Grand dorsal",
+          "consigne": "Bras quasi tendu, adduction pure vers la hanche. Exercice cle largeur",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 4,
+          "nom": "Elevation laterale halteres",
+          "series": 4,
+          "reps_min": 15,
+          "reps_max": 20,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 75,
+          "muscle": "Deltoïde latéral",
+          "consigne": "Troisieme exo du deltoide lateral, charge legere.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
+          "nom": "FACE PULL",
+          "series": 3,
+          "reps_min": 15,
+          "reps_max": 20,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 60,
+          "muscle": "Deltoide posterieur",
+          "consigne": "Poulie hauteur visage, rotation externe en fin de mouvement.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 6,
+          "nom": "Curl pupitre",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 12,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Biceps",
+          "consigne": "Bras cales,X triche possible. Ne pas verrouiller les coudes en bas.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 7,
+          "nom": "Extension triceps poulie barre",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 75,
+          "muscle": "Triceps",
+          "consigne": "Prise inversee ou neutre selon confort du coude.",
+          "reglages": "",
+          "substituts": []
+        }
+      ]
+    },
+    {
+      "code": "J2",
+      "rang": 2,
+      "nom": "Cardio",
+      "type": "cardio",
+      "exercices": []
+    },
+    {
+      "code": "J3",
+      "rang": 3,
+      "nom": "Pull",
+      "type": "muscu",
+      "exercices": [
+        {
+          "numero": 1,
+          "nom": "Tirage vertical prise large",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 150,
+          "muscle": "Grand dorsal",
+          "consigne": "Amener la barre a la clavicule. Ne pas cambrer excessivement.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 2,
+          "nom": "Rowing unilateral machine ou haltere",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 120,
+          "muscle": "Grand dorsal",
+          "consigne": "Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 3,
+          "nom": "Curl incline halteres",
+          "series": 3,
+          "reps_min": 10,
+          "reps_max": 12,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Biceps",
+          "consigne": "Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 4,
+          "nom": "Elevation laterale halteres",
+          "series": 3,
+          "reps_min": 15,
+          "reps_max": 20,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 60,
+          "muscle": "Deltoide lateral",
+          "consigne": "Charge legere, tempo controle. Pas de balancier.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
+          "nom": "Oiseau inverse machine",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 75,
+          "muscle": "Deltoide posterieur",
+          "consigne": "Bras quasi tendus, pas d'elan du buste.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 6,
+          "nom": "Curl marteau",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 75,
+          "muscle": "Biceps",
+          "consigne": "Prise neutre. Cible le brachial/brachio-radial",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 7,
+          "nom": "Traction prise neutre machine assistee",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 150,
+          "muscle": "Grand dorsal",
+          "consigne": "pas ajout de repetitions au dela de 10.",
+          "reglages": "",
+          "substituts": []
+        }
+      ]
+    },
+    {
+      "code": "J4",
+      "rang": 4,
+      "nom": "Jambes",
+      "type": "muscu",
+      "exercices": [
+        {
+          "numero": 1,
+          "nom": "PRESSE A CUISSE / HACK SQUAT",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 12,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 150,
+          "muscle": "Quadriceps",
+          "consigne": "Hack squat prioritaire s'il est disponible. Descente jusqu'a 90 degres minimum.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 2,
+          "nom": "SOULEVE DE TERRE ROUMAIN",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1
+          ],
+          "repos_s": 120,
+          "muscle": "Ischio-jambiers et fessiers",
+          "consigne": "Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 3,
+          "nom": "Extension jambes unilatéral",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Quadriceps",
+          "consigne": "Amplitude complete. Pause courte en contraction haute.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 4,
+          "nom": "Extension de hanche machine",
+          "series": 3,
+          "reps_min": 10,
+          "reps_max": 12,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Grand fessier",
+          "consigne": "Par jambe. De dos, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
+          "nom": "Mollets debout unilatéral",
+          "series": 4,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 75,
+          "muscle": "Mollets",
+          "consigne": "Pause 2 secondes en position basse etiree.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 6,
+          "nom": "Abduction de hanche machine",
+          "series": 3,
+          "reps_min": 15,
+          "reps_max": 20,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 60,
+          "muscle": "Abducteurs et moyen fessier",
+          "consigne": "Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 7,
+          "nom": "LEG CURL ALLONGE",
+          "series": 3,
+          "reps_min": 10,
+          "reps_max": 12,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Ischio-jambiers et fessiers",
+          "consigne": "Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",
+          "reglages": "",
+          "substituts": []
+        }
+      ]
+    },
+    {
+      "code": "J1",
+      "rang": 5,
+      "nom": "Push",
+      "type": "muscu",
+      "exercices": [
+        {
+          "numero": 1,
+          "nom": "Developpe incline banc",
+          "series": 4,
+          "reps_min": 6,
+          "reps_max": 8,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 150,
+          "muscle": "Pectoraux",
+          "consigne": "Inclinaison 30 Amplitude complete, etirement controle en bas.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 2,
+          "nom": "Dips buste penche",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 120,
+          "muscle": "Pectoraux",
+          "consigne": "Coudes fixes en legere flexion. Ne pas transformer en presse.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 3,
+          "nom": "Ecarte poulie horizontale hauteur poitrine",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Pectoraux",
+          "consigne": "Coudes légèrement fléchis, angle fixe tout du long (pas de coup de triceps). Amener les mains devant la poitrine, coudes un peu plus bas que les épaules. Contraction pectorale marquée en fin de mouvement, pas juste un rapprochement des mains. Contrôler la phase excentrique plutôt que de laisser les poulies tirer les bras en arrière.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 4,
+          "nom": "Extension triceps overhead corde",
+          "series": 3,
+          "reps_min": 10,
+          "reps_max": 12,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Triceps",
+          "consigne": "Bras au dessus de la tete pour etirer la longue portion.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
+          "nom": "Elevation laterale halteres",
+          "series": 3,
+          "reps_min": 15,
+          "reps_max": 20,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 60,
+          "muscle": "Deltoide lateral",
+          "consigne": "Charge legere, tempo controle. Pas de balancier.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 6,
+          "nom": "Extension triceps poulie barre",
+          "series": 3,
+          "reps_min": 12,
+          "reps_max": 15,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 75,
+          "muscle": "Triceps",
+          "consigne": "Coudes colles au buste. Verrouillage complet en fin de mouvement.",
+          "reglages": "",
+          "substituts": []
+        }
+      ]
+    },
+    {
+      "code": "J6",
+      "rang": 6,
+      "nom": "Cardio",
+      "type": "cardio",
+      "exercices": []
+    }
+  ]
+}

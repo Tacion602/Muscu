@@ -1,0 +1,16 @@
+{
+  "name": "Muscu v2",
+  "short_name": "Muscu",
+  "description": "Journal de séance, charge suggérée, progression et synchronisation vers le classeur.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f6f8",
+  "theme_color": "#f5f6f8",
+  "lang": "fr",
+  "icons": [
+    { "src": "../icones/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "../icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
