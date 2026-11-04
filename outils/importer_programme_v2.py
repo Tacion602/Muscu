@@ -53,8 +53,8 @@ PROGRAMME_V1 = RACINE / "data" / "programme.json"
 # A renseigner une fois le nouveau classeur cree : identifiant du classeur et
 # gid de l'onglet « Programme ». Tant qu'ils sont vides, seul l'import depuis
 # un fichier CSV ou depuis la v1 est possible.
-CLASSEUR_ID = ""
-GID_PROGRAMME = ""
+CLASSEUR_ID = "1JOiH7LYXLtosQnnyMYLMjrBFK_CDkeKN98sKSwJM7DI"
+GID_PROGRAMME = "291704442"
 
 COLONNES = [
     "Jour", "Rang", "Nom", "Type", "Numero", "Exercice", "Series",

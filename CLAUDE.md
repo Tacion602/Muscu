@@ -110,8 +110,9 @@ lots de 20 via `historique` (`synchroniser()` dans `v2/js/reglages.js`).
 colonnes nommées (`outils/importer_programme_v2.py`, colonnes Jour, Rang,
 Nom, Type, Numero, Exercice, Series, Reps min, Reps max, RIR, Repos, Muscle,
 Consigne, Reglages, Substituts). Plus de reconnaissance de forme : les
-pièges d'import de la v1 disparaissent. `CLASSEUR_ID` et `GID_PROGRAMME` y
-sont vides tant que le classeur n'existe pas ; `--depuis-v1` convertit
+pièges d'import de la v1 disparaissent. `CLASSEUR_ID` (`1JOiH7LYXLtosQnnyMYLMjrBFK_CDkeKN98sKSwJM7DI`, classeur « Muscu v2 » créé par
+l'utilisateur le 4 novembre 2026, pont déployé le même jour) et
+`GID_PROGRAMME` (`291704442`) y sont renseignés ; `--depuis-v1` convertit
 `data/programme.json` et `--csv` écrit `classeur/Programme.csv` à coller
 dans le nouvel onglet (fait ce jour-là : 6 jours, 27 exercices). Sortie :
 `v2/data/programme.json`, jamais édité à la main. L'import vérifie
@@ -260,7 +261,7 @@ fichiers v1.
 
 ### Chantiers ouverts de la v2
 
-1. **Créer le nouveau classeur** (utilisateur) : coller
+1. ~~Créer le nouveau classeur~~ **Fait par l'utilisateur le 4 novembre 2026** (classeur, onglet Programme, pont déployé, connexion testée). Pour mémoire : coller
    `classeur/Programme.csv` dans un onglet `Programme`, coller
    `appsscript/Code_v2.gs`, changer `SECRET`, déployer, renseigner
    `CLASSEUR_ID` et `GID_PROGRAMME` dans `outils/importer_programme_v2.py`,
