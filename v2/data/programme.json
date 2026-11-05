@@ -1,7 +1,7 @@
 {
   "version": 2,
   "origine": "fichier classeur/Programme.csv",
-  "importe_le": "2026-11-04T12:09:10+00:00",
+  "importe_le": "2026-11-05T11:07:53+00:00",
   "jours": [
     {
       "code": "J5",
@@ -197,7 +197,7 @@
         },
         {
           "numero": 2,
-          "nom": "Oiseau inverse machine",
+          "nom": "Ecarte poulie basse vers le haut",
           "series": 3,
           "reps_min": 12,
           "reps_max": 15,
@@ -207,11 +207,11 @@
             1
           ],
           "repos_s": 75,
-          "muscle": "Deltoide posterieur",
-          "consigne": "Bras quasi tendus, pas d'elan du buste.",
+          "muscle": "Pectoraux",
+          "consigne": "Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",
           "reglages": "",
           "substituts": [
-            "FACE PULL"
+            "Ecarte poulie horizontale hauteur poitrine"
           ]
         },
         {
@@ -234,6 +234,23 @@
         },
         {
           "numero": 4,
+          "nom": "Elevation laterale halteres",
+          "series": 3,
+          "reps_min": 10,
+          "reps_max": 12,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 60,
+          "muscle": "Deltoide lateral",
+          "consigne": "Troisieme exo du deltoide lateral, charge legere.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
           "nom": "Curl incline halteres",
           "series": 3,
           "reps_min": 8,
@@ -252,8 +269,8 @@
           ]
         },
         {
-          "numero": 5,
-          "nom": "Ecarte poulie basse vers le haut",
+          "numero": 6,
+          "nom": "Oiseau inverse machine",
           "series": 3,
           "reps_min": 12,
           "reps_max": 15,
@@ -263,29 +280,12 @@
             1
           ],
           "repos_s": 75,
-          "muscle": "Pectoraux",
-          "consigne": "Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",
+          "muscle": "Deltoide posterieur",
+          "consigne": "Bras quasi tendus, pas d'elan du buste.",
           "reglages": "",
           "substituts": [
-            "Ecarte poulie horizontale hauteur poitrine"
+            "FACE PULL"
           ]
-        },
-        {
-          "numero": 6,
-          "nom": "Elevation laterale halteres",
-          "series": 3,
-          "reps_min": 10,
-          "reps_max": 12,
-          "rir": [
-            2,
-            1,
-            1
-          ],
-          "repos_s": 60,
-          "muscle": "Deltoide lateral",
-          "consigne": "Troisieme exo du deltoide lateral, charge legere.",
-          "reglages": "",
-          "substituts": []
         }
       ]
     },

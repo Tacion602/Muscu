@@ -185,6 +185,32 @@ codes.
   séance en cours ou la prochaine, phrase du jour en bas. Un appui sur le
   cadran la fond vers l'Accueil. Masquée si le programme ne charge pas.
   Les tests la passent par `passer_intro()` dans `ouvrir_sport()`.
+- **Repos persistant, plein écran jusqu'au bout, chrono +30 %**
+  (remarque de fin de séance du 5 novembre 2026, « fais tout ») :
+  - le repos est gardé sur le téléphone (`muscu2.repos`, `sauverRepos()`/
+    `restaurerRepos()`), repris au lancement s'il n'est pas fini ; quitter
+    la fiche ne l'arrête plus (`avantRetour()` ne fait que masquer le plein
+    écran). Hors de la séance, une pastille `#repos-flottant` au-dessus des
+    onglets le montre ; un appui rouvre la séance. Finir ou abandonner la
+    séance l'arrête ;
+  - `battre()` ne masque plus le plein écran à 10 s de la fin : il reste
+    jusqu'à zéro, sauf appui ;
+  - anneau 220 → 286 px, chiffres 64 → 83 px, bandeau 30 → 39 px ;
+  - **vibration** : `navigator.vibrate` n'agit que page au premier plan et
+    manque sur certains navigateurs. Réglage « Notification en fin de
+    repos » repris de la v1 (`notifierFinDeRepos()`, permission demandée
+    au cochage, `notificationclick` dans `v2/sw.js`) : le système vibre et
+    sonne même écran verrouillé. Cause exacte de la panne non confirmée
+    (navigateur du téléphone à demander).
+- **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
+  écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
+  inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,
+  règle de l'utilisateur) : l'écarté les sépare, l'élévation latérale
+  sépare le curl du rowing (remarque du 19 octobre, biceps fatigués) et
+  l'oiseau de l'élévation. `classeur/Programme.csv` et
+  `v2/data/programme.json` à jour ; **les lignes J3 sont à recoller dans
+  l'onglet Programme du classeur**, sans quoi le prochain import depuis le
+  classeur reviendrait à l'ancien ordre.
 - **RIR par quatre boutons 0 à 3**, cible du programme présélectionnée
   (contour) et retenue si rien n'est touché : fini les 1,3 saisis au
   clavier, inexploitables.
@@ -241,7 +267,8 @@ Les règles de saisie éprouvées en salle : les répétitions valident à la
 confirmation du champ, le clavier est amorcé avant tout rendu
 (`#amorce-clavier`), la dernière série passe à l'exercice suivant, la
 minuterie appartient à la série finie et continue par-dessus la fiche
-suivante, le plein écran de repos se masque à 10 s de la fin ou d'un appui,
+suivante, le plein écran de repos se masque d'un appui (plus à 10 s de la
+fin depuis le 5 novembre 2026, voir plus bas),
 quitter une séance la laisse en cours, plusieurs séances en cours à la fois
 (une par jour), la validation sans chiffres reprend le filigrane, le retour
 Android remonte d'un écran (une entrée d'historique « garde », `popstate`).

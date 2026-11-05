@@ -165,6 +165,27 @@ def test_l_envoi_passe_par_une_page_dediee_animee(page):
     assert page.locator("#envoi-plein").is_hidden()
 
 
+def test_le_repos_persiste_hors_de_la_fiche_et_au_relancement(page):
+    """Remarque du 5 novembre 2026 : chrono persistant, et plein ecran
+    garde jusqu'a la fin (plus de masquage a 10 s)."""
+    ouvrir_jour(page, "J1")
+    saisir_serie_courante(page, 40, 8)
+    page.wait_for_selector("#minuterie-plein:not([hidden])")
+    page.evaluate("minuterie.fin = Date.now() + 5000; battre()")
+    assert page.locator("#minuterie-plein").is_visible()
+    page.locator("#minuterie-fermer").click()
+    page.locator("#ecran-seance .barre [data-retour]").click()
+    page.wait_for_selector("#repos-flottant:not([hidden])")
+    page.evaluate("minuterie.fin = Date.now() + 60000; sauverRepos()")
+    page.reload()
+    passer_intro(page)
+    page.wait_for_selector("#repos-flottant:not([hidden])")
+    page.locator("#repos-flottant").click()
+    page.wait_for_selector("#ecran-seance.actif")
+    assert page.evaluate("minuterie !== null")
+    assert page.locator("#repos-flottant").is_hidden()
+
+
 def test_la_derniere_serie_passe_a_l_exercice_suivant(page):
     ouvrir_jour(page, "J1")
     n = page.locator("#series .serie").count()

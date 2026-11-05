@@ -219,6 +219,14 @@ const PHRASES_OUVERTURE = [
   'Échauffe-toi comme si tu allais charger lourd. Tu vas charger lourd.',
   'Un recul noté honnêtement vaut plus qu\'un chiffre arrangé.',
   'Technique d\'abord, charge ensuite, ego nulle part.',
+  // Ajouts du 5 novembre 2026, dont quelques-unes avec humour (demande de
+  // l'utilisateur). Toutes écrites pour l'application, aucune attribuée.
+  "L'ego veut 5 kg de plus. Le RIR veut la vérité.",
+  "Si tu peux chanter pendant la série, ce n'était pas RIR 1.",
+  'Respire, gaine, pousse. Dans cet ordre.',
+  'Téléphone posé entre les séries. Sauf pour cette appli, évidemment.',
+  'Le dernier rep moche ne compte pas. Le dernier rep propre, si.',
+  'Range tes disques à la fin. Ta réputation en salle en dépend.',
 ];
 
 /* Phrases de motivation de l'accueil et faits d'entraînement de l'écran de
@@ -243,6 +251,17 @@ const PHRASES_MOTIVATION = [
   'Le repos est un outil, pas une récompense.',
   "L'échauffement est la première série. Ne la saute pas.",
   'La régularité bat l\'intensité ponctuelle, toutes les semaines.',
+  // Ajouts du 5 novembre 2026, plusieurs avec humour.
+  'Charger la barre prend dix secondes. Trouver une excuse, à peine moins. Charge la barre.',
+  'Ta playlist est prête, tes excuses aussi. Choisis la playlist.',
+  'Les haltères ne jugent pas. Le miroir, un peu.',
+  'Aujourd\'hui on soulève. Demain on négocie avec les escaliers.',
+  'Le RIR 0, c\'est comme le piment : un peu relève le plat, partout il le gâche.',
+  'Les progrès, c\'est un livret d\'épargne : intérêts lents, mais composés.',
+  'La machine à ischios t\'attend. Elle ne l\'avouera jamais, mais elle t\'attend.',
+  'Personne n\'a jamais regretté une séance faite. Le canapé, lui, collectionne les regrets.',
+  'Un bon carnet d\'entraînement ne ment pas. Il se tait quand tu sautes une séance, c\'est pire.',
+  'Les courbatures passent. Le développé couché que tu as rajouté reste.',
 ];
 
 const FAITS_ENTRAINEMENT = [

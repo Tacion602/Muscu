@@ -386,15 +386,41 @@ function brancherMinuterie() {
   $('seance-abandonner').addEventListener('click', abandonnerSeanceCourante);
   $('minuterie-fermer').addEventListener('click', () => { $('minuterie-plein').hidden = true; });
   $('minuterie-plein').addEventListener('click', (e) => { if (e.target === $('minuterie-plein')) $('minuterie-plein').hidden = true; });
-  $('minuterie-moins').addEventListener('click', () => { if (minuterie) { minuterie.fin -= 15000; battre(); } });
-  $('minuterie-plus').addEventListener('click', () => { if (minuterie) { minuterie.fin += 15000; battre(); } });
+  $('minuterie-moins').addEventListener('click', () => { if (minuterie) { minuterie.fin -= 15000; sauverRepos(); battre(); } });
+  $('minuterie-plus').addEventListener('click', () => { if (minuterie) { minuterie.fin += 15000; sauverRepos(); battre(); } });
+  $('repos-flottant').addEventListener('click', () => {
+    const jour = minuterie && minuterie.jour;
+    if (jour && lireSeancesEnCours()[codeCanonique(jour)]) { afficher('sport'); commencer(jour); }
+    else minuterieTerminee(true);
+  });
   $('minuterie-stop').addEventListener('click', () => minuterieTerminee(true));
   $('minuterie-anneau').style.strokeDasharray = String(2 * Math.PI * 52);
 }
 
+/* Repos persistant (remarque du 5 novembre 2026, « chrono persistant ») :
+   le repos survit à la sortie de la fiche et à la fermeture de
+   l'application. Il est gardé sur le téléphone, repris au lancement s'il
+   n'est pas fini, et une pastille (#repos-flottant) le montre sur les
+   autres écrans ; un appui ramène à la séance. */
+const CLE_REPOS = 'muscu2.repos';
+
+function sauverRepos() {
+  ecrire(CLE_REPOS, minuterie ? { debut: minuterie.debut, fin: minuterie.fin, duree: minuterie.duree, bilan: minuterie.bilan, jour: minuterie.jour } : null);
+}
+
+function restaurerRepos() {
+  const r = lire(CLE_REPOS, null);
+  if (!r || !r.fin || r.fin <= Date.now()) { ecrire(CLE_REPOS, null); return; }
+  minuterie = r;
+  rendreBandeauMinuterie();
+  battre();
+  tictac = setInterval(battre, 250);
+}
+
 function lancerMinuterie(secondes, bilan) {
   arreterMinuterie();
-  minuterie = { debut: Date.now(), fin: Date.now() + secondes * 1000, duree: secondes, bilan };
+  minuterie = { debut: Date.now(), fin: Date.now() + secondes * 1000, duree: secondes, bilan, jour: seance ? seance.jour : null };
+  sauverRepos();
   rendreBandeauMinuterie();
   const plein = $('minuterie-plein');
   $('minuterie-suivant').innerHTML = bilan && bilan.suivant
@@ -429,13 +455,19 @@ function battre() {
   $('minuterie-plein-t').textContent = texte;
   const fraction = Math.max(0, Math.min(1, restant / minuterie.duree));
   $('minuterie-anneau').style.strokeDashoffset = String(2 * Math.PI * 52 * (1 - fraction));
-  if (restant <= 10 && !$('minuterie-plein').hidden) $('minuterie-plein').hidden = true;
+  // Le plein écran reste jusqu'à la fin du repos (remarque du 5 novembre
+  // 2026) : il ne se masque plus à 10 s, seulement par un appui.
+  const flottant = $('repos-flottant');
+  flottant.hidden = ecranActif() === 'seance';
+  $('repos-flottant-t').textContent = texte;
 }
 
 function arreterMinuterie() {
   if (tictac) clearInterval(tictac);
   tictac = null; minuterie = null;
+  sauverRepos();
   $('minuterie-plein').hidden = true;
+  $('repos-flottant').hidden = true;
   rendreBandeauMinuterie();
 }
 
@@ -450,9 +482,24 @@ function minuterieTerminee(manuel) {
   }
 }
 
+/* Notification système de fin de repos, reprise de la v1 (remarque du
+   5 novembre 2026, « vibration ne fonctionne pas ») : navigator.vibrate
+   n'agit que page au premier plan et n'existe pas sur tous les navigateurs ;
+   la notification passe par le système, qui vibre et sonne même écran
+   verrouillé. Seul ServiceWorkerRegistration.showNotification marche
+   depuis une page Android. Activée dans Réglages (permission demandée). */
+function notifierFinDeRepos() {
+  if (!reglages.notification || !('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!navigator.serviceWorker) return;
+  navigator.serviceWorker.ready.then((r) => r.showNotification('Repos terminé', {
+    body: 'Série suivante.', tag: 'muscu-repos', renotify: true, vibrate: [180, 90, 180], silent: false,
+  })).catch(() => {});
+}
+
 let contexteAudio = null;
 function signaler() {
   if (reglages.vibration && navigator.vibrate) navigator.vibrate([180, 90, 180]);
+  notifierFinDeRepos();
   if (!reglages.son) return;
   try {
     contexteAudio = contexteAudio || new (window.AudioContext || window.webkitAudioContext)();
@@ -518,6 +565,7 @@ async function enregistrerEtSynchroniser() {
   const bouton = $('fin-enregistrer');
   const etat = $('fin-etat');
   bouton.disabled = true;
+  arreterMinuterie();
   seance.fin = new Date().toISOString();
   if (seance.type === 'gainage') seance.lignesGainage = lignesGainage(seance);
   enregistrerDansHistorique(seance);
@@ -577,7 +625,8 @@ function abandonnerSeanceCourante() {
 
 function avantRetour() {
   if (ecranActif() === 'seance') {
-    arreterMinuterie();
+    // Le repos continue hors de la fiche (pastille #repos-flottant).
+    $('minuterie-plein').hidden = true;
     if (alternanceSchema) { clearInterval(alternanceSchema); alternanceSchema = null; }
     enregistrerSeance();
   }

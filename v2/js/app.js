@@ -14,6 +14,7 @@ async function demarrer() {
   }
   brancherNavigation();
   brancherMinuterie();
+  restaurerRepos();
   brancherReglages();
   rendreAccueil();
   rendreIntro();

@@ -12,6 +12,7 @@ function rendreReglages() {
     '</div>' +
     '<p class="titre-section">Séance</p><div class="reglages-groupe">' +
     bascule('son', 'Signal sonore en fin de repos') + bascule('vibration', 'Vibration à la validation et en fin de repos') +
+    bascule('notification', 'Notification en fin de repos (vibre aussi écran verrouillé)') +
     bascule('veille', 'Garder l\'écran allumé en séance') + bascule('clavierPendantRecup', 'Clavier ouvert pendant le repos') + '</div>' +
     '<p class="titre-section">Données</p><div class="reglages-groupe">' +
     '<div class="champ"><p class="petit texte-2">' + (m ? 'Historique repris de l\'ancienne application le ' + dateCourte(m.quand) + ' (' + m.seances + ' séances).' : 'Aucune reprise effectuée.') + ' ' + historique().length + ' séances sur ce téléphone.</p></div>' +
@@ -22,7 +23,16 @@ function rendreReglages() {
     '</div>' +
     '<p class="petit texte-3" style="margin-top:16px;text-align:center">Muscu v2 · version <span id="reglages-version">' + echapper(versionApp || 'non installée') + '</span> · ' + echapper(programme.nom || 'programme') + ' importé le ' + (programme.importe_le ? dateCourte(programme.importe_le) : '?') + '</p>';
   ['pont', 'secret'].forEach((c) => $('r-' + c).addEventListener('change', (e) => { reglages[c] = e.target.value.trim(); sauverReglages(); }));
-  corps.querySelectorAll('[data-bascule]').forEach((i) => i.addEventListener('change', () => { reglages[i.dataset.bascule] = i.checked; sauverReglages(); }));
+  corps.querySelectorAll('[data-bascule]').forEach((i) => i.addEventListener('change', async () => {
+    // La notification demande d'abord la permission du navigateur.
+    if (i.dataset.bascule === 'notification' && i.checked) {
+      if (!('Notification' in window)) { i.checked = false; toast('Notifications non prises en charge par ce navigateur.', 3500); }
+      else if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') {
+        i.checked = false; toast('Autorisation refusée : pas de notification de fin de repos.', 3500);
+      }
+    }
+    reglages[i.dataset.bascule] = i.checked; sauverReglages();
+  }));
   $('r-tester').addEventListener('click', async () => {
     const etat = $('r-etat');
     etat.textContent = 'Connexion…';
