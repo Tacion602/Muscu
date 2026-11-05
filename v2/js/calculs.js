@@ -12,10 +12,14 @@ function e1rm(charge, reps) {
 }
 
 /* Pas de charge selon le matériel : 2,5 kg à la barre, aux haltères et aux
-   poulies ; 5 kg sur les grosses machines guidées. Lu dans le nom. */
+   poulies ; 5 kg sur les grosses machines guidées. Lu dans le nom.
+   Les tractions passent avant : faites au poids de corps puis lestées
+   (charge saisie = poids réellement soulevé), elles montent par 2,5 kg
+   de lest, même si leur nom contient encore « machine » (5 novembre 2026). */
 function pasDeCharge(nomExo) {
   const f = formeDuNom(nomExo);
-  if (/presse|hack|squat|machine|tirage|traction|rowing|extension jambes|leg curl|hanche|mollets/.test(f)) return 5;
+  if (/traction/.test(f)) return 2.5;
+  if (/presse|hack|squat|machine|tirage|rowing|extension jambes|leg curl|hanche|mollets/.test(f)) return 5;
   if (/halter|curl|elevation|poulie|face pull|ecarte|dips|banc|overhead|corde/.test(f)) return 2.5;
   return 2.5;
 }

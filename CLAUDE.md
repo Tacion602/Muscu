@@ -145,6 +145,13 @@ codes.
   plus sur la première série. Affichée en tête de fiche, et en filigrane
   de la première série (les suivantes montrent la dernière fois). Rien sans
   historique, rien en deload.
+  - **Tractions : la charge saisie est le poids réellement soulevé**
+    (précision de l'utilisateur le 5 novembre 2026) : poids de corps moins
+    l'assistance jusque-là, poids de corps (77 kg) désormais, lest ajouté
+    ensuite. Aucune inversion à faire pour « machine assistee » dans le nom,
+    l'e1RM et la double progression sont justes tels quels. **Pas de 2,5 kg**
+    (choix de l'utilisateur le même jour), testé avant la règle des
+    machines, le nom contenant encore « machine ».
 - **RIR par quatre boutons 0 à 3**, cible du programme présélectionnée
   (contour) et retenue si rien n'est touché : fini les 1,3 saisis au
   clavier, inexploitables.
