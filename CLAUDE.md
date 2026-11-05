@@ -209,6 +209,15 @@ codes.
   élément (`.voile.ancree`). Utilisé par les deux abandons : la ligne de
   la séance en cours sur Sport, la croix `#seance-abandonner` de la fiche.
   Les autres confirmations restent en bas.
+- **Séances d'essai des 27 et 28 août 2026 supprimées** (demande du
+  5 novembre 2026, captures de fiches de courbe à l'appui : 40 × 40 au J5,
+  « Ligne du classeur inconnue ») : séances de mise au point de la v1,
+  absentes du classeur v1 (qui commence le 31 août), reprises par la
+  migration. `nettoyerSeancesDeTest()` (`v2/js/donnees.js`) les retire au
+  démarrage, à chaque lancement (toast du nombre retiré) ; `seanceDeTest()`
+  les écarte aussi de la migration et de « Reprendre à nouveau
+  l'historique v1 ». L'historique de la v1 (`muscu.historique`) n'est pas
+  touché.
 - **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
   écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
   inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,

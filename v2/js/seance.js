@@ -14,6 +14,7 @@ let confirmationEnCours = false;
 
 function rendreSeance(mode) {
   if (!seance) { return; }
+  $('repos-flottant').hidden = true;   // sans attendre le tic de battre()
   if (seance.type === 'cardio') { rendreCardio(); return; }
   if (seance.type === 'gainage') { rendreGainage(); return; }
   // `mode` n'est passé qu'à l'ouverture (voir ouvrirSeance) : on repart à

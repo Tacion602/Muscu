@@ -109,6 +109,23 @@ function nomDuJourV1(titre) {
   return /^footing$/i.test(nom) ? 'Cardio' : nom.charAt(0) + nom.slice(1).toLowerCase();
 }
 
+/* Séances d'essai du développement de la v1, les 27 et 28 août 2026
+   (40 × 40 au J5, entre autres), reprises par la migration. Le classeur v1
+   ne commence que le 31 août : ces séances n'existent que sur le
+   téléphone. Supprimées à la demande de l'utilisateur le 5 novembre 2026,
+   au démarrage (`nettoyerSeancesDeTest()`), et jamais reprises de la v1. */
+const JOURS_DE_TEST = ['27/08/2026', '28/08/2026'];
+function seanceDeTest(s) {
+  const d = s && (s.fin || s.debut);
+  return !!d && JOURS_DE_TEST.includes(cleDate(new Date(d)));
+}
+function nettoyerSeancesDeTest() {
+  const toutes = lireTableau(CLES.historique);
+  const gardees = toutes.filter((s) => !seanceDeTest(s));
+  if (gardees.length !== toutes.length) ecrire(CLES.historique, gardees);
+  return toutes.length - gardees.length;
+}
+
 function migrerDepuisV1() {
   if (lire(CLES.migration, null)) return false;
   const v1 = lireTableau(CLES_V1.historique);
@@ -116,7 +133,7 @@ function migrerDepuisV1() {
     ecrire(CLES.migration, { quand: new Date().toISOString(), seances: 0, source: 'aucune v1' });
     return false;
   }
-  ecrire(CLES.historique, v1.map(normaliserSeanceV1));
+  ecrire(CLES.historique, v1.filter((s) => !seanceDeTest(s)).map(normaliserSeanceV1));
   const consignes = lire(CLES_V1.consignes, {});
   ecrire(CLES.consignes, consignes && typeof consignes === 'object' ? consignes : {});
   ecrire(CLES.sommeil, lireTableau(CLES_V1.sommeil));

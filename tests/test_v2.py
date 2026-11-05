@@ -367,6 +367,28 @@ def test_l_historique_v1_est_repris_une_fois(adresse, navigateur):
     contexte.close()
 
 
+def test_les_seances_d_essai_d_aout_sont_supprimees(adresse, navigateur):
+    """Demande du 5 novembre 2026 : seances d'essai des 27 et 28 aout 2026
+    retirees de la v2, et jamais reprises de la v1."""
+    contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
+    onglet = contexte.new_page()
+    onglet.goto(adresse)
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    seances = [
+        {"id": "T1", "jour": "J5", "type": "muscu", "debut": "2026-08-28T10:00:00", "fin": "2026-08-28T11:00:00", "exercices": []},
+        {"id": "R1", "jour": "J1", "type": "muscu", "debut": "2026-08-31T10:00:00", "fin": "2026-08-31T11:00:00", "exercices": []},
+    ]
+    onglet.evaluate("(s) => { localStorage.clear(); localStorage.setItem('muscu.historique', JSON.stringify(s)); }", seances)
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    assert [s["id"] for s in onglet.evaluate("historique()")] == ["R1"]
+    onglet.evaluate("(s) => localStorage.setItem('muscu2.historique', JSON.stringify(s))", seances)
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    assert [s["id"] for s in onglet.evaluate("historique()")] == ["R1"]
+    contexte.close()
+
+
 # ------------------------------------------------------------ cardio, gainage, suivi
 
 

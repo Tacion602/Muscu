@@ -4,6 +4,7 @@ let versionApp = '';
 
 async function demarrer() {
   const migree = migrerDepuisV1();
+  const retirees = nettoyerSeancesDeTest();
   reglages = Object.assign({}, REGLAGES_PAR_DEFAUT, lire(CLES.reglages, {}) || {});
   try {
     await chargerProgramme();
@@ -21,6 +22,8 @@ async function demarrer() {
   if (migree) {
     const m = lire(CLES.migration, {});
     toast('Historique repris de l\'ancienne application : ' + m.seances + ' séances.', 4000);
+  } else if (retirees) {
+    toast(retirees + ' séance' + (retirees > 1 ? 's' : '') + ' d\'essai des 27 et 28 août supprimée' + (retirees > 1 ? 's' : '') + '.', 4000);
   }
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
