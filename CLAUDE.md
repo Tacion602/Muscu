@@ -202,6 +202,13 @@ codes.
     au cochage, `notificationclick` dans `v2/sw.js`) : le système vibre et
     sonne même écran verrouillé. Cause exacte de la panne non confirmée
     (navigateur du téléphone à demander).
+- **Confirmation d'abandon posée sur la croix** (demande du 5 novembre
+  2026 : « au niveau de la croix, qu'elle superpose la séance à annuler »,
+  elle montait du bas) : `feuille()` et `confirmer()` (`v2/js/ui.js`)
+  acceptent une `ancre` ; la feuille se pose alors en haut, sur cet
+  élément (`.voile.ancree`). Utilisé par les deux abandons : la ligne de
+  la séance en cours sur Sport, la croix `#seance-abandonner` de la fiche.
+  Les autres confirmations restent en bas.
 - **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
   écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
   inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,

@@ -620,7 +620,7 @@ function abandonnerSeanceCourante() {
     oublierSeance(seance.jour);
     seance = null;
     afficher('sport');   // racine : afficher() réinitialise la pile lui-même
-  }, true);
+  }, true, null, $('seance-abandonner'));
 }
 
 function avantRetour() {

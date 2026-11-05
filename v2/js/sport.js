@@ -77,7 +77,7 @@ function rendreSport() {
     confirmer('Abandonner cette séance ?', 'Les séries saisies seront perdues.', 'Abandonner', () => {
       oublierSeance(b.dataset.abandonner);
       rendreSport();
-    }, true);
+    }, true, null, b.parentElement);
   }));
   const h = corps.querySelector('[data-historique]');
   if (h) h.addEventListener('click', () => afficher('historique'));

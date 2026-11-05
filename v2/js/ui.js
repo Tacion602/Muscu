@@ -147,11 +147,21 @@ function brancherNavigation() {
 
 /* ---------- Feuille basse, toast ---------- */
 
-function feuille(html, brancher, surFermeture) {
+/* `ancre` (facultatif) : la feuille ne monte plus du bas mais se pose sur
+   cet élément, en haut de l'écran, par-dessus ce qu'elle concerne
+   (demande du 5 novembre 2026 pour l'abandon de séance, « au niveau de la
+   croix, qu'elle superpose la séance à annuler »). */
+function feuille(html, brancher, surFermeture, ancre) {
   const voile = document.createElement('div');
-  voile.className = 'voile';
+  voile.className = 'voile' + (ancre ? ' ancree' : '');
   voile.innerHTML = '<div class="feuille">' + html + '</div>';
   $('app').appendChild(voile);
+  if (ancre) {
+    const app = $('app').getBoundingClientRect();
+    const f = voile.querySelector('.feuille');
+    const haut = ancre.getBoundingClientRect().top - app.top;
+    f.style.marginTop = Math.max(8, Math.min(haut, app.height - f.offsetHeight - 8)) + 'px';
+  }
   requestAnimationFrame(() => voile.classList.add('visible'));
   let fermee = false;
   const fermer = () => {
@@ -167,7 +177,7 @@ function feuille(html, brancher, surFermeture) {
   return fermer;
 }
 
-function confirmer(titre, texte, libelle, suite, danger, surAnnulation) {
+function confirmer(titre, texte, libelle, suite, danger, surAnnulation, ancre) {
   let confirme = false;
   const voile = feuille(
     '<h3>' + echapper(titre) + '</h3><p class="texte-2">' + echapper(texte) + '</p>' +
@@ -176,7 +186,7 @@ function confirmer(titre, texte, libelle, suite, danger, surAnnulation) {
     (f, fermer) => {
       f.querySelector('[data-annuler]').addEventListener('click', fermer);
       f.querySelector('[data-ok]').addEventListener('click', () => { confirme = true; fermer(); suite(); });
-    }, () => { if (!confirme && surAnnulation) surAnnulation(); });
+    }, () => { if (!confirme && surAnnulation) surAnnulation(); }, ancre);
   return voile;
 }
 
