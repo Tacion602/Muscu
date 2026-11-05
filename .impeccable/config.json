@@ -89,6 +89,24 @@
         ],
         "createdAt": "2026-11-04T00:00:00.000Z",
         "reason": ".barre : 12px de marge interieure, et le premier enfant est un bouton rond de 44px (retour) dont le trait est centre ; le detecteur lit le HTML statique sans la feuille v2/css/style.css et conclut a tort a un contenu colle au bord."
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "v2/js/seance.js"
+        ],
+        "createdAt": "2026-11-05T10:24:49.794Z",
+        "reason": "Claude: #exo-image est construit sans src puis rempli par rendreImageExercice() juste après le rendu, ligne antérieure à ce changement"
+      },
+      {
+        "rule": "pulsing-dot",
+        "value": "*",
+        "files": [
+          "v2/index.html"
+        ],
+        "createdAt": "2026-11-05T10:34:54.778Z",
+        "reason": "Demande de l'utilisateur le 5 novembre 2026 : jauge néon de la v1 (étincelle qui pulse en bout de barre) et animation d'envoi de la v1 reprises telles quelles"
       }
     ]
   }

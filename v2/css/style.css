@@ -226,6 +226,51 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .ligne-progression { display: flex; align-items: center; gap: var(--marge); padding: 8px var(--marge); background: var(--carte); border-bottom: 1px solid var(--trait); flex: none; }
 .jauge-pilule { flex: 1; height: 14px; border-radius: 7px; border: 1.5px solid var(--texte-2); background: var(--fond-2); overflow: hidden; }
 .jauge-pilule > div { display: block; height: 100%; border-radius: 7px; background: var(--accent); width: 0; transition: width .25s; }
+/* Jauge de séance en néon électrique, reprise de la v1 (demande de
+   l'utilisateur le 5 novembre 2026, « comme la V1 ») : courant cyan,
+   violet, magenta qui défile, halo qui grésille, étincelle en bout.
+   Seule exception au bleu unique de la direction v2. */
+.ligne-progression .jauge-pilule {
+  border-color: #6a00ff;
+  background: #14002e;
+  box-shadow: 0 0 6px rgba(0, 229, 255, .45), inset 0 0 6px rgba(106, 0, 255, .6);
+  overflow: visible;
+}
+.ligne-progression .jauge-pilule > div {
+  position: relative;
+  background: linear-gradient(90deg, #00e5ff, #6a00ff, #ff2bd6, #00e5ff);
+  background-size: 300% 100%;
+  box-shadow: 0 0 8px #00e5ff, 0 0 16px rgba(255, 43, 214, .7);
+  animation: jauge-courant 1.6s linear infinite, jauge-gresille 2.3s steps(1) infinite;
+}
+.ligne-progression .jauge-pilule > div::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px #fff, 0 0 12px #00e5ff, 0 0 18px #ff2bd6;
+  animation: jauge-etincelle .5s ease-in-out infinite alternate;
+}
+.ligne-progression .jauge-pilule > div[style*="width: 0%"]::after { display: none; }
+@keyframes jauge-courant { to { background-position: 300% 0; } }
+@keyframes jauge-gresille {
+  0%, 100% { filter: brightness(1); }
+  41% { filter: brightness(1.6); }
+  43% { filter: brightness(.8); }
+  45% { filter: brightness(1.4); }
+  78% { filter: brightness(1.8); }
+  80% { filter: brightness(1); }
+}
+@keyframes jauge-etincelle { from { transform: scale(.7); opacity: .7; } to { transform: scale(1.3); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ligne-progression .jauge-pilule > div,
+  .ligne-progression .jauge-pilule > div::after { animation: none; }
+}
 .ligne-progression .num { font-size: 14px; min-width: 52px; text-align: right; }
 .exo-entete { display: flex; align-items: flex-start; gap: 10px; }
 .exo-entete h3 { font-size: 22px; font-weight: 700; line-height: 1.15; flex: 1; text-wrap: balance; }
@@ -270,7 +315,7 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .serie .plus button svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 .serie .plus button.rp.actif { background: var(--accent); color: #fff; }
 .actions-serie { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.actions-serie .bouton { flex: 1; min-width: 0; padding: 0 10px; }
+.actions-serie .bouton { flex: 1 1 auto; white-space: nowrap; padding: 0 10px; }
 .actions-serie .bouton.actif { background: var(--accent); color: #fff; }
 
 .comparaison { font-size: 13px; color: var(--texte-2); margin-top: 6px; min-height: 18px; }
@@ -478,3 +523,143 @@ details.seance-h .detail { padding: 0 0 12px; }
 .accueil-stats .l { display: block; font-size: 12px; color: var(--texte-2); margin-top: 2px; }
 .saviez-vous { margin-top: 10px; }
 .saviez-vous .titre { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
+
+/* ---------- Page d'envoi de fin de séance ----------
+   Reprise de la v1 (demande du 5 novembre 2026, « une page dédiée à la fin
+   avec l'animation upload comme la V1 ») : le bouton du CodePen
+   « download button animation » (Denis Pasko), technique seule, en CSS pur,
+   seul au centre d'une page blanche. Trois classes posées par
+   enregistrerEtSynchroniser() (v2/js/seance.js) :
+   - .envoi : la pilule se resserre en rond, la flèche devient un carré
+     blanc qui pivote, le rond se remplit par le bas, un point tourne ;
+   - .complet : la pilule se redéploie, un point vert rebondit ;
+   - .envoye : bordure verte, texte « Envoyé » qui revient.
+   Couleurs de l'original, hors jetons de la direction v2 : exception
+   voulue par l'utilisateur, comme la jauge néon. */
+.envoi-plein { position: absolute; inset: 0; z-index: 30; background: #fff; display: flex; align-items: center; justify-content: center; padding: 0 var(--marge); }
+.bouton-sync {
+  --sync-couleur: #00cffc;
+  --sync-remplissage: #00afd3;
+  --sync-vert: #02fc86;
+  position: relative;
+  width: 100%;
+  height: 64px;
+  border: 2.5px solid var(--sync-couleur);
+  border-radius: 999px;
+  color: var(--texte);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  transition: width .7s cubic-bezier(.33, 1, .68, 1), border-color .2s ease;
+}
+.bouton-sync-cercle {
+  position: absolute; top: 50%; left: 4px; width: 51px; height: 51px; margin-top: -25.5px;
+  border-radius: 50%; background: var(--sync-couleur); color: #fff; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  transition: left .7s cubic-bezier(.33, 1, .68, 1), transform .7s cubic-bezier(.33, 1, .68, 1), background .35s ease, opacity .33s ease;
+}
+.bouton-sync-cercle::before { content: ''; position: absolute; inset: 0; background: var(--sync-remplissage); transform: translateY(100%); }
+.bouton-sync.envoi .bouton-sync-cercle::before { transform: translateY(0); transition: transform 1.8s cubic-bezier(.55, 0, 1, .45) .75s; }
+.bouton-sync-icone, .bouton-sync-carre { z-index: 1; }
+.bouton-sync-icone { font-size: 24px; line-height: 1; transition: opacity .3s ease, transform .35s ease; }
+.bouton-sync-carre { position: absolute; width: 14px; height: 14px; border-radius: 2px; background: #fff; opacity: 0; transform: rotate(45deg) scale(.3); transition: opacity .35s ease, transform .7s cubic-bezier(.33, 1, .68, 1); }
+.bouton-sync-texte {
+  position: absolute; inset: 0; padding-left: 56px; display: flex; align-items: center; justify-content: center; white-space: nowrap;
+  transition: opacity .3s ease, transform .45s cubic-bezier(.34, 1.8, .64, 1), padding-left .3s ease;
+}
+.bouton-sync-orbite { position: absolute; inset: -2.5px; margin: auto; width: 64px; height: 64px; border-radius: 50%; opacity: 0; pointer-events: none; }
+.bouton-sync-point { position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--sync-couleur); }
+.bouton-sync-pastille { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--sync-vert); opacity: 0; transform: scale(0); }
+.bouton-sync.envoi { width: 64px; }
+.bouton-sync.envoi .bouton-sync-cercle { left: 50%; transform: translateX(-50%); }
+.bouton-sync.envoi .bouton-sync-icone { opacity: 0; transform: rotate(225deg) scale(.4); }
+.bouton-sync.envoi .bouton-sync-carre { opacity: 1; transform: rotate(270deg) scale(1); }
+.bouton-sync.envoi .bouton-sync-texte { opacity: 0; transform: translateY(7px) scale(.77); }
+.bouton-sync.envoi .bouton-sync-orbite { opacity: 1; transition: opacity .4s ease .7s; animation: bouton-sync-orbite 1.1s cubic-bezier(.55, 0, .45, 1) .7s infinite; }
+@keyframes bouton-sync-orbite { to { transform: rotate(360deg); } }
+.bouton-sync.envoi.complet { width: 100%; }
+.bouton-sync.envoi.complet .bouton-sync-cercle,
+.bouton-sync.envoi.complet .bouton-sync-orbite { opacity: 0; animation: none; transition: opacity .33s ease; }
+.bouton-sync.envoi.complet .bouton-sync-pastille { animation: bouton-sync-rebond 1s ease forwards; }
+@keyframes bouton-sync-rebond {
+  0% { opacity: 1; transform: scale(.6) translateY(0); }
+  40% { transform: scale(.5, 1) translateY(-22px); }
+  60% { transform: scale(1, .6) translateY(-22px); }
+  90% { opacity: 1; transform: scale(.4, 1) translateY(0); }
+  100% { opacity: 0; transform: scale(0); }
+}
+.bouton-sync.envoye { border-color: var(--sync-vert); animation: bouton-sync-ressort .3s ease; }
+.bouton-sync.envoye .bouton-sync-cercle { opacity: 0; }
+.bouton-sync.envoye .bouton-sync-texte { padding-left: 0; color: var(--hausse); font-weight: 700; }
+.bouton-sync.attente { border-color: var(--texte-2); }
+.bouton-sync.attente .bouton-sync-texte { color: var(--texte-2); }
+@keyframes bouton-sync-ressort { 40% { transform: scaleY(1.08); } 70% { transform: scaleY(.96); } }
+@media (prefers-reduced-motion: reduce) {
+  .bouton-sync, .bouton-sync * { transition: none !important; animation: none !important; }
+}
+
+/* ---------- Intro d'ouverture ----------
+   Demande du 5 novembre 2026 : une intro avant l'Accueil, un élément
+   central pour entrer, des codes de sportif, univers néon électrique
+   (choix de l'utilisateur, même famille que la jauge de séance). Le cadran
+   tient du chronomètre de piste : graduations, anneau cyan, violet,
+   magenta qui tourne, « GO » au centre. Hors jetons de la direction v2,
+   exception voulue comme la jauge et la page d'envoi. */
+.intro {
+  position: absolute; inset: 0; z-index: 40;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 40px) var(--marge) calc(env(safe-area-inset-bottom, 0px) + 40px);
+  background: radial-gradient(120% 70% at 50% 45%, #2a0a5e 0%, #14002e 45%, #07000f 100%);
+  color: #fff; text-align: center; overflow: hidden;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.intro.sortie { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.intro[hidden] { display: none; }
+.intro-haut { display: flex; flex-direction: column; gap: 6px; }
+.intro-kicker { font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: #8ff3ff; }
+.intro-marque {
+  font-size: 44px; font-weight: 900; font-style: italic; letter-spacing: .04em; text-transform: uppercase; line-height: 1;
+  text-shadow: 0 0 10px rgba(0, 229, 255, .7), 0 0 26px rgba(255, 43, 214, .55);
+}
+.intro-cadran {
+  position: relative; width: min(72vw, 300px); aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; color: #fff;
+  -webkit-tap-highlight-color: transparent; transition: transform .2s ease;
+}
+.intro-cadran:active { transform: scale(.96); }
+.intro-anneau {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, #00e5ff, #6a00ff, #ff2bd6, #00e5ff);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 9px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 9px));
+  filter: drop-shadow(0 0 10px #00e5ff) drop-shadow(0 0 22px rgba(255, 43, 214, .7));
+  animation: intro-rotation 6s linear infinite;
+}
+.intro-graduation {
+  position: absolute; inset: 18px; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 255, 255, .55) 0 .6deg, transparent .6deg 6deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px));
+}
+.intro-centre {
+  position: relative; width: 66%; aspect-ratio: 1; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: radial-gradient(circle at 50% 35%, #2b0b63, #0d001f 75%);
+  box-shadow: inset 0 0 24px rgba(106, 0, 255, .8), 0 0 30px rgba(0, 229, 255, .25);
+  animation: intro-souffle 2.4s ease-in-out infinite;
+}
+.intro-go {
+  font-size: 64px; font-weight: 900; font-style: italic; letter-spacing: .02em; line-height: 1;
+  text-shadow: 0 0 8px #fff, 0 0 18px #00e5ff, 0 0 34px #ff2bd6;
+}
+.intro-jour { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #ffd6f7; }
+.intro-bas { font-size: 14px; color: rgba(255, 255, 255, .78); max-width: 30ch; margin: 0; }
+@keyframes intro-rotation { to { transform: rotate(360deg); } }
+@keyframes intro-souffle {
+  0%, 100% { box-shadow: inset 0 0 24px rgba(106, 0, 255, .8), 0 0 30px rgba(0, 229, 255, .25); }
+  50% { box-shadow: inset 0 0 34px rgba(255, 43, 214, .7), 0 0 46px rgba(0, 229, 255, .45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-anneau, .intro-centre { animation: none; }
+  .intro { transition: none; }
+}

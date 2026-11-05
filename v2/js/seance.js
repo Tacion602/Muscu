@@ -99,7 +99,7 @@ function rendreExercice() {
 
   html += '<div class="carte" style="margin-top:10px"><div class="entete-series"><span></span><span>kg</span><span>reps</span><span>RIR</span></div><div id="series"></div>' +
     '<div class="comparaison" id="comparaison"></div>' +
-    '<div class="actions-serie"><button class="bouton petit" id="ajouter-serie">+ Série</button><button class="bouton petit" id="retirer-serie">− Série</button><button class="bouton petit" id="rp-serie" aria-pressed="false" aria-label="Rest-pause sur la série en cours">RP</button><button class="bouton petit" id="douleur-exo">Douleur</button></div></div>';
+    '<div class="actions-serie"><button class="bouton petit" id="ajouter-serie">+ Série</button><button class="bouton petit" id="retirer-serie">− Série</button><button class="bouton petit" id="rp-serie" aria-pressed="false" aria-label="Rest-pause sur la série en cours">RP</button><button class="bouton petit" id="douleur-exo">Douleur</button><button class="bouton petit" id="chrono-exo" aria-label="Lancer un repos sans valider de série">Chrono</button></div></div>';
   if (douleur && joursDepuis(douleur.date) <= 60) html += '<div class="alerte baisse" style="margin-top:10px">' + svgIcone('alerte') + '<div>' + echapper(douleur.texte) + ' : douleur notée ' + ilYA(douleur.date) + ' sur cet exercice.</div></div>';
   html += '<div class="nav-exo">' +
     '<button class="bouton" id="exo-precedent"' + (indexExo === 0 ? ' disabled' : '') + '>Précédent</button>' +
@@ -136,6 +136,10 @@ function rendreExercice() {
     serie.restPause = !serie.restPause;
     enregistrerSeance(); rendreSeries();
   });
+  // Repos lancé à la main, sans valider de série : entre les deux côtés
+  // d'un unilatéral, après une série d'échauffement (remarque du
+  // 5 novembre 2026). Durée du repos de l'exercice, réglable par ±15 s.
+  $('chrono-exo').addEventListener('click', () => lancerMinuterie(exo.repos_s || 90, null));
   $('douleur-exo').addEventListener('click', () => saisir('Douleur sur ' + exo.nom, '', 'Noter', (t) => {
     if (!t) return;
     ajouterDouleur(exo.nom, t, seance.id, seance.jour);
@@ -506,6 +510,10 @@ function rendreFin() {
 }
 rendus.fin = rendreFin;
 
+/* Cadence de la page d'envoi, celle de la v1 (DUREE_MIN_ENVOI_MS, 0,9 s de
+   rebond, 2 s sur « Envoyé »). Objet modifiable : les tests la réduisent. */
+const DUREES_ENVOI = { minimum: 2200, rebond: 900, tenue: 2000 };
+
 async function enregistrerEtSynchroniser() {
   const bouton = $('fin-enregistrer');
   const etat = $('fin-etat');
@@ -518,11 +526,33 @@ async function enregistrerEtSynchroniser() {
   const finie = seance;
   seance = null;
   if (chronoTictac) clearInterval(chronoTictac);
-  etat.innerHTML = '<span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--accent)"></span> Envoi au classeur';
-  let envoyees = 0;
-  try { envoyees = await synchroniser(); } catch (e) { envoyees = 0; }
+  etat.textContent = '';
+  // Page d'envoi dédiée, animation de la v1 (voir .bouton-sync dans
+  // v2/css/style.css) : rond pendant l'envoi, durée minimale garantie même
+  // si le réseau répond vite, rebond, puis « Envoyé » tenu avant la fiche.
+  const plein = $('envoi-plein');
+  const anim = $('envoi-bouton');
+  const texte = $('envoi-texte');
+  const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+  anim.className = 'bouton-sync';
+  texte.textContent = 'Synchronisation';
+  plein.hidden = false;
+  void anim.offsetWidth;   // la pilule doit être dessinée avant de se resserrer
+  anim.classList.add('envoi');
+  const debut = Date.now();
+  try { await synchroniser(); } catch (e) { /* la séance reste en attente */ }
+  await attendre(Math.max(0, DUREES_ENVOI.minimum - (Date.now() - debut)));
   const apres = historique().find((s) => s.id === finie.id);
-  if (apres && apres.envoye) toast('Séance enregistrée et envoyée au classeur.');
+  const envoyee = !!(apres && apres.envoye);
+  anim.classList.add('complet');
+  await attendre(DUREES_ENVOI.rebond);
+  anim.classList.remove('envoi', 'complet');
+  anim.classList.add('envoye');
+  if (!envoyee) anim.classList.add('attente');
+  texte.textContent = envoyee ? 'Envoyé' : (reglages.pont ? 'En attente' : 'Enregistré');
+  await attendre(DUREES_ENVOI.tenue);
+  plein.hidden = true;
+  if (envoyee) toast('Séance enregistrée et envoyée au classeur.');
   else toast(reglages.pont ? 'Séance enregistrée, envoi en attente (réseau ou pont).' : 'Séance enregistrée sur le téléphone.', 3500);
   pile = ['sport'];
   afficher('sport');

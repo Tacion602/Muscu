@@ -152,6 +152,39 @@ codes.
     l'e1RM et la double progression sont justes tels quels. **Pas de 2,5 kg**
     (choix de l'utilisateur le même jour), testé avant la règle des
     machines, le nom contenant encore « machine ».
+- **Chrono manuel sur chaque fiche** (`#chrono-exo`, remarque du
+  5 novembre 2026 : « chrono accessible pour les unilatérales ou
+  échauffement, depuis tous les exo ») : lance le repos de l'exercice sans
+  valider de série, même minuterie que celle d'une série (plein écran,
+  ±15 s, Passer). Les boutons de `.actions-serie` ne coupent plus leur
+  texte (`white-space: nowrap`) et passent à la ligne entiers : sur 375 px,
+  Chrono occupe seul la seconde ligne.
+- **Jauge de séance en néon électrique, comme la v1** (demande de
+  l'utilisateur le 5 novembre 2026) : courant cyan, violet, magenta qui
+  défile, halo qui grésille, étincelle en bout (`.ligne-progression
+  .jauge-pilule` dans `v2/css/style.css`, coupé sous
+  `prefers-reduced-motion`). Exception voulue au bleu unique de la
+  direction v2.
+- **Page d'envoi animée, comme la v1** (même demande, même jour) :
+  « Enregistrer et envoyer » ouvre `#envoi-plein`, page blanche avec le
+  seul bouton du CodePen de la v1 (`.bouton-sync`, mêmes phases `.envoi`,
+  `.complet`, `.envoye`, mêmes couleurs, autre exception aux jetons v2).
+  Cadence de la v1 dans `DUREES_ENVOI` (`v2/js/seance.js` : 2,2 s minimum,
+  0,9 s de rebond, 2 s sur l'état), puis toast et fiche de la séance comme
+  avant. Texte final « Envoyé », « En attente » (pont injoignable, bordure
+  grise `.attente`) ou « Enregistré » (pas de pont). La fixture de
+  `tests/test_v2.py` réduit `DUREES_ENVOI` à zéro, sauf dans
+  `test_l_envoi_passe_par_une_page_dediee_animee`.
+- **Intro néon avant l'Accueil** (demande du 5 novembre 2026 : « une intro
+  avant d'arriver sur le programme, un élément central pour entrer, des
+  codes de sportif » ; place et univers choisis par l'utilisateur : avant
+  l'Accueil gardé tel quel, néon électrique). `#intro`, couche plein écran
+  visible dès le chargement à chaque lancement, rendue par `rendreIntro()`
+  (`v2/js/sport.js`) : date et semaine, « Muscu », cadran de chronomètre
+  (anneau cyan, violet, magenta qui tourne, graduations) avec « GO » et la
+  séance en cours ou la prochaine, phrase du jour en bas. Un appui sur le
+  cadran la fond vers l'Accueil. Masquée si le programme ne charge pas.
+  Les tests la passent par `passer_intro()` dans `ouvrir_sport()`.
 - **RIR par quatre boutons 0 à 3**, cible du programme présélectionnée
   (contour) et retenue si rien n'est touché : fini les 1,3 saisis au
   clavier, inexploitables.

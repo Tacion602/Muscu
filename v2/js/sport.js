@@ -249,6 +249,24 @@ function ouvrirSeance(options) {
 /* Écran racine d'entrée (4 novembre 2026) : salutation, phrase de
    motivation du jour (change chaque jour, par hachage de la date), chiffres
    de la semaine, prochaine séance et accès au programme. */
+/* Intro d'ouverture (5 novembre 2026) : affichée à chaque lancement,
+   au-dessus de l'Accueil, refermée par le cadran central. Annonce la séance
+   en cours, sinon la prochaine. */
+function rendreIntro() {
+  const maintenant = new Date();
+  $('intro-date').textContent = maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }) + ' · semaine ' + semaineIso(maintenant);
+  const ouvertes = Object.values(lireSeancesEnCours()).filter((s) => s && !s.fin && jourDe(s.jour));
+  const code = ouvertes.length ? ouvertes[0].jour : prochainJour();
+  const jour = code ? jourDe(code) : null;
+  $('intro-jour').textContent = jour ? libelleJour(jour) + ' · ' + jour.nom : '';
+  $('intro-bas').textContent = ouvertes.length ? 'Séance en cours, on reprend.' : phraseMotivation(cleDate(maintenant));
+  $('intro-entrer').onclick = () => {
+    const intro = $('intro');
+    intro.classList.add('sortie');
+    setTimeout(() => { intro.hidden = true; }, 350);
+  };
+}
+
 function rendreAccueil() {
   const corps = $('accueil-corps');
   const maintenant = new Date();

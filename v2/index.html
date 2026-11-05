@@ -133,6 +133,38 @@
     </div>
   </div>
 
+  <!-- Intro d'ouverture (5 novembre 2026) : écran néon à chaque lancement,
+       avant l'Accueil. Un seul élément central, le cadran, pour entrer. -->
+  <div id="intro" class="intro">
+    <div class="intro-haut">
+      <span class="intro-kicker" id="intro-date"></span>
+      <span class="intro-marque">Muscu</span>
+    </div>
+    <button class="intro-cadran" id="intro-entrer" aria-label="Entrer">
+      <span class="intro-anneau" aria-hidden="true"></span>
+      <span class="intro-graduation" aria-hidden="true"></span>
+      <span class="intro-centre">
+        <span class="intro-go">GO</span>
+        <span class="intro-jour" id="intro-jour"></span>
+      </span>
+    </button>
+    <p class="intro-bas" id="intro-bas"></p>
+  </div>
+
+  <!-- Page d'envoi de fin de séance (5 novembre 2026, « comme la V1 ») :
+       le bouton animé de la v1 (.bouton-sync), seul sur fond blanc. -->
+  <div id="envoi-plein" class="envoi-plein" hidden>
+    <div id="envoi-bouton" class="bouton-sync" role="status" aria-live="polite">
+      <span class="bouton-sync-cercle" aria-hidden="true">
+        <span class="bouton-sync-icone">&#8595;</span>
+        <span class="bouton-sync-carre"></span>
+      </span>
+      <span class="bouton-sync-orbite" aria-hidden="true"><span class="bouton-sync-point"></span></span>
+      <span class="bouton-sync-pastille" aria-hidden="true"></span>
+      <span id="envoi-texte" class="bouton-sync-texte">Synchronisation</span>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </div>
 

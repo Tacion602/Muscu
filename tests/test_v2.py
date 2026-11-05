@@ -43,6 +43,8 @@ def page(navigateur, adresse):
     erreurs = []
     onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
     onglet.goto(adresse)
+    # Page d'envoi animee : cadence reduite, sauf dans son propre test.
+    onglet.evaluate("Object.assign(DUREES_ENVOI, { minimum: 0, rebond: 0, tenue: 0 })")
     ouvrir_sport(onglet)
     # Temoin structurel : six jours dans l'ordre de la semaine plus le bonus.
     codes = onglet.eval_on_selector_all("#ecran-sport .carte-jour .code", "c => c.map(x => x.textContent.trim())")
@@ -52,9 +54,17 @@ def page(navigateur, adresse):
     assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
 
 
+def passer_intro(page):
+    """Intro neon a chaque lancement depuis le 5 novembre 2026."""
+    page.locator("#intro-entrer").click()
+    page.wait_for_selector("#intro", state="hidden")
+
+
 def ouvrir_sport(page):
     """L'accueil est la racine depuis le 4 novembre 2026 : Sport par l'onglet."""
     page.wait_for_selector("#accueil-programme")
+    if page.locator("#intro").is_visible():
+        passer_intro(page)
     page.locator('.onglet[data-onglet="sport"]').click()
     page.wait_for_selector(".carte-jour")
 
@@ -104,6 +114,55 @@ def test_les_repetitions_valident_la_serie_et_lancent_le_repos(page):
     saisir_serie_courante(page, 40, 8)
     assert page.locator("#series .serie.faite").count() == 1
     assert page.evaluate("minuterie !== null")
+
+
+def test_le_chrono_de_la_fiche_lance_un_repos_sans_valider(page):
+    """Remarque du 5 novembre 2026 : un repos doit pouvoir partir de
+    n'importe quel exercice (unilateral, echauffement), sans serie validee."""
+    ouvrir_jour(page, "J3")
+    page.locator("#exo-suivant").click()
+    page.locator("#chrono-exo").click()
+    assert page.evaluate("minuterie !== null")
+    assert page.locator("#series .serie.faite").count() == 0
+    page.wait_for_selector("#minuterie-plein:not([hidden])")
+
+
+def test_l_intro_s_ouvre_au_lancement_et_mene_a_l_accueil(navigateur, adresse):
+    """Demande du 5 novembre 2026 : intro avant l'Accueil, un cadran central
+    pour entrer, qui annonce la prochaine seance."""
+    contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
+    onglet = contexte.new_page()
+    erreurs = []
+    onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
+    onglet.goto(adresse)
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    assert onglet.locator("#intro").is_visible()
+    assert onglet.locator("#intro-jour").inner_text().strip().startswith("J")
+    passer_intro(onglet)
+    onglet.locator("#accueil-programme").click()
+    onglet.wait_for_selector("#ecran-sport .carte-jour")
+    contexte.close()
+    assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
+
+
+def test_l_envoi_passe_par_une_page_dediee_animee(page):
+    """Demande du 5 novembre 2026 : page d'envoi a part, animation de la v1
+    (rond pendant l'envoi, puis pilule avec son etat), avant la fiche."""
+    page.evaluate("Object.assign(DUREES_ENVOI, { minimum: 600, rebond: 200, tenue: 600 })")
+    ouvrir_jour(page, "J1")
+    saisir_serie_courante(page, 40, 8)
+    fermer_repos(page)
+    page.locator("#exo-suivant").click()
+    while page.locator("#exo-terminer").count() == 0:
+        page.locator("#exo-suivant").click()
+    page.locator("#exo-terminer").click()
+    page.wait_for_selector("#ecran-fin.actif")
+    page.locator("#fin-enregistrer").click()
+    page.wait_for_selector("#envoi-plein:not([hidden]) #envoi-bouton.envoi")
+    page.wait_for_selector("#envoi-bouton.envoye")
+    assert page.locator("#envoi-texte").inner_text() in ("Envoyé", "En attente", "Enregistré")
+    page.wait_for_selector("#ecran-historique.actif")
+    assert page.locator("#envoi-plein").is_hidden()
 
 
 def test_la_derniere_serie_passe_a_l_exercice_suivant(page):

@@ -8,6 +8,7 @@ async function demarrer() {
   try {
     await chargerProgramme();
   } catch (e) {
+    $('intro').hidden = true;
     $('accueil-corps').innerHTML = '<p class="vide">Le programme n\'a pas pu être chargé.</p>';
     return;
   }
@@ -15,6 +16,7 @@ async function demarrer() {
   brancherMinuterie();
   brancherReglages();
   rendreAccueil();
+  rendreIntro();
   if (migree) {
     const m = lire(CLES.migration, {});
     toast('Historique repris de l\'ancienne application : ' + m.seances + ' séances.', 4000);
