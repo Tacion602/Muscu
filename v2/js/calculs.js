@@ -154,7 +154,7 @@ function frequenceDuJour(code) {
    26 septembre 2026). Les couples sont lus dans le programme : deux jours
    de musculation qui partagent un muscle de priorité 1. */
 const ESPACEMENT_MIN_JOURS = 3;
-const PRIORITES_MUSCLES = ['pectoraux', 'grand dorsal', 'deltoide lateral', 'deltoïde latéral', 'biceps', 'triceps', 'quadriceps', 'grand fessier', 'mollets'];
+const PRIORITES_MUSCLES = ['pectoraux', 'grand dorsal', 'deltoide lateral', 'deltoïde latéral', 'deltoide anterieur', 'biceps', 'triceps', 'quadriceps', 'grand fessier', 'mollets'];
 
 function avertissementEspacement(code) {
   const jour = jourDe(code);

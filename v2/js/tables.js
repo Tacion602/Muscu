@@ -185,7 +185,7 @@ const CHAMPS_FOOTING = [
 
 const ZONES_MUSCULAIRES = [
   { cle: 'pectoraux', nom: 'Pectoraux', muscles: ['pectoraux'], recuperation_h: 72 },
-  { cle: 'epaules', nom: 'Épaules', muscles: ['deltoide lateral'], recuperation_h: 48 },
+  { cle: 'epaules', nom: 'Épaules', muscles: ['deltoide lateral', 'deltoide anterieur'], recuperation_h: 48 },
   { cle: 'biceps', nom: 'Biceps', muscles: ['biceps'], recuperation_h: 48 },
   { cle: 'quadriceps', nom: 'Quadriceps', muscles: ['quadriceps'], recuperation_h: 72 },
   { cle: 'dos', nom: 'Dos', muscles: ['grand dorsal'], recuperation_h: 72 },

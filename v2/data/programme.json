@@ -1,7 +1,7 @@
 {
   "version": 2,
   "origine": "fichier classeur/Programme.csv",
-  "importe_le": "2026-11-05T11:07:53+00:00",
+  "importe_le": "2026-11-06T09:35:01+00:00",
   "jours": [
     {
       "code": "J5",
@@ -88,18 +88,18 @@
         },
         {
           "numero": 5,
-          "nom": "Elevation laterale halteres",
+          "nom": "Developpe epaules halteres",
           "series": 3,
-          "reps_min": 10,
+          "reps_min": 8,
           "reps_max": 12,
           "rir": [
             2,
-            1,
-            1
+            2,
+            2
           ],
-          "repos_s": 60,
-          "muscle": "Deltoide lateral",
-          "consigne": "Troisieme exo du deltoide lateral, charge legere.",
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
           "reglages": "",
           "substituts": []
         },
@@ -234,18 +234,18 @@
         },
         {
           "numero": 4,
-          "nom": "Elevation laterale halteres",
+          "nom": "Developpe epaules halteres",
           "series": 3,
-          "reps_min": 10,
+          "reps_min": 8,
           "reps_max": 12,
           "rir": [
             2,
-            1,
-            1
+            2,
+            2
           ],
-          "repos_s": 60,
-          "muscle": "Deltoide lateral",
-          "consigne": "Troisieme exo du deltoide lateral, charge legere.",
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
           "reglages": "",
           "substituts": []
         },
@@ -446,18 +446,18 @@
         },
         {
           "numero": 2,
-          "nom": "Elevation laterale halteres",
+          "nom": "Developpe epaules halteres",
           "series": 3,
-          "reps_min": 10,
+          "reps_min": 8,
           "reps_max": 12,
           "rir": [
             2,
-            1,
-            1
+            2,
+            2
           ],
-          "repos_s": 60,
-          "muscle": "Deltoide lateral",
-          "consigne": "Troisieme exo du deltoide lateral, charge legere.",
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
           "reglages": "",
           "substituts": []
         },

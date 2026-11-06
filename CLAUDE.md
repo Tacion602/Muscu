@@ -200,8 +200,14 @@ codes.
     manque sur certains navigateurs. Réglage « Notification en fin de
     repos » repris de la v1 (`notifierFinDeRepos()`, permission demandée
     au cochage, `notificationclick` dans `v2/sw.js`) : le système vibre et
-    sonne même écran verrouillé. Cause exacte de la panne non confirmée
-    (navigateur du téléphone à demander).
+    sonne même écran verrouillé. **Cause trouvée le 6 novembre 2026 : le
+    téléphone est sous Firefox**, qui ignore `navigator.vibrate` et la
+    vibration des notifications (sans vibration sur Android depuis la 79,
+    ignorées partout depuis la 129, bug Mozilla 1900037) tout en exposant
+    l'API. Rien à corriger dans le code : Réglages le dit sous Firefox
+    (`navigateurSansVibration()`, lu dans la chaîne du navigateur) et
+    oriente vers Chrome ou la vibration des notifications de Firefox dans
+    les paramètres Android.
 - **Confirmation d'abandon posée sur la croix** (demande du 5 novembre
   2026 : « au niveau de la croix, qu'elle superpose la séance à annuler »,
   elle montait du bas) : `feuille()` et `confirmer()` (`v2/js/ui.js`)
@@ -240,6 +246,20 @@ codes.
   son bouton de choix, en fond quand il est choisi (`styleInterference()`
   dans `v2/js/gainage.js`, texte noir ou blanc selon le contraste,
   `texteSurTeinte()`), et la ligne dit « interférence course N/9 ».
+- **Élévations latérales arrêtées, développé épaules à la place**
+  (6 novembre 2026, douleur sur le dessus de l'épaule pendant l'élévation
+  latérale, signalée dans Douleurs le 5). Les trois occurrences (J1, J3,
+  J5) deviennent « Developpe epaules halteres », 3 × 8-12, RIR 2 / 2 / 2,
+  repos 90 s, muscle `Deltoide anterieur` (ajouté à la zone Épaules et à
+  `PRIORITES_MUSCLES`). Choix de l'utilisateur contre l'avis donné : le
+  développé passe par la même position bras au-dessus de l'horizontale
+  que l'élévation et peut entretenir la douleur ; le deltoïde latéral
+  perd son seul travail direct (9 séries par semaine). **Règle d'arrêt
+  dans la consigne** : douleur sur le dessus de l'épaule, l'exercice
+  s'arrête ; deux séances avec douleur, il sort du programme. Pas de
+  schéma Everkinetic de développé épaules dans `images-exercices/` : la
+  fiche n'a pas d'illustration. **Les lignes J1, J3 et J5 de
+  `classeur/Programme.csv` sont à recoller dans l'onglet Programme.**
 - **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
   écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
   inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,

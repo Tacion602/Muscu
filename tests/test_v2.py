@@ -145,6 +145,26 @@ def test_l_intro_s_ouvre_au_lancement_et_mene_a_l_accueil(navigateur, adresse):
     assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
 
 
+def test_reglages_signalent_que_firefox_ne_vibre_pas(navigateur, adresse):
+    """Constat du 6 novembre 2026 : sous Firefox la vibration ne part jamais,
+    Reglages le dit ; sous Chrome, rien."""
+    for agent, attendu in (("Mozilla/5.0 (Android 15; Mobile; rv:144.0) Gecko/144.0 Firefox/144.0", 1), (None, 0)):
+        options = {"viewport": {"width": 390, "height": 844}}
+        if agent:
+            options["user_agent"] = agent
+        contexte = navigateur.new_context(**options)
+        onglet = contexte.new_page()
+        erreurs = []
+        onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
+        onglet.goto(adresse)
+        passer_intro(onglet)
+        onglet.locator('.onglet[data-onglet="reglages"]').click()
+        onglet.wait_for_selector("#reglages-corps .bascule")
+        assert onglet.locator("#r-sans-vibration").count() == attendu, agent
+        contexte.close()
+        assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
+
+
 def test_l_envoi_passe_par_une_page_dediee_animee(page):
     """Demande du 5 novembre 2026 : page d'envoi a part, animation de la v1
     (rond pendant l'envoi, puis pilule avec son etat), avant la fiche."""

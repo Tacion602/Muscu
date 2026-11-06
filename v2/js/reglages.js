@@ -13,7 +13,8 @@ function rendreReglages() {
     '<p class="titre-section">Séance</p><div class="reglages-groupe">' +
     bascule('son', 'Signal sonore en fin de repos') + bascule('vibration', 'Vibration à la validation et en fin de repos') +
     bascule('notification', 'Notification en fin de repos (vibre aussi écran verrouillé)') +
-    bascule('veille', 'Garder l\'écran allumé en séance') + bascule('clavierPendantRecup', 'Clavier ouvert pendant le repos') + '</div>' +
+    bascule('veille', 'Garder l\'écran allumé en séance') + bascule('clavierPendantRecup', 'Clavier ouvert pendant le repos') +
+    (navigateurSansVibration() ? '<div class="champ"><p class="petit texte-2" id="r-sans-vibration">Firefox ignore la vibration demandée par une page, notification comprise : ces cases ne font pas vibrer. Pour vibrer, installer l\'application depuis Chrome (exporter puis restaurer les données), ou activer la vibration des notifications de Firefox dans les paramètres Android. Le signal sonore fonctionne.</p></div>' : '') + '</div>' +
     '<p class="titre-section">Données</p><div class="reglages-groupe">' +
     '<div class="champ"><p class="petit texte-2">' + (m ? 'Historique repris de l\'ancienne application le ' + dateCourte(m.quand) + ' (' + m.seances + ' séances).' : 'Aucune reprise effectuée.') + ' ' + historique().length + ' séances sur ce téléphone.</p></div>' +
     '<div class="champ"><button class="bouton" id="r-export">Exporter les données (fichier JSON)</button></div>' +
@@ -104,6 +105,14 @@ function rendreReglages() {
   }));
 }
 rendus.reglages = rendreReglages;
+
+/* Firefox ignore navigator.vibrate et la vibration des notifications
+   (désactivées sur Android depuis la version 79, ignorées partout depuis
+   la 129, bug Mozilla 1900037), tout en exposant l'API : seule la chaîne
+   du navigateur le dit. Constat du 6 novembre 2026 sur le Pixel. */
+function navigateurSansVibration() {
+  return /Firefox\//.test(navigator.userAgent);
+}
 
 function bascule(cle, libelle) {
   return '<label class="bascule"><span>' + libelle + '</span><input type="checkbox" data-bascule="' + cle + '"' + (reglages[cle] ? ' checked' : '') + '></label>';
