@@ -286,6 +286,10 @@ codes.
     répétitions, `validerSerie()` refuse une série sans répétitions, et
     l'écran de fin liste les séries faites sans chiffres
     (`#fin-incompletes`). Scénario exact sur le téléphone non reproduit.
+    Séries réelles données par l'utilisateur : 65 × 13 @2, 70 × 12 @1,
+    75 × 12 @0. Corrigées à la main dans le classeur (Séries lignes 26 à
+    28, e1RM compris, tonnage de la séance à 31 130 kg) et une fois sur le
+    téléphone (`corrigerExtensionJambes()`, `muscu2.extensionCorrigee`).
   - **Douleur** : texte d'au moins trois lettres (`douleurValable()`),
     après deux « # » envoyés le 5.
   - **Sommeil** : historique effacé une fois sur le téléphone, à la

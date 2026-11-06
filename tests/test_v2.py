@@ -472,6 +472,31 @@ def test_l_historique_de_sommeil_est_efface_une_seule_fois(adresse, navigateur):
     assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
 
 
+def test_l_extension_jambes_du_6_novembre_est_corrigee_une_fois(adresse, navigateur):
+    """Series donnees par l'utilisateur : 65 x 13 @2, 70 x 12 @1, 75 x 12 @0."""
+    contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
+    onglet = contexte.new_page()
+    erreurs = []
+    onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
+    onglet.goto(adresse)
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    seance = {"id": "S1793958424096", "jour": "J4", "type": "muscu", "debut": "2026-11-06T10:00:00", "fin": "2026-11-06T11:30:00",
+              "exercices": [{"nom": "Extension jambes unilatéral", "series": [
+                  {"charge": 65, "reps": None, "rir": 2, "faite": True},
+                  {"charge": 65, "reps": 13, "rir": 1, "faite": True},
+                  {"charge": 70, "reps": 12, "rir": 0, "faite": True}]}]}
+    onglet.evaluate("""(s) => { localStorage.clear();
+        localStorage.setItem('muscu2.migration', JSON.stringify({ quand: '2026-11-04', seances: 0, source: 'v1' }));
+        localStorage.setItem('muscu2.essaisRestaures', JSON.stringify({ quand: '2026-11-06', seances: 0 }));
+        localStorage.setItem('muscu2.historique', JSON.stringify([s])); }""", seance)
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    series = onglet.evaluate("historique()[0].exercices[0].series.map(s => [s.charge, s.reps, s.rir, s.faite])")
+    assert series == [[65, 13, 2, True], [70, 12, 1, True], [75, 12, 0, True]], series
+    contexte.close()
+    assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
+
+
 def test_le_rear_kick_du_6_novembre_repart_de_zero(adresse, navigateur):
     """6 novembre 2026 : rear kick fait ce jour-la, saisi sous l'extension de
     hanche ; seule cette seance change de nom, une seule fois."""

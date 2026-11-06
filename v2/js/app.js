@@ -6,6 +6,7 @@ async function demarrer() {
   const migree = migrerDepuisV1();
   const rendues = restaurerSeancesDEssai();
   renommerRearKick();
+  corrigerExtensionJambes();
   effacerSommeilUneFois();
   reglages = Object.assign({}, REGLAGES_PAR_DEFAUT, lire(CLES.reglages, {}) || {});
   try {

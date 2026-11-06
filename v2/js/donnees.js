@@ -142,6 +142,26 @@ function effacerSommeilUneFois() {
   return avant;
 }
 
+/* Extension jambes du J4 du 6 novembre 2026 : la série 1 était partie sans
+   répétitions (65 kg, RIR 2) et la série 75 × 12 manquait. Séries données
+   par l'utilisateur le même jour : 65 × 13 @2, 70 × 12 @1, 75 × 12 @0. Une
+   seule fois, sur cette séance seule ; le classeur a été corrigé à la main. */
+const CLE_EXTENSION_CORRIGEE = 'muscu2.extensionCorrigee';
+function corrigerExtensionJambes() {
+  if (lire(CLE_EXTENSION_CORRIGEE, null)) return false;
+  const toutes = lireTableau(CLES.historique);
+  const s = toutes.find((x) => x.id === SEANCE_REAR_KICK);
+  const exo = s ? (s.exercices || []).find((e) => memeExercice(e.nom, 'Extension jambes unilatéral')) : null;
+  if (!exo) { if (s) ecrire(CLE_EXTENSION_CORRIGEE, { quand: new Date().toISOString(), corrige: false }); return false; }
+  const justes = [[65, 13, 2], [70, 12, 1], [75, 12, 0]];
+  const modele = exo.series[0] || {};
+  exo.series = justes.map(([charge, reps, rir], i) => Object.assign({}, modele, exo.series[i] || {},
+    { charge, reps, rir, faite: true, echauffement: false, restPause: false }));
+  ecrire(CLES.historique, toutes);
+  ecrire(CLE_EXTENSION_CORRIGEE, { quand: new Date().toISOString(), corrige: true });
+  return true;
+}
+
 /* Rear kick : remplace l'extension de hanche machine en J4 le 6 novembre
    2026 (pile de la machine au maximum). Fait le jour même et saisi sous
    l'ancien nom ; l'utilisateur veut repartir de zéro avec ces données. Une
