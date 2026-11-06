@@ -4,7 +4,7 @@
    cache). Une mise en ligne est prise au lancement suivant : VERSION doit
    changer à chaque livraison, c'est elle qui purge l'ancien cache. */
 
-const VERSION = 'muscu2-2026-11-06-5';
+const VERSION = 'muscu2-2026-11-06-13';
 const FICHIERS = [
   './', './index.html', './manifest.webmanifest', './css/style.css', './data/programme.json',
   './js/tables.js', './js/donnees.js', './js/calculs.js', './js/ui.js', './js/sport.js',
@@ -19,7 +19,7 @@ const SCHEMAS = ['thigh-abductor', 'alternating-incline-curl-with-dumbbell', 'bi
   'lateral-dumbbell-raises', 'one-legged-cable-kickback', 'leg-extensions', 'standing-triceps-extension-with-towel',
   'triceps-pushdown-with-cable', 'lying-leg-curl-machine', 'straight-arm-push-down', 'standing-calf-raises-using-machine',
   'bent-over-rear-deltoid-raise-with-head-on-bench', 'leg-press', 'seated-cable-rows', 'romanian-dead-lift',
-  'underhand-pull-downs', 'narrow-parallel-grip-chin-ups'];
+  'underhand-pull-downs', 'narrow-parallel-grip-chin-ups', 'seated-military-press'];
 SCHEMAS.forEach((s) => { FICHIERS.push('../images-exercices/schemas/' + s + '-relaxation.svg', '../images-exercices/schemas/' + s + '-tension.svg'); });
 FICHIERS.push('../images-exercices/face-pull.jpg');
 

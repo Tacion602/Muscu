@@ -309,9 +309,13 @@ const IMAGES_EXERCICES = {
   'Ecarte poulie basse vers le haut': { schema: 'crossover-bands', generique: true },
   'Dips buste penche': { schema: 'chest-dips' },
   'Ecarte poulie horizontale hauteur poitrine': { schema: 'crossover-bands', generique: true },
+  // Développé militaire assis à la barre (Everkinetic 0004) : même position
+  // et même trajectoire que le développé épaules assis aux haltères.
+  'Developpe epaules halteres': { schema: 'seated-military-press', generique: true },
   'Elevation laterale halteres': { schema: 'lateral-dumbbell-raises' },
   'Elevation laterale poulie unilaterale': { schema: 'lateral-dumbbell-raises', generique: true },
   'Extension de hanche machine': { schema: 'one-legged-cable-kickback', generique: true },
+  'Rear kick machine': { schema: 'one-legged-cable-kickback', generique: true },
   'Extension jambes unilatéral': { schema: 'leg-extensions' },
   'Extension triceps overhead corde': { schema: 'standing-triceps-extension-with-towel', generique: true },
   'Extension triceps poulie barre': { schema: 'triceps-pushdown-with-cable' },

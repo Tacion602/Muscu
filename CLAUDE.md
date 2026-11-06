@@ -137,7 +137,14 @@ codes.
   l'inverse = recul). La comparaison se dit indicative quand le RIR diffère
   de deux crans ou plus. Couleur des séries, bilan de fin, courbes et
   surcharge par muscle utilisent tous `indicateur()`.
-- **Charge suggérée, double progression** (`objectifExercice()`) : si la
+- **Charge suggérée, double progression** (`objectifExercice()`).
+  **Depuis le 6 novembre 2026** (l'utilisateur : « les premières séries
+  sont toujours des vraies séries », montée jugée « aux deux dernières
+  séries, pas 3 ou 4 ») : la montée se décide sur les deux dernières
+  séries seulement, et la charge se propose série par série
+  (`objectif.charges`, chaque série reprend sa charge de la dernière fois,
+  + un pas sur chacune si la montée est gagnée) ; la fiche affiche
+  « Objectif 1re série ». Ce qui suit décrit la règle d'avant : si la
   dernière fois toutes les séries de travail ont atteint `reps_max` avec un
   RIR réel inférieur ou égal à la cible (ou non saisi), charge + un pas
   (`pasDeCharge()` : 5 kg sur les grosses machines, 2,5 kg ailleurs, lu
@@ -185,6 +192,18 @@ codes.
   séance en cours ou la prochaine, phrase du jour en bas. Un appui sur le
   cadran la fond vers l'Accueil. Masquée si le programme ne charge pas.
   Les tests la passent par `passer_intro()` dans `ouvrir_sport()`.
+  **Refaite le 6 novembre 2026 en éditorial sombre** (le néon jugé « un
+  peu kitsch » ; direction A choisie par l'utilisateur parmi trois) : noir
+  mat, date et semaine en petit, la séance du jour en très grande
+  typographie étroite (`sans-serif-condensed` sur Android), son code en
+  bleu, le détail dessous, deux chiffres en pied (séances de la semaine,
+  jours depuis la dernière). Le nom ne se coupe jamais dans un mot
+  (`ajusterTitreIntro()` réduit la taille). Sortie (`sortirIntro()`) : le
+  nom glisse et rétrécit jusqu'au nom de la carte de l'Accueil, qui reste
+  caché pendant le vol et prend le relais, pendant que le fond noir
+  remonte comme un rideau (520 ms) ; rien sous `prefers-reduced-motion`.
+  Le cadran, le « GO » et la phrase du jour de l'intro disparaissent (la
+  phrase reste sur l'Accueil).
 - **Repos persistant, plein écran jusqu'au bout, chrono +30 %**
   (remarque de fin de séance du 5 novembre 2026, « fais tout ») :
   - le repos est gardé sur le téléphone (`muscu2.repos`, `sauverRepos()`/
@@ -258,8 +277,56 @@ codes.
   dans la consigne** : douleur sur le dessus de l'épaule, l'exercice
   s'arrête ; deux séances avec douleur, il sort du programme. Pas de
   schéma Everkinetic de développé épaules dans `images-exercices/` : la
-  fiche n'a pas d'illustration. **Les lignes J1, J3 et J5 de
-  `classeur/Programme.csv` sont à recoller dans l'onglet Programme.**
+  fiche n'a pas d'illustration.
+- **Retours du 6 novembre 2026, fin de journée** :
+  - **Série sans répétitions** : extension jambes du J4, série 1 arrivée
+    au classeur à 65 kg sans répétitions, juste après une confirmation de
+    charge inhabituelle. Le dialogue validait la série capturée à son
+    ouverture sans revérifier ; désormais le « Confirmer » revérifie les
+    répétitions, `validerSerie()` refuse une série sans répétitions, et
+    l'écran de fin liste les séries faites sans chiffres
+    (`#fin-incompletes`). Scénario exact sur le téléphone non reproduit.
+  - **Douleur** : texte d'au moins trois lettres (`douleurValable()`),
+    après deux « # » envoyés le 5.
+  - **Sommeil** : historique effacé une fois sur le téléphone, à la
+    demande de l'utilisateur (`effacerSommeilUneFois()`,
+    `muscu2.sommeilEfface`). L'onglet `Sommeil` n'existait pas encore dans
+    le classeur : le pont le crée à la première nuit envoyée
+    (`ongletPret()`), et une lecture gviz d'un onglet absent renvoie le
+    premier onglet du classeur, d'où le contenu du Programme à la relève.
+  - **Suivant sous le pouce** : `.nav-exo` collée en bas de l'écran,
+    Suivant et Terminer à deux tiers de largeur, 52 px.
+  - **Accueil centré** (« justifiée au centre ») : `#accueil-corps` en
+    colonne centrée horizontalement et verticalement (`safe center`), carte
+    de la séance comprise.
+  - **Schéma du développé épaules** : développé militaire assis à la barre
+    (Everkinetic 0004, `seated-military-press`), « Illustration
+    approchée », précaché.
+- **Onglet Programme du classeur aligné sur `classeur/Programme.csv` le
+  6 novembre 2026**, à la demande de l'utilisateur, depuis le navigateur
+  intégré (compte Google de l'utilisateur) : lignes 3, 9, 11 à 13, 19 et
+  25, relues ensuite par gviz, zéro écart. Piège de saisie : dans la
+  grille de Sheets, le texte tapé n'est pris qu'une fois l'éditeur de
+  cellule ouvert (cellule choisie par la zone de nom, Entrée, Ctrl+A,
+  texte, Tab) ; tapé directement sur la cellule sélectionnée, il est
+  perdu, et les noms de touches de ponctuation ne passent pas.
+- **Rear kick à la place de l'extension de hanche machine, J4, le
+  6 novembre 2026** (pile de la machine au maximum). Fait ce jour-là et
+  saisi sous l'ancien nom ; l'utilisateur veut repartir de zéro avec ces
+  données : `renommerRearKick()` (`v2/js/donnees.js`, une seule fois,
+  `muscu2.rearKickRenomme`) renomme l'exercice dans la seule séance
+  `S1793958424096`, `exo.remplace` garde l'ancien nom ; l'historique plus
+  ancien de l'extension de hanche reste sous son nom, sans fusion. Les
+  trois lignes de cette séance dans l'onglet `Séries` du classeur ont été
+  renommées le même jour.
+- **J3 réordonné une seconde fois, le 6 novembre 2026** (l'utilisateur :
+  curl incliné « à la fin, trop proche des tractions, je n'ai pas assez de
+  puissance ») : traction, développé épaules, rowing, écarté poulie basse,
+  oiseau inversé, curl incliné. Mettre le curl seul à la fin collait
+  développé épaules et oiseau ; cet ordre, choisi par l'utilisateur (ordre
+  A), sépare traction et rowing, les deux épaules, et éloigne le curl des
+  tirages, au prix de l'écarté reculé en 4e place. Ordre d'avant, pour
+  mémoire :
 - **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
   écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
   inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,
@@ -277,7 +344,11 @@ codes.
   validation (cas réel : 25 puis 55 kg à l'extension jambes). Le `change`
   du champ repart quand le dialogue prend le focus : un drapeau
   (`confirmationEnCours`) empêche un second dialogue par-dessus le premier,
-  trouvé par `tests/test_v2.py`.
+  trouvé par `tests/test_v2.py`. **Référence : la série la plus lourde de
+  la dernière fois** (`chargeDeReference()`, depuis le 6 novembre 2026),
+  comme la charge suggérée ; c'était la première série, et une séance en
+  pyramide (45 puis 55, 55) faisait suggérer 60 kg puis signaler 65 kg
+  « contre 45 kg ».
 - **Deload depuis l'application** : bascule sur l'écran de démarrage
   (`seance.deload`), filigrane à 70 % de la dernière fois, séance écartée
   de `occurrences()` donc de toutes les comparaisons, marquée dans le
@@ -423,7 +494,10 @@ Cinq demandes de l'utilisateur, après ses premières captures de la v2 :
   dans le programme avec des phrases motivantes et intéressantes ») :
   quatrième onglet `Accueil`, racine de démarrage (`rendreAccueil()` dans
   `v2/js/sport.js`) : salutation selon l'heure, phrase de motivation du
-  jour (`PHRASES_MOTIVATION`, hachage de la date), séances de la semaine,
+  jour (`PHRASES_MOTIVATION`, hachage de la date ; 46 phrases depuis le
+  6 novembre 2026, dont des citations attribuées seulement quand la source
+  est vérifiable : Rollins, Nietzsche, Kipchoge, Coleman, Durant résumant
+  Aristote, présenté comme tel), séances de la semaine,
   total, jours depuis la dernière, carte de la prochaine séance ou de la
   séance en cours, bouton « Entrer dans le programme » vers Sport. L'écran
   de démarrage d'une séance ajoute un « Le saviez-vous »

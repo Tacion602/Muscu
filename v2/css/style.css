@@ -328,8 +328,18 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .comparaison.hausse { color: var(--hausse); }
 .comparaison.baisse { color: var(--baisse); }
 
-.nav-exo { display: flex; gap: 8px; margin-top: 12px; }
-.nav-exo .bouton { flex: 1; }
+/* Navigation entre exercices collée en bas de l'écran, sous le pouce
+   (6 novembre 2026 ; noté à la revue du 4 : « Suivant » loin du pouce en
+   bas d'une longue fiche). Suivant et Terminer prennent deux tiers de la
+   largeur et 52 px de haut ; Précédent reste secondaire. */
+.nav-exo {
+  position: sticky; bottom: 0; z-index: 5; display: flex; gap: 8px; margin-top: 12px;
+  padding: 14px 0 calc(env(safe-area-inset-bottom, 0px) + 6px);
+  background: linear-gradient(180deg, rgba(245, 246, 248, 0), var(--fond) 34%);
+}
+.nav-exo .bouton { flex: 1; min-height: 52px; font-size: 16px; }
+.nav-exo #exo-suivant, .nav-exo #exo-terminer { flex: 2; }
+.nav-exo #exo-suivant { background: var(--accent-fond); color: var(--accent); font-weight: 600; }
 
 /* Minuterie de repos : bandeau compact et plein écran */
 .minuterie { position: sticky; top: 0; z-index: 4; margin: -12px calc(-1 * var(--marge)) 12px; background: var(--repos); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 10px var(--marge); }
@@ -528,6 +538,12 @@ details.seance-h .detail { padding: 0 0 12px; }
 }
 
 /* Accueil : salutation, phrase du jour, prochaine séance. */
+/* Accueil centré, horizontalement et verticalement (demande du 6 novembre
+   2026, « justifiée au centre ») ; `safe center` garde le haut accessible
+   si le contenu dépasse l'écran. */
+#accueil-corps { display: flex; flex-direction: column; justify-content: safe center; text-align: center; }
+#accueil-corps .titre-section { text-align: center; }
+#accueil-corps .carte-jour .tx { text-align: center; align-items: center; }
 .accueil-entete { padding: calc(env(safe-area-inset-top, 0px) + 22px) 0 6px; }
 .accueil-entete h1 { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
 .accueil-entete p { color: var(--texte-2); font-size: 14px; margin-top: 2px; }
@@ -615,67 +631,58 @@ details.seance-h .detail { padding: 0 0 12px; }
 }
 
 /* ---------- Intro d'ouverture ----------
-   Demande du 5 novembre 2026 : une intro avant l'Accueil, un élément
-   central pour entrer, des codes de sportif, univers néon électrique
-   (choix de l'utilisateur, même famille que la jauge de séance). Le cadran
-   tient du chronomètre de piste : graduations, anneau cyan, violet,
-   magenta qui tourne, « GO » au centre. Hors jetons de la direction v2,
-   exception voulue comme la jauge et la page d'envoi. */
+   Éditorial sombre (choix de l'utilisateur le 6 novembre 2026, à la place
+   du cadran néon du 5, « un peu kitsch ») : noir mat, la séance du jour en
+   très grande typographie étroite, une seule couleur d'accent (le bleu de
+   l'application), deux chiffres en pied. Entrée : les lignes montent en
+   cascade. Sortie (sortirIntro dans sport.js) : le titre glisse jusqu'au
+   nom de la carte de l'Accueil pendant que le fond remonte comme un
+   rideau. Rien ne bouge sous prefers-reduced-motion. */
 .intro {
   position: absolute; inset: 0; z-index: 40;
-  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-  padding: calc(env(safe-area-inset-top, 0px) + 40px) var(--marge) calc(env(safe-area-inset-bottom, 0px) + 40px);
-  background: radial-gradient(120% 70% at 50% 45%, #2a0a5e 0%, #14002e 45%, #07000f 100%);
-  color: #fff; text-align: center; overflow: hidden;
-  transition: opacity .35s ease, transform .35s ease;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 32px) 24px calc(env(safe-area-inset-bottom, 0px) + 32px);
+  color: #f4f4f2; overflow: hidden;
 }
-.intro.sortie { opacity: 0; transform: scale(1.04); pointer-events: none; }
 .intro[hidden] { display: none; }
-.intro-haut { display: flex; flex-direction: column; gap: 6px; }
-.intro-kicker { font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: #8ff3ff; }
-.intro-marque {
-  font-size: 44px; font-weight: 900; font-style: italic; letter-spacing: .04em; text-transform: uppercase; line-height: 1;
-  text-shadow: 0 0 10px rgba(0, 229, 255, .7), 0 0 26px rgba(255, 43, 214, .55);
+.intro-fond { position: absolute; inset: 0; background: #0c0d0f; z-index: -1; }
+.intro-kicker {
+  margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #8b8f96;
+  animation: intro-fondu .6s ease-out both;
 }
-.intro-cadran {
-  position: relative; width: min(72vw, 300px); aspect-ratio: 1; border-radius: 50%;
-  display: grid; place-items: center; color: #fff;
-  -webkit-tap-highlight-color: transparent; transition: transform .2s ease;
+.intro-titre {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 14px; text-align: left; width: 100%;
+  color: inherit; -webkit-tap-highlight-color: transparent;
 }
-.intro-cadran:active { transform: scale(.96); }
-.intro-anneau {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(from 0deg, #00e5ff, #6a00ff, #ff2bd6, #00e5ff);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 9px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 9px));
-  filter: drop-shadow(0 0 10px #00e5ff) drop-shadow(0 0 22px rgba(255, 43, 214, .7));
-  animation: intro-rotation 6s linear infinite;
+.intro-jour { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.intro-code {
+  font-size: 15px; font-weight: 700; letter-spacing: .12em; color: #6f9bff;
+  animation: intro-montee .6s cubic-bezier(.2, .8, .2, 1) .05s both;
 }
-.intro-graduation {
-  position: absolute; inset: 18px; border-radius: 50%;
-  background: repeating-conic-gradient(rgba(255, 255, 255, .55) 0 .6deg, transparent .6deg 6deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 11px));
+.intro-nom {
+  display: block; transform-origin: 0 0;
+  font-family: "sans-serif-condensed", "Roboto Condensed", "Arial Narrow", var(--police);
+  font-stretch: condensed; font-weight: 700; text-transform: uppercase;
+  font-size: clamp(64px, 23vw, 128px); line-height: .88; letter-spacing: -.01em; max-width: 100%;
+  animation: intro-montee .7s cubic-bezier(.2, .8, .2, 1) .12s both;
 }
-.intro-centre {
-  position: relative; width: 66%; aspect-ratio: 1; border-radius: 50%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  background: radial-gradient(circle at 50% 35%, #2b0b63, #0d001f 75%);
-  box-shadow: inset 0 0 24px rgba(106, 0, 255, .8), 0 0 30px rgba(0, 229, 255, .25);
-  animation: intro-souffle 2.4s ease-in-out infinite;
+.intro-detail {
+  font-size: 15px; color: #a7abb2; max-width: 32ch;
+  animation: intro-montee .7s cubic-bezier(.2, .8, .2, 1) .22s both;
 }
-.intro-go {
-  font-size: 64px; font-weight: 900; font-style: italic; letter-spacing: .02em; line-height: 1;
-  text-shadow: 0 0 8px #fff, 0 0 18px #00e5ff, 0 0 34px #ff2bd6;
+.intro-pied {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+  padding-top: 18px; border-top: 1px solid #26282c;
+  animation: intro-fondu .6s ease-out .3s both;
 }
-.intro-jour { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #ffd6f7; }
-.intro-bas { font-size: 14px; color: rgba(255, 255, 255, .78); max-width: 30ch; margin: 0; }
-@keyframes intro-rotation { to { transform: rotate(360deg); } }
-@keyframes intro-souffle {
-  0%, 100% { box-shadow: inset 0 0 24px rgba(106, 0, 255, .8), 0 0 30px rgba(0, 229, 255, .25); }
-  50% { box-shadow: inset 0 0 34px rgba(255, 43, 214, .7), 0 0 46px rgba(0, 229, 255, .45); }
-}
+.intro-stats { display: flex; gap: 28px; }
+.intro-stats div { display: flex; flex-direction: column; gap: 2px; }
+.intro-stats .n { font-size: 28px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.intro-stats .l { font-size: 12px; color: #8b8f96; }
+.intro-indice { font-size: 13px; color: #8b8f96; white-space: nowrap; }
+.intro-indice::after { content: " \2192"; color: #6f9bff; }
+@keyframes intro-montee { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes intro-fondu { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .intro-anneau, .intro-centre { animation: none; }
-  .intro { transition: none; }
+  .intro-kicker, .intro-code, .intro-nom, .intro-detail, .intro-pied { animation: none; }
 }

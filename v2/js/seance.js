@@ -81,7 +81,7 @@ function rendreExercice() {
   if (exo.remplace) html += '<p class="petit texte-2" style="margin-top:6px">Remplace ' + echapper(exo.remplace) + ' pour cette séance.</p>';
   if (seance.deload) html += '<p class="puce attention" style="margin-top:8px">Deload : charges à 70 %, hors comparaisons</p>';
   else if (objectif) {
-    html += '<div class="objectif' + (objectif.monte ? ' monte' : '') + '"><div><div class="petit texte-2">Objectif</div><div class="val num">' + formatNombre(objectif.charge) + '<small>kg × ' + objectif.reps + '</small></div></div><div class="why">' + echapper(objectif.raison) + '</div></div>';
+    html += '<div class="objectif' + (objectif.monte ? ' monte' : '') + '"><div><div class="petit texte-2">Objectif 1re série</div><div class="val num">' + formatNombre(objectif.charge) + '<small>kg × ' + objectif.reps + '</small></div></div><div class="why">' + echapper(objectif.raison) + '</div></div>';
   } else if (!derniere) {
     html += '<p class="petit texte-2" style="margin-top:8px">Première fois : choisis une charge qui laisse ' + (fiche.rir && fiche.rir.length ? fiche.rir[0] : 2) + ' répétitions en réserve.</p>';
   }
@@ -142,7 +142,7 @@ function rendreExercice() {
   // 5 novembre 2026). Durée du repos de l'exercice, réglable par ±15 s.
   $('chrono-exo').addEventListener('click', () => lancerMinuterie(exo.repos_s || 90, null));
   $('douleur-exo').addEventListener('click', () => saisir('Douleur sur ' + exo.nom, '', 'Noter', (t) => {
-    if (!t) return;
+    if (!douleurValable(t)) { toast('Décris la douleur en quelques mots (où, à quel moment).', 3500); return; }
     ajouterDouleur(exo.nom, t, seance.id, seance.jour);
     seance.douleurs = seance.douleurs || [];
     seance.douleurs.push({ exercice: exo.nom, texte: t });
@@ -261,9 +261,11 @@ function rendreSeries() {
     ligne.className = 'serie' + (serie.faite ? ' faite' : '') + (index === prochaine ? ' courante' : '');
     const reference = derniere ? derniere.series[index] : null;
     const cibleRir = serie.cible != null ? serie.cible : (fiche.rir && fiche.rir.length ? fiche.rir[Math.min(index, fiche.rir.length - 1)] : null);
-    // Filigrane : l'objectif sur la première série, la dernière fois ensuite.
-    const sugCharge = objectif ? objectif.charge : (reference ? reference.charge : null);
-    const sugReps = index === 0 && objectif ? objectif.reps : (reference ? reference.reps : (fiche.reps_min || null));
+    // Filigrane série par série : la charge de cette série la dernière fois
+    // (+ un pas si la montée est gagnée) ; les répétitions visées sur la
+    // première, reps_min partout après une montée, la dernière fois sinon.
+    const sugCharge = objectif ? objectif.charges[index] : (reference ? reference.charge : null);
+    const sugReps = objectif && (index === 0 || objectif.monte) ? objectif.reps : (reference ? reference.reps : (fiche.reps_min || null));
     if (seance.deload && reference) { /* 70 % de la dernière fois */ }
 
     const n = document.createElement('div'); n.className = 'n num'; n.textContent = index + 1;
@@ -305,8 +307,12 @@ function rendreSeries() {
         // Le `change` du champ repart quand le dialogue prend le focus :
         // le drapeau empêche un second dialogue par-dessus le premier.
         confirmationEnCours = true;
-        confirmer('Charge inhabituelle', formatNombre(serie.charge) + ' kg contre ' + formatNombre(derniere.series[0].charge) + ' kg la dernière fois. Confirmer ?', 'Confirmer',
-          () => { confirmationEnCours = false; validerSerie(exo, serie, index, reference, fiche); }, false,
+        confirmer('Charge inhabituelle', formatNombre(serie.charge) + ' kg contre ' + formatNombre(chargeDeReference(derniere)) + ' kg la dernière fois (série la plus lourde). Confirmer ?', 'Confirmer',
+          () => {
+            confirmationEnCours = false;
+            if (serie.reps == null) { toast('Répétitions manquantes : série non validée.', 3000); rendreSeries(); return; }
+            validerSerie(exo, serie, index, reference, fiche);
+          }, false,
           () => { confirmationEnCours = false; });
         return;
       }
@@ -341,7 +347,17 @@ function champSerie(valeur, suggestion, libelle, role) {
   return input;
 }
 
+/* Une douleur se décrit en quelques mots : au moins 3 lettres. Le
+   5 novembre 2026, deux « # » sont partis dans l'onglet Douleurs. */
+function douleurValable(texte) {
+  return ((texte || '').match(/\p{L}/gu) || []).length >= 3;
+}
+
 function validerSerie(exo, serie, index, reference, fiche) {
+  // Jamais de série faite sans répétitions (6 novembre 2026 : extension
+  // jambes, série 1 arrivée au classeur à 65 kg sans répétitions, après
+  // une confirmation de charge inhabituelle).
+  if (serie.reps == null) return;
   serie.faite = true;
   serie.heure = new Date().toISOString();
   enregistrerSeance();
@@ -541,9 +557,12 @@ function rendreFin() {
       if (c) html += '<p class="petit" style="margin-top:10px">Première série de ' + echapper(premier.nom) + ' : <span class="puce ' + c.sens + '">' + echapper(c.texte) + '</span>' + (c.indicatif ? ' <span class="texte-2">RIR différent, indicatif</span>' : '') + '</p>';
     }
     html += '</div>';
+    const incompletes = [];
+    seance.exercices.forEach((e) => e.series.forEach((x, i) => { if (x.faite && (x.reps == null || x.charge == null)) incompletes.push(e.nom + ' série ' + (i + 1)); }));
+    if (incompletes.length) html += '<div class="alerte baisse" style="margin-top:10px" id="fin-incompletes">' + svgIcone('alerte') + '<div>Chiffres manquants : ' + incompletes.map(echapper).join(', ') + '. Reviens sur l\'exercice pour les saisir avant l\'envoi.</div></div>';
     if (oublies.length) html += '<div class="alerte attention" style="margin-top:10px">' + svgIcone('alerte') + '<div>Sans série : ' + oublies.map((e) => echapper(e.nom)).join(', ') + '. L\'envoi reste possible.</div></div>';
     html += '<div class="carte" style="margin-top:10px">' + faits.map((e) => '<div class="resume-exo"><b>' + echapper(e.nom) + '</b><span>' +
-      e.series.filter((s) => s.faite).map((s) => formatNombre(s.charge) + '×' + s.reps + (s.rir != null ? ' @' + s.rir : '') + (s.restPause ? ' RP' : '')).join(' · ') + '</span></div>').join('') + '</div>';
+      e.series.filter((s) => s.faite).map((s) => (s.charge == null ? '?' : formatNombre(s.charge)) + '×' + (s.reps == null ? '?' : s.reps) + (s.rir != null ? ' @' + s.rir : '') + (s.restPause ? ' RP' : '')).join(' · ') + '</span></div>').join('') + '</div>';
   } else if (seance.type === 'cardio') {
     html += resumeCardio();
   } else {

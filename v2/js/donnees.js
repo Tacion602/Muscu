@@ -129,6 +129,39 @@ function restaurerSeancesDEssai() {
   return ajout.length;
 }
 
+/* Historique de sommeil effacé une fois, à la demande de l'utilisateur
+   le 6 novembre 2026 (« il n'y a plus de problème d'insomnie ») : les
+   nuits saisies sur le téléphone, pas le classeur (l'onglet Sommeil n'y
+   existait pas encore). Les nuits saisies ensuite repartent de zéro. */
+const CLE_SOMMEIL_EFFACE = 'muscu2.sommeilEfface';
+function effacerSommeilUneFois() {
+  if (lire(CLE_SOMMEIL_EFFACE, null)) return 0;
+  const avant = lireTableau(CLES.sommeil).length;
+  ecrire(CLES.sommeil, []);
+  ecrire(CLE_SOMMEIL_EFFACE, { quand: new Date().toISOString(), nuits: avant });
+  return avant;
+}
+
+/* Rear kick : remplace l'extension de hanche machine en J4 le 6 novembre
+   2026 (pile de la machine au maximum). Fait le jour même et saisi sous
+   l'ancien nom ; l'utilisateur veut repartir de zéro avec ces données. Une
+   seule fois, sur cette séance seule : l'historique plus ancien de
+   l'extension de hanche garde son nom. */
+const SEANCE_REAR_KICK = 'S1793958424096';
+const CLE_REAR_KICK = 'muscu2.rearKickRenomme';
+function renommerRearKick() {
+  if (lire(CLE_REAR_KICK, null)) return false;
+  const toutes = lireTableau(CLES.historique);
+  const s = toutes.find((x) => x.id === SEANCE_REAR_KICK);
+  let fait = false;
+  (s ? s.exercices || [] : []).forEach((e) => {
+    if (memeExercice(e.nom, 'Extension de hanche machine')) { e.remplace = e.nom; e.nom = 'Rear kick machine'; fait = true; }
+  });
+  if (fait) ecrire(CLES.historique, toutes);
+  if (s) ecrire(CLE_REAR_KICK, { quand: new Date().toISOString(), renomme: fait });
+  return fait;
+}
+
 /* Retire un exercice d'une séance enregistrée (point aberrant d'une
    courbe), sans toucher au reste de la séance ni au classeur. */
 function retirerExerciceDeSeance(idSeance, nomExo) {

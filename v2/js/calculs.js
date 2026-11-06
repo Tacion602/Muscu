@@ -63,48 +63,72 @@ function comparerSeries(maintenant, avant, fiche) {
   return { sens: ecart > 0 ? 'hausse' : 'baisse', texte: (ecart > 0 ? '+' : '') + formatNombre(ecart) + ' kg e1RM', indicatif };
 }
 
-/* Objectif de la séance pour un exercice (double progression) :
-   - si la dernière fois toutes les séries de travail ont atteint reps_max,
-     avec un RIR réel inférieur ou égal à la cible (ou non saisi) : charge
-     + un pas, viser reps_min ;
-   - sinon : même charge, viser une répétition de plus sur la première
-     série (plafonné à reps_max).
+/* Objectif de la séance pour un exercice (double progression), série par
+   série (règle du 6 novembre 2026, l'utilisateur : « les premières séries
+   sont toujours des vraies séries », et la montée se juge sur les deux
+   dernières, pas sur toutes) :
+   - si les deux dernières séries de travail ont atteint reps_max, avec un
+     RIR réel inférieur ou égal à la cible (ou non saisi) : chaque série
+     reprend sa charge de la dernière fois + un pas, viser reps_min ;
+   - sinon : chaque série reprend sa charge de la dernière fois, viser une
+     répétition de plus sur la première (plafonné à reps_max).
+   `charges[i]` est la charge proposée pour la série i (une série en plus
+   reprend la dernière charge connue) ; `charge` celle de la première.
    Sans historique : rien à suggérer, on renvoie null. */
 function objectifExercice(fiche, derniere) {
   if (!fiche || !derniere || !derniere.series.length) return null;
   const series = derniere.series;
-  const charge = Math.max(...series.map((s) => s.charge));
   const pas = pasDeCharge(fiche.nom);
-  const toutesAuMax = fiche.reps_max != null && series.every((s) => s.reps >= fiche.reps_max);
-  const rirOk = series.every((s, i) => {
+  const n = Math.max(series.length, fiche.series || 0);
+  const debutJuge = Math.max(0, series.length - 2);
+  const jugees = series.slice(debutJuge);
+  const auMax = fiche.reps_max != null && jugees.every((s) => s.reps != null && s.reps >= fiche.reps_max);
+  const rirOk = jugees.every((s, k) => {
+    const i = debutJuge + k;
     const cible = fiche.rir && fiche.rir.length ? fiche.rir[Math.min(i, fiche.rir.length - 1)] : null;
     return s.rir == null || cible == null || s.rir <= cible;
   });
-  if (toutesAuMax && rirOk) {
+  const monte = auMax && rirOk;
+  const charges = [];
+  for (let i = 0; i < n; i++) {
+    const base = series[Math.min(i, series.length - 1)].charge;
+    charges.push(base == null ? null : Math.round((base + (monte ? pas : 0)) * 100) / 100);
+  }
+  const deux = jugees.length > 1 ? 'deux dernières séries' : 'dernière série';
+  if (monte) {
     return {
-      charge: Math.round((charge + pas) * 100) / 100,
+      charge: charges[0], charges,
       reps: fiche.reps_min != null ? fiche.reps_min : series[0].reps,
-      raison: 'Dernière fois ' + series.length + ' × ' + fiche.reps_max + ' à ' + formatNombre(charge) + ' kg, haut de fourchette : +' + formatNombre(pas) + ' kg.',
+      raison: 'Dernière fois, ' + deux + ' à ' + fiche.reps_max + ' : +' + formatNombre(pas) + ' kg sur chaque série.',
       monte: true,
     };
   }
   const premiere = series[0];
   const repsCible = fiche.reps_max != null ? Math.min(fiche.reps_max, premiere.reps + 1) : premiere.reps + 1;
-  const manque = series.filter((s) => fiche.reps_max != null && s.reps < fiche.reps_max).length;
   return {
-    charge: premiere.charge,
+    charge: charges[0], charges,
     reps: repsCible,
-    raison: 'Même charge, viser ' + repsCible + ' sur la première série' +
-      (manque ? ' (' + manque + ' série' + (manque > 1 ? 's' : '') + ' sous ' + fiche.reps_max + ' la dernière fois)' : '') + '.',
+    raison: 'Mêmes charges, viser ' + repsCible + ' sur la première série' +
+      (fiche.reps_max != null ? ' (' + deux + ' à ' + fiche.reps_max + ' pour monter).' : '.'),
     monte: false,
   };
 }
 
 /* Garde-fou de saisie : une charge hors de 0,6 à 1,4 fois la dernière est
-   probablement une erreur de frappe ou une autre machine. */
+   probablement une erreur de frappe ou une autre machine. La référence est
+   la série la plus lourde de la dernière fois, comme pour la charge
+   suggérée (objectifExercice) : comparée à la première série, une séance
+   en pyramide (45 puis 55, 55) faisait suggérer 60 kg et signaler 65 kg
+   « contre 45 kg » (remarque du 6 novembre 2026, extension jambes). */
+function chargeDeReference(derniere) {
+  if (!derniere || !derniere.series.length) return null;
+  const charges = derniere.series.map((s) => s.charge).filter((c) => c != null);
+  return charges.length ? Math.max(...charges) : null;
+}
+
 function chargeAberrante(charge, derniere) {
   if (charge == null || !derniere || !derniere.series.length) return false;
-  const ref = derniere.series[0].charge;
+  const ref = chargeDeReference(derniere);
   if (!ref) return false;
   return charge < ref * 0.6 || charge > ref * 1.4;
 }
@@ -227,6 +251,17 @@ const PHRASES_OUVERTURE = [
   'Téléphone posé entre les séries. Sauf pour cette appli, évidemment.',
   'Le dernier rep moche ne compte pas. Le dernier rep propre, si.',
   'Range tes disques à la fin. Ta réputation en salle en dépend.',
+  // Ajouts du 6 novembre 2026, même demande.
+  'La première série donne le ton. Donne-lui un bon ton.',
+  "Aujourd'hui, l'objectif est simple : battre le toi de la dernière fois, d'une répétition.",
+  'Pose le téléphone, prends la barre. Dans cet ordre aussi.',
+  "Si la charge te fait peur, c'est qu'elle est bien choisie. Si elle te fait rire, ajoute un disque.",
+  "Le chrono de repos n'est pas une suggestion. C'est un contrat.",
+  "Un échauffement raté, c'est une première série gâchée. Prends tes cinq minutes.",
+  'Concentre-toi sur le muscle, pas sur le voisin de banc.',
+  "Pas de héros sur la première série : c'est la dernière qui raconte l'histoire.",
+  "Gaine comme si quelqu'un allait te pousser. Personne ne va te pousser. Gaine quand même.",
+  "Le bruit de la barre qui retombe n'ajoute aucun kilo au carnet.",
 ];
 
 /* Phrases de motivation de l'accueil et faits d'entraînement de l'écran de
@@ -262,6 +297,29 @@ const PHRASES_MOTIVATION = [
   'Personne n\'a jamais regretté une séance faite. Le canapé, lui, collectionne les regrets.',
   'Un bon carnet d\'entraînement ne ment pas. Il se tait quand tu sautes une séance, c\'est pire.',
   'Les courbatures passent. Le développé couché que tu as rajouté reste.',
+  // Ajouts du 6 novembre 2026 (« plus de citations, de motivation et
+  // d'humour »). Les citations attribuées sont limitées à des sources
+  // vérifiables ; les autres phrases sont écrites pour l'application.
+  "« Le fer ne ment jamais. » Henry Rollins, Iron and the Soul. Ton carnet non plus.",
+  "« Ce qui ne me tue pas me rend plus fort. » Nietzsche. Il n'avait pas fait ta séance jambes.",
+  "« Seuls les disciplinés sont libres. » Eliud Kipchoge, qui court le marathon en moins de deux heures.",
+  "« Tout le monde veut être bodybuilder, mais personne ne veut soulever de lourd. » Ronnie Coleman, version polie.",
+  "« Light weight, baby ! » Ronnie Coleman, à propos de charges qui ne l'étaient pas.",
+  "« Nous sommes ce que nous faisons de manière répétée. » Will Durant, résumant Aristote, à qui on la prête souvent.",
+  "Arnold disait que les trois ou quatre dernières répétitions font le muscle. Ton RIR 2 dit que tu n'en es pas loin.",
+  'La salle est ouverte, la barre est libre, et ton futur toi prend des notes.',
+  "Le meilleur programme est celui que tu suis. Le deuxième meilleur, c'est celui-ci.",
+  'Personne ne devient fort en lisant son programme. Même bien imprimé.',
+  'Tes muscles ne savent pas quel jour on est. Ils savent seulement si tu es venu.',
+  "Les jambes, c'est comme les impôts : on y échappe rarement, et ça se paie en marches d'escalier.",
+  'Tu as déjà survécu à cent pour cent de tes séances jambes. Statistique imbattable.',
+  "Le canapé t'a fait une offre. Décline poliment.",
+  "Il y a deux sortes de séances : celles qu'on fait, et celles qu'on regrette de ne pas avoir faites.",
+  "Une bonne séance ne se voit pas dans le miroir ce soir. Elle se voit dans le carnet dans trois mois.",
+  'Même les machines ont des jours sans. Toi, tu as un programme.',
+  "La sueur, c'est le gras qui pleure. Scientifiquement faux, moralement juste.",
+  "Ne compte pas les jours, fais que les séries comptent.",
+  "Tu n'es pas fatigué, tu es en pleine adaptation. C'est plus flatteur et c'est vrai.",
 ];
 
 const FAITS_ENTRAINEMENT = [

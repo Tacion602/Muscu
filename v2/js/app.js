@@ -5,6 +5,8 @@ let versionApp = '';
 async function demarrer() {
   const migree = migrerDepuisV1();
   const rendues = restaurerSeancesDEssai();
+  renommerRearKick();
+  effacerSommeilUneFois();
   reglages = Object.assign({}, REGLAGES_PAR_DEFAUT, lire(CLES.reglages, {}) || {});
   try {
     await chargerProgramme();

@@ -254,17 +254,77 @@ function ouvrirSeance(options) {
    en cours, sinon la prochaine. */
 function rendreIntro() {
   const maintenant = new Date();
-  $('intro-date').textContent = maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }) + ' · semaine ' + semaineIso(maintenant);
+  $('intro-date').textContent = maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · semaine ' + semaineIso(maintenant);
   const ouvertes = Object.values(lireSeancesEnCours()).filter((s) => s && !s.fin && jourDe(s.jour));
   const code = ouvertes.length ? ouvertes[0].jour : prochainJour();
   const jour = code ? jourDe(code) : null;
-  $('intro-jour').textContent = jour ? libelleJour(jour) + ' · ' + jour.nom : '';
-  $('intro-bas').textContent = ouvertes.length ? 'Séance en cours, on reprend.' : phraseMotivation(cleDate(maintenant));
-  $('intro-entrer').onclick = () => {
-    const intro = $('intro');
-    intro.classList.add('sortie');
-    setTimeout(() => { intro.hidden = true; }, 350);
-  };
+  $('intro-code').textContent = jour ? libelleJour(jour) : '';
+  $('intro-nom').textContent = jour ? jour.nom : 'Muscu';
+  $('intro-detail').textContent = ouvertes.length ? 'Séance en cours, on reprend.'
+    : (jour ? (jour.type === 'cardio' ? 'Course et HIIT' : (jour.exercices || []).length + ' exercices · ' + musclesDuJour(jour)) : '');
+  const terminees = seancesTerminees();
+  const semaine = semaineIso(maintenant);
+  const cetteSemaine = terminees.filter((s) => semaineIso(new Date(s.fin)) === semaine).length;
+  const depuis = terminees[0] ? joursDepuis(terminees[0].fin) : null;
+  $('intro-stats').innerHTML = '<div><span class="n">' + cetteSemaine + '</span><span class="l">cette semaine</span></div>' +
+    '<div><span class="n">' + (depuis == null ? '–' : depuis) + '</span><span class="l">' + (depuis == null ? 'aucune séance' : (depuis > 1 ? 'jours depuis' : 'jour depuis')) + '</span></div>';
+  $('intro-entrer').onclick = sortirIntro;
+  ajusterTitreIntro();
+}
+
+/* Un mot ne se coupe jamais : la taille du nom descend jusqu'à ce que le
+   plus long mot tienne dans la largeur (la police étroite d'Android n'est
+   pas partout, et « Gainage » se cassait en deux ailleurs). */
+function ajusterTitreIntro() {
+  const nom = $('intro-nom');
+  if (!nom || $('intro').hidden) return;
+  nom.style.fontSize = '';
+  const largeur = $('intro-entrer').clientWidth;
+  let taille = parseFloat(getComputedStyle(nom).fontSize);
+  while (nom.scrollWidth > largeur + 1 && taille > 36) {
+    taille -= 4;
+    nom.style.fontSize = taille + 'px';
+  }
+}
+
+/* Sortie de l'intro (6 novembre 2026) : le nom de la séance glisse jusqu'au
+   nom de la carte de l'Accueil, déjà rendue dessous, en changeant d'échelle
+   et de couleur ; le fond noir remonte comme un rideau ; le reste s'efface.
+   Environ 520 ms, rien sous prefers-reduced-motion. */
+function sortirIntro() {
+  const intro = $('intro');
+  if (intro.classList.contains('sortie')) return;
+  intro.classList.add('sortie');
+  const finir = () => { intro.hidden = true; };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !intro.animate) { finir(); return; }
+  const duree = 520; const courbe = 'cubic-bezier(.65, 0, .25, 1)';
+  intro.style.pointerEvents = 'none';
+  intro.querySelector('.intro-fond').animate([{ transform: 'none' }, { transform: 'translateY(-100%)' }], { duration: duree, easing: courbe, fill: 'forwards' });
+  intro.querySelectorAll('.intro-kicker, .intro-code, .intro-detail, .intro-pied').forEach((e) =>
+    e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-out', fill: 'forwards' }));
+  const nom = $('intro-nom');
+  const cible = document.querySelector('#accueil-corps [data-accueil-jour] .tx b');
+  // Boîtes du texte lui-même (pas des blocs), pour poser le mot sur le mot.
+  const boiteTexte = (el) => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect(); };
+  const a = boiteTexte(nom);
+  const b = cible ? boiteTexte(cible) : null;
+  const depart = nom.getBoundingClientRect();
+  let images;
+  if (b && b.height && a.height && a.width) {
+    const k = Math.min(b.height / a.height, b.width / a.width);
+    const dx = b.left - a.left + (a.left - depart.left) * (1 - k);
+    const dy = (b.top + b.height / 2) - (depart.top + (a.top - depart.top + a.height / 2) * k);
+    const arrivee = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
+    const couleur = getComputedStyle(cible).color;
+    images = [{ transform: 'none', color: '#f4f4f2', opacity: 1 },
+      { transform: arrivee, color: couleur, opacity: 1, offset: 0.8 },
+      { transform: arrivee, color: couleur, opacity: 0 }];
+    // Le vrai nom de la carte reste caché pendant le vol et prend le relais.
+    cible.animate([{ opacity: 0 }, { opacity: 0, offset: 0.8 }, { opacity: 1 }], { duration: duree, easing: 'linear' });
+  } else {
+    images = [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-40px)' }];
+  }
+  nom.animate(images, { duration: duree, easing: courbe, fill: 'forwards' }).finished.then(finir, finir);
 }
 
 function rendreAccueil() {

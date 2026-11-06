@@ -138,22 +138,21 @@
     <span class="l">Repos</span><span class="t num" id="repos-flottant-t"></span>
   </button>
 
-  <!-- Intro d'ouverture (5 novembre 2026) : écran néon à chaque lancement,
-       avant l'Accueil. Un seul élément central, le cadran, pour entrer. -->
+  <!-- Intro d'ouverture : éditorial sombre depuis le 6 novembre 2026 (le
+       néon du 5 jugé « un peu kitsch »). La séance du jour en grande
+       typographie ; un appui la fait glisser jusqu'à sa carte de l'Accueil
+       pendant que le fond noir remonte. -->
   <div id="intro" class="intro">
-    <div class="intro-haut">
-      <span class="intro-kicker" id="intro-date"></span>
-      <span class="intro-marque">Muscu</span>
-    </div>
-    <button class="intro-cadran" id="intro-entrer" aria-label="Entrer">
-      <span class="intro-anneau" aria-hidden="true"></span>
-      <span class="intro-graduation" aria-hidden="true"></span>
-      <span class="intro-centre">
-        <span class="intro-go">GO</span>
-        <span class="intro-jour" id="intro-jour"></span>
-      </span>
+    <div class="intro-fond" aria-hidden="true"></div>
+    <p class="intro-kicker" id="intro-date"></p>
+    <button class="intro-titre" id="intro-entrer" aria-label="Entrer">
+      <span class="intro-jour" id="intro-jour"><span class="intro-code" id="intro-code"></span><span class="intro-nom" id="intro-nom"></span></span>
+      <span class="intro-detail" id="intro-detail"></span>
     </button>
-    <p class="intro-bas" id="intro-bas"></p>
+    <div class="intro-pied">
+      <div class="intro-stats" id="intro-stats"></div>
+      <span class="intro-indice">Toucher pour entrer</span>
+    </div>
   </div>
 
   <!-- Page d'envoi de fin de séance (5 novembre 2026, « comme la V1 ») :

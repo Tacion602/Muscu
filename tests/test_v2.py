@@ -275,6 +275,16 @@ def test_l_objectif_garde_la_charge_quand_la_fourchette_n_est_pas_atteinte(page)
     assert page.locator(".objectif .val").inner_text().startswith("40")
 
 
+def test_l_objectif_se_calcule_serie_par_serie_sur_les_deux_dernieres(page):
+    """Regle du 6 novembre 2026 : montee jugee sur les deux dernieres
+    series, charge proposee serie par serie (pyramide 45, 55, 55)."""
+    fiche = "{nom: 'Extension jambes unilatéral', series: 3, reps_min: 10, reps_max: 12, rir: [2, 1, 1]}"
+    monte = page.evaluate("objectifExercice(" + fiche + ", {series: [{charge: 45, reps: 11, rir: 2}, {charge: 55, reps: 12, rir: 1}, {charge: 55, reps: 12, rir: 1}]})")
+    assert monte["monte"] and monte["charges"] == [50, 60, 60], monte
+    reste = page.evaluate("objectifExercice(" + fiche + ", {series: [{charge: 45, reps: 12, rir: 2}, {charge: 55, reps: 12, rir: 1}, {charge: 55, reps: 11, rir: 1}]})")
+    assert not reste["monte"] and reste["charges"] == [45, 55, 55], reste
+
+
 def test_le_e1rm_ne_compte_pas_une_hausse_de_charge_comme_un_recul(page):
     """40 x 8 puis 42,5 x 6 : le tonnage baisse (320 -> 255) mais le 1RM
     estime est stable. Demande de l'utilisateur le 4 novembre 2026."""
@@ -298,6 +308,57 @@ def test_une_charge_aberrante_demande_confirmation(page):
     page.locator("[data-ok]").click()
     page.wait_for_timeout(300)
     assert page.locator("#series .serie.faite").count() == 1
+
+
+def test_l_alerte_de_charge_part_de_la_serie_la_plus_lourde(page):
+    # Remarque du 6 novembre 2026 : 45 puis 55, 55 la derniere fois, 60 kg
+    # suggeres, 65 kg signales « contre 45 kg ».
+    derniere = "{series: [{charge: 45, reps: 12}, {charge: 55, reps: 12}, {charge: 55, reps: 12}]}"
+    assert page.evaluate("chargeAberrante(65, " + derniere + ")") is False
+    assert page.evaluate("chargeAberrante(80, " + derniere + ")") is True
+    assert page.evaluate("chargeAberrante(30, " + derniere + ")") is True
+
+
+def test_une_charge_inhabituelle_confirmee_sans_repetitions_n_est_pas_validee(page):
+    """6 novembre 2026 : extension jambes, serie 1 arrivee au classeur a
+    65 kg sans repetitions apres une confirmation de charge inhabituelle.
+    Les repetitions sont reverifiees au moment de confirmer."""
+    ouvrir_jour(page, "J1")
+    terminer_seance(page, 25, 8)
+    page.locator("#ecran-historique [data-retour]").click()
+    ouvrir_jour(page, "J1")
+    saisir_serie_courante(page, 55, 8)
+    assert page.locator(".voile .feuille").is_visible()
+    page.locator("#series .serie.courante input.reps").fill("")
+    page.locator("[data-ok]").click()
+    page.wait_for_timeout(300)
+    assert page.locator("#series .serie.faite").count() == 0
+    assert page.evaluate("seance.exercices[0].series.every(s => !s.faite || s.reps != null)")
+
+
+def test_une_douleur_trop_courte_est_refusee(page):
+    ouvrir_jour(page, "J1")
+    page.locator("#douleur-exo").click()
+    page.locator(".feuille [data-champ]").fill("#")
+    page.locator(".feuille [data-ok]").click()
+    page.wait_for_timeout(300)
+    assert page.evaluate("(seance.douleurs || []).length") == 0
+    page.locator("#douleur-exo").click()
+    page.locator(".feuille [data-champ]").fill("avant de l'epaule en haut")
+    page.locator(".feuille [data-ok]").click()
+    page.wait_for_timeout(300)
+    assert page.evaluate("(seance.douleurs || []).length") == 1
+
+
+def test_la_navigation_d_exercice_reste_sous_le_pouce(page):
+    """6 novembre 2026 : Suivant colle au bas de l'ecran sur une longue fiche."""
+    ouvrir_jour(page, "J1")
+    suivant = page.locator("#exo-suivant")
+    hauteur = page.evaluate("window.innerHeight")
+    boite = suivant.bounding_box()
+    assert boite["height"] >= 48
+    assert boite["y"] + boite["height"] <= hauteur
+    assert boite["y"] > hauteur - 140, boite
 
 
 def test_une_seance_de_deload_n_entre_pas_dans_les_comparaisons(page):
@@ -385,6 +446,57 @@ def test_l_historique_v1_est_repris_une_fois(adresse, navigateur):
     onglet.wait_for_selector("#accueil-programme")
     assert len(onglet.evaluate("historique()")) == 1
     contexte.close()
+
+
+def test_l_historique_de_sommeil_est_efface_une_seule_fois(adresse, navigateur):
+    """Demande du 6 novembre 2026 : effacer tout l'historique de sommeil,
+    une fois ; une nuit saisie ensuite reste."""
+    contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
+    onglet = contexte.new_page()
+    erreurs = []
+    onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
+    onglet.goto(adresse)
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    onglet.evaluate("""() => { localStorage.clear();
+        localStorage.setItem('muscu2.migration', JSON.stringify({ quand: '2026-11-04', seances: 0, source: 'v1' }));
+        localStorage.setItem('muscu2.sommeil', JSON.stringify([{ cle: '2026-10-01', insomnies: ['2h'] }, { cle: '2026-10-02', insomnies: [] }])); }""")
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    assert onglet.evaluate("JSON.parse(localStorage.getItem('muscu2.sommeil'))") == []
+    assert onglet.evaluate("JSON.parse(localStorage.getItem('muscu2.sommeilEfface')).nuits") == 2
+    onglet.evaluate("localStorage.setItem('muscu2.sommeil', JSON.stringify([{ cle: '2026-11-06', insomnies: [] }]))")
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    assert len(onglet.evaluate("JSON.parse(localStorage.getItem('muscu2.sommeil'))")) == 1
+    contexte.close()
+    assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
+
+
+def test_le_rear_kick_du_6_novembre_repart_de_zero(adresse, navigateur):
+    """6 novembre 2026 : rear kick fait ce jour-la, saisi sous l'extension de
+    hanche ; seule cette seance change de nom, une seule fois."""
+    contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
+    onglet = contexte.new_page()
+    erreurs = []
+    onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
+    onglet.goto(adresse)
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    def seance(ident, date):
+        return {"id": ident, "jour": "J4", "type": "muscu", "debut": date + "T10:00:00", "fin": date + "T11:00:00",
+                "exercices": [{"nom": "Extension de hanche machine", "series": [{"charge": 80, "reps": 12, "rir": 2, "faite": True}]}]}
+    seances = [seance("ANCIENNE", "2026-10-30"), seance("S1793958424096", "2026-11-06")]
+    onglet.evaluate("""(h) => { localStorage.clear();
+        localStorage.setItem('muscu2.migration', JSON.stringify({ quand: '2026-11-04', seances: 0, source: 'v1' }));
+        localStorage.setItem('muscu2.essaisRestaures', JSON.stringify({ quand: '2026-11-06', seances: 0 }));
+        localStorage.setItem('muscu2.historique', JSON.stringify(h)); }""", seances)
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    noms = {s["id"]: s["exercices"][0]["nom"] for s in onglet.evaluate("historique()")}
+    assert noms == {"ANCIENNE": "Extension de hanche machine", "S1793958424096": "Rear kick machine"}, noms
+    assert onglet.evaluate("derniereFois('Rear kick machine').series[0].charge") == 80
+    assert "Rear kick machine" in onglet.evaluate("programme.jours.find(j => j.code === 'J4').exercices.map(e => e.nom)")
+    contexte.close()
+    assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
 
 
 def test_les_seances_d_aout_reviennent_et_un_point_se_retire_seul(adresse, navigateur):

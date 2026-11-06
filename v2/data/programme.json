@@ -1,7 +1,7 @@
 {
   "version": 2,
   "origine": "fichier classeur/Programme.csv",
-  "importe_le": "2026-11-06T09:35:01+00:00",
+  "importe_le": "2026-11-06T12:37:16+00:00",
   "jours": [
     {
       "code": "J5",
@@ -197,22 +197,20 @@
         },
         {
           "numero": 2,
-          "nom": "Ecarte poulie basse vers le haut",
+          "nom": "Developpe epaules halteres",
           "series": 3,
-          "reps_min": 12,
-          "reps_max": 15,
+          "reps_min": 8,
+          "reps_max": 12,
           "rir": [
             2,
-            1,
-            1
+            2,
+            2
           ],
-          "repos_s": 75,
-          "muscle": "Pectoraux",
-          "consigne": "Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
           "reglages": "",
-          "substituts": [
-            "Ecarte poulie horizontale hauteur poitrine"
-          ]
+          "substituts": []
         },
         {
           "numero": 3,
@@ -234,42 +232,25 @@
         },
         {
           "numero": 4,
-          "nom": "Developpe epaules halteres",
+          "nom": "Ecarte poulie basse vers le haut",
           "series": 3,
-          "reps_min": 8,
-          "reps_max": 12,
-          "rir": [
-            2,
-            2,
-            2
-          ],
-          "repos_s": 90,
-          "muscle": "Deltoide anterieur",
-          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
-          "reglages": "",
-          "substituts": []
-        },
-        {
-          "numero": 5,
-          "nom": "Curl incline halteres",
-          "series": 3,
-          "reps_min": 8,
-          "reps_max": 10,
+          "reps_min": 12,
+          "reps_max": 15,
           "rir": [
             2,
             1,
             1
           ],
-          "repos_s": 90,
-          "muscle": "Biceps",
-          "consigne": "Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",
+          "repos_s": 75,
+          "muscle": "Pectoraux",
+          "consigne": "Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",
           "reglages": "",
           "substituts": [
-            "Curl pupitre"
+            "Ecarte poulie horizontale hauteur poitrine"
           ]
         },
         {
-          "numero": 6,
+          "numero": 5,
           "nom": "Oiseau inverse machine",
           "series": 3,
           "reps_min": 12,
@@ -285,6 +266,25 @@
           "reglages": "",
           "substituts": [
             "FACE PULL"
+          ]
+        },
+        {
+          "numero": 6,
+          "nom": "Curl incline halteres",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Biceps",
+          "consigne": "Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",
+          "reglages": "",
+          "substituts": [
+            "Curl pupitre"
           ]
         }
       ]
@@ -384,7 +384,7 @@
         },
         {
           "numero": 6,
-          "nom": "Extension de hanche machine",
+          "nom": "Rear kick machine",
           "series": 3,
           "reps_min": 10,
           "reps_max": 12,
@@ -395,7 +395,7 @@
           ],
           "repos_s": 90,
           "muscle": "Grand fessier",
-          "consigne": "Par jambe. De dos, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",
+          "consigne": "Par jambe. Pousser le talon vers l'arriere et le haut en contractant le fessier, bassin fixe, sans cambrer le bas du dos. Retour controle.",
           "reglages": "",
           "substituts": []
         },

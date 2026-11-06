@@ -6,17 +6,17 @@ J1,5,Push,muscu,4,Extension triceps overhead corde,3,10,12,2 / 1 / 1,90,Triceps,
 J1,5,Push,muscu,5,Developpe machine,3,8,10,2 / 1 / 1,120,Pectoraux,POS 1,,Dips buste penche
 J2,2,Cardio,cardio,,,,,,,,,,,
 J3,3,Pull,muscu,1,Traction prise neutre machine assistee,4,6,8,2 / 2 / 1 / 1,150,Grand dorsal,"Charger des que le haut de la fourchette est atteint, pas de repetition au-dela.",,Tirage vertical prise large
-J3,3,Pull,muscu,2,Ecarte poulie basse vers le haut,3,12,15,2 / 1 / 1,75,Pectoraux,"Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",,Ecarte poulie horizontale hauteur poitrine
+J3,3,Pull,muscu,2,Developpe epaules halteres,3,8,12,2 / 2 / 2,90,Deltoide anterieur,"Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",,
 J3,3,Pull,muscu,3,Rowing unilateral machine ou haltere,4,8,10,2 / 2 / 1 / 1,120,Grand dorsal,"Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",,
-J3,3,Pull,muscu,4,Developpe epaules halteres,3,8,12,2 / 2 / 2,90,Deltoide anterieur,"Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",,
-J3,3,Pull,muscu,5,Curl incline halteres,3,8,10,2 / 1 / 1,90,Biceps,"Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",,Curl pupitre
-J3,3,Pull,muscu,6,Oiseau inverse machine,3,12,15,2 / 1 / 1,75,Deltoide posterieur,"Bras quasi tendus, pas d'elan du buste.",,FACE PULL
+J3,3,Pull,muscu,4,Ecarte poulie basse vers le haut,3,12,15,2 / 1 / 1,75,Pectoraux,"Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",,Ecarte poulie horizontale hauteur poitrine
+J3,3,Pull,muscu,5,Oiseau inverse machine,3,12,15,2 / 1 / 1,75,Deltoide posterieur,"Bras quasi tendus, pas d'elan du buste.",,FACE PULL
+J3,3,Pull,muscu,6,Curl incline halteres,3,8,10,2 / 1 / 1,90,Biceps,"Banc a 45 /60 degres, bras en arriere du buste pour etirer la longue portion.",,Curl pupitre
 J4,4,Jambes,muscu,1,PRESSE A CUISSE / HACK SQUAT,4,8,12,2 / 2 / 1 / 1,150,Quadriceps,Hack squat prioritaire s'il est disponible. Descente jusqu'a 90 degres minimum.,,
 J4,4,Jambes,muscu,2,LEG CURL ALLONGE,3,8,12,2 / 1 / 1,90,Ischio-jambiers et fessiers,"Bassin plaqué au banc, ne pas le laisser décoller (compensation lombaire sinon). Flexion complète du genou, sans à-coup. Pointe de pied fléchie plutôt que tendue, pour limiter les mollets. Contrôler le retour, ne pas le laisser tomber.",,
 J4,4,Jambes,muscu,3,Extension jambes unilatéral,3,10,12,2 / 1 / 1,90,Quadriceps,Amplitude complete. Pause courte en contraction haute.,,
 J4,4,Jambes,muscu,4,SOULEVE DE TERRE ROUMAIN,3,8,10,2 / 2 / 1,120,Ischio-jambiers et fessiers,"Dos neutre, genoux legerement flechis. Charge moderee, l'objectif est l'etirement.",,
 J4,4,Jambes,muscu,5,Mollets debout unilatéral,4,10,15,2 / 2 / 1 / 1,75,Mollets,Pause 2 secondes en position basse etiree.,,
-J4,4,Jambes,muscu,6,Extension de hanche machine,3,10,12,2 / 1 / 1,90,Grand fessier,"Par jambe. De dos, coussin derriere la cuisse au-dessus du genou. Partir hanche flechie, pousser la jambe en arriere jusqu'au neutre, sans cambrer le bas du dos.",,
+J4,4,Jambes,muscu,6,Rear kick machine,3,10,12,2 / 1 / 1,90,Grand fessier,"Par jambe. Pousser le talon vers l'arriere et le haut en contractant le fessier, bassin fixe, sans cambrer le bas du dos. Retour controle.",,
 J4,4,Jambes,muscu,7,Abduction de hanche machine,3,12,15,2 / 1 / 1,60,Abducteurs et moyen fessier,"Buste legerement penche en avant. Seul travail d'abduction du programme, contribue a la largeur du bassin vue de dos, non couverte par la presse ni le souleve de terre roumain.",,
 J5,1,Haut max,muscu,1,Developpe machine,3,8,10,2 / 1 / 1,150,Pectoraux,POS 1,,Dips buste penche
 J5,1,Haut max,muscu,2,Traction prise neutre machine assistee,4,8,10,2 / 2 / 1 / 1,150,Grand dorsal,"Charger des que le haut de la fourchette est atteint, pas de repetition au-dela.",,Tirage vertical prise large
