@@ -109,6 +109,21 @@ function rendreCategoriesGainage() {
   });
 }
 
+/* Couleur d'interférence avec la course, rendue plus visible (remarque du
+   5 novembre 2026, « accentuer la visibilité des codes couleurs ») : le nom
+   du mouvement et ses boutons de choix portent la teinte en fond ou en
+   contour, plus seulement en couleur de texte. Le texte posé sur la teinte
+   est noir ou blanc, celui qui contraste le plus. */
+function texteSurTeinte(hex) {
+  const canal = (i) => { const c = parseInt(hex.slice(i, i + 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const l = 0.2126 * canal(1) + 0.7152 * canal(3) + 0.0722 * canal(5);
+  return 1.05 / (l + 0.05) >= (l + 0.05) / 0.05 ? '#fff' : '#1b1b1b';
+}
+
+function styleInterference(m) {
+  return '--teinte:' + m.couleur + ';--texte-teinte:' + texteSurTeinte(m.couleur);
+}
+
 function carteMouvement(categorie) {
   const cle = seance.choix[categorie.cle];
   const m = MOUVEMENTS_GAINAGE[cle];
@@ -119,8 +134,8 @@ function carteMouvement(categorie) {
   const carte = document.createElement('div');
   carte.className = 'carte gainage-exo';
   let html = '<div class="exo-entete"><h3 style="font-size:17px">' + echapper(categorie.nom) + '</h3><span class="puce">' + series + ' séries</span></div>';
-  html += '<div class="segments choix">' + categorie.mouvements.map((c) => '<button class="segment' + (c === cle ? ' choisi' : '') + '" data-m="' + c + '">' + echapper(MOUVEMENTS_GAINAGE[c].nom) + '</button>').join('') + '</div>';
-  html += '<p class="petit texte-2"><span class="nom-mouvement" style="color:' + (m.couleurTexte || m.couleur) + '">' + echapper(m.nom) + '</span> · ' + echapper(m.prescription) + ' · repos ' + m.repos + ' s</p>';
+  html += '<div class="segments choix">' + categorie.mouvements.map((c) => '<button class="segment segment-interference' + (c === cle ? ' choisi' : '') + '" data-m="' + c + '" style="' + styleInterference(MOUVEMENTS_GAINAGE[c]) + '">' + echapper(MOUVEMENTS_GAINAGE[c].nom) + '</button>').join('') + '</div>';
+  html += '<p class="petit texte-2"><span class="nom-mouvement" style="' + styleInterference(m) + '">' + echapper(m.nom) + '</span> · interférence course ' + m.interference + '/9 · ' + echapper(m.prescription) + ' · repos ' + m.repos + ' s</p>';
   html += '<div class="gainage-series"></div>';
   if (avant) html += '<p class="petit texte-2" style="margin-top:8px">Dernière fois : ' + avant.map((v, i) => valeurRenseignee(v) ? texteValeur(m, v) + (poidsAvant[i] != null ? ' à ' + poidsAvant[i] + ' kg' : '') : null).filter(Boolean).join(' · ') + '</p>';
   html += '<p class="petit texte-2" style="margin-top:6px">' + echapper(m.consigne) + '</p>';

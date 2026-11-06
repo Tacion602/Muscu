@@ -374,7 +374,9 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .gainage-serie .demarrer { min-height: 36px; border-radius: 18px; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; }
 .gainage-chrono { position: sticky; top: 0; z-index: 4; margin: -12px calc(-1 * var(--marge)) 12px; background: var(--repos); color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 10px var(--marge); }
 .gainage-chrono .t { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.nom-mouvement { font-weight: 600; }
+.nom-mouvement { font-weight: 600; background: var(--teinte); color: var(--texte-teinte); padding: 1px 8px; border-radius: 6px; }
+.segment-interference { border: 2px solid var(--teinte); }
+.segment-interference.choisi { background: var(--teinte); border-color: var(--teinte); color: var(--texte-teinte); }
 .reglage-duree { display: flex; align-items: center; gap: 10px; }
 .reglage-duree button { width: 40px; height: 40px; border-radius: 20px; background: var(--fond-2); font-size: 20px; font-weight: 600; }
 

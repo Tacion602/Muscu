@@ -432,6 +432,19 @@ def test_une_serie_de_gainage_lance_le_repos(page):
     assert page.locator("#gainage-chrono").is_visible()
 
 
+def test_pas_de_champ_poids_sur_les_mouvements_au_poids_du_corps(page):
+    # Remarque du 5 novembre 2026 : ni planche, ni bird dog, ni dead bug,
+    # ni marche de l'ours ne prennent de charge ; le Pallof press, si.
+    ouvrir_jour(page, "G")
+    for mouvement in ("Dead bug", "Planche", "Bird dog", "Marche de l'ours"):
+        bouton = page.locator(".segment", has_text=mouvement)
+        if bouton.count():
+            bouton.first.click()
+        assert page.get_by_label(mouvement + ", série 1, poids en kg").count() == 0, mouvement
+    page.locator(".segment", has_text="Pallof press").first.click()
+    assert page.get_by_label("Pallof press, série 1, poids en kg").count() == 1
+
+
 def test_le_bird_dog_bipe_une_seule_fois_a_mi_tenue(page):
     # Remarque du 5 novembre 2026 : un côté par moitié, bip au milieu.
     ouvrir_jour(page, "G")

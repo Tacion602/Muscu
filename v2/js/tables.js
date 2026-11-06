@@ -8,12 +8,15 @@
 const MOUVEMENTS_GAINAGE = {
   dead_bug: {
     nom: 'Dead bug', mode: 'reps', prescription: '6-8 par côté', repos: 45,
+    // Sans poids, comme la planche et le bird dog (remarque du 5 novembre 2026).
+    sansPoids: true,
     interference: 4, couleur: '#D9EF8B', couleurTexte: '#5d7310',
     consigne: '3 s de descente bras et jambe opposés, 1 s en bas, 3 s de retour. '
       + 'Bas du dos plaqué au sol en permanence.',
   },
   planche: {
     nom: 'Planche', mode: 'chrono', prescription: '45 s', repos: 45,
+    sansPoids: true,
     interference: 3, couleur: '#91CF60', couleurTexte: '#497724',
     consigne: 'Bassin en rétroversion légère, fessiers contractés.',
   },
@@ -32,6 +35,7 @@ const MOUVEMENTS_GAINAGE = {
     // 2026 : l'alternance coûtait du temps et une remise en place à chaque
     // changement), voir battreGainage.
     changerCote: true,
+    sansPoids: true,
     interference: 5, couleur: '#FEE08B', couleurTexte: '#896501',
     consigne: "Même côté jusqu'au bip, puis l'autre côté jusqu'à la fin. 2 s d'extension "
       + 'bras et jambe opposés, 2 s de maintien, 2 s de retour. Hanches horizontales ; '

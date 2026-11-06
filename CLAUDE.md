@@ -232,6 +232,14 @@ codes.
   que la fin, vibration brève, pas de notification) et le bandeau passe
   de « 1er côté » à « 2e côté ». La durée reste celle du réglage commun
   de tenue.
+  **Pas de champ poids** sur la planche, le bird dog et le dead bug (même
+  remarque : « pas de poids/kg nécessaire »), comme sur la marche de l'ours
+  depuis le 1er octobre : `sansPoids` dans `v2/js/tables.js`.
+  **Couleurs d'interférence avec la course plus visibles** (même
+  remarque) : la teinte du mouvement passe en fond du nom et en contour de
+  son bouton de choix, en fond quand il est choisi (`styleInterference()`
+  dans `v2/js/gainage.js`, texte noir ou blanc selon le contraste,
+  `texteSurTeinte()`), et la ligne dit « interférence course N/9 ».
 - **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
   écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
   inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,
