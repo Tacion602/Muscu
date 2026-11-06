@@ -27,10 +27,15 @@ const MOUVEMENTS_GAINAGE = {
       + '2 s de maintien, 2 s de retour. Départ 10 à 15 kg. Le buste ne pivote pas.',
   },
   bird_dog: {
-    nom: 'Bird dog', mode: 'chrono', prescription: '45 s', repos: 45,
+    nom: 'Bird dog', mode: 'chrono', prescription: "un côté puis l'autre, changement au bip", repos: 45,
+    // Un côté par moitié de tenue, bip au milieu (remarque du 5 novembre
+    // 2026 : l'alternance coûtait du temps et une remise en place à chaque
+    // changement), voir battreGainage.
+    changerCote: true,
     interference: 5, couleur: '#FEE08B', couleurTexte: '#896501',
-    consigne: "2 s d'extension bras et jambe opposés, 2 s de maintien, 2 s de retour. "
-      + 'Hanches horizontales.',
+    consigne: "Même côté jusqu'au bip, puis l'autre côté jusqu'à la fin. 2 s d'extension "
+      + 'bras et jambe opposés, 2 s de maintien, 2 s de retour. Hanches horizontales ; '
+      + 'arrêter le côté dès que la hanche bascule.',
   },
   marche_ours: {
     nom: "Marche de l'ours", mode: 'chrono', prescription: '45 s', repos: 45,

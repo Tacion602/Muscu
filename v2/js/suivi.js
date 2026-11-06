@@ -140,11 +140,22 @@ function rendreExerciceDetail(nom) {
       '<div class="series">' + p.occ.series.map((x) => formatNombre(x.charge) + '×' + x.reps + (x.rir != null ? ' @' + x.rir : '') + (x.restPause ? ' RP' : '')).join(' · ') + '</div>' +
       (p.occ.seance.remarque ? '<div class="petit texte-2" style="margin-top:4px">Remarque : ' + echapper(p.occ.seance.remarque) + '</div>' : '') +
       ((p.occ.seance.douleurs || []).filter((d) => memeExercice(d.exercice, nom)).map((d) => '<div class="petit" style="color:var(--baisse);margin-top:4px">Douleur : ' + echapper(d.texte) + '</div>').join('')) +
-      (lien ? '<a href="' + lien + '" target="_blank" rel="noopener">Ouvrir dans le classeur</a>' : '<div class="petit texte-3" style="margin-top:6px">' + (s.envoye ? 'Ligne du classeur inconnue (séance envoyée par l\'ancien pont).' : 'Pas encore envoyée au classeur.') + '</div>') + '</div>';
+      (lien ? '<a href="' + lien + '" target="_blank" rel="noopener">Ouvrir dans le classeur</a>' : '<div class="petit texte-3" style="margin-top:6px">' + (s.envoye ? 'Ligne du classeur inconnue (séance envoyée par l\'ancien pont).' : 'Pas encore envoyée au classeur.') + '</div>') +
+      '<button class="bouton petit" id="point-retirer" style="margin-top:10px">Retirer ce point</button></div>';
   }
   if (pts.length) html += '<p class="titre-section">Toutes les séances</p><div class="carte">' + [...pts].reverse().map((q, i) => '<div class="resume-exo"><b class="num">' + dateCourte(q.x) + ' · ' + formatNombre(q.occ.series[0].charge) + ' × ' + q.occ.series[0].reps + '</b><span>' + q.occ.series.map((x) => formatNombre(x.charge) + '×' + x.reps + (x.rir != null ? ' @' + x.rir : '')).join(' · ') + '</span></div>').join('') + '</div>';
   corps.innerHTML = html;
   corps.querySelectorAll('.zone[data-index]').forEach((z) => z.addEventListener('click', () => { pointChoisi = Number(z.dataset.index); rendreExerciceDetail(); }));
+  // Point aberrant (6 novembre 2026) : retire cet exercice de cette séance
+  // seulement, le reste de la séance et le classeur ne bougent pas.
+  const retirer = $('point-retirer');
+  if (retirer && p) retirer.addEventListener('click', () => confirmer('Retirer ce point ?',
+    nom + ' sera retiré de la séance du ' + dateCourte(p.x) + '. Le reste de la séance est gardé, le classeur n\'est pas modifié.', 'Retirer', () => {
+      retirerExerciceDeSeance(p.occ.seance.id, nom);
+      pointChoisi = null;
+      rendreExerciceDetail();
+      toast('Point retiré.');
+    }, true));
 }
 rendus.exercice = rendreExerciceDetail;
 

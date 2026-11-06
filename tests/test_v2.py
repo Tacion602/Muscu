@@ -367,26 +367,47 @@ def test_l_historique_v1_est_repris_une_fois(adresse, navigateur):
     contexte.close()
 
 
-def test_les_seances_d_essai_d_aout_sont_supprimees(adresse, navigateur):
-    """Demande du 5 novembre 2026 : seances d'essai des 27 et 28 aout 2026
-    retirees de la v2, et jamais reprises de la v1."""
+def test_les_seances_d_aout_reviennent_et_un_point_se_retire_seul(adresse, navigateur):
+    """6 novembre 2026 : les seances des 27 et 28 aout, supprimees entieres
+    la veille, sont reprises de la v1 ; seul l'exercice aberrant se retire,
+    depuis la fiche du point, le reste de la seance reste."""
     contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
     onglet = contexte.new_page()
+    erreurs = []
+    onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
     onglet.goto(adresse)
     onglet.wait_for_selector("#accueil-programme", state="attached")
-    seances = [
-        {"id": "T1", "jour": "J5", "type": "muscu", "debut": "2026-08-28T10:00:00", "fin": "2026-08-28T11:00:00", "exercices": []},
-        {"id": "R1", "jour": "J1", "type": "muscu", "debut": "2026-08-31T10:00:00", "fin": "2026-08-31T11:00:00", "exercices": []},
-    ]
-    onglet.evaluate("(s) => { localStorage.clear(); localStorage.setItem('muscu.historique', JSON.stringify(s)); }", seances)
+    exo = onglet.evaluate("programme.jours.find((j) => j.type === 'muscu').exercices[0].nom")
+    autre = onglet.evaluate("programme.jours.find((j) => j.type === 'muscu').exercices[1].nom")
+    def seance(ident, date, charge):
+        return {"id": ident, "jour": "J1", "type": "muscu", "debut": date + "T10:00:00", "fin": date + "T11:00:00",
+                "exercices": [{"nom": exo, "series": [{"charge": charge, "reps": 8, "rir": 2, "faite": True}]},
+                              {"nom": autre, "series": [{"charge": 20, "reps": 10, "rir": 2, "faite": True}]}]}
+    v1 = [seance("A", "2026-08-28", 400), seance("B", "2026-09-04", 40)]
+    # Etat du telephone apres la version qui supprimait : migration faite,
+    # seance du 28 aout absente de la v2.
+    onglet.evaluate("""(v1) => { localStorage.clear();
+        localStorage.setItem('muscu.historique', JSON.stringify(v1));
+        localStorage.setItem('muscu2.migration', JSON.stringify({ quand: '2026-11-04', seances: 2, source: 'v1' }));
+        localStorage.setItem('muscu2.historique', JSON.stringify([v1[1]])); }""", v1)
     onglet.reload()
     onglet.wait_for_selector("#accueil-programme", state="attached")
-    assert [s["id"] for s in onglet.evaluate("historique()")] == ["R1"]
-    onglet.evaluate("(s) => localStorage.setItem('muscu2.historique', JSON.stringify(s))", seances)
+    assert sorted(s["id"] for s in onglet.evaluate("historique()")) == ["A", "B"]
+    passer_intro(onglet)
+    onglet.evaluate("(n) => afficher('exercice', { parametres: n })", exo)
+    onglet.wait_for_selector("#ecran-exercice.actif")
+    onglet.locator(".zone[data-index='0']").click()
+    onglet.locator("#point-retirer").click()
+    onglet.locator(".voile [data-ok]").click()
+    seance_a = next(s for s in onglet.evaluate("historique()") if s["id"] == "A")
+    assert [e["nom"] for e in seance_a["exercices"]] == [autre]
+    # Une seule restauration : le point retire ne revient pas au relancement.
     onglet.reload()
     onglet.wait_for_selector("#accueil-programme", state="attached")
-    assert [s["id"] for s in onglet.evaluate("historique()")] == ["R1"]
+    seance_a = next(s for s in onglet.evaluate("historique()") if s["id"] == "A")
+    assert [e["nom"] for e in seance_a["exercices"]] == [autre]
     contexte.close()
+    assert not erreurs, "exception JavaScript : " + " ; ".join(erreurs)
 
 
 # ------------------------------------------------------------ cardio, gainage, suivi
@@ -409,6 +430,20 @@ def test_une_serie_de_gainage_lance_le_repos(page):
     champ.fill("8")
     champ.press("Tab")
     assert page.locator("#gainage-chrono").is_visible()
+
+
+def test_le_bird_dog_bipe_une_seule_fois_a_mi_tenue(page):
+    # Remarque du 5 novembre 2026 : un côté par moitié, bip au milieu.
+    ouvrir_jour(page, "G")
+    page.locator('[data-m="bird_dog"]').click()
+    page.evaluate("window.bipsCote = 0; signalerChangementDeCote = () => { window.bipsCote++; }; null")
+    page.locator('[data-m="bird_dog"].choisi').locator("xpath=ancestor::div[contains(@class,'gainage-exo')]").locator(".demarrer").first.click()
+    assert "1er côté" in page.locator("#gainage-chrono-l").inner_text()
+    page.evaluate("minuteurGainage.debut -= 600000; minuteurGainage.fin = Date.now() + 5000")
+    page.wait_for_function("document.getElementById('gainage-chrono-l').textContent.includes('2e côté')")
+    assert page.evaluate("window.bipsCote") == 1
+    page.wait_for_timeout(600)
+    assert page.evaluate("window.bipsCote") == 1
 
 
 def test_la_courbe_porte_des_axes_lisibles_et_une_fiche_au_point(page):

@@ -109,21 +109,37 @@ function nomDuJourV1(titre) {
   return /^footing$/i.test(nom) ? 'Cardio' : nom.charAt(0) + nom.slice(1).toLowerCase();
 }
 
-/* Séances d'essai du développement de la v1, les 27 et 28 août 2026
-   (40 × 40 au J5, entre autres), reprises par la migration. Le classeur v1
-   ne commence que le 31 août : ces séances n'existent que sur le
-   téléphone. Supprimées à la demande de l'utilisateur le 5 novembre 2026,
-   au démarrage (`nettoyerSeancesDeTest()`), et jamais reprises de la v1. */
-const JOURS_DE_TEST = ['27/08/2026', '28/08/2026'];
-function seanceDeTest(s) {
-  const d = s && (s.fin || s.debut);
-  return !!d && JOURS_DE_TEST.includes(cleDate(new Date(d)));
+/* Séances des 27 et 28 août 2026 : supprimées entières par la version
+   muscu2-2026-11-05-9, puis rendues le 6 novembre 2026 (« je ne souhaite
+   pas effacer toute la séance mais uniquement l'exercice trop éloigné de
+   ses voisins »). `restaurerSeancesDEssai()` les reprend une seule fois de
+   l'historique v1, resté intact, si elles manquent ; l'exercice aberrant
+   se retire ensuite depuis la fiche du point (`retirerExerciceDeSeance()`). */
+const JOURS_RESTAURES = ['27/08/2026', '28/08/2026'];
+const CLE_RESTAURATION = 'muscu2.essaisRestaures';
+function restaurerSeancesDEssai() {
+  if (lire(CLE_RESTAURATION, null)) return 0;
+  const presentes = new Set(lireTableau(CLES.historique).map((s) => s.id));
+  const ajout = lireTableau(CLES_V1.historique).filter((s) => {
+    const d = s && (s.fin || s.debut);
+    return d && !presentes.has(s.id) && JOURS_RESTAURES.includes(cleDate(new Date(d)));
+  }).map(normaliserSeanceV1);
+  if (ajout.length) ecrire(CLES.historique, lireTableau(CLES.historique).concat(ajout));
+  ecrire(CLE_RESTAURATION, { quand: new Date().toISOString(), seances: ajout.length });
+  return ajout.length;
 }
-function nettoyerSeancesDeTest() {
-  const toutes = lireTableau(CLES.historique);
-  const gardees = toutes.filter((s) => !seanceDeTest(s));
-  if (gardees.length !== toutes.length) ecrire(CLES.historique, gardees);
-  return toutes.length - gardees.length;
+
+/* Retire un exercice d'une séance enregistrée (point aberrant d'une
+   courbe), sans toucher au reste de la séance ni au classeur. */
+function retirerExerciceDeSeance(idSeance, nomExo) {
+  const toutes = historique();
+  const s = toutes.find((x) => x.id === idSeance);
+  if (!s) return false;
+  const avant = (s.exercices || []).length;
+  s.exercices = (s.exercices || []).filter((e) => !memeExercice(e.nom, nomExo));
+  if (s.exercices.length === avant) return false;
+  ecrire(CLES.historique, toutes);
+  return true;
 }
 
 function migrerDepuisV1() {
@@ -133,7 +149,7 @@ function migrerDepuisV1() {
     ecrire(CLES.migration, { quand: new Date().toISOString(), seances: 0, source: 'aucune v1' });
     return false;
   }
-  ecrire(CLES.historique, v1.filter((s) => !seanceDeTest(s)).map(normaliserSeanceV1));
+  ecrire(CLES.historique, v1.map(normaliserSeanceV1));
   const consignes = lire(CLES_V1.consignes, {});
   ecrire(CLES.consignes, consignes && typeof consignes === 'object' ? consignes : {});
   ecrire(CLES.sommeil, lireTableau(CLES_V1.sommeil));

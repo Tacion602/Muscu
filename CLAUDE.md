@@ -209,15 +209,29 @@ codes.
   élément (`.voile.ancree`). Utilisé par les deux abandons : la ligne de
   la séance en cours sur Sport, la croix `#seance-abandonner` de la fiche.
   Les autres confirmations restent en bas.
-- **Séances d'essai des 27 et 28 août 2026 supprimées** (demande du
-  5 novembre 2026, captures de fiches de courbe à l'appui : 40 × 40 au J5,
-  « Ligne du classeur inconnue ») : séances de mise au point de la v1,
-  absentes du classeur v1 (qui commence le 31 août), reprises par la
-  migration. `nettoyerSeancesDeTest()` (`v2/js/donnees.js`) les retire au
-  démarrage, à chaque lancement (toast du nombre retiré) ; `seanceDeTest()`
-  les écarte aussi de la migration et de « Reprendre à nouveau
-  l'historique v1 ». L'historique de la v1 (`muscu.historique`) n'est pas
-  touché.
+- **Points aberrants des courbes : retrait d'un exercice, pas d'une
+  séance** (6 novembre 2026). La veille, à partir de captures de fiches de
+  courbe (40 × 40 au J5 le 28 août, « Ligne du classeur inconnue »), la
+  version `muscu2-2026-11-05-9` supprimait au démarrage toutes les séances
+  des 27 et 28 août. L'utilisateur l'a refusé le lendemain : « je ne
+  souhaite pas effacer toute la séance mais uniquement l'exercice trop
+  éloigné de ses voisins ». Désormais :
+  - `restaurerSeancesDEssai()` (`v2/js/donnees.js`) reprend une seule fois
+    (`muscu2.essaisRestaures`) les séances de ces deux jours absentes de la
+    v2, depuis l'historique v1 resté intact ;
+  - la fiche d'un point de courbe porte « Retirer ce point »
+    (`#point-retirer`, `retirerExerciceDeSeance()`) : confirmation, puis cet
+    exercice seul quitte cette séance, le reste est gardé, le classeur n'est
+    pas touché. C'est l'utilisateur qui choisit les points, à l'œil, sur
+    la courbe : aucun seuil automatique.
+- **Bird dog d'un côté puis de l'autre, bip à mi-tenue** (remarque du
+  5 novembre 2026 : alterner coûtait le temps du changement et une remise
+  en place à chaque fois). `changerCote` sur le mouvement dans
+  `v2/js/tables.js` : `battreGainage()` émet une seule fois, à la moitié
+  de la tenue, `signalerChangementDeCote()` (bip plus court et plus grave
+  que la fin, vibration brève, pas de notification) et le bandeau passe
+  de « 1er côté » à « 2e côté ». La durée reste celle du réglage commun
+  de tenue.
 - **J3 réordonné** (même remarque, « oiseau inversé à la fin ») : traction,
   écarté poulie basse, rowing, élévation latérale, curl incliné, oiseau
   inversé. Mettre l'oiseau à la fin collait traction et rowing (même zone,

@@ -91,7 +91,7 @@ function rendreReglages() {
   };
   $('r-reimporter').addEventListener('click', () => confirmer('Reprendre l\'historique v1 ?', 'Les séances v1 absentes de la v2 seront ajoutées ; rien n\'est effacé.', 'Reprendre', () => {
     const connues = new Set(historique().map((s) => s.id));
-    const ajout = lireTableau(CLES_V1.historique).filter((s) => !connues.has(s.id) && !seanceDeTest(s)).map(normaliserSeanceV1);
+    const ajout = lireTableau(CLES_V1.historique).filter((s) => !connues.has(s.id)).map(normaliserSeanceV1);
     ecrire(CLES.historique, historique().concat(ajout));
     toast(ajout.length + ' séance' + (ajout.length > 1 ? 's' : '') + ' ajoutée' + (ajout.length > 1 ? 's' : '') + '.');
     rendreReglages();

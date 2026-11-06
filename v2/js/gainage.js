@@ -225,9 +225,26 @@ function battreGainage() {
   const restant = (minuteurGainage.fin - Date.now()) / 1000;
   if (restant <= 0) { signaler(); if (minuteurGainage.type === 'tenue') finirTenue(true); else arreterMinuteurGainage(); return; }
   const m = MOUVEMENTS_GAINAGE[minuteurGainage.cle];
+  const milieu = (minuteurGainage.fin - minuteurGainage.debut) / 2000;
+  const secondCote = m.changerCote && minuteurGainage.type === 'tenue' && restant <= milieu;
+  if (secondCote && !minuteurGainage.coteChange) { minuteurGainage.coteChange = true; signalerChangementDeCote(); }
   const l = $('gainage-chrono-l'); const t = $('gainage-chrono-t');
-  if (l) l.textContent = minuteurGainage.type === 'tenue' ? 'Tenue · ' + m.nom + ', série ' + (minuteurGainage.index + 1) : 'Repos';
+  if (l) l.textContent = minuteurGainage.type === 'tenue' ? 'Tenue · ' + m.nom + ', série ' + (minuteurGainage.index + 1) + (m.changerCote ? (secondCote ? ', 2e côté' : ', 1er côté') : '') : 'Repos';
   if (t) t.textContent = texteDuree(restant);
+}
+
+/* Bip de mi-tenue : plus court que la fin, sans notification, pour ne pas
+   être pris pour la fin de la tenue. */
+function signalerChangementDeCote() {
+  if (reglages.vibration && navigator.vibrate) navigator.vibrate(120);
+  if (!reglages.son) return;
+  try {
+    contexteAudio = contexteAudio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = contexteAudio.createOscillator(); const g = contexteAudio.createGain();
+    o.type = 'sine'; o.frequency.value = 660; g.gain.value = 0.9;
+    o.connect(g); g.connect(contexteAudio.destination);
+    o.start(); o.stop(contexteAudio.currentTime + 0.15);
+  } catch (e) { /* pas de son */ }
 }
 
 function arreterMinuteurGainage() {
