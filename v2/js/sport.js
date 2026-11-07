@@ -268,6 +268,8 @@ function rendreIntro() {
   const depuis = terminees[0] ? joursDepuis(terminees[0].fin) : null;
   $('intro-stats').innerHTML = '<div><span class="n">' + cetteSemaine + '</span><span class="l">cette semaine</span></div>' +
     '<div><span class="n">' + (depuis == null ? '–' : depuis) + '</span><span class="l">' + (depuis == null ? 'aucune séance' : (depuis > 1 ? 'jours depuis' : 'jour depuis')) + '</span></div>';
+  // Graine décalée : pas la même phrase que la carte de l'Accueil le même jour.
+  $('intro-phrase').textContent = phraseMotivation(cleDate(maintenant) + '-intro');
   $('intro-entrer').onclick = sortirIntro;
   ajusterTitreIntro();
 }
@@ -300,7 +302,7 @@ function sortirIntro() {
   const duree = 520; const courbe = 'cubic-bezier(.65, 0, .25, 1)';
   intro.style.pointerEvents = 'none';
   intro.querySelector('.intro-fond').animate([{ transform: 'none' }, { transform: 'translateY(-100%)' }], { duration: duree, easing: courbe, fill: 'forwards' });
-  intro.querySelectorAll('.intro-kicker, .intro-code, .intro-detail, .intro-pied').forEach((e) =>
+  intro.querySelectorAll('.intro-kicker, .intro-code, .intro-detail, .intro-phrase, .intro-pied').forEach((e) =>
     e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-out', fill: 'forwards' }));
   const nom = $('intro-nom');
   const cible = document.querySelector('#accueil-corps [data-accueil-jour] .tx b');
@@ -316,7 +318,7 @@ function sortirIntro() {
     const dy = (b.top + b.height / 2) - (depart.top + (a.top - depart.top + a.height / 2) * k);
     const arrivee = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
     const couleur = getComputedStyle(cible).color;
-    images = [{ transform: 'none', color: '#f4f4f2', opacity: 1 },
+    images = [{ transform: 'none', color: getComputedStyle(nom).color, opacity: 1 },
       { transform: arrivee, color: couleur, opacity: 1, offset: 0.8 },
       { transform: arrivee, color: couleur, opacity: 0 }];
     // Le vrai nom de la carte reste caché pendant le vol et prend le relais.

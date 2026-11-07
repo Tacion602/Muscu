@@ -631,8 +631,9 @@ details.seance-h .detail { padding: 0 0 12px; }
 }
 
 /* ---------- Intro d'ouverture ----------
-   Éditorial sombre (choix de l'utilisateur le 6 novembre 2026, à la place
-   du cadran néon du 5, « un peu kitsch ») : noir mat, la séance du jour en
+   Éditoriale, en clair depuis le 7 novembre 2026 (le noir du 6 « trop
+   différent du reste ») ; à l'origine choix de l'utilisateur du 6, à la place
+   du cadran néon du 5, « un peu kitsch » : fond de l'application, la séance du jour en
    très grande typographie étroite, une seule couleur d'accent (le bleu de
    l'application), deux chiffres en pied. Entrée : les lignes montent en
    cascade. Sortie (sortirIntro dans sport.js) : le titre glisse jusqu'au
@@ -642,12 +643,12 @@ details.seance-h .detail { padding: 0 0 12px; }
   position: absolute; inset: 0; z-index: 40;
   display: flex; flex-direction: column; justify-content: space-between;
   padding: calc(env(safe-area-inset-top, 0px) + 32px) 24px calc(env(safe-area-inset-bottom, 0px) + 32px);
-  color: #f4f4f2; overflow: hidden;
+  color: var(--texte); overflow: hidden;
 }
 .intro[hidden] { display: none; }
-.intro-fond { position: absolute; inset: 0; background: #0c0d0f; z-index: -1; }
+.intro-fond { position: absolute; inset: 0; background: var(--carte); z-index: -1; box-shadow: 0 10px 30px rgba(17, 20, 24, .12); }
 .intro-kicker {
-  margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #8b8f96;
+  margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--texte-3);
   animation: intro-fondu .6s ease-out both;
 }
 .intro-titre {
@@ -656,7 +657,7 @@ details.seance-h .detail { padding: 0 0 12px; }
 }
 .intro-jour { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .intro-code {
-  font-size: 15px; font-weight: 700; letter-spacing: .12em; color: #6f9bff;
+  font-size: 15px; font-weight: 700; letter-spacing: .12em; color: var(--accent);
   animation: intro-montee .6s cubic-bezier(.2, .8, .2, 1) .05s both;
 }
 .intro-nom {
@@ -667,22 +668,28 @@ details.seance-h .detail { padding: 0 0 12px; }
   animation: intro-montee .7s cubic-bezier(.2, .8, .2, 1) .12s both;
 }
 .intro-detail {
-  font-size: 15px; color: #a7abb2; max-width: 32ch;
+  font-size: 15px; color: var(--texte-2); max-width: 32ch;
   animation: intro-montee .7s cubic-bezier(.2, .8, .2, 1) .22s both;
+}
+/* Petite phrase de motivation (7 novembre 2026), sous le détail. */
+.intro-phrase {
+  margin: 0; max-width: 30ch; font-size: 16px; line-height: 1.4; color: var(--texte-2);
+  padding-left: 12px; border-left: 3px solid var(--accent);
+  animation: intro-montee .7s cubic-bezier(.2, .8, .2, 1) .3s both;
 }
 .intro-pied {
   display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
-  padding-top: 18px; border-top: 1px solid #26282c;
+  padding-top: 18px; border-top: 1px solid var(--trait);
   animation: intro-fondu .6s ease-out .3s both;
 }
 .intro-stats { display: flex; gap: 28px; }
 .intro-stats div { display: flex; flex-direction: column; gap: 2px; }
 .intro-stats .n { font-size: 28px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-.intro-stats .l { font-size: 12px; color: #8b8f96; }
-.intro-indice { font-size: 13px; color: #8b8f96; white-space: nowrap; }
-.intro-indice::after { content: " \2192"; color: #6f9bff; }
+.intro-stats .l { font-size: 12px; color: var(--texte-3); }
+.intro-indice { font-size: 13px; color: var(--texte-3); white-space: nowrap; }
+.intro-indice::after { content: " \2192"; color: var(--accent); }
 @keyframes intro-montee { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
 @keyframes intro-fondu { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .intro-kicker, .intro-code, .intro-nom, .intro-detail, .intro-pied { animation: none; }
+  .intro-kicker, .intro-code, .intro-nom, .intro-detail, .intro-phrase, .intro-pied { animation: none; }
 }

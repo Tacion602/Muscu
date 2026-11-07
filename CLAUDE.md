@@ -203,7 +203,12 @@ codes.
   caché pendant le vol et prend le relais, pendant que le fond noir
   remonte comme un rideau (520 ms) ; rien sous `prefers-reduced-motion`.
   Le cadran, le « GO » et la phrase du jour de l'intro disparaissent (la
-  phrase reste sur l'Accueil).
+  phrase reste sur l'Accueil). **Passée en clair le 7 novembre 2026** (le
+  noir « trop différent du reste ») : fond blanc de carte, texte et bleu
+  des jetons de la v2 ; le rideau qui remonte garde une ombre pour rester
+  visible sur l'Accueil clair. Une petite phrase de motivation revient
+  sous le titre (`#intro-phrase`, `PHRASES_MOTIVATION` avec une graine
+  décalée pour ne pas répéter celle de l'Accueil).
 - **Repos persistant, plein écran jusqu'au bout, chrono +30 %**
   (remarque de fin de séance du 5 novembre 2026, « fais tout ») :
   - le repos est gardé sur le téléphone (`muscu2.repos`, `sauverRepos()`/
