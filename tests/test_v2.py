@@ -280,9 +280,44 @@ def test_l_objectif_se_calcule_serie_par_serie_sur_les_deux_dernieres(page):
     series, charge proposee serie par serie (pyramide 45, 55, 55)."""
     fiche = "{nom: 'Extension jambes unilatéral', series: 3, reps_min: 10, reps_max: 12, rir: [2, 1, 1]}"
     monte = page.evaluate("objectifExercice(" + fiche + ", {series: [{charge: 45, reps: 11, rir: 2}, {charge: 55, reps: 12, rir: 1}, {charge: 55, reps: 12, rir: 1}]})")
-    assert monte["monte"] and monte["charges"] == [50, 60, 60], monte
+    # Pas de 5 kg au-dela de 7,5 % de 55 kg : 2,5 kg (8 novembre 2026).
+    assert monte["monte"] and monte["charges"] == [47.5, 57.5, 57.5], monte
     reste = page.evaluate("objectifExercice(" + fiche + ", {series: [{charge: 45, reps: 12, rir: 2}, {charge: 55, reps: 12, rir: 1}, {charge: 55, reps: 11, rir: 1}]})")
     assert not reste["monte"] and reste["charges"] == [45, 55, 55], reste
+
+
+def test_la_progression_suit_le_pas_relatif_et_le_rir_saisi(page):
+    """8 novembre 2026 : pas reduit a 2,5 kg puis montee stricte sur les
+    charges legeres ; un RIR pose d'office ne bloque pas la montee ; le 1RM
+    estime compte le RIR saisi."""
+    leger = "{nom: 'LEG CURL ALLONGE', series: 3, reps_min: 8, reps_max: 12, rir: [2, 1, 1]}"
+    # 25 kg : 2,5 kg = 10 % > 7,5 % -> toutes les series au max exigees.
+    pas_toutes = page.evaluate("objectifExercice(" + leger + ", {series: [{charge: 25, reps: 11}, {charge: 25, reps: 12}, {charge: 25, reps: 12}]})")
+    assert not pas_toutes["monte"], pas_toutes
+    toutes = page.evaluate("objectifExercice(" + leger + ", {series: [{charge: 25, reps: 12}, {charge: 25, reps: 12}, {charge: 25, reps: 12}]})")
+    assert toutes["monte"] and toutes["charges"] == [27.5, 27.5, 27.5], toutes
+    # RIR 3 pose d'office (rirAuto) : ignore ; saisi a 3 au-dessus de la cible : bloque.
+    fiche = "{nom: 'Developpe incline banc', series: 2, reps_min: 6, reps_max: 8, rir: [1, 1]}"
+    auto = page.evaluate("objectifExercice(" + fiche + ", {series: [{charge: 50, reps: 8, rir: 3, rirAuto: true}, {charge: 50, reps: 8, rir: 3, rirAuto: true}]})")
+    saisi = page.evaluate("objectifExercice(" + fiche + ", {series: [{charge: 50, reps: 8, rir: 3}, {charge: 50, reps: 8, rir: 3}]})")
+    assert auto["monte"] and not saisi["monte"], (auto, saisi)
+    assert page.evaluate("e1rmEffort({charge: 60, reps: 8, rir: 2}) > e1rmEffort({charge: 60, reps: 8, rir: 0})")
+    assert page.evaluate("e1rmEffort({charge: 60, reps: 8, rir: 2, rirAuto: true}) === e1rm(60, 8)")
+
+
+def test_la_reference_de_progression_reste_sur_le_meme_jour(page):
+    """8 novembre 2026 : un exercice de plusieurs jours se compare a sa
+    derniere fois sur le meme jour."""
+    nom = page.evaluate("""(() => { const c = {}; programme.jours.forEach(j => (j.exercices || []).forEach(e => { c[e.nom] = (c[e.nom] || []).concat(j.code); }));
+        return Object.keys(c).find(n => c[n].length > 1); })()""")
+    jours = page.evaluate("(n) => programme.jours.filter(j => (j.exercices || []).some(e => e.nom === n)).map(j => j.code)", nom)
+    page.evaluate("""([n, a, b]) => { const s = (id, jour, date, charge) => ({ id, jour, type: 'muscu', debut: date + 'T10:00:00', fin: date + 'T11:00:00',
+          exercices: [{ nom: n, series: [{ charge, reps: 8, faite: true }] }] });
+        localStorage.setItem('muscu2.historique', JSON.stringify([s('A', a, '2026-11-01', 50), s('B', b, '2026-11-03', 60)])); }""", [nom, jours[0], jours[1]])
+    page.reload()
+    page.wait_for_selector("#accueil-programme", state="attached")
+    assert page.evaluate("([n, j]) => referenceProgression(n, { id: 'X', jour: j }).series[0].charge", [nom, jours[0]]) == 50
+    assert page.evaluate("([n, j]) => referenceProgression(n, { id: 'X', jour: j }).series[0].charge", [nom, jours[1]]) == 60
 
 
 def test_le_e1rm_ne_compte_pas_une_hausse_de_charge_comme_un_recul(page):
@@ -348,6 +383,27 @@ def test_une_douleur_trop_courte_est_refusee(page):
     page.locator(".feuille [data-ok]").click()
     page.wait_for_timeout(300)
     assert page.evaluate("(seance.douleurs || []).length") == 1
+    # Confirmation en vert (8 novembre 2026).
+    assert "Note enregistr" in page.locator("#toast").inner_text()
+    assert "succes" in page.locator("#toast").get_attribute("class")
+
+
+def test_une_douleur_de_seance_ne_part_pas_deux_fois(page):
+    """8 novembre 2026 : la douleur partait avec la seance et une seconde fois
+    par l'action douleurs de la synchronisation."""
+    page.evaluate("""() => {
+        localStorage.setItem('muscu2.douleurs', JSON.stringify([
+          { exercice: 'Developpe machine', texte: 'manque de force', date: '2026-11-08T12:00:00Z', seance: 'S1', jour: 'J1', envoyee: false },
+          { exercice: 'Dips buste penche', texte: 'coude gauche', date: '2026-11-08T12:00:00Z', seance: null, jour: 'J1', envoyee: false }]));
+        reglages.pont = 'https://exemple.invalid/exec';
+        window.envois = [];
+        envoyer = async (corps) => { window.envois.push(corps); return { ok: true }; };
+    }""")
+    page.evaluate("synchroniser().catch(() => {})")
+    page.wait_for_timeout(300)
+    envois = page.evaluate("window.envois.filter(e => e.action === 'douleurs')")
+    assert len(envois) == 1 and [d["exercice"] for d in envois[0]["douleurs"]] == ["Dips buste penche"], envois
+    assert page.evaluate("JSON.parse(localStorage.getItem('muscu2.douleurs')).every(d => d.envoyee)")
 
 
 def test_la_navigation_d_exercice_reste_sous_le_pouce(page):
@@ -359,6 +415,17 @@ def test_la_navigation_d_exercice_reste_sous_le_pouce(page):
     assert boite["height"] >= 48
     assert boite["y"] + boite["height"] <= hauteur
     assert boite["y"] > hauteur - 140, boite
+
+
+def test_le_developpe_epaules_machine_garde_l_historique_halteres(page):
+    """8 novembre 2026 : simple changement de nom, l'historique suit."""
+    page.evaluate("""() => { const h = JSON.parse(localStorage.getItem('muscu2.historique') || '[]');
+        h.push({ id: 'EP', jour: 'J1', type: 'muscu', debut: '2026-11-08T10:00:00', fin: '2026-11-08T11:00:00',
+          exercices: [{ nom: 'Developpe epaules halteres', series: [{ charge: 40, reps: 12, rir: 1, faite: true }] }] });
+        localStorage.setItem('muscu2.historique', JSON.stringify(h)); }""")
+    page.reload()
+    page.wait_for_selector("#accueil-programme", state="attached")
+    assert page.evaluate("derniereFois('Developpe epaules machine').series[0].charge") == 40
 
 
 def test_une_seance_de_deload_n_entre_pas_dans_les_comparaisons(page):

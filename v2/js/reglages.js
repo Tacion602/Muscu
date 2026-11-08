@@ -162,9 +162,17 @@ async function synchroniser() {
       await envoyer({ action: 'reglages', reglages: Object.keys(r).map((k) => ({ exercice: k, texte: r[k] })) });
       reglages.reglagesMachineAEnvoyer = false; sauverReglages();
     }
+    // Douleurs : seulement celles qui ne sont pas encore parties et qui ne
+    // sont rattachées à aucune séance. Celles d'une séance partent avec la
+    // séance (le pont les écrit dans Douleurs) : les renvoyer ici les
+    // doublait, la date relue dans le classeur n'étant plus le texte envoyé
+    // (8 novembre 2026, deux lignes identiques pour le développé machine).
     const douleurs = lireTableau(CLES.douleurs);
+    const aEnvoyer = douleurs.filter((d) => !d.envoyee && !d.seance);
+    if (aEnvoyer.length) {
+      await envoyer({ action: 'douleurs', douleurs: aEnvoyer.map((d) => ({ exercice: d.exercice, date: dateCourte(d.date), jour: d.jour, texte: d.texte, seance: d.seance })) });
+    }
     if (douleurs.some((d) => !d.envoyee)) {
-      await envoyer({ action: 'douleurs', douleurs: douleurs.map((d) => ({ exercice: d.exercice, date: dateCourte(d.date), jour: d.jour, texte: d.texte, seance: d.seance })) });
       douleurs.forEach((d) => { d.envoyee = true; }); ecrire(CLES.douleurs, douleurs);
     }
     if (reglages.sommeilAEnvoyer) {

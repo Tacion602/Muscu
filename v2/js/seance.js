@@ -66,7 +66,7 @@ function rendreExercice() {
     '<span class="sous">Exercice ' + (indexExo + 1) + ' sur ' + seance.exercices.length + '</span>';
   rendreJauge();
 
-  const derniere = derniereFois(exo.nom, seance.id);
+  const derniere = referenceProgression(exo.nom, seance);
   const objectif = seance.deload ? null : objectifExercice(fiche, derniere);
   const corps = $('seance-corps');
   const info = IMAGES_EXERCICES[exo.nom] || IMAGES_EXERCICES[Object.keys(IMAGES_EXERCICES).find((k) => memeExercice(k, exo.nom))];
@@ -92,9 +92,12 @@ function rendreExercice() {
   }
   html += '<div class="exo-details">';
   const consigne = consigneAffichee(seance.jour, exo.nom, fiche.consigne);
-  html += '<button class="ligne-detail" id="exo-consigne"><span class="cle">Consigne</span><span class="val">' + (consigne ? echapper(consigne) : '<span class="texte-3">Ajouter une consigne</span>') + '</span></button>';
+  // Consigne et réglage machine modifiables d'un appui (crayon), gardés
+  // sur le téléphone et envoyés au classeur (8 novembre 2026 : « Machine »
+  // devient « Réglage machine »).
+  html += '<button class="ligne-detail" id="exo-consigne"><span class="cle">Consigne</span><span class="val">' + (consigne ? echapper(consigne) : '<span class="texte-3">Ajouter une consigne</span>') + '</span><span class="crayon" data-icone="crayon"></span></button>';
   const regl = reglagesMachine(exo.nom);
-  html += '<button class="ligne-detail" id="exo-reglages"><span class="cle">Machine</span><span class="val">' + (regl ? '<b>' + echapper(regl) + '</b>' : '<span class="texte-3">Siège, dossier, position</span>') + '</span></button>';
+  html += '<button class="ligne-detail" id="exo-reglages"><span class="cle">Réglage machine</span><span class="val">' + (regl ? '<b>' + echapper(regl) + '</b>' : '<span class="texte-3">Siège, dossier, position</span>') + '</span><span class="crayon" data-icone="crayon"></span></button>';
   if (derniere && !objectif) html += '<div class="ligne-detail"><span class="cle">Dernière fois</span><span class="val num">' + ilYA(derniere.quand) + ' : ' + derniere.series.map((s) => formatNombre(s.charge) + '×' + s.reps + (s.rir != null ? ' @' + s.rir : '')).join(' · ') + '</span></div>';
   html += '</div></div>';
 
@@ -114,8 +117,8 @@ function rendreExercice() {
   rendreBandeauMinuterie();
 
   $('exo-menu').addEventListener('click', menuExercice);
-  $('exo-consigne').addEventListener('click', () => saisir('Consigne technique', consigne, 'Enregistrer', (t) => { enregistrerConsigne(seance.jour, exo.nom, t); rendreExercice(); }, true));
-  $('exo-reglages').addEventListener('click', () => saisir('Réglages de la machine', regl, 'Enregistrer', (t) => { enregistrerReglagesMachine(exo.nom, t); rendreExercice(); }));
+  $('exo-consigne').addEventListener('click', () => saisir('Consigne technique', consigne, 'Enregistrer', (t) => { enregistrerConsigne(seance.jour, exo.nom, t); rendreExercice(); toast('Consigne enregistrée.', 2000, 'succes'); }, true));
+  $('exo-reglages').addEventListener('click', () => saisir('Réglage machine', regl, 'Enregistrer', (t) => { enregistrerReglagesMachine(exo.nom, t); rendreExercice(); toast('Réglage enregistré.', 2000, 'succes'); }));
   $('ajouter-serie').addEventListener('click', () => {
     exo.series.push({ charge: null, reps: null, rir: null, faite: false, heure: null, restPause: false, cible: fiche.rir && fiche.rir.length ? fiche.rir[fiche.rir.length - 1] : null });
     enregistrerSeance();
@@ -148,7 +151,7 @@ function rendreExercice() {
     seance.douleurs.push({ exercice: exo.nom, texte: t });
     enregistrerSeance();
     rendreExercice();
-    toast('Douleur notée, rappelée la prochaine fois.');
+    toast('Note enregistrée.', 2500, 'succes');
   }, true));
   const prec = $('exo-precedent');
   const suiv = $('exo-suivant');
@@ -249,7 +252,7 @@ function choisirRemplacant() {
 function rendreSeries() {
   const exo = seance.exercices[indexExo];
   const fiche = ficheExercice();
-  const derniere = derniereFois(exo.nom, seance.id);
+  const derniere = referenceProgression(exo.nom, seance);
   const objectif = seance.deload ? null : objectifExercice(fiche, derniere);
   const liste = $('series');
   liste.innerHTML = '';
@@ -279,6 +282,7 @@ function rendreSeries() {
       b.setAttribute('aria-label', 'RIR ' + v);
       b.addEventListener('click', () => {
         serie.rir = serie.rir === v ? null : v;
+        serie.rirAuto = false;
         enregistrerSeance();
         rir.querySelectorAll('button').forEach((x) => x.classList.toggle('choisi', Number(x.textContent) === serie.rir));
       });
@@ -302,7 +306,7 @@ function rendreSeries() {
     const valider = () => {
       if (serie.faite || serie.reps == null || confirmationEnCours) return;
       if (serie.charge == null) serie.charge = champCharge.placeholder ? nombreOuNull(champCharge.placeholder) : null;
-      if (serie.rir == null && cibleRir != null) serie.rir = cibleRir;
+      if (serie.rir == null && cibleRir != null) { serie.rir = cibleRir; serie.rirAuto = true; }
       if (chargeAberrante(serie.charge, derniere)) {
         // Le `change` du champ repart quand le dialogue prend le focus :
         // le drapeau empêche un second dialogue par-dessus le premier.
@@ -432,6 +436,7 @@ function restaurerRepos() {
   rendreBandeauMinuterie();
   battre();
   tictac = setInterval(battre, 250);
+  animerAnneau();
 }
 
 function lancerMinuterie(secondes, bilan) {
@@ -441,7 +446,7 @@ function lancerMinuterie(secondes, bilan) {
   rendreBandeauMinuterie();
   const plein = $('minuterie-plein');
   $('minuterie-suivant').innerHTML = bilan && bilan.suivant
-    ? '<b>Ensuite : ' + echapper(bilan.suivant) + '</b>' + (bilan.reglages ? 'Réglages : ' + echapper(bilan.reglages) : '') + (bilan.consigne ? '<div class="petit">' + echapper(bilan.consigne) + '</div>' : '')
+    ? '<b>Ensuite : ' + echapper(bilan.suivant) + '</b>' + (bilan.reglages ? 'Réglage machine : ' + echapper(bilan.reglages) : '') + (bilan.consigne ? '<div class="petit">' + echapper(bilan.consigne) + '</div>' : '')
     : '<b>Repos</b>';
   $('minuterie-bilan').innerHTML = bilan && bilan.tonnageAvant != null
     ? '<div><b class="num">' + bilan.tonnage + '</b>kg aujourd\'hui</div><div><b class="num">' + bilan.tonnageAvant + '</b>kg la dernière fois</div>'
@@ -452,6 +457,74 @@ function lancerMinuterie(secondes, bilan) {
   setTimeout(() => { if (minuterie === instance && secondes > 15) { plein.hidden = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } }, 0);
   battre();
   tictac = setInterval(battre, 250);
+  animerAnneau();
+}
+
+/* ---------- Animation du chrono (8 novembre 2026, direction A choisie par
+   l'utilisateur : « fluide et cinétique ») ----------
+   - l'anneau se vide en continu, image par image, et une pointe lumineuse
+     marque sa tête ;
+   - les chiffres défilent vers le haut à chaque changement, comme un
+     compteur à rouleau ;
+   - sur les 5 dernières secondes, chaque chiffre arrive avec un rebond ;
+   - à zéro, l'anneau passe au vert un court instant.
+   Rien ne bouge sous prefers-reduced-motion (texte posé directement). */
+const MOUVEMENT_REDUIT = window.matchMedia('(prefers-reduced-motion: reduce)');
+let imageAnneau = null;
+
+function poserAnneau(restant) {
+  if (!minuterie) return;
+  const fraction = Math.max(0, Math.min(1, restant / minuterie.duree));
+  const circonference = 2 * Math.PI * 52;
+  $('minuterie-anneau').style.strokeDashoffset = String(circonference * (1 - fraction));
+  const angle = (-90 + 360 * fraction) * Math.PI / 180;
+  const pointe = $('minuterie-pointe');
+  pointe.setAttribute('cx', (60 + 52 * Math.cos(angle)).toFixed(2));
+  pointe.setAttribute('cy', (60 + 52 * Math.sin(angle)).toFixed(2));
+}
+
+function animerAnneau() {
+  if (imageAnneau) cancelAnimationFrame(imageAnneau);
+  const image = () => {
+    imageAnneau = null;
+    if (!minuterie) return;
+    if (!$('minuterie-plein').hidden) poserAnneau((minuterie.fin - Date.now()) / 1000);
+    imageAnneau = requestAnimationFrame(image);
+  };
+  imageAnneau = requestAnimationFrame(image);
+}
+
+/* Compteur à rouleau : un emplacement par caractère ; un caractère qui
+   change sort par le haut pendant que le nouveau monte du bas. */
+function chiffresRoulants(el, texte, rebond) {
+  if (el.dataset.texte === texte) return;
+  const ancien = el.dataset.texte || '';
+  el.dataset.texte = texte;
+  el.setAttribute('aria-label', texte);
+  if (MOUVEMENT_REDUIT.matches || !el.animate || ancien.length !== texte.length) {
+    el.innerHTML = texte.split('').map((c) => '<span class="case"><span>' + c + '</span></span>').join('');
+    return;
+  }
+  const cases = el.querySelectorAll('.case');
+  texte.split('').forEach((c, i) => {
+    if (ancien[i] === c || !cases[i]) return;
+    // Un ancien chiffre encore en sortie (animation ralentie, page en
+    // arrière-plan) part tout de suite : jamais deux chiffres empilés.
+    cases[i].querySelectorAll('.sortant').forEach((x) => x.remove());
+    const sortant = cases[i].firstElementChild;
+    const entrant = document.createElement('span');
+    entrant.textContent = c;
+    cases[i].appendChild(entrant);
+    const courbe = 'cubic-bezier(.2, .8, .2, 1)';
+    if (sortant) {
+      sortant.classList.add('sortant');
+      sortant.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-70%)', opacity: 0 }], { duration: 260, easing: courbe, fill: 'forwards' })
+        .finished.then(() => sortant.remove(), () => sortant.remove());
+      setTimeout(() => sortant.remove(), 320);
+    }
+    entrant.animate([{ transform: 'translateY(70%)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 260, easing: courbe });
+  });
+  if (rebond) el.animate([{ transform: 'scale(1.18)' }, { transform: 'scale(.97)', offset: .6 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.3, 1.4, .5, 1)' });
 }
 
 function rendreBandeauMinuterie() {
@@ -468,10 +541,9 @@ function battre() {
   const restant = (minuterie.fin - Date.now()) / 1000;
   if (restant <= 0) { minuterieTerminee(false); return; }
   const texte = texteDuree(restant);
-  const bt = $('minuterie-bandeau-t'); if (bt) bt.textContent = texte;
-  $('minuterie-plein-t').textContent = texte;
-  const fraction = Math.max(0, Math.min(1, restant / minuterie.duree));
-  $('minuterie-anneau').style.strokeDashoffset = String(2 * Math.PI * 52 * (1 - fraction));
+  const bt = $('minuterie-bandeau-t'); if (bt) chiffresRoulants(bt, texte, false);
+  chiffresRoulants($('minuterie-plein-t'), texte, restant <= 5.5);
+  poserAnneau(restant);
   // Le plein écran reste jusqu'à la fin du repos (remarque du 5 novembre
   // 2026) : il ne se masque plus à 10 s, seulement par un appui.
   const flottant = $('repos-flottant');
@@ -480,6 +552,7 @@ function battre() {
 }
 
 function arreterMinuterie() {
+  if (imageAnneau) { cancelAnimationFrame(imageAnneau); imageAnneau = null; }
   if (tictac) clearInterval(tictac);
   tictac = null; minuterie = null;
   sauverRepos();
@@ -490,8 +563,18 @@ function arreterMinuterie() {
 
 function minuterieTerminee(manuel) {
   const etait = minuterie;
+  const plein = $('minuterie-plein');
+  const visible = !plein.hidden;
   arreterMinuterie();
   if (!etait) { return; }
+  // Fin naturelle, plein écran ouvert : l'anneau plein passe au vert un
+  // court instant avant de laisser la fiche (sans bloquer les appuis).
+  if (!manuel && visible && !MOUVEMENT_REDUIT.matches) {
+    $('minuterie-anneau').style.strokeDashoffset = '0';
+    plein.hidden = false;
+    plein.classList.add('fini');
+    setTimeout(() => { plein.classList.remove('fini'); if (!minuterie) plein.hidden = true; }, 700);
+  }
   if (!manuel) signaler();
   if (ecranActif() === 'seance' && seance && seance.type === 'muscu') {
     amorcerClavier();

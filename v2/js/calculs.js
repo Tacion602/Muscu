@@ -35,7 +35,39 @@ function enSeriesLongues(fiche) {
    jugées par la règle de fourchette, voir comparerSeries). */
 function indicateur(serie, fiche) {
   if (!serie || serie.charge == null || serie.reps == null) return null;
-  return enSeriesLongues(fiche) ? serie.charge : e1rm(serie.charge, serie.reps);
+  return enSeriesLongues(fiche) ? serie.charge : e1rmEffort(serie);
+}
+
+/* RIR réellement saisi (8 novembre 2026) : un RIR posé d'office à la cible
+   du programme, faute d'appui sur un bouton (`rirAuto`), ne dit rien de
+   l'effort ; il ne compte ni dans le test de montée ni dans le 1RM. Les
+   séances d'avant ce drapeau sont tenues pour saisies. */
+function rirSaisi(serie) {
+  return serie && serie.rir != null && !serie.rirAuto ? serie.rir : null;
+}
+
+/* 1RM estimé corrigé par l'effort (8 novembre 2026) : les répétitions en
+   réserve comptent comme des répétitions possibles, 60 × 8 à RIR 2 vaut
+   alors plus que 60 × 8 à RIR 0. Pratique courante de la programmation
+   au RIR ; sans RIR saisi, Epley sur les répétitions faites seulement. */
+function e1rmEffort(serie) {
+  if (!serie) return null;
+  return e1rm(serie.charge, serie.reps == null ? null : serie.reps + (rirSaisi(serie) || 0));
+}
+
+/* Pas effectif (8 novembre 2026) : le pas fixe en kilos montait trop vite
+   les charges légères (leg curl 25 → 30 kg, +20 %, et 13 puis 8
+   répétitions). Au-delà de 7,5 % de la charge, le pas de 5 kg descend au
+   plus petit cran disponible, 2,5 kg (précision de l'utilisateur). Si même
+   2,5 kg dépasse 7,5 %, la montée devient stricte : toutes les séries de
+   travail au haut de la fourchette, plus seulement les deux dernières. Le
+   seuil de 7,5 % est une règle pratique, pas un résultat d'étude. */
+const CRAN_MINIMUM = 2.5;
+const SEUIL_PAS_RELATIF = 0.075;
+function pasEffectif(nomExo, charge) {
+  let pas = pasDeCharge(nomExo);
+  if (charge > 0 && pas / charge > SEUIL_PAS_RELATIF && pas > CRAN_MINIMUM) pas = CRAN_MINIMUM;
+  return { pas, strict: charge > 0 && pas / charge > SEUIL_PAS_RELATIF };
 }
 
 /* Compare deux séries de même rang. Renvoie { sens: 'hausse'|'baisse'|'stable',
@@ -56,8 +88,8 @@ function comparerSeries(maintenant, avant, fiche) {
     }
     return { sens: 'stable', texte: 'comme la dernière fois', indicatif };
   }
-  const a = e1rm(maintenant.charge, maintenant.reps);
-  const b = e1rm(avant.charge, avant.reps);
+  const a = e1rmEffort(maintenant);
+  const b = e1rmEffort(avant);
   const ecart = Math.round((a - b) * 10) / 10;
   if (Math.abs(ecart) < 0.5) return { sens: 'stable', texte: 'e1RM stable', indicatif };
   return { sens: ecart > 0 ? 'hausse' : 'baisse', texte: (ecart > 0 ? '+' : '') + formatNombre(ecart) + ' kg e1RM', indicatif };
@@ -78,15 +110,16 @@ function comparerSeries(maintenant, avant, fiche) {
 function objectifExercice(fiche, derniere) {
   if (!fiche || !derniere || !derniere.series.length) return null;
   const series = derniere.series;
-  const pas = pasDeCharge(fiche.nom);
+  const { pas, strict } = pasEffectif(fiche.nom, chargeDeReference(derniere));
   const n = Math.max(series.length, fiche.series || 0);
-  const debutJuge = Math.max(0, series.length - 2);
+  const debutJuge = strict ? 0 : Math.max(0, series.length - 2);
   const jugees = series.slice(debutJuge);
   const auMax = fiche.reps_max != null && jugees.every((s) => s.reps != null && s.reps >= fiche.reps_max);
   const rirOk = jugees.every((s, k) => {
     const i = debutJuge + k;
     const cible = fiche.rir && fiche.rir.length ? fiche.rir[Math.min(i, fiche.rir.length - 1)] : null;
-    return s.rir == null || cible == null || s.rir <= cible;
+    const rir = rirSaisi(s);
+    return rir == null || cible == null || rir <= cible;
   });
   const monte = auMax && rirOk;
   const charges = [];
@@ -94,7 +127,7 @@ function objectifExercice(fiche, derniere) {
     const base = series[Math.min(i, series.length - 1)].charge;
     charges.push(base == null ? null : Math.round((base + (monte ? pas : 0)) * 100) / 100);
   }
-  const deux = jugees.length > 1 ? 'deux dernières séries' : 'dernière série';
+  const deux = strict ? 'toutes les séries (pas lourd pour cette charge)' : (jugees.length > 1 ? 'deux dernières séries' : 'dernière série');
   if (monte) {
     return {
       charge: charges[0], charges,

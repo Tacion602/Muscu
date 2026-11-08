@@ -8,6 +8,8 @@ const ICONES = {
   courbe: '<path d="M4 18L10 11l4 4 6-8"/>',
   reglages: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
   retour: '<path d="M15 5l-7 7 7 7"/>',
+  // Crayon des lignes modifiables de la fiche (8 novembre 2026).
+  crayon: '<path d="M4 20l4-1 11-11-3-3L5 16l-1 4zM14 6l3 3"/>',
   gainage: '<circle cx="5" cy="9" r="1.8"/><path d="M7 11l9 2 5 1M7 11l-2 5M16 13l1 4"/>',
   // Icônes explicites du calendrier (4 novembre 2026) : une par jour de
   // musculation et une par type de cardio, plutôt qu'un haltère générique.
@@ -206,9 +208,10 @@ function saisir(titre, valeur, libelle, suite, multiligne) {
 }
 
 let toastDelai = null;
-function toast(texte, duree) {
+function toast(texte, duree, genre) {
   const t = $('toast');
   t.textContent = texte;
+  t.classList.toggle('succes', genre === 'succes');
   t.classList.add('visible');
   if (toastDelai) clearTimeout(toastDelai);
   toastDelai = setTimeout(() => t.classList.remove('visible'), duree || 2200);
@@ -252,7 +255,8 @@ function courbeSvg(points, unite, choisi) {
     if (i === points.length - 1) classes.push('dernier');
     if (i === choisi) classes.push('choisi');
     if (p.deload) classes.push('deload');
-    svg += '<circle class="' + classes.join(' ') + '" cx="' + sx(xs[i]) + '" cy="' + sy(p.y) + '" r="' + (i === choisi ? 6.5 : 4.5) + '"/>';
+    const teinte = p.couleur ? ' style="--teinte-point:' + p.couleur + '"' : '';
+    svg += '<circle class="' + classes.join(' ') + '"' + teinte + ' cx="' + sx(xs[i]) + '" cy="' + sy(p.y) + '" r="' + (i === choisi ? 6.5 : 4.5) + '"/>';
     svg += '<rect class="zone" data-index="' + i + '" x="' + (sx(xs[i]) - 14) + '" y="' + h + '" width="28" height="' + (H - h - b) + '"/>';
   });
   return svg + '</svg>';

@@ -1,7 +1,7 @@
 {
   "version": 2,
   "origine": "fichier classeur/Programme.csv",
-  "importe_le": "2026-11-06T12:37:16+00:00",
+  "importe_le": "2026-11-08T15:28:28+00:00",
   "jours": [
     {
       "code": "J5",
@@ -22,8 +22,8 @@
           ],
           "repos_s": 150,
           "muscle": "Pectoraux",
-          "consigne": "POS 1",
-          "reglages": "",
+          "consigne": "Omoplates serrees et basses, poignees a hauteur du milieu de la poitrine. Descente controlee jusqu'a l'etirement des pectoraux, pousser sans verrouiller les coudes.",
+          "reglages": "POS 1",
           "substituts": [
             "Dips buste penche"
           ]
@@ -42,7 +42,7 @@
           ],
           "repos_s": 150,
           "muscle": "Grand dorsal",
-          "consigne": "Charger des que le haut de la fourchette est atteint, pas de repetition au-dela.",
+          "consigne": "Partir bras tendus, epaules basses. Tirer les coudes vers les hanches jusqu'au menton au-dessus des poignees, descente controlee. Charger des que le haut de la fourchette est atteint.",
           "reglages": "",
           "substituts": [
             "Tirage vertical prise large"
@@ -69,6 +69,23 @@
         },
         {
           "numero": 4,
+          "nom": "Developpe epaules machine",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 12,
+          "rir": [
+            2,
+            2,
+            2
+          ],
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Siege regle pour des poignees a hauteur d'epaules, dos plaque au dossier, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
           "nom": "Tirage vertical prise large",
           "series": 3,
           "reps_min": 10,
@@ -87,43 +104,7 @@
           ]
         },
         {
-          "numero": 5,
-          "nom": "Developpe epaules halteres",
-          "series": 3,
-          "reps_min": 8,
-          "reps_max": 12,
-          "rir": [
-            2,
-            2,
-            2
-          ],
-          "repos_s": 90,
-          "muscle": "Deltoide anterieur",
-          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
-          "reglages": "",
-          "substituts": []
-        },
-        {
           "numero": 6,
-          "nom": "Curl pupitre",
-          "series": 3,
-          "reps_min": 8,
-          "reps_max": 10,
-          "rir": [
-            2,
-            1,
-            1
-          ],
-          "repos_s": 90,
-          "muscle": "Biceps",
-          "consigne": "Bras cales,X triche possible. Ne pas verrouiller les coudes en bas.",
-          "reglages": "",
-          "substituts": [
-            "Curl incline halteres"
-          ]
-        },
-        {
-          "numero": 7,
           "nom": "FACE PULL",
           "series": 3,
           "reps_min": 12,
@@ -142,6 +123,25 @@
           ]
         },
         {
+          "numero": 7,
+          "nom": "Curl pupitre",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 90,
+          "muscle": "Biceps",
+          "consigne": "Bras cales sur le pupitre, descente jusqu'aux bras presque tendus sans verrouiller, remontee sans elan ni triche.",
+          "reglages": "",
+          "substituts": [
+            "Curl incline halteres"
+          ]
+        },
+        {
           "numero": 8,
           "nom": "Extension triceps poulie barre",
           "series": 3,
@@ -154,7 +154,7 @@
           ],
           "repos_s": 75,
           "muscle": "Triceps",
-          "consigne": "Prise inversee ou neutre selon confort du coude.",
+          "consigne": "Coudes colles au buste et fixes, extension complete en bas, remontee controlee. Prise inversee ou neutre selon confort du coude.",
           "reglages": "",
           "substituts": [
             "Extension triceps overhead corde"
@@ -177,61 +177,6 @@
       "exercices": [
         {
           "numero": 1,
-          "nom": "Traction prise neutre machine assistee",
-          "series": 4,
-          "reps_min": 6,
-          "reps_max": 8,
-          "rir": [
-            2,
-            2,
-            1,
-            1
-          ],
-          "repos_s": 150,
-          "muscle": "Grand dorsal",
-          "consigne": "Charger des que le haut de la fourchette est atteint, pas de repetition au-dela.",
-          "reglages": "",
-          "substituts": [
-            "Tirage vertical prise large"
-          ]
-        },
-        {
-          "numero": 2,
-          "nom": "Developpe epaules halteres",
-          "series": 3,
-          "reps_min": 8,
-          "reps_max": 12,
-          "rir": [
-            2,
-            2,
-            2
-          ],
-          "repos_s": 90,
-          "muscle": "Deltoide anterieur",
-          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
-          "reglages": "",
-          "substituts": []
-        },
-        {
-          "numero": 3,
-          "nom": "Rowing unilateral machine ou haltere",
-          "series": 4,
-          "reps_min": 8,
-          "reps_max": 10,
-          "rir": [
-            2,
-            2,
-            1,
-            1
-          ],
-          "repos_s": 120,
-          "muscle": "Grand dorsal",
-          "consigne": "Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",
-          "reglages": "",
-          "substituts": []
-        },
-        {
-          "numero": 4,
           "nom": "Ecarte poulie basse vers le haut",
           "series": 3,
           "reps_min": 12,
@@ -248,6 +193,61 @@
           "substituts": [
             "Ecarte poulie horizontale hauteur poitrine"
           ]
+        },
+        {
+          "numero": 2,
+          "nom": "Traction prise neutre machine assistee",
+          "series": 4,
+          "reps_min": 6,
+          "reps_max": 8,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 150,
+          "muscle": "Grand dorsal",
+          "consigne": "Partir bras tendus, epaules basses. Tirer les coudes vers les hanches jusqu'au menton au-dessus des poignees, descente controlee. Charger des que le haut de la fourchette est atteint.",
+          "reglages": "",
+          "substituts": [
+            "Tirage vertical prise large"
+          ]
+        },
+        {
+          "numero": 3,
+          "nom": "Developpe epaules machine",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 12,
+          "rir": [
+            2,
+            2,
+            2
+          ],
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Siege regle pour des poignees a hauteur d'epaules, dos plaque au dossier, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 4,
+          "nom": "Rowing unilateral machine ou haltere",
+          "series": 4,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            2,
+            1,
+            1
+          ],
+          "repos_s": 120,
+          "muscle": "Grand dorsal",
+          "consigne": "Tirer vers la hanche, coude proche du corps. Etirement complet en bas.",
+          "reglages": "",
+          "substituts": []
         },
         {
           "numero": 5,
@@ -343,7 +343,7 @@
           ],
           "repos_s": 90,
           "muscle": "Quadriceps",
-          "consigne": "Amplitude complete. Pause courte en contraction haute.",
+          "consigne": "Dossier regle pour aligner le genou avec l'axe de la machine. Amplitude complete, pause courte en contraction haute, descente controlee.",
           "reglages": "",
           "substituts": []
         },
@@ -378,7 +378,7 @@
           ],
           "repos_s": 75,
           "muscle": "Mollets",
-          "consigne": "Pause 2 secondes en position basse etiree.",
+          "consigne": "Talon le plus bas possible, pause 2 secondes en position basse etiree, montee complete sur la pointe, sans rebond.",
           "reglages": "",
           "substituts": []
         },
@@ -446,23 +446,6 @@
         },
         {
           "numero": 2,
-          "nom": "Developpe epaules halteres",
-          "series": 3,
-          "reps_min": 8,
-          "reps_max": 12,
-          "rir": [
-            2,
-            2,
-            2
-          ],
-          "repos_s": 90,
-          "muscle": "Deltoide anterieur",
-          "consigne": "Assis, dossier presque vertical, prise neutre, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
-          "reglages": "",
-          "substituts": []
-        },
-        {
-          "numero": 3,
           "nom": "Dips buste penche",
           "series": 4,
           "reps_min": 8,
@@ -482,7 +465,43 @@
           ]
         },
         {
+          "numero": 3,
+          "nom": "Developpe machine",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 10,
+          "rir": [
+            2,
+            1,
+            1
+          ],
+          "repos_s": 120,
+          "muscle": "Pectoraux",
+          "consigne": "Omoplates serrees et basses, poignees a hauteur du milieu de la poitrine. Descente controlee jusqu'a l'etirement des pectoraux, pousser sans verrouiller les coudes.",
+          "reglages": "POS 1",
+          "substituts": [
+            "Dips buste penche"
+          ]
+        },
+        {
           "numero": 4,
+          "nom": "Developpe epaules machine",
+          "series": 3,
+          "reps_min": 8,
+          "reps_max": 12,
+          "rir": [
+            2,
+            2,
+            2
+          ],
+          "repos_s": 90,
+          "muscle": "Deltoide anterieur",
+          "consigne": "Siege regle pour des poignees a hauteur d'epaules, dos plaque au dossier, coudes un peu en avant. Charge legere. Douleur sur le dessus de l'epaule : arreter l'exercice ; deux seances avec douleur, il sort du programme.",
+          "reglages": "",
+          "substituts": []
+        },
+        {
+          "numero": 5,
           "nom": "Extension triceps overhead corde",
           "series": 3,
           "reps_min": 10,
@@ -501,22 +520,22 @@
           ]
         },
         {
-          "numero": 5,
-          "nom": "Developpe machine",
+          "numero": 6,
+          "nom": "Ecarte poulie basse vers le haut",
           "series": 3,
-          "reps_min": 8,
-          "reps_max": 10,
+          "reps_min": 12,
+          "reps_max": 15,
           "rir": [
             2,
             1,
             1
           ],
-          "repos_s": 120,
+          "repos_s": 75,
           "muscle": "Pectoraux",
-          "consigne": "POS 1",
+          "consigne": "Poulies basses, mains qui montent et se rejoignent devant le haut de la poitrine. Coudes fixes, contraction marquee en haut, excentrique controlee.",
           "reglages": "",
           "substituts": [
-            "Dips buste penche"
+            "Ecarte poulie horizontale hauteur poitrine"
           ]
         }
       ]

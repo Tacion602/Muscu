@@ -325,6 +325,21 @@ function derniereFois(nomExo, saufId) {
   return toutes.length ? toutes[toutes.length - 1] : null;
 }
 
+/* Référence de progression (8 novembre 2026) : pour un exercice présent sur
+   plusieurs jours du programme, la dernière fois sur le même jour, à la
+   même place dans la séance ; sinon la dernière fois tout court. Comparer
+   un développé machine 1er au J5 à celui fait 3e au J1 mêlait fatigue et
+   progrès. */
+function referenceProgression(nomExo, seanceCourante) {
+  const jour = seanceCourante && seanceCourante.jour;
+  const jours = ((programme && programme.jours) || []).filter((j) => (j.exercices || []).some((e) => memeExercice(e.nom, nomExo)));
+  if (jour && jours.length > 1) {
+    const memeJour = occurrences(nomExo, seanceCourante.id).filter((o) => codeCanonique(o.seance.jour) === codeCanonique(jour));
+    if (memeJour.length) return memeJour[memeJour.length - 1];
+  }
+  return derniereFois(nomExo, seanceCourante && seanceCourante.id);
+}
+
 function derniereSeanceDuJour(code) {
   return seancesTerminees().find((s) => codeCanonique(s.jour) === codeCanonique(code)) || null;
 }

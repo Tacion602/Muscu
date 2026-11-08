@@ -144,7 +144,18 @@ codes.
   séries seulement, et la charge se propose série par série
   (`objectif.charges`, chaque série reprend sa charge de la dernière fois,
   + un pas sur chacune si la montée est gagnée) ; la fiche affiche
-  « Objectif 1re série ». Ce qui suit décrit la règle d'avant : si la
+  « Objectif 1re série ». **Révisée le 8 novembre 2026** après analyse
+  demandée par l'utilisateur : (1) référence prise sur le même jour quand
+  l'exercice vit sur plusieurs jours (`referenceProgression()`), pour ne
+  pas mêler fatigue d'enchaînement et progrès ; (2) pas proportionnel
+  (`pasEffectif()`) : au-delà de 7,5 % de la charge, 5 kg descend à
+  2,5 kg, le plus petit cran disponible selon l'utilisateur, et si 2,5 kg
+  dépasse encore 7,5 %, toutes les séries doivent atteindre le haut de la
+  fourchette (cas réel : leg curl 25 → 30 kg, 13 puis 8 répétitions) ;
+  (3) un RIR posé d'office à la cible (`rirAuto`, aucun bouton touché) ne
+  compte plus dans le test de montée (`rirSaisi()`) ; (4) le 1RM estimé
+  ajoute le RIR saisi aux répétitions (`e1rmEffort()`), courbes et
+  comparaisons comprises. Ce qui suit décrit la règle d'avant : si la
   dernière fois toutes les séries de travail ont atteint `reps_max` avec un
   RIR réel inférieur ou égal à la cible (ou non saisi), charge + un pas
   (`pasDeCharge()` : 5 kg sur les grosses machines, 2,5 kg ailleurs, lu
@@ -328,6 +339,76 @@ codes.
   ancien de l'extension de hanche reste sous son nom, sans fusion. Les
   trois lignes de cette séance dans l'onglet `Séries` du classeur ont été
   renommées le même jour.
+- **Courbes colorées par jour de programme, le 8 novembre 2026** (« une
+  couleur par programme, des nuances légères entre les 2 ou 3 séances »,
+  pour voir si un écart tient à l'enchaînement dans la séance) : quand un
+  exercice vit sur plusieurs jours, chaque point prend la nuance de son
+  jour (`NUANCES_JOURS`, un même bleu en trois nuances, dans l'ordre de la
+  semaine, `teintesParJour()` dans `v2/js/suivi.js`), une légende donne
+  le jour et la place de l'exercice dans ce jour (« J1 Haut max · 1er
+  exercice »), et la fiche du point la place réelle dans cette séance.
+  Un exercice d'un seul jour garde l'affichage d'avant.
+- **Consignes et réglage machine, le 8 novembre 2026** : « Machine »
+  devient « Réglage machine » sur la fiche et le plein écran de repos ;
+  les deux lignes portent un crayon (icône `crayon`) pour dire qu'elles se
+  modifient d'un appui, et l'enregistrement se confirme en vert. Une
+  consigne technique pour chaque exercice dans `classeur/Programme.csv` :
+  écrites pour le développé machine (son « POS 1 » passe en colonne
+  Reglages), et réécrites pour la traction, le développé épaules machine,
+  l'extension triceps barre, les mollets, l'extension jambes et le curl
+  pupitre. Une consigne modifiée sur le téléphone reste prioritaire sur
+  celle du programme (`consigneAffichee()`).
+- **Chrono « fluide et cinétique », le 8 novembre 2026** (« légère
+  animation, plus dynamique et moderne » ; direction A choisie parmi
+  trois) : l'anneau du plein écran se vide en continu (`animerAnneau()`,
+  une image par rafraîchissement, `poserAnneau()`), une pointe lumineuse
+  marque sa tête (`#minuterie-pointe`) ; les chiffres du plein écran et du
+  bandeau défilent comme un compteur à rouleau (`chiffresRoulants()`, un
+  emplacement `.case` par caractère, l'ancien chiffre retiré même si
+  l'animation est ralentie, sans quoi ils s'empilaient) ; rebond sur les 5
+  dernières secondes ; à zéro, l'anneau plein passe au vert 700 ms
+  (`.minuterie-plein.fini`, sans bloquer les appuis). Rien sous
+  `prefers-reduced-motion`.
+- **Un seul bleu pour le repos et les RIR, le 8 novembre 2026** (« bleu
+  bandeau pause identique RIR, légèrement moins saturé ») : `--repos`
+  passe du bleu nuit `#1e3a8a` à `#2d61d2` (teinte de l'accent, saturation
+  65 %), et le bouton RIR choisi comme la cible RIR le prennent aussi.
+  Bandeau et plein écran de repos, pastille flottante et chrono de gainage
+  suivent, par le même jeton.
+- **Douleurs en double dans le classeur, corrigé le 8 novembre 2026** :
+  une douleur notée en séance partait avec la séance (le pont l'écrit dans
+  `Douleurs`) puis une seconde fois par l'action `douleurs` de
+  `synchroniser()`, qui renvoyait en plus toutes les douleurs dès qu'une
+  seule était nouvelle. Le pont déduplique sur exercice et date, mais la
+  date relue dans la feuille est convertie en date par Sheets et ne se
+  compare plus au texte envoyé : « # » du 5 novembre trois fois, le
+  développé machine du 8 deux fois. Désormais l'action `douleurs` ne porte
+  que les douleurs nouvelles sans séance. Les trois lignes en double ont
+  été supprimées du classeur le même jour (une ligne par douleur reste). Après une douleur notée,
+  toast vert « Note enregistrée. » (`toast(…, 'succes')`, `.toast.succes`).
+- **Écarté poulie basse vers le haut en fin de J1, le 8 novembre 2026**
+  (l'utilisateur : « finir par un tirage poulie vers le haut, pour une
+  isolation pec haut » ; le mot juste est écarté, pas tirage). Même
+  exercice et même prescription qu'en J3 (3 × 12-15), 6e et dernier du
+  J1. **Exception assumée à la règle d'ordre** (priorité des muscles puis
+  espacement) : un exercice d'isolation des pectoraux peut finir la
+  séance, il ne dépend presque pas des triceps et des épaules fatigués
+  avant lui ; c'est une déduction du principe, pas un résultat d'étude.
+  Pectoraux portés à 23 séries par semaine (11 + 3 au J1, 3 au J3, 6 au
+  J5). La séance du 8 novembre était la plus courte (69 min) parce
+  qu'elle comptait le moins de séries (17, contre 20 au J3 et 24 au J4).
+- **Développé épaules à la machine, le 8 novembre 2026** : simple
+  changement de nom (« Developpe epaules machine » sur J1, J3 et J5),
+  l'historique de « Developpe epaules halteres » suit par `ANCIENS_NOMS`.
+  Le pas de charge passe à 5 kg (le nom contient « machine »).
+- **J1, J3 et J5 réordonnés le 8 novembre 2026** par la règle « priorité
+  des muscles visés, puis espacement des zones » (voir « Nouveau
+  programme ») : J1 développé incliné, dips, développé machine, développé
+  épaules, extension triceps ; J3 écarté poulie basse, traction, développé
+  épaules, rowing, oiseau inversé, curl incliné ; J5 développé machine,
+  traction, développé couché haltères, développé épaules, tirage vertical,
+  face pull, curl pupitre, extension triceps. Ordres plus anciens, pour
+  mémoire :
 - **J3 réordonné une seconde fois, le 6 novembre 2026** (l'utilisateur :
   curl incliné « à la fin, trop proche des tractions, je n'ai pas assez de
   puissance ») : traction, développé épaules, rowing, écarté poulie basse,
@@ -545,7 +626,13 @@ Règles données par l'utilisateur, à respecter dans tout programme futur :
 moins deux fois par semaine** ; **aucune série au-delà de 15** (seules
 exceptions, mollets et abducteurs 10-15 et 12-15, machines sans crans
 fins) ; **jamais deux exercices de la même zone à la suite** dans une
-séance (les dips comptent comme zone à part, à sa demande) ; **élévation
+séance (les dips comptent comme zone à part, à sa demande) ; **dans une
+séance, l'ordre suit d'abord la priorité des muscles visés, puis
+l'espacement des zones** (règle précisée le 8 novembre 2026, après un
+développé épaules placé en 2e position du J1, avant les dips et le
+développé machine : un exercice composé d'un muscle moins prioritaire ne
+passe jamais avant les exercices des pectoraux, qu'il pré-fatiguerait par
+le deltoïde antérieur et les triceps) ; **élévation
 latérale uniquement aux haltères, jamais à la poulie**. Dos ramené de 19 à
 13 séries (lat pull-in et curl marteau retirés), ischios remontés en 2e de
 Jambes, bras à 6 séries directes en 8-10. Un exercice neuf, « Developpe

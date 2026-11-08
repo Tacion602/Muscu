@@ -295,6 +295,9 @@ const ANCIENS_NOMS = {
   // de celle de Push, même mouvement : une seule progression pour les deux
   // jours, qui récupère aussi l'historique « unilatéral ».
   'extension triceps poulie barre': ['extension triceps unilaterale poulie'],
+  // 8 novembre 2026, demande de l'utilisateur : le développé épaules se fait
+  // à la machine. Simple changement de nom, l'historique suit.
+  'developpe epaules machine': ['developpe epaules halteres'],
 };
 
 
@@ -311,7 +314,7 @@ const IMAGES_EXERCICES = {
   'Ecarte poulie horizontale hauteur poitrine': { schema: 'crossover-bands', generique: true },
   // Développé militaire assis à la barre (Everkinetic 0004) : même position
   // et même trajectoire que le développé épaules assis aux haltères.
-  'Developpe epaules halteres': { schema: 'seated-military-press', generique: true },
+  'Developpe epaules machine': { schema: 'seated-military-press', generique: true },
   'Elevation laterale halteres': { schema: 'lateral-dumbbell-raises' },
   'Elevation laterale poulie unilaterale': { schema: 'lateral-dumbbell-raises', generique: true },
   'Extension de hanche machine': { schema: 'one-legged-cable-kickback', generique: true },

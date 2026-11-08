@@ -56,6 +56,24 @@ function exercicesActifs() {
 
 /* Points de progression d'un exercice : indicateur de la première série de
    travail par séance, dans la fenêtre. */
+/* Couleur par jour de programme sur les courbes (8 novembre 2026 : « une
+   couleur par programme, des nuances légères entre les 2 ou 3 séances »,
+   pour voir si un écart entre deux points tient à la place de l'exercice
+   dans la séance). Un même bleu en trois nuances, dans l'ordre de la
+   semaine ; la légende donne la place de l'exercice dans chaque jour. */
+const NUANCES_JOURS = ['#1d4ed8', '#4f86f0', '#93b4f7', '#0e7490'];
+function rangTexte(n) { return n === 1 ? '1er' : n + 'e'; }
+function teintesParJour(pts, nom) {
+  const codes = [...new Set(pts.map((q) => codeCanonique(q.occ.seance.jour)))];
+  return codes.map((code) => jourDe(code)).filter(Boolean)
+    .sort((a, b) => (a.rang || 0) - (b.rang || 0))
+    .map((jour, i) => {
+      const rang = (jour.exercices || []).findIndex((e) => memeExercice(e.nom, nom));
+      return { code: jour.code, couleur: NUANCES_JOURS[i % NUANCES_JOURS.length],
+        libelle: libelleJour(jour) + ' ' + jour.nom + (rang >= 0 ? ' · ' + rangTexte(rang + 1) + ' exercice' : '') };
+    });
+}
+
 function pointsExercice(nom, jours) {
   const fiche = ficheDuProgramme(nom);
   const limite = Date.now() - jours * 86400000;
@@ -125,16 +143,20 @@ function rendreExerciceDetail(nom) {
   const fiche = ficheDuProgramme(nom) || { nom };
   $('exercice-titre').textContent = nom;
   const pts = pointsExercice(nom, 3650);
+  const teintes = teintesParJour(pts, nom);
+  if (teintes.length > 1) pts.forEach((q) => { q.couleur = (teintes.find((t) => t.code === codeCanonique(q.occ.seance.jour)) || {}).couleur; });
   if (pointChoisi == null && pts.length) pointChoisi = pts.length - 1;
   const corps = $('exercice-corps');
   let html = '<div class="carte"><p class="petit texte-2">' + (enSeriesLongues(fiche) ? 'Charge de la première série de travail. Séries longues : la progression se juge sur la charge dans la fourchette ' + fiche.reps_min + '-' + fiche.reps_max + '.' : '1RM estimé (Epley) de la première série de travail, à RIR constant.') + '</p>' +
-    (pts.length >= 2 ? courbeSvg(pts, 'kg', pointChoisi) : '<p class="vide">Deux séances au moins pour tracer une courbe.</p>') + '</div>';
+    (pts.length >= 2 ? courbeSvg(pts, 'kg', pointChoisi) : '<p class="vide">Deux séances au moins pour tracer une courbe.</p>') +
+    (teintes.length > 1 ? '<div class="legende-jours">' + teintes.map((t) => '<span><i style="background:' + t.couleur + '"></i>' + echapper(t.libelle) + '</span>').join('') + '</div>' : '') + '</div>';
   const p = pts[pointChoisi];
   if (p) {
     const s = p.occ.seance;
     const jour = jourDe(s.jour);
     const lien = lienClasseur(s);
-    html += '<div class="fiche-point"><div class="petit texte-2">' + dateCourte(p.x) + ' · ' + echapper(libelleJour(jour) + ' ' + (s.nom || '')) + (s.deload ? ' · deload' : '') + '</div>' +
+    const rang = (s.exercices || []).findIndex((e) => memeExercice(e.nom, nom));
+    html += '<div class="fiche-point"><div class="petit texte-2">' + dateCourte(p.x) + ' · ' + echapper(libelleJour(jour) + ' ' + (s.nom || '')) + (rang >= 0 ? ' · ' + rangTexte(rang + 1) + ' exercice' : '') + (s.deload ? ' · deload' : '') + '</div>' +
       '<b class="num">' + formatNombre(p.occ.series[0].charge) + ' × ' + p.occ.series[0].reps + (enSeriesLongues(fiche) ? '' : ' · e1RM ' + formatNombre(p.y) + ' kg') + '</b>' +
       (pointChoisi > 0 ? ' <span class="puce ' + classeEcart(p.y - pts[pointChoisi - 1].y) + '">' + (Math.abs(p.y - pts[pointChoisi - 1].y) < 0.5 ? 'stable' : (p.y - pts[pointChoisi - 1].y > 0 ? '+' : '') + formatNombre(p.y - pts[pointChoisi - 1].y) + ' kg') + '</span>' : '') +
       '<div class="series">' + p.occ.series.map((x) => formatNombre(x.charge) + '×' + x.reps + (x.rir != null ? ' @' + x.rir : '') + (x.restPause ? ' RP' : '')).join(' · ') + '</div>' +
