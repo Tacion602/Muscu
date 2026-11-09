@@ -336,8 +336,12 @@ codes.
   mémoire d'idempotence du pont (`seances_v2`) croyant écrites des séances
   absentes du classeur. `dejaEcrite()` (`appsscript/Code_v2.gs`,
   `VERSION_PONT` `v2-2026-11-09`) vérifie désormais que l'identifiant
-  figure encore dans l'onglet `Séances` ; **à recoller dans le script du
-  classeur et à redéployer** (geste de l'utilisateur). Sauvegarde datée :
+  figure encore dans l'onglet `Séances`, et retrouve le classeur seule
+  (une première version dépendait d'une ligne d'appel non recopiée et
+  restait inactive). Recollé et redéployé par l'utilisateur le même jour :
+  49 séances dans le classeur (26 août au 8 novembre), aucun doublon,
+  602 séries ; trois séances d'essai du 26 août sans type n'ont écrit
+  aucune série (le pont n'écrit les séries que des séances `muscu`). Sauvegarde datée :
   `python outils/sauvegarder_classeur.py` vise maintenant le classeur v2
   (`--v1` pour l'ancien) et refuse d'écrire si un onglet attendu manque.
 - **Onglet Programme du classeur aligné sur `classeur/Programme.csv` le
