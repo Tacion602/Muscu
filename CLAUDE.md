@@ -112,7 +112,7 @@ Nom, Type, Numero, Exercice, Series, Reps min, Reps max, RIR, Repos, Muscle,
 Consigne, Reglages, Substituts). Plus de reconnaissance de forme : les
 pièges d'import de la v1 disparaissent. `CLASSEUR_ID` (`1JOiH7LYXLtosQnnyMYLMjrBFK_CDkeKN98sKSwJM7DI`, classeur « Muscu v2 » créé par
 l'utilisateur le 4 novembre 2026, pont déployé le même jour) et
-`GID_PROGRAMME` (`291704442`) y sont renseignés ; `--depuis-v1` convertit
+`GID_PROGRAMME` (`1897993877` depuis le 9 novembre 2026 : l'ancien `291704442` n'existait plus, gviz renvoyait alors le premier onglet, le Programme, ce qui masquait l'erreur) y sont renseignés ; `--depuis-v1` convertit
 `data/programme.json` et `--csv` écrit `classeur/Programme.csv` à coller
 dans le nouvel onglet (fait ce jour-là : 6 jours, 27 exercices). Sortie :
 `v2/data/programme.json`, jamais édité à la main. L'import vérifie
@@ -322,6 +322,16 @@ codes.
   - **Schéma du développé épaules** : développé militaire assis à la barre
     (Everkinetic 0004, `seated-military-press`), « Illustration
     approchée », précaché.
+- **Classeur restauré le 9 novembre 2026** : l'import du CSV du 8 au soir
+  avait été fait avec « Remplacer la feuille de calcul » au lieu de
+  « Remplacer la feuille actuelle » ; tous les onglets sauf Programme
+  avaient disparu (la relève du 9 l'a révélé : chaque onglet demandé à gviz
+  renvoyait le Programme). Version du 8 novembre 14 h 56 restaurée par
+  l'historique des versions, puis l'onglet Programme réaligné cellule par
+  cellule (une ligne insérée pour l'écarté du J1, 93 cellules, zéro écart
+  à la relecture). **Après tout import fait par l'utilisateur, relire
+  aussi les autres onglets**, pas seulement le Programme, et préférer
+  l'option « Remplacer la feuille actuelle » dans les consignes données.
 - **Onglet Programme du classeur aligné sur `classeur/Programme.csv` le
   6 novembre 2026**, à la demande de l'utilisateur, depuis le navigateur
   intégré (compte Google de l'utilisateur) : lignes 3, 9, 11 à 13, 19 et

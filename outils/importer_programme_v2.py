@@ -54,7 +54,7 @@ PROGRAMME_V1 = RACINE / "data" / "programme.json"
 # gid de l'onglet « Programme ». Tant qu'ils sont vides, seul l'import depuis
 # un fichier CSV ou depuis la v1 est possible.
 CLASSEUR_ID = "1JOiH7LYXLtosQnnyMYLMjrBFK_CDkeKN98sKSwJM7DI"
-GID_PROGRAMME = "291704442"
+GID_PROGRAMME = "1897993877"
 
 COLONNES = [
     "Jour", "Rang", "Nom", "Type", "Numero", "Exercice", "Series",
