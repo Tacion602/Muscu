@@ -332,6 +332,14 @@ codes.
   à la relecture). **Après tout import fait par l'utilisateur, relire
   aussi les autres onglets**, pas seulement le Programme, et préférer
   l'option « Remplacer la feuille actuelle » dans les consignes données.
+  Le même jour : « Renvoyer tout l'historique » n'écrivait plus rien, la
+  mémoire d'idempotence du pont (`seances_v2`) croyant écrites des séances
+  absentes du classeur. `dejaEcrite()` (`appsscript/Code_v2.gs`,
+  `VERSION_PONT` `v2-2026-11-09`) vérifie désormais que l'identifiant
+  figure encore dans l'onglet `Séances` ; **à recoller dans le script du
+  classeur et à redéployer** (geste de l'utilisateur). Sauvegarde datée :
+  `python outils/sauvegarder_classeur.py` vise maintenant le classeur v2
+  (`--v1` pour l'ancien) et refuse d'écrire si un onglet attendu manque.
 - **Onglet Programme du classeur aligné sur `classeur/Programme.csv` le
   6 novembre 2026**, à la demande de l'utilisateur, depuis le navigateur
   intégré (compte Google de l'utilisateur) : lignes 3, 9, 11 à 13, 19 et

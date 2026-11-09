@@ -30,7 +30,7 @@
  */
 
 const SECRET = 'a-changer';
-const VERSION_PONT = 'v2-2026-11-04';
+const VERSION_PONT = 'v2-2026-11-09';
 
 const ONGLETS = {
   seances: 'Séances',
@@ -205,10 +205,22 @@ function mettreAJour(classeur, nom, lignes, nbCles, ajoutSeulement) {
 
 /* ---------------- Idempotence : une seance n'est ecrite qu'une fois ---------------- */
 
-function dejaEcrite(id) {
+/* Une seance n'est tenue pour deja ecrite que si sa memoire existe ET que
+   son identifiant figure encore dans l'onglet Seances (9 novembre 2026 :
+   apres une restauration du classeur par l'historique des versions, la
+   memoire du pont croyait ecrites des seances disparues, et « Renvoyer tout
+   l'historique » n'ecrivait plus rien). */
+function dejaEcrite(id, classeur) {
   const brut = PropertiesService.getScriptProperties().getProperty('seances_v2');
   const carte = brut ? JSON.parse(brut) : {};
-  return carte[id] || null;
+  if (!carte[id]) return null;
+  if (classeur) {
+    const onglet = classeur.getSheetByName(ONGLETS.seances);
+    const derniere = onglet ? onglet.getLastRow() : 0;
+    const ids = derniere > 1 ? onglet.getRange(2, 1, derniere - 1, 1).getValues().map(function (v) { return String(v[0]); }) : [];
+    if (ids.indexOf(String(id)) < 0) return null;
+  }
+  return carte[id];
 }
 
 function marquerEcrite(id, lignes) {
@@ -251,7 +263,7 @@ function e1rm(charge, reps) {
 
 function ecrireSeance(classeur, seance) {
   if (!seance || !seance.id) throw new Error('seance sans identifiant');
-  const deja = dejaEcrite(seance.id);
+  const deja = dejaEcrite(seance.id, classeur);
   if (deja) return deja;
 
   const date = new Date(seance.fin || seance.debut || Date.now());
