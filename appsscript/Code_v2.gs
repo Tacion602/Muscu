@@ -214,12 +214,10 @@ function dejaEcrite(id, classeur) {
   const brut = PropertiesService.getScriptProperties().getProperty('seances_v2');
   const carte = brut ? JSON.parse(brut) : {};
   if (!carte[id]) return null;
-  if (classeur) {
-    const onglet = classeur.getSheetByName(ONGLETS.seances);
-    const derniere = onglet ? onglet.getLastRow() : 0;
-    const ids = derniere > 1 ? onglet.getRange(2, 1, derniere - 1, 1).getValues().map(function (v) { return String(v[0]); }) : [];
-    if (ids.indexOf(String(id)) < 0) return null;
-  }
+  const feuille = (classeur || SpreadsheetApp.getActiveSpreadsheet()).getSheetByName(ONGLETS.seances);
+  const derniere = feuille ? feuille.getLastRow() : 0;
+  const ids = derniere > 1 ? feuille.getRange(2, 1, derniere - 1, 1).getValues().map(function (v) { return String(v[0]); }) : [];
+  if (ids.indexOf(String(id)) < 0) return null;
   return carte[id];
 }
 
