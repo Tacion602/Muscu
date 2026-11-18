@@ -322,6 +322,60 @@ codes.
   - **Schéma du développé épaules** : développé militaire assis à la barre
     (Everkinetic 0004, `seated-military-press`), « Illustration
     approchée », précaché.
+- **Suites du 9 novembre 2026** :
+  - **Sauvegarde hebdomadaire du classeur par Google** :
+    `sauvegarderClasseur()` et `installerSauvegardeHebdo()` dans
+    `appsscript/Code_v2.gs` (`VERSION_PONT` `v2-2026-11-09b`) : copie datée
+    dans le dossier Drive « Muscu sauvegardes » chaque lundi à 4 h, les
+    12 plus récentes gardées. À installer une fois depuis l'éditeur
+    (exécuter `installerSauvegardeHebdo`, accepter l'accès à Drive).
+  - **État du pont dans Réglages** : « Tester la connexion » affiche la
+    version du pont, la signale si elle est antérieure à
+    `VERSION_PONT_MINIMALE` (`etatPont()`, `pontAJour()`), et dit si la
+    sauvegarde hebdomadaire est active (le `ping` renvoie `sauvegarde`).
+  - **Rappel daté** sur l'Accueil (`RAPPELS`, `rappelDuJour()`,
+    `muscu2.rappelsVus`) : retester l'élévation latérale à partir du
+    4 décembre 2026, quatre semaines après l'arrêt, jusqu'à « C'est noté ».
+  - **Bilan mensuel** : alerte si au moins deux exercices de pectoraux
+    reculent sur le mois (`alerteVolumePectoraux()`), le volume étant
+    passé à 23 séries par semaine ; retirer d'abord l'écarté de fin de J1.
+- **Remarque du J5 du 18 novembre 2026, traitée le 19** (« fais tout »,
+  treize points) :
+  - **J3 : oiseau inversé à la fin**, comme demandé le 6 novembre ; le
+    réordonnancement du 8 l'avait remis juste après le rowing, erreur de
+    ma part. Ordre : écarté poulie basse, traction, développé épaules,
+    rowing, curl incliné, oiseau inversé.
+  - **Curl marteau à la place du curl pupitre au J5** (même rôle que le
+    curl incliné selon l'utilisateur ; le marteau ajoute le brachial et le
+    long supinateur). Curl pupitre en substitut.
+  - **Consignes réécrites pour tous les exercices** dans
+    `classeur/Programme.csv` : placement, engagement, tempo, erreur
+    fréquente. Repliées sur trois lignes sur la fiche (`#exo-consigne`,
+    classes `repliable` puis `deplie` au premier appui, le crayon modifie).
+    **L'onglet Programme du classeur doit être réaligné** sur ce CSV.
+  - **Chrono** : anneau du plein écran en sens inverse (miroir CSS) ; le
+    plein écran et le passage à l'exercice suivant **attendent le RIR**
+    (`ATTENTE_RIR`, 6 s sans appui, `apresRir()`, `terminerAttenteRir()`,
+    `poursuivreApresSerie()`), mais le repos compte depuis la fin de la
+    série (`lancerMinuterie()` reçoit l'heure de départ). Un RIR choisi
+    avant de valider ne fait pas attendre. Les tests mettent
+    `ATTENTE_RIR.ms` à zéro, sauf le leur.
+  - **Courbes** : couleur du point selon le RIR saisi de la première
+    série, du rouge (0) au vert (3) (`COULEURS_RIR`), anneau vide si le
+    RIR n'a pas été saisi ; forme selon le jour quand l'exercice vit sur
+    plusieurs jours (`FORMES_JOURS` : rond, carré, losange), légendes
+    sous la courbe.
+  - **Échauffement indicatif** en gris sous l'objectif
+    (`echauffementIndicatif()`, `ECHAUFFEMENT` : 10 répétitions à 65 %,
+    5 à 85 % de la charge prévue, arrondies à 2,5 kg ;
+    `REPOS_ECHAUFFEMENT` 60 s, lancé d'un appui sur la ligne). Rien pour
+    les tractions ni sous 15 kg, rien en deload. Pratique courante, pas un
+    protocole établi.
+  - **Courbes du jour** sur l'écran de fin d'une séance de musculation
+    (`courbesDuJour()`, sept derniers points plus celui du jour).
+  - Écarté absent de la surcharge progressive : pas un défaut, une seule
+    séance d'écarté sur le téléphone, la courbe demande deux points.
+  - Illustrations animées plus stylisées : non faites, à reprendre.
 - **Classeur restauré le 9 novembre 2026** : l'import du CSV du 8 au soir
   avait été fait avec « Remplacer la feuille de calcul » au lieu de
   « Remplacer la feuille actuelle » ; tous les onglets sauf Programme

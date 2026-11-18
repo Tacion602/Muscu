@@ -69,7 +69,7 @@ function teintesParJour(pts, nom) {
     .sort((a, b) => (a.rang || 0) - (b.rang || 0))
     .map((jour, i) => {
       const rang = (jour.exercices || []).findIndex((e) => memeExercice(e.nom, nom));
-      return { code: jour.code, couleur: NUANCES_JOURS[i % NUANCES_JOURS.length],
+      return { code: jour.code, couleur: NUANCES_JOURS[i % NUANCES_JOURS.length], forme: FORMES_JOURS[i % FORMES_JOURS.length],
         libelle: libelleJour(jour) + ' ' + jour.nom + (rang >= 0 ? ' · ' + rangTexte(rang + 1) + ' exercice' : '') };
     });
 }
@@ -78,7 +78,7 @@ function pointsExercice(nom, jours) {
   const fiche = ficheDuProgramme(nom);
   const limite = Date.now() - jours * 86400000;
   return occurrences(nom).filter((o) => new Date(o.quand).getTime() >= limite)
-    .map((o) => ({ x: o.quand, y: indicateur(o.series[0], fiche), occ: o }))
+    .map((o) => ({ x: o.quand, y: indicateur(o.series[0], fiche), occ: o, rir: rirSaisi(o.series[0]) }))
     .filter((p) => p.y != null);
 }
 
@@ -117,6 +117,8 @@ function rendreSurcharge() {
   if (!exos.length) html += '<div class="carte"><p class="vide">Aucun exercice actif pour cette zone.</p></div>';
   exos.forEach((nom) => {
     const pts = pointsExercice(nom, fenetreSurcharge);
+    const teintes = teintesParJour(pts, nom);
+    if (teintes.length > 1) pts.forEach((q) => { const t = teintes.find((x) => x.code === codeCanonique(q.occ.seance.jour)) || {}; q.forme = t.forme; });
     const fiche = ficheDuProgramme(nom);
     const ecart = ecartExercice(nom, fenetreSurcharge);
     html += '<button class="carte" data-exo="' + echapper(nom) + '" style="width:100%;text-align:left;margin-bottom:10px"><div class="exo-entete"><h3 style="font-size:16px">' + echapper(nom) + '</h3>' +
@@ -144,12 +146,13 @@ function rendreExerciceDetail(nom) {
   $('exercice-titre').textContent = nom;
   const pts = pointsExercice(nom, 3650);
   const teintes = teintesParJour(pts, nom);
-  if (teintes.length > 1) pts.forEach((q) => { q.couleur = (teintes.find((t) => t.code === codeCanonique(q.occ.seance.jour)) || {}).couleur; });
+  if (teintes.length > 1) pts.forEach((q) => { const t = teintes.find((x) => x.code === codeCanonique(q.occ.seance.jour)) || {}; q.couleur = t.couleur; q.forme = t.forme; });
   if (pointChoisi == null && pts.length) pointChoisi = pts.length - 1;
   const corps = $('exercice-corps');
   let html = '<div class="carte"><p class="petit texte-2">' + (enSeriesLongues(fiche) ? 'Charge de la première série de travail. Séries longues : la progression se juge sur la charge dans la fourchette ' + fiche.reps_min + '-' + fiche.reps_max + '.' : '1RM estimé (Epley) de la première série de travail, à RIR constant.') + '</p>' +
     (pts.length >= 2 ? courbeSvg(pts, 'kg', pointChoisi) : '<p class="vide">Deux séances au moins pour tracer une courbe.</p>') +
-    (teintes.length > 1 ? '<div class="legende-jours">' + teintes.map((t) => '<span><i style="background:' + t.couleur + '"></i>' + echapper(t.libelle) + '</span>').join('') + '</div>' : '') + '</div>';
+    (teintes.length > 1 ? '<div class="legende-jours">' + teintes.map((t) => '<span><i class="forme-' + t.forme + '"></i>' + echapper(t.libelle) + '</span>').join('') + '</div>' : '') +
+    (pts.some((q) => q.rir != null) ? '<div class="legende-jours">' + COULEURS_RIR.map((c, i) => '<span><i style="background:' + c + '"></i>RIR ' + i + '</span>').join('') + '<span><i style="background:var(--carte);box-shadow:inset 0 0 0 2px var(--accent)"></i>RIR non saisi</span></div>' : '') + '</div>';
   const p = pts[pointChoisi];
   if (p) {
     const s = p.occ.seance;
@@ -319,6 +322,23 @@ rendus.etat = rendreEtat;
 
 /* ---------- Bilan mensuel ---------- */
 
+/* Volume de pectoraux sous surveillance (9 novembre 2026 : passé à
+   23 séries par semaine avec l'écarté de fin de J1, au-delà des 20 fixés
+   au départ). Signal quand au moins deux exercices de pectoraux reculent
+   sur le mois, ou en recul deux séances de suite : piste de récupération
+   insuffisante, à corriger d'abord par la série la plus récemment ajoutée.
+   Déduction du principe de récupération, pas un seuil publié. */
+function alerteVolumePectoraux(progres) {
+  const pecs = new Set();
+  programme.jours.forEach((j) => (j.exercices || []).forEach((e) => { if (/pector/.test(formeDuNom(e.muscle || ''))) pecs.add(e.nom); }));
+  const enRecul = [...pecs].filter((n) => {
+    const p = (progres || []).find((x) => memeExercice(x.nom, n));
+    return (p && p.ecart < 0) || reculDouble(n, ficheDuProgramme(n));
+  });
+  if (enRecul.length < 2) return null;
+  return 'Pectoraux : ' + enRecul.join(', ') + ' reculent ce mois. Le volume est passé à 23 séries par semaine le 8 novembre ; si la tendance se confirme, retirer d\'abord l\'écarté de fin de J1.';
+}
+
 function rendreBilan() {
   const corps = $('bilan-corps');
   const debut = Date.now() - 28 * 86400000;
@@ -344,6 +364,8 @@ function rendreBilan() {
   const progres = exercicesActifs().map((n) => ({ nom: n, ecart: ecartExercice(n, 28) })).filter((x) => x.ecart != null).sort((a, b) => b.ecart - a.ecart);
   html += '<p class="titre-section">Progression sur le mois</p><div class="carte">' +
     (progres.length ? progres.map((p) => '<div class="rangee" style="min-height:40px"><div class="tx"><b>' + echapper(p.nom) + '</b></div><span class="puce ' + classeEcart(p.ecart) + '">' + (p.ecart > 0 ? '+' : '') + formatNombre(p.ecart) + ' %</span></div>').join('') : '<p class="vide">Pas encore deux séances d\'un même exercice ce mois.</p>') + '</div>';
+  const pecs = alerteVolumePectoraux(progres);
+  if (pecs) html += '<div class="alerte attention" style="margin-top:10px" id="bilan-pectoraux">' + svgIcone('alerte') + '<div>' + echapper(pecs) + '</div></div>';
   if (reculs.length) html += '<div class="alerte baisse" style="margin-top:10px">' + svgIcone('alerte') + '<div><b>En recul deux séances de suite :</b> ' + reculs.map(echapper).join(', ') + '. Alléger la séance qui précède plutôt que changer l\'ordre.</div></div>';
   const douleurs = lireTableau(CLES.douleurs).filter((d) => new Date(d.date).getTime() >= debut);
   if (douleurs.length) html += '<p class="titre-section">Douleurs notées</p><div class="carte">' + douleurs.map((d) => '<div class="resume-exo"><b>' + echapper(d.exercice) + '</b><span>' + dateCourte(d.date) + ' : ' + echapper(d.texte) + '</span></div>').join('') + '</div>';

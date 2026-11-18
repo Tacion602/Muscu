@@ -153,6 +153,21 @@ function objectifExercice(fiche, derniere) {
    suggérée (objectifExercice) : comparée à la première série, une séance
    en pyramide (45 puis 55, 55) faisait suggérer 60 kg et signaler 65 kg
    « contre 45 kg » (remarque du 6 novembre 2026, extension jambes). */
+/* Échauffement indicatif (19 novembre 2026, proposition de l'utilisateur :
+   10 répétitions à 65 %, 5 à 85 % de la charge de travail, repos court).
+   Pratique courante, pas un protocole établi par des essais. Calculé sur
+   la charge de la 1re série prévue, arrondi au cran de 2,5 kg ; rien pour
+   les tractions (poids du corps) ni sous 15 kg. */
+const ECHAUFFEMENT = [{ reps: 10, part: 0.65 }, { reps: 5, part: 0.85 }];
+const REPOS_ECHAUFFEMENT = 60;
+function echauffementIndicatif(nomExo, chargeTravail) {
+  if (!chargeTravail || chargeTravail < 15 || /traction/.test(formeDuNom(nomExo))) return null;
+  return {
+    series: ECHAUFFEMENT.map((e) => ({ reps: e.reps, charge: Math.max(2.5, Math.round((chargeTravail * e.part) / 2.5) * 2.5) })),
+    repos: REPOS_ECHAUFFEMENT,
+  };
+}
+
 function chargeDeReference(derniere) {
   if (!derniere || !derniere.series.length) return null;
   const charges = derniere.series.map((s) => s.charge).filter((c) => c != null);

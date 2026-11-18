@@ -30,7 +30,7 @@
  */
 
 const SECRET = 'a-changer';
-const VERSION_PONT = 'v2-2026-11-09';
+const VERSION_PONT = 'v2-2026-11-09b';
 
 const ONGLETS = {
   seances: 'Séances',
@@ -87,7 +87,8 @@ function doPost(requete) {
     switch (corps.action) {
       case 'ping':
         return reponse({ ok: true, classeur: classeur.getName(), version: VERSION_PONT,
-          id: classeur.getId(), gids: gidsDesOnglets(classeur) });
+          id: classeur.getId(), gids: gidsDesOnglets(classeur),
+          sauvegarde: ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'sauvegarderClasseur'; }) });
       case 'seance':
         return reponse({ ok: true, lignes: ecrireSeance(classeur, corps.seance) });
       case 'historique': {
@@ -400,4 +401,40 @@ function ecrireProgramme(classeur, programme) {
   });
   if (onglet.getLastRow() > 1) onglet.getRange(2, 1, onglet.getLastRow() - 1, onglet.getMaxColumns()).clearContent();
   ajouterLignes(onglet, lignes);
+}
+
+/* ---------------- Sauvegarde hebdomadaire (9 novembre 2026) ----------------
+   Une copie datee du classeur entier dans un dossier Drive « Muscu
+   sauvegardes », chaque semaine, faite par Google lui-meme : elle protege
+   d'une erreur d'import (cas du 8 novembre, classeur remplace en entier)
+   sans dependre de l'ordinateur. Les 12 copies les plus recentes sont
+   gardees, les plus anciennes vont a la corbeille de Drive.
+   Mise en place, une seule fois : dans l'editeur, choisir la fonction
+   installerSauvegardeHebdo et cliquer sur Executer, puis accepter les
+   autorisations (acces a Drive). */
+const DOSSIER_SAUVEGARDES = 'Muscu sauvegardes';
+const SAUVEGARDES_GARDEES = 12;
+
+function sauvegarderClasseur() {
+  const classeur = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('classeur_id'));
+  const dossiers = DriveApp.getFoldersByName(DOSSIER_SAUVEGARDES);
+  const dossier = dossiers.hasNext() ? dossiers.next() : DriveApp.createFolder(DOSSIER_SAUVEGARDES);
+  const nom = classeur.getName() + ' ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH-mm');
+  DriveApp.getFileById(classeur.getId()).makeCopy(nom, dossier);
+  const copies = [];
+  const fichiers = dossier.getFiles();
+  while (fichiers.hasNext()) copies.push(fichiers.next());
+  copies.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  copies.slice(SAUVEGARDES_GARDEES).forEach(function (f) { f.setTrashed(true); });
+  return nom;
+}
+
+function installerSauvegardeHebdo() {
+  // Le declencheur horaire n'a pas de classeur actif : on retient son id.
+  PropertiesService.getScriptProperties().setProperty('classeur_id', SpreadsheetApp.getActiveSpreadsheet().getId());
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'sauvegarderClasseur') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('sauvegarderClasseur').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(4).create();
+  return sauvegarderClasseur();
 }

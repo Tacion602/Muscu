@@ -221,6 +221,9 @@ function toast(texte, duree, genre) {
 
 /* points : [{ x: date ISO, y: nombre, deload?, etiquette }], unite texte.
    Renvoie du SVG ; les points portent data-index pour un appui. */
+const COULEURS_RIR = ['#dc2626', '#f59e0b', '#84cc16', '#16a34a'];
+const FORMES_JOURS = ['rond', 'carre', 'losange'];
+
 function courbeSvg(points, unite, choisi) {
   if (points.length < 2) return '';
   const L = 340, H = 210, g = 46, d = 12, h = 20, b = 34;
@@ -255,8 +258,16 @@ function courbeSvg(points, unite, choisi) {
     if (i === points.length - 1) classes.push('dernier');
     if (i === choisi) classes.push('choisi');
     if (p.deload) classes.push('deload');
-    const teinte = p.couleur ? ' style="--teinte-point:' + p.couleur + '"' : '';
-    svg += '<circle class="' + classes.join(' ') + '"' + teinte + ' cx="' + sx(xs[i]) + '" cy="' + sy(p.y) + '" r="' + (i === choisi ? 6.5 : 4.5) + '"/>';
+    // Couleur du point : RIR saisi de la première série, du rouge (RIR 0)
+    // au vert (RIR 3) ; forme : le jour du programme quand l'exercice vit
+    // sur plusieurs jours (19 novembre 2026).
+    const remplissage = p.rir != null ? COULEURS_RIR[Math.max(0, Math.min(3, p.rir))] : (p.couleur || null);
+    const teinte = remplissage ? ' style="--teinte-point:' + remplissage + '"' : '';
+    const r = i === choisi ? 6.5 : 4.5;
+    const cx = sx(xs[i]), cy = sy(p.y);
+    if (p.forme === 'carre') svg += '<rect class="' + classes.join(' ') + '"' + teinte + ' x="' + (cx - r) + '" y="' + (cy - r) + '" width="' + 2 * r + '" height="' + 2 * r + '"/>';
+    else if (p.forme === 'losange') svg += '<polygon class="' + classes.join(' ') + '"' + teinte + ' points="' + cx + ',' + (cy - r * 1.3) + ' ' + (cx + r * 1.3) + ',' + cy + ' ' + cx + ',' + (cy + r * 1.3) + ' ' + (cx - r * 1.3) + ',' + cy + '"/>';
+    else svg += '<circle class="' + classes.join(' ') + '"' + teinte + ' cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
     svg += '<rect class="zone" data-index="' + i + '" x="' + (sx(xs[i]) - 14) + '" y="' + h + '" width="28" height="' + (H - h - b) + '"/>';
   });
   return svg + '</svg>';

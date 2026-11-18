@@ -299,7 +299,14 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .exo-details .ligne-detail { display: flex; gap: 8px; align-items: flex-start; }
 .exo-details .ligne-detail .cle { color: var(--texte-2); flex: none; width: 76px; font-size: 13px; padding-top: 1px; }
 .exo-details .ligne-detail .val { flex: 1; min-width: 0; }
+#exo-consigne .val { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+#exo-consigne.deplie .val { display: block; -webkit-line-clamp: unset; overflow: visible; }
 .exo-details button.ligne-detail { width: 100%; text-align: left; }
+/* Échauffement indicatif, en gris, sous l'objectif (19 novembre 2026). */
+.courbe-du-jour { margin-top: 10px; }
+.courbe-du-jour b { display: block; font-size: 14px; margin-bottom: 4px; }
+.ligne-echauffement { display: block; width: 100%; text-align: left; margin-top: 8px; padding: 8px 10px; border-radius: var(--rayon-petit); background: var(--fond-2); color: var(--texte-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ligne-echauffement span { display: block; font-size: 11px; color: var(--texte-3); margin-top: 2px; }
 .exo-details .ligne-detail .crayon { flex: none; width: 18px; height: 18px; color: var(--texte-3); margin-top: 1px; }
 .exo-details .ligne-detail .crayon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .exo-details .douleur { color: var(--baisse); }
@@ -359,6 +366,13 @@ button.rangee:active { background: var(--fond-2); margin: 0 -14px; padding-left:
 .minuterie-plein .anneau .progres { stroke: #93c5fd; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke .3s ease; }
 /* Pointe lumineuse en tête de l'arc (8 novembre 2026, chrono « fluide et
    cinétique »), et vert de fin à zéro. */
+/* Sens inversé (19 novembre 2026) : la tête de l'anneau tourne dans le
+   sens des aiguilles d'une montre. */
+.minuterie-plein .anneau { transform: scaleX(-1); }
+/* Série validée qui attend son RIR avant l'écran de repos. */
+.serie.rir-attendu .rir { box-shadow: 0 0 0 2px var(--repos); border-radius: var(--rayon-petit); animation: rir-attendu 1s ease-in-out infinite alternate; }
+@keyframes rir-attendu { from { box-shadow: 0 0 0 2px rgba(45, 97, 210, .25); } to { box-shadow: 0 0 0 2px var(--repos); } }
+@media (prefers-reduced-motion: reduce) { .serie.rir-attendu .rir { animation: none; } }
 .minuterie-plein .anneau .pointe { fill: #fff; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px #93c5fd); }
 .minuterie-plein.fini { pointer-events: none; }
 .minuterie-plein.fini .anneau .progres { stroke: #86efac; }
@@ -442,6 +456,11 @@ svg.courbe .point.choisi[style] { stroke-width: 3; }
 .legende-jours { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; font-size: 12px; color: var(--texte-2); }
 .legende-jours span { display: inline-flex; align-items: center; gap: 6px; }
 .legende-jours i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+/* Formes des jours dans la légende (19 novembre 2026). */
+.legende-jours i.forme-rond, .legende-jours i.forme-carre, .legende-jours i.forme-losange { background: var(--texte-2); }
+.legende-jours i.forme-carre { border-radius: 1px; }
+.legende-jours i.forme-losange { border-radius: 1px; transform: rotate(45deg) scale(.85); }
+svg.courbe rect.point, svg.courbe polygon.point { stroke-width: 2; }
 svg.courbe .zone { fill: transparent; }
 svg.courbe .deload { fill: var(--attention); stroke: var(--attention); }
 .fiche-point { margin-top: 8px; border-radius: var(--rayon); background: var(--carte); box-shadow: 0 0 0 2px var(--accent), var(--ombre); padding: 12px 14px; font-size: 13px; }

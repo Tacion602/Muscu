@@ -85,6 +85,8 @@ function rendreExercice() {
   } else if (!derniere) {
     html += '<p class="petit texte-2" style="margin-top:8px">Première fois : choisis une charge qui laisse ' + (fiche.rir && fiche.rir.length ? fiche.rir[0] : 2) + ' répétitions en réserve.</p>';
   }
+  const echauffement = seance.deload ? null : echauffementIndicatif(exo.nom, objectif ? objectif.charge : (derniere ? chargeDeReference(derniere) : null));
+  if (echauffement) html += '<button class="ligne-echauffement" id="exo-echauffement">Échauffement : ' + echauffement.series.map((s) => s.reps + ' × ' + formatNombre(s.charge) + ' kg').join(' · ') + ' · repos ' + echauffement.repos + ' s <span>Toucher pour lancer le repos</span></button>';
   if (info) {
     html += '<div class="exo-image"><img id="exo-image" alt="' + echapper(exo.nom) + '">' +
       (info.generique ? '<span class="puce generique">Illustration approchée</span>' : '') +
@@ -117,7 +119,17 @@ function rendreExercice() {
   rendreBandeauMinuterie();
 
   $('exo-menu').addEventListener('click', menuExercice);
-  $('exo-consigne').addEventListener('click', () => saisir('Consigne technique', consigne, 'Enregistrer', (t) => { enregistrerConsigne(seance.jour, exo.nom, t); rendreExercice(); toast('Consigne enregistrée.', 2000, 'succes'); }, true));
+  // Consigne longue repliée sur trois lignes (19 novembre 2026) : un
+  // premier appui la déplie, le crayon ou un second appui la modifie.
+  const ligneConsigne = $('exo-consigne');
+  const valConsigne = ligneConsigne.querySelector('.val');
+  if (valConsigne.scrollHeight > valConsigne.clientHeight + 2) ligneConsigne.classList.add('repliable');
+  ligneConsigne.addEventListener('click', (ev) => {
+    if (ligneConsigne.classList.contains('repliable') && !ligneConsigne.classList.contains('deplie') && !ev.target.closest('.crayon')) {
+      ligneConsigne.classList.add('deplie'); return;
+    }
+    saisir('Consigne technique', consigne, 'Enregistrer', (t) => { enregistrerConsigne(seance.jour, exo.nom, t); rendreExercice(); toast('Consigne enregistrée.', 2000, 'succes'); }, true);
+  });
   $('exo-reglages').addEventListener('click', () => saisir('Réglage machine', regl, 'Enregistrer', (t) => { enregistrerReglagesMachine(exo.nom, t); rendreExercice(); toast('Réglage enregistré.', 2000, 'succes'); }));
   $('ajouter-serie').addEventListener('click', () => {
     exo.series.push({ charge: null, reps: null, rir: null, faite: false, heure: null, restPause: false, cible: fiche.rir && fiche.rir.length ? fiche.rir[fiche.rir.length - 1] : null });
@@ -144,6 +156,8 @@ function rendreExercice() {
   // d'un unilatéral, après une série d'échauffement (remarque du
   // 5 novembre 2026). Durée du repos de l'exercice, réglable par ±15 s.
   $('chrono-exo').addEventListener('click', () => lancerMinuterie(exo.repos_s || 90, null));
+  const lienEchauffement = $('exo-echauffement');
+  if (lienEchauffement) lienEchauffement.addEventListener('click', () => lancerMinuterie(echauffement.repos, null));
   $('douleur-exo').addEventListener('click', () => saisir('Douleur sur ' + exo.nom, '', 'Noter', (t) => {
     if (!douleurValable(t)) { toast('Décris la douleur en quelques mots (où, à quel moment).', 3500); return; }
     ajouterDouleur(exo.nom, t, seance.id, seance.jour);
@@ -285,6 +299,7 @@ function rendreSeries() {
         serie.rirAuto = false;
         enregistrerSeance();
         rir.querySelectorAll('button').forEach((x) => x.classList.toggle('choisi', Number(x.textContent) === serie.rir));
+        terminerAttenteRir(serie);
       });
       rir.appendChild(b);
     });
@@ -372,9 +387,37 @@ function validerSerie(exo, serie, index, reference, fiche) {
   const comp = $('comparaison');
   if (comp && c) { comp.textContent = c.texte + (c.indicatif ? ' (RIR différent, indicatif)' : ''); comp.className = 'comparaison ' + c.sens; }
 
+  // Le repos part du moment où la série finit, mais l'écran de repos et le
+  // passage à l'exercice suivant attendent le RIR (19 novembre 2026 : « il
+  // se déclenche après avoir renseigné le RIR ») : un appui sur un bouton
+  // RIR de cette série, ou ATTENTE_RIR.ms sans appui. Un RIR choisi avant
+  // de valider ne fait pas attendre.
+  const debutRepos = Date.now();
+  rendreSeries(); rendreJauge();
+  apresRir(serie, () => poursuivreApresSerie(exo, repos, debutRepos));
+}
+
+const ATTENTE_RIR = { ms: 6000 };
+let attenteRir = null;
+function apresRir(serie, suite) {
+  if (attenteRir) terminerAttenteRir();
+  if ((serie.rir != null && !serie.rirAuto) || !ATTENTE_RIR.ms) { suite(); return; }
+  attenteRir = { serie, suite, delai: setTimeout(() => terminerAttenteRir(), ATTENTE_RIR.ms) };
+  const ligne = document.querySelectorAll('#series .serie')[seance.exercices[indexExo].series.indexOf(serie)];
+  if (ligne) ligne.classList.add('rir-attendu');
+}
+function terminerAttenteRir(serie) {
+  if (!attenteRir || (serie && attenteRir.serie !== serie)) return;
+  const a = attenteRir; attenteRir = null;
+  clearTimeout(a.delai);
+  a.suite();
+}
+
+function poursuivreApresSerie(exo, repos, debutRepos) {
+  if (!seance) return;
   const toutFait = exo.series.every((s) => s.faite);
   let bilan = null;
-  if (toutFait) {
+  if (toutFait && seance.exercices[indexExo] === exo) {
     const derniere = derniereFois(exo.nom, seance.id);
     bilan = { tonnage: tonnageDesSeries(exo.series), tonnageAvant: derniere ? tonnageDesSeries(derniere.series) : null, suivant: null };
     if (indexExo < seance.exercices.length - 1) {
@@ -387,7 +430,7 @@ function validerSerie(exo, serie, index, reference, fiche) {
     } else { rendreSeries(); rendreJauge(); }
   } else { rendreSeries(); rendreJauge(); }
   focaliserProchaineSerie();
-  lancerMinuterie(repos, bilan);
+  lancerMinuterie(repos, bilan, debutRepos);
 }
 
 function amorcerClavier() {
@@ -439,9 +482,10 @@ function restaurerRepos() {
   animerAnneau();
 }
 
-function lancerMinuterie(secondes, bilan) {
+function lancerMinuterie(secondes, bilan, debut) {
   arreterMinuterie();
-  minuterie = { debut: Date.now(), fin: Date.now() + secondes * 1000, duree: secondes, bilan, jour: seance ? seance.jour : null };
+  const depart = debut || Date.now();
+  minuterie = { debut: depart, fin: depart + secondes * 1000, duree: secondes, bilan, jour: seance ? seance.jour : null };
   sauverRepos();
   rendreBandeauMinuterie();
   const plein = $('minuterie-plein');
@@ -620,6 +664,23 @@ function terminer() {
   afficher('fin');
 }
 
+/* Courbes des exercices faits aujourd'hui, en fin de séance (19 novembre
+   2026) : les huit derniers points de chacun, celui du jour en dernier. */
+function courbesDuJour() {
+  const blocs = seance.exercices.map((e) => {
+    const series = seriesDeTravail(e);
+    if (!series.length) return '';
+    const fiche = ficheDuProgramme(e.nom) || { nom: e.nom };
+    const pts = pointsExercice(e.nom, 3650).filter((q) => q.occ.seance.id !== seance.id).slice(-7);
+    const y = indicateur(series[0], fiche);
+    if (y == null) return '';
+    pts.push({ x: new Date().toISOString(), y, rir: rirSaisi(series[0]), occ: { seance, series } });
+    if (pts.length < 2) return '';
+    return '<div class="carte courbe-du-jour"><b>' + echapper(e.nom) + '</b>' + courbeSvg(pts, 'kg', pts.length - 1) + '</div>';
+  }).filter(Boolean);
+  return blocs.length ? '<p class="titre-section">Courbes du jour</p>' + blocs.join('') : '';
+}
+
 function rendreFin() {
   if (!seance) return;
   const corps = $('fin-corps');
@@ -646,6 +707,7 @@ function rendreFin() {
     if (oublies.length) html += '<div class="alerte attention" style="margin-top:10px">' + svgIcone('alerte') + '<div>Sans série : ' + oublies.map((e) => echapper(e.nom)).join(', ') + '. L\'envoi reste possible.</div></div>';
     html += '<div class="carte" style="margin-top:10px">' + faits.map((e) => '<div class="resume-exo"><b>' + echapper(e.nom) + '</b><span>' +
       e.series.filter((s) => s.faite).map((s) => (s.charge == null ? '?' : formatNombre(s.charge)) + '×' + (s.reps == null ? '?' : s.reps) + (s.rir != null ? ' @' + s.rir : '') + (s.restPause ? ' RP' : '')).join(' · ') + '</span></div>').join('') + '</div>';
+    html += courbesDuJour();
   } else if (seance.type === 'cardio') {
     html += resumeCardio();
   } else {

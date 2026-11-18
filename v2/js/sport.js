@@ -329,6 +329,24 @@ function sortirIntro() {
   nom.animate(images, { duration: duree, easing: courbe, fill: 'forwards' }).finished.then(finir, finir);
 }
 
+/* Rappels datés (9 novembre 2026), affichés sur l'Accueil à partir de leur
+   date jusqu'à « C'est noté ». */
+const RAPPELS = [
+  { cle: 'elevation-laterale-2026-12', des: '2026-12-04', titre: "Retester l'élévation latérale",
+    texte: "Quatre semaines depuis l'arrêt (douleur sur le dessus de l'épaule). Si l'épaule est calme : deux séries très légères en fin de séance, arrêt à la première gêne. Si elle a encore mal, voir un kiné ou un médecin." },
+];
+const CLE_RAPPELS_VUS = 'muscu2.rappelsVus';
+function rappelDuJour(maintenant) {
+  const vus = lire(CLE_RAPPELS_VUS, []) || [];
+  const jour = maintenant.toISOString().slice(0, 10);
+  return RAPPELS.find((r) => r.des <= jour && !vus.includes(r.cle)) || null;
+}
+function marquerRappelVu(cle) {
+  const vus = lire(CLE_RAPPELS_VUS, []) || [];
+  if (!vus.includes(cle)) vus.push(cle);
+  ecrire(CLE_RAPPELS_VUS, vus);
+}
+
 function rendreAccueil() {
   const corps = $('accueil-corps');
   const maintenant = new Date();
@@ -344,6 +362,8 @@ function rendreAccueil() {
 
   let html = '<div class="accueil-entete"><h1>' + salut + '</h1><p>' + echapper(maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })) + ' · semaine ' + semaine + '</p></div>';
   html += '<div class="accueil-phrase"><div class="texte">' + echapper(phraseMotivation(cleDate(maintenant))) + '</div></div>';
+  const rappel = rappelDuJour(maintenant);
+  if (rappel) html += '<div class="alerte info" style="margin-top:10px;text-align:left" id="accueil-rappel">' + svgIcone('alerte') + '<div><b>' + echapper(rappel.titre) + '</b><br>' + echapper(rappel.texte) + '<br><button class="bouton petit" id="accueil-rappel-vu" style="margin-top:8px">C&#39;est noté</button></div></div>';
   const depuis = derniere ? joursDepuis(derniere.fin) : null;
   html += '<div class="carte accueil-stats">' +
     '<div><span class="n num">' + cetteSemaine + '</span><span class="l">cette semaine</span></div>' +
@@ -363,5 +383,7 @@ function rendreAccueil() {
   poserIcones(corps);
   corps.querySelectorAll('[data-accueil-jour]').forEach((b) => b.addEventListener('click', () => { afficher('sport'); commencer(b.dataset.accueilJour); }));
   $('accueil-programme').addEventListener('click', () => afficher('sport'));
+  const vu = $('accueil-rappel-vu');
+  if (vu) vu.addEventListener('click', () => { marquerRappelVu(rappel.cle); rendreAccueil(); });
 }
 rendus.accueil = rendreAccueil;

@@ -45,6 +45,9 @@ def page(navigateur, adresse):
     onglet.goto(adresse)
     # Page d'envoi animee : cadence reduite, sauf dans son propre test.
     onglet.evaluate("Object.assign(DUREES_ENVOI, { minimum: 0, rebond: 0, tenue: 0 })")
+    # Attente du RIR avant l'ecran de repos : immediate dans les tests,
+    # sauf dans son propre test.
+    onglet.evaluate("ATTENTE_RIR.ms = 0")
     ouvrir_sport(onglet)
     # Temoin structurel : six jours dans l'ordre de la semaine plus le bonus.
     codes = onglet.eval_on_selector_all("#ecran-sport .carte-jour .code", "c => c.map(x => x.textContent.trim())")
@@ -428,6 +431,20 @@ def test_le_developpe_epaules_machine_garde_l_historique_halteres(page):
     assert page.evaluate("derniereFois('Developpe epaules machine').series[0].charge") == 40
 
 
+def test_rappel_date_et_etat_du_pont(page):
+    """9 novembre 2026 : rappel de l'elevation laterale a partir du
+    4 decembre jusqu'a « C'est note » ; Reglages signale un pont ancien et
+    une sauvegarde hebdomadaire absente."""
+    assert page.evaluate("rappelDuJour(new Date('2026-12-03T12:00:00Z'))") is None
+    assert page.evaluate("rappelDuJour(new Date('2026-12-05T12:00:00Z')).cle") == "elevation-laterale-2026-12"
+    page.evaluate("marquerRappelVu('elevation-laterale-2026-12')")
+    assert page.evaluate("rappelDuJour(new Date('2026-12-05T12:00:00Z'))") is None
+    ancien = page.evaluate("etatPont({ classeur: 'Muscu v2', version: 'v2-2026-11-04', sauvegarde: false })")
+    assert "redéployer" in ancien and "non installée" in ancien, ancien
+    neuf = page.evaluate("etatPont({ classeur: 'Muscu v2', version: 'v2-2026-11-09b', sauvegarde: true })")
+    assert "redéployer" not in neuf and "active" in neuf, neuf
+
+
 def test_une_seance_de_deload_n_entre_pas_dans_les_comparaisons(page):
     ouvrir_jour(page, "J1")
     terminer_seance(page, 40, 8)
@@ -462,6 +479,52 @@ def test_le_rir_cible_est_propose_et_un_appui_le_corrige(page):
     assert courante.locator(".rir button.cible").count() == 1
     courante.locator(".rir button").nth(0).click()
     assert courante.locator(".rir button.choisi").inner_text() == "0"
+
+
+def test_le_repos_attend_le_rir_avant_le_plein_ecran(page):
+    """19 novembre 2026 : l'ecran de repos attend le RIR, mais le temps
+    de repos compte depuis la fin de la serie."""
+    page.evaluate("ATTENTE_RIR.ms = 60000")
+    ouvrir_jour(page, "J1")
+    saisir_serie_courante(page, 40, 8)
+    assert page.locator("#series .serie.faite").count() == 1
+    assert page.evaluate("minuterie === null")
+    assert page.locator("#series .serie.rir-attendu").count() == 1
+    page.locator("#series .serie.rir-attendu .rir button").nth(1).click()
+    assert page.evaluate("minuterie !== null")
+    assert page.evaluate("Date.now() - minuterie.debut < 5000")
+
+
+def test_l_echauffement_indicatif_et_les_courbes_du_jour(page):
+    for charge in (40, 42.5):
+        ouvrir_jour(page, "J1")
+        terminer_seance(page, charge, 8)
+        page.locator("#ecran-historique [data-retour]").click()
+    ouvrir_jour(page, "J1")
+    ligne = page.locator("#exo-echauffement")
+    assert ligne.count() == 1
+    assert "10 ×" in ligne.inner_text() and "5 ×" in ligne.inner_text()
+    ligne.click()
+    assert page.evaluate("minuterie && minuterie.duree === REPOS_ECHAUFFEMENT")
+    fermer_repos(page)
+    for _ in range(40):
+        if page.locator("#series .serie.courante").count() == 0:
+            break
+        saisir_serie_courante(page, 45, 8)
+        fermer_repos(page)
+    page.locator("#exo-terminer").click()
+    page.wait_for_selector("#ecran-fin.actif")
+    assert page.locator("#ecran-fin .courbe-du-jour svg.courbe").count() >= 1
+
+
+def test_la_consigne_longue_se_deplie_puis_se_modifie(page):
+    ouvrir_jour(page, "J1")
+    ligne = page.locator("#exo-consigne")
+    assert "repliable" in ligne.get_attribute("class")
+    ligne.click()
+    assert "deplie" in ligne.get_attribute("class")
+    ligne.locator(".crayon").click()
+    page.wait_for_selector(".voile textarea")
 
 
 def test_le_remplacement_garde_l_identite_par_nom(page):

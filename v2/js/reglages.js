@@ -7,7 +7,7 @@ function rendreReglages() {
     '<p class="titre-section">Classeur</p><div class="reglages-groupe">' +
     '<label class="champ"><span>Adresse du pont (déploiement Apps Script v2)</span><input type="url" id="r-pont" value="' + echapper(reglages.pont || '') + '" placeholder="https://script.google.com/macros/s/.../exec"></label>' +
     '<label class="champ"><span>Mot de passe du pont</span><input type="password" id="r-secret" value="' + echapper(reglages.secret || '') + '"></label>' +
-    '<div class="champ"><button class="bouton" id="r-tester">Tester la connexion</button><p class="etat-pont" id="r-etat">' + (reglages.classeurId ? 'Classeur relié : ' + echapper(reglages.classeurNom || reglages.classeurId) : 'Pas encore relié.') + '</p></div>' +
+    '<div class="champ"><button class="bouton" id="r-tester">Tester la connexion</button><p class="etat-pont" id="r-etat">' + (reglages.classeurId ? etatPont({ classeur: reglages.classeurNom || reglages.classeurId, version: reglages.versionPont, sauvegarde: reglages.sauvegardePont }) : 'Pas encore relié.') + '</p></div>' +
     '<div class="champ"><button class="bouton" id="r-programme">Sauvegarder le programme dans le classeur</button></div>' +
     '</div>' +
     '<p class="titre-section">Séance</p><div class="reglages-groupe">' +
@@ -40,8 +40,9 @@ function rendreReglages() {
     try {
       const r = await envoyer({ action: 'ping' });
       reglages.classeurId = r.id || ''; reglages.classeurNom = r.classeur || ''; reglages.gids = r.gids || {};
+      reglages.versionPont = r.version || ''; reglages.sauvegardePont = !!r.sauvegarde;
       sauverReglages();
-      etat.textContent = 'Classeur relié : ' + r.classeur + ' (pont ' + (r.version || '?') + ').';
+      etat.innerHTML = etatPont(r);
     } catch (e) { etat.textContent = 'Échec : ' + e.message; }
   });
   $('r-programme').addEventListener('click', async () => {
@@ -112,6 +113,21 @@ rendus.reglages = rendreReglages;
    du navigateur le dit. Constat du 6 novembre 2026 sur le Pixel. */
 function navigateurSansVibration() {
   return /Firefox\//.test(navigator.userAgent);
+}
+
+/* État du pont après « Tester la connexion » (9 novembre 2026) : sa
+   version, signalée si elle est antérieure à celle que l'appli attend
+   (un redéploiement oublié laissait l'ancien code tourner sans le dire),
+   et la sauvegarde hebdomadaire du classeur, active ou non. */
+const VERSION_PONT_MINIMALE = 'v2-2026-11-09';
+function pontAJour(version) {
+  return !!version && version >= VERSION_PONT_MINIMALE;
+}
+function etatPont(r) {
+  let html = 'Classeur relié : ' + echapper(r.classeur || '?') + '.';
+  if (r.version) html += '<br>Pont ' + echapper(r.version) + (pontAJour(r.version) ? '' : ' : <b style="color:var(--baisse)">version ancienne, à redéployer</b>');
+  if (r.version) html += '<br>Sauvegarde hebdomadaire du classeur : ' + (r.sauvegarde ? 'active' : '<b style="color:var(--attention)">non installée</b>');
+  return html;
 }
 
 function bascule(cle, libelle) {
