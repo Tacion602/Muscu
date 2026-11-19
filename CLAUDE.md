@@ -385,18 +385,19 @@ codes.
     supprimées par l'utilisateur ; reste `S1787776089163` (J1, ligne 7 de
     `Séances` au 19 novembre). Les deux cardios du même jour restent.
   - Suppression d'une série d'un geste : abandonnée par l'utilisateur.
-- **Jours de maladie dans le calendrier, le 19 novembre 2026** (« dans
-  l'agenda pouvoir dire les jours malade ») : tout jour passé ou présent
-  du calendrier s'ouvre, la feuille porte une bascule « Malade ce
-  jour-là » (`#cal-malade`, `basculerMalade()`) ; le jour prend un fond
-  ambre et un thermomètre (icône `malade`), « Malade » écrit dessous
-  quand il n'y a pas de séance. Rangés dans `muscu2.joursMalade`
-  (`CLES.malade`, une entrée `{ cle }` par jour, export et restauration
-  compris), **pas envoyés au classeur** (le pont n'a pas d'action pour
-  ça). Effets : le retard d'un jour (`retardDuJour()`) ne compte pas les
-  jours malades (`joursMaladeDepuis()`), et le bilan mensuel retire une
-  séance attendue par jour pour chaque semaine de maladie
-  (`#bilan-malade`).
+- **Jours malade ou absent dans le calendrier, le 19 novembre 2026**
+  (« dans l'agenda pouvoir dire les jours malade », puis « aussi noter
+  absent ») : tout jour passé ou présent du calendrier s'ouvre, la
+  feuille porte trois boutons Normal, Malade, Absent (`#cal-etat`,
+  `poserEtatJour()`, `ETATS_JOUR`). Malade : fond ambre et thermomètre
+  (icône `malade`) ; absent : fond hachuré et valise (icône `absent`) ;
+  le mot écrit dessous quand il n'y a pas de séance. Rangés dans
+  `muscu2.joursIndispo` (`CLES.indispo`, une entrée `{ cle, etat }` par
+  jour, export et restauration compris), **pas envoyés au classeur** (le
+  pont n'a pas d'action pour ça). Effets : le retard d'un jour
+  (`retardDuJour()`) ne compte pas ces jours (`joursIndisposDepuis()`),
+  et le bilan mensuel retire une séance attendue par jour pour chaque
+  semaine malade ou absent (`#bilan-indispo`).
 - **Classeur restauré le 9 novembre 2026** : l'import du CSV du 8 au soir
   avait été fait avec « Remplacer la feuille de calcul » au lieu de
   « Remplacer la feuille actuelle » ; tous les onglets sauf Programme

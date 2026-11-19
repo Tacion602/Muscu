@@ -785,26 +785,33 @@ def test_la_courbe_porte_des_axes_lisibles_et_une_fiche_au_point(page):
     assert "40" in page.locator(".fiche-point b").inner_text()
 
 
-def test_un_jour_malade_se_note_dans_le_calendrier_et_suspend_le_retard(page):
-    """Demande du 19 novembre 2026 : dire les jours malade dans l'agenda."""
+def test_un_jour_malade_ou_absent_se_note_et_suspend_le_retard(page):
+    """Demandes du 19 novembre 2026 : dire les jours malade, puis absent,
+    dans l'agenda."""
     page.locator('.onglet[data-onglet="suivi"]').click()
     page.locator('.tuile[data-ecran="calendrier"]').click()
     page.wait_for_selector("#ecran-calendrier.actif")
     page.locator("#calendrier-corps .calendrier-case.aujourdhui").click()
-    page.locator("#cal-malade").check()
+    page.locator('#cal-etat [data-etat="malade"]').click()
     page.wait_for_timeout(200)
     assert page.locator("#calendrier-corps .calendrier-case.aujourdhui.malade").count() == 1
-    assert page.evaluate("joursMalade().size") == 1
+    page.locator('#cal-etat [data-etat="absent"]').click()
+    page.wait_for_timeout(200)
+    assert page.locator("#calendrier-corps .calendrier-case.aujourdhui.absent").count() == 1
+    assert page.evaluate("Object.values(etatsDesJours())") == ["absent"]
+    page.locator('#cal-etat [data-etat=""]').click()
+    page.wait_for_timeout(200)
+    assert page.evaluate("Object.keys(etatsDesJours()).length") == 0
     # Dix jours malades apres une seance ancienne de douze jours : pas en retard.
     page.evaluate("""() => {
         const fin = new Date(Date.now() - 12 * 86400000).toISOString();
         ecrire(CLES.historique, [{ id: 'S9', jour: 'J1', type: 'muscu', debut: fin, fin, exercices: [] }]);
         const jours = [];
-        for (let i = 0; i < 10; i++) jours.push({ cle: cleDate(new Date(Date.now() - i * 86400000)) });
-        ecrire(CLES.malade, jours);
+        for (let i = 0; i < 10; i++) jours.push({ cle: cleDate(new Date(Date.now() - i * 86400000)), etat: i % 2 ? 'absent' : 'malade' });
+        ecrire(CLES.indispo, jours);
     }""")
     r = page.evaluate("retardDuJour('J1')")
-    assert r["malade"] == 10 and r["enRetard"] is False
+    assert r["indispo"] == 10 and r["enRetard"] is False
 
 
 def test_le_service_worker_liste_tous_les_fichiers_servis(page):

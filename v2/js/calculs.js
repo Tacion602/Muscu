@@ -206,9 +206,9 @@ function retardDuJour(code) {
   const derniere = derniereSeanceDuJour(code);
   if (!derniere) return null;
   const j = joursDepuis(derniere.fin);
-  // Les jours de maladie ne comptent pas dans le retard (19 novembre 2026).
-  const malade = joursMaladeDepuis(derniere.fin);
-  return { jours: j, malade, enRetard: j - malade > RETARD_JOURS, derniere };
+  // Les jours malade ou absent ne comptent pas dans le retard (19 novembre 2026).
+  const indispo = joursIndisposDepuis(derniere.fin);
+  return { jours: j, indispo, enRetard: j - indispo > RETARD_JOURS, derniere };
 }
 
 function frequenceDuJour(code) {

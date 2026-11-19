@@ -20,7 +20,7 @@ const CLES = {
   dureeGainage: 'muscu2.dureeGainage',
   migration: 'muscu2.migration',
   dernierJour: 'muscu2.dernierJour',
-  malade: 'muscu2.joursMalade',
+  indispo: 'muscu2.joursIndispo',
 };
 
 const CLES_V1 = {
@@ -130,28 +130,30 @@ function restaurerSeancesDEssai() {
   return ajout.length;
 }
 
-/* Jours de maladie (demande du 19 novembre 2026 : « dans l'agenda pouvoir
-   dire les jours malade »). Une entrée { cle: 'jj/mm/aaaa' } par jour,
-   sur le téléphone seulement (export et restauration compris), pas
-   envoyée au classeur. */
-function joursMalade() {
-  return new Set(lireTableau(CLES.malade).map((j) => j.cle));
+/* Jours malade ou absent (demandes du 19 novembre 2026 : « dans l'agenda
+   pouvoir dire les jours malade », puis « aussi noter absent »). Une
+   entrée { cle: 'jj/mm/aaaa', etat: 'malade' | 'absent' } par jour, sur
+   le téléphone seulement (export et restauration compris), pas envoyée au
+   classeur. */
+const ETATS_JOUR = { malade: { libelle: 'Malade', icone: 'malade' }, absent: { libelle: 'Absent', icone: 'absent' } };
+function etatsDesJours() {
+  const etats = {};
+  lireTableau(CLES.indispo).forEach((j) => { if (j && j.cle) etats[j.cle] = ETATS_JOUR[j.etat] ? j.etat : 'malade'; });
+  return etats;
 }
-function basculerMalade(cle) {
-  const liste = lireTableau(CLES.malade);
-  const reste = liste.filter((j) => j.cle !== cle);
-  ecrire(CLES.malade, reste.length === liste.length ? liste.concat([{ cle }]) : reste);
-  return reste.length === liste.length;
+function poserEtatJour(cle, etat) {
+  const reste = lireTableau(CLES.indispo).filter((j) => j.cle !== cle);
+  ecrire(CLES.indispo, ETATS_JOUR[etat] ? reste.concat([{ cle, etat }]) : reste);
 }
-/* Nombre de jours de maladie entre une date et aujourd'hui, bornes exclues
-   pour le départ (le jour de la séance) et comprises pour aujourd'hui. */
-function joursMaladeDepuis(depuis) {
-  const malades = joursMalade();
-  if (!malades.size) return 0;
+/* Nombre de jours malade ou absent entre une date et aujourd'hui, le jour
+   de départ exclu (celui de la séance), aujourd'hui compris. */
+function joursIndisposDepuis(depuis) {
+  const etats = etatsDesJours();
+  if (!Object.keys(etats).length) return 0;
   let n = 0;
   const d = new Date(depuis); d.setHours(0, 0, 0, 0);
   const fin = new Date(); fin.setHours(0, 0, 0, 0);
-  for (d.setDate(d.getDate() + 1); d <= fin; d.setDate(d.getDate() + 1)) if (malades.has(cleDate(d))) n++;
+  for (d.setDate(d.getDate() + 1); d <= fin; d.setDate(d.getDate() + 1)) if (etats[cleDate(d)]) n++;
   return n;
 }
 
