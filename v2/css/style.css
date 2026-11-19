@@ -491,6 +491,14 @@ button.calendrier-case:active { transform: scale(.95); }
 .calendrier-case.gainage { background: #e2e8f0; }
 .calendrier-case.a-sommeil { box-shadow: inset 0 -3px 0 #5a7aa8; }  /* trait bas conservé sous la lune */
 .calendrier-case .multi { position: absolute; right: 3px; bottom: 2px; font-size: 10px; font-weight: 600; color: var(--texte-2); }
+/* Jours de maladie (19 novembre 2026). */
+.calendrier-case.malade { background: var(--attention-fond); }
+.calendrier-case .mal { display: flex; flex-direction: column; align-items: center; margin-top: 10px; color: var(--attention); }
+.calendrier-case .mal svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.calendrier-case .mal small { font-size: 10px; line-height: 1; margin-top: 2px; font-weight: 600; }
+.calendrier-case.malade:has(.ico) .mal { position: absolute; right: 2px; top: 2px; margin: 0; }
+.calendrier-case.malade:has(.ico) .nuit { right: 15px; }
+.calendrier-case.malade:has(.ico) .mal svg { width: 11px; height: 11px; stroke-width: 2; }
 .calendrier-case.zone-fatigue { background: var(--baisse-fond); }
 .calendrier-case.zone-recup { background: var(--attention-fond); }
 .calendrier-case.zone-prete { background: var(--hausse-fond); }

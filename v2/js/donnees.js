@@ -20,6 +20,7 @@ const CLES = {
   dureeGainage: 'muscu2.dureeGainage',
   migration: 'muscu2.migration',
   dernierJour: 'muscu2.dernierJour',
+  malade: 'muscu2.joursMalade',
 };
 
 const CLES_V1 = {
@@ -127,6 +128,31 @@ function restaurerSeancesDEssai() {
   if (ajout.length) ecrire(CLES.historique, lireTableau(CLES.historique).concat(ajout));
   ecrire(CLE_RESTAURATION, { quand: new Date().toISOString(), seances: ajout.length });
   return ajout.length;
+}
+
+/* Jours de maladie (demande du 19 novembre 2026 : « dans l'agenda pouvoir
+   dire les jours malade »). Une entrée { cle: 'jj/mm/aaaa' } par jour,
+   sur le téléphone seulement (export et restauration compris), pas
+   envoyée au classeur. */
+function joursMalade() {
+  return new Set(lireTableau(CLES.malade).map((j) => j.cle));
+}
+function basculerMalade(cle) {
+  const liste = lireTableau(CLES.malade);
+  const reste = liste.filter((j) => j.cle !== cle);
+  ecrire(CLES.malade, reste.length === liste.length ? liste.concat([{ cle }]) : reste);
+  return reste.length === liste.length;
+}
+/* Nombre de jours de maladie entre une date et aujourd'hui, bornes exclues
+   pour le départ (le jour de la séance) et comprises pour aujourd'hui. */
+function joursMaladeDepuis(depuis) {
+  const malades = joursMalade();
+  if (!malades.size) return 0;
+  let n = 0;
+  const d = new Date(depuis); d.setHours(0, 0, 0, 0);
+  const fin = new Date(); fin.setHours(0, 0, 0, 0);
+  for (d.setDate(d.getDate() + 1); d <= fin; d.setDate(d.getDate() + 1)) if (malades.has(cleDate(d))) n++;
+  return n;
 }
 
 /* Séances d'essai du 26 août 2026 (deux J1, un J3), sans type ni séries

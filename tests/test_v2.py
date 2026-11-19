@@ -785,6 +785,28 @@ def test_la_courbe_porte_des_axes_lisibles_et_une_fiche_au_point(page):
     assert "40" in page.locator(".fiche-point b").inner_text()
 
 
+def test_un_jour_malade_se_note_dans_le_calendrier_et_suspend_le_retard(page):
+    """Demande du 19 novembre 2026 : dire les jours malade dans l'agenda."""
+    page.locator('.onglet[data-onglet="suivi"]').click()
+    page.locator('.tuile[data-ecran="calendrier"]').click()
+    page.wait_for_selector("#ecran-calendrier.actif")
+    page.locator("#calendrier-corps .calendrier-case.aujourdhui").click()
+    page.locator("#cal-malade").check()
+    page.wait_for_timeout(200)
+    assert page.locator("#calendrier-corps .calendrier-case.aujourdhui.malade").count() == 1
+    assert page.evaluate("joursMalade().size") == 1
+    # Dix jours malades apres une seance ancienne de douze jours : pas en retard.
+    page.evaluate("""() => {
+        const fin = new Date(Date.now() - 12 * 86400000).toISOString();
+        ecrire(CLES.historique, [{ id: 'S9', jour: 'J1', type: 'muscu', debut: fin, fin, exercices: [] }]);
+        const jours = [];
+        for (let i = 0; i < 10; i++) jours.push({ cle: cleDate(new Date(Date.now() - i * 86400000)) });
+        ecrire(CLES.malade, jours);
+    }""")
+    r = page.evaluate("retardDuJour('J1')")
+    assert r["malade"] == 10 and r["enRetard"] is False
+
+
 def test_le_service_worker_liste_tous_les_fichiers_servis(page):
     sw = (RACINE / "v2" / "sw.js").read_text(encoding="utf-8")
     for script in ["tables", "donnees", "calculs", "ui", "sport", "seance", "cardio", "gainage", "suivi", "sommeil", "mensurations", "reglages", "app"]:

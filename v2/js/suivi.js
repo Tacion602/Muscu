@@ -240,6 +240,7 @@ function rendreCalendrier(param) {
   seancesTerminees().forEach((s) => { const c = cleDate(new Date(s.fin)); (parJour[c] = parJour[c] || []).push(s); });
   const nuits = {};
   lireTableau(CLES.sommeil).forEach((n) => { nuits[n.cle] = true; });
+  const malades = joursMalade();
   const maintenant = new Date();
   const premier = new Date(maintenant.getFullYear(), maintenant.getMonth() + decalageMois, 1);
   const annee = premier.getFullYear(), mois = premier.getMonth();
@@ -251,10 +252,13 @@ function rendreCalendrier(param) {
     const cle = String(j).padStart(2, '0') + '/' + String(mois + 1).padStart(2, '0') + '/' + annee;
     const liste = parJour[cle] || [];
     const type = liste.length ? liste[0].type : '';
-    cases += '<' + (liste.length ? 'button type="button" data-jour-cal="' + cle + '"' : 'span') + ' class="calendrier-case ' + type + (decalageMois === 0 && j === maintenant.getDate() ? ' aujourdhui' : '') + (afficherNuits && nuits[cle] ? ' a-sommeil' : '') + '">' +
-      '<span class="num">' + j + '</span>' + (liste.length ? '<span class="ico' + (liste.length > 1 ? ' deux' : '') + '">' + liste.slice(0, 2).map((s) => { const ic = iconeSeance(s); return '<span class="' + s.type + '" title="' + echapper(ic.libelle) + '">' + svgIcone(ic.icone) + (liste.length === 1 ? '<small>' + echapper(ic.libelle) + '</small>' : '') + '</span>'; }).join('') + '</span>' : '') +
+    // Tout jour passé ou présent s'ouvre, pour pouvoir le dire « malade ».
+    const futur = new Date(annee, mois, j) > maintenant;
+    const malade = malades.has(cle);
+    cases += '<' + (!futur ? 'button type="button" data-jour-cal="' + cle + '"' : 'span') + ' class="calendrier-case ' + type + (malade ? ' malade' : '') + (decalageMois === 0 && j === maintenant.getDate() ? ' aujourdhui' : '') + (afficherNuits && nuits[cle] ? ' a-sommeil' : '') + '">' +
+      '<span class="num">' + j + '</span>' + (malade ? '<span class="mal" title="Malade">' + svgIcone('malade') + (liste.length ? '' : '<small>Malade</small>') + '</span>' : '') + (liste.length ? '<span class="ico' + (liste.length > 1 ? ' deux' : '') + '">' + liste.slice(0, 2).map((s) => { const ic = iconeSeance(s); return '<span class="' + s.type + '" title="' + echapper(ic.libelle) + '">' + svgIcone(ic.icone) + (liste.length === 1 ? '<small>' + echapper(ic.libelle) + '</small>' : '') + '</span>'; }).join('') + '</span>' : '') +
       (afficherNuits && nuits[cle] ? '<span class="nuit">' + svgIcone('lune') + '</span>' : '') +
-      (liste.length > 2 ? '<span class="multi">×' + liste.length + '</span>' : '') + (liste.length ? '</button>' : '</span>');
+      (liste.length > 2 ? '<span class="multi">×' + liste.length + '</span>' : '') + (!futur ? '</button>' : '</span>');
   }
   corps.innerHTML = '<div class="carte"><div class="mois-nav"><button class="icone" id="cal-prec" aria-label="Mois précédent">' + svgIcone('retour') + '</button><b>' + premier.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) + '</b><button class="icone" id="cal-suiv" aria-label="Mois suivant"' + (decalageMois === 0 ? ' disabled style="opacity:.3"' : '') + '>' + svgIcone('chevron') + '</button></div>' +
     '<div class="calendrier-entetes">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => '<span>' + d + '</span>').join('') + '</div><div class="calendrier-grille">' + cases + '</div>' +
@@ -265,12 +269,21 @@ function rendreCalendrier(param) {
   // Un appui sur un jour ouvre le détail de ses séances (demande du
   // 4 novembre 2026 : « le détail de la séance sur le dessin »).
   corps.querySelectorAll('[data-jour-cal]').forEach((b) => b.addEventListener('click', () => {
-    const liste = parJour[b.dataset.jourCal] || [];
-    feuille('<h3>' + echapper(b.dataset.jourCal) + '</h3>' + liste.map((s) => {
+    const cle = b.dataset.jourCal;
+    const liste = parJour[cle] || [];
+    const malade = malades.has(cle);
+    feuille('<h3>' + echapper(cle) + '</h3>' +
+      '<label class="bascule" style="margin-top:6px"><span>Malade ce jour-là</span><input type="checkbox" id="cal-malade"' + (malade ? ' checked' : '') + '></label>' +
+      (liste.length ? '' : '<p class="petit texte-2" style="margin-top:8px">Aucune séance ce jour.</p>') + liste.map((s) => {
       const jour = jourDe(s.jour);
       return '<div class="carte" style="margin-top:10px"><div class="resume-exo" style="border-top:0"><b>' + echapper((libelleJour(jour) || '') + ' ' + (s.nom || s.jour)) + (s.deload ? ' <span class="puce attention">deload</span>' : '') + '</b><span class="petit texte-2">' + (s.duree_min ? s.duree_min + ' min' : '') + '</span></div>' + detailSeance(s) +
         '<div class="actions-serie"><button class="bouton petit" data-ouvrir="' + s.id + '">Ouvrir dans les séances</button></div></div>';
     }).join(''), (f, fermer) => {
+      f.querySelector('#cal-malade').addEventListener('change', () => {
+        const ajoute = basculerMalade(cle);
+        rendreCalendrier(null);
+        toast(ajoute ? 'Jour noté malade.' : 'Jour malade retiré.', 1800, 'succes');
+      });
       f.querySelectorAll('[data-ouvrir]').forEach((o) => o.addEventListener('click', () => { fermer(); afficher('historique', { parametres: { ouvrir: o.dataset.ouvrir } }); }));
     });
   }));
@@ -348,9 +361,11 @@ function rendreBilan() {
   let html = '<div class="carte"><h3 style="font-size:16px;margin-bottom:8px">Quatre dernières semaines</h3><div class="chiffres"><div class="chiffre"><b>' + recentes.length + '</b><span>séances</span></div><div class="chiffre"><b>' + recentes.filter((s) => s.type === 'muscu').length + '</b><span>musculation</span></div><div class="chiffre"><b>' + recentes.filter((s) => s.type === 'cardio').length + '</b><span>cardio</span></div></div></div>';
 
   const vus = new Set();
-  html += '<p class="titre-section">Jours du programme</p><div class="carte">' + programme.jours.filter((j) => { if (j.type === 'gainage') return false; const c = codeCanonique(j.code); if (vus.has(c)) return false; vus.add(c); return true; }).map((j) => {
+  // Une semaine de maladie retire une séance attendue par jour (19 novembre 2026).
+  const malade = joursMaladeDepuis(debut);
+  const attendu = Math.max(1, 4 - Math.floor(malade / 7));
+  html += '<p class="titre-section">Jours du programme</p><div class="carte">' + (malade ? '<p class="petit texte-2" id="bilan-malade" style="margin-bottom:6px">' + malade + ' jour' + (malade > 1 ? 's' : '') + ' malade sur la période' + (attendu < 4 ? ' : ' + attendu + ' séances attendues par jour au lieu de 4' : '') + '.</p>' : '') + programme.jours.filter((j) => { if (j.type === 'gainage') return false; const c = codeCanonique(j.code); if (vus.has(c)) return false; vus.add(c); return true; }).map((j) => {
     const n = parJour[codeCanonique(j.code)] || 0;
-    const attendu = 4;
     return '<div class="barre-volume"><span>' + echapper(j.nom) + '</span><div class="jauge"><i style="width:' + Math.min(100, (n / attendu) * 100) + '%;background:' + (n >= attendu - 1 ? 'var(--hausse)' : 'var(--baisse)') + '"></i></div><span class="val">' + n + ' / ' + attendu + '</span></div>';
   }).join('') + '</div>';
 
