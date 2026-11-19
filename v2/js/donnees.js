@@ -122,11 +122,31 @@ function restaurerSeancesDEssai() {
   const presentes = new Set(lireTableau(CLES.historique).map((s) => s.id));
   const ajout = lireTableau(CLES_V1.historique).filter((s) => {
     const d = s && (s.fin || s.debut);
-    return d && !presentes.has(s.id) && JOURS_RESTAURES.includes(cleDate(new Date(d)));
+    return d && !presentes.has(s.id) && !seanceSupprimee(s) && JOURS_RESTAURES.includes(cleDate(new Date(d)));
   }).map(normaliserSeanceV1);
   if (ajout.length) ecrire(CLES.historique, lireTableau(CLES.historique).concat(ajout));
   ecrire(CLE_RESTAURATION, { quand: new Date().toISOString(), seances: ajout.length });
   return ajout.length;
+}
+
+/* Séances d'essai du 26 août 2026 (deux J1, un J3), sans type ni séries
+   dans le classeur, supprimées à la demande de l'utilisateur le
+   19 novembre 2026. Effacées une fois du téléphone, et jamais reprises
+   ensuite par la reprise de l'historique v1 ou une restauration de
+   fichier (`seanceSupprimee()`). Les lignes du classeur sont à retirer à
+   la main (onglet Séances). */
+const SEANCES_SUPPRIMEES = ['S1787772644326', 'S1787776089163', 'S1787777623874'];
+const CLE_ESSAIS_SUPPRIMES = 'muscu2.essaisAoutSupprimes';
+function seanceSupprimee(s) {
+  return !!s && SEANCES_SUPPRIMEES.includes(s.id);
+}
+function supprimerEssaisAout() {
+  if (lire(CLE_ESSAIS_SUPPRIMES, null)) return 0;
+  const avant = lireTableau(CLES.historique);
+  const apres = avant.filter((s) => !seanceSupprimee(s));
+  if (apres.length !== avant.length) ecrire(CLES.historique, apres);
+  ecrire(CLE_ESSAIS_SUPPRIMES, { quand: new Date().toISOString(), seances: avant.length - apres.length });
+  return avant.length - apres.length;
 }
 
 /* Historique de sommeil effacé une fois, à la demande de l'utilisateur

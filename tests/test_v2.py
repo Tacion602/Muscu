@@ -578,6 +578,30 @@ def test_l_historique_v1_est_repris_une_fois(adresse, navigateur):
     contexte.close()
 
 
+def test_les_essais_du_26_aout_sont_supprimes_et_ne_reviennent_pas(adresse, navigateur):
+    """Demande du 19 novembre 2026 : les trois seances d'essai du 26 aout
+    quittent le telephone, et la reprise v1 ne les ramene pas."""
+    contexte = navigateur.new_context(viewport={"width": 390, "height": 844})
+    onglet = contexte.new_page()
+    erreurs = []
+    onglet.on("pageerror", lambda erreur: erreurs.append(str(erreur)))
+    onglet.goto(adresse)
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    essai = {"id": "S1787772644326", "jour": "J1", "debut": "2026-08-26T10:00:00.000Z", "fin": "2026-08-26T10:30:00.000Z", "exercices": []}
+    garde = {"id": "S1", "jour": "J1", "type": "muscu", "debut": "2026-10-01T10:00:00.000Z", "fin": "2026-10-01T11:00:00.000Z", "exercices": []}
+    onglet.evaluate("""([e, g]) => { localStorage.clear();
+        localStorage.setItem('muscu2.migration', JSON.stringify({ quand: '2026-11-04', seances: 2, source: 'v1' }));
+        localStorage.setItem('muscu2.historique', JSON.stringify([e, g]));
+        localStorage.setItem('muscu.historique', JSON.stringify([e, g])); }""", [essai, garde])
+    onglet.reload()
+    onglet.wait_for_selector("#accueil-programme", state="attached")
+    assert [s["id"] for s in onglet.evaluate("historique()")] == ["S1"]
+    assert onglet.evaluate("() => { const connues = new Set(historique().map((s) => s.id)); return lireTableau(CLES_V1.historique).filter((s) => !connues.has(s.id) && !seanceSupprimee(s)).length; }") == 0
+    assert onglet.evaluate("seanceSupprimee({ id: 'S1787777623874' })")
+    contexte.close()
+    assert not erreurs, erreurs
+
+
 def test_l_historique_de_sommeil_est_efface_une_seule_fois(adresse, navigateur):
     """Demande du 6 novembre 2026 : effacer tout l'historique de sommeil,
     une fois ; une nuit saisie ensuite reste."""

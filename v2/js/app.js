@@ -7,6 +7,7 @@ async function demarrer() {
   const rendues = restaurerSeancesDEssai();
   renommerRearKick();
   corrigerExtensionJambes();
+  supprimerEssaisAout();
   effacerSommeilUneFois();
   reglages = Object.assign({}, REGLAGES_PAR_DEFAUT, lire(CLES.reglages, {}) || {});
   try {

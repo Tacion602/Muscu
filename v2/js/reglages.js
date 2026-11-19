@@ -70,7 +70,7 @@ function rendreReglages() {
         if (Array.isArray(d[c]) && Array.isArray(actuel) && d[c].length && d[c][0] && (d[c][0].id || d[c][0].cle)) {
           const k = d[c][0].id ? 'id' : 'cle';
           const connus = new Set(actuel.map((x) => x[k]));
-          const ajout = d[c].filter((x) => !connus.has(x[k]));
+          const ajout = d[c].filter((x) => !connus.has(x[k]) && !(c === CLES.historique && seanceSupprimee(x)));
           if (c === CLES.historique) seances = ajout.length;
           ecrire(c, actuel.concat(ajout));
         } else if (actuel == null || (Array.isArray(actuel) && !actuel.length)) {
@@ -93,7 +93,7 @@ function rendreReglages() {
   };
   $('r-reimporter').addEventListener('click', () => confirmer('Reprendre l\'historique v1 ?', 'Les séances v1 absentes de la v2 seront ajoutées ; rien n\'est effacé.', 'Reprendre', () => {
     const connues = new Set(historique().map((s) => s.id));
-    const ajout = lireTableau(CLES_V1.historique).filter((s) => !connues.has(s.id)).map(normaliserSeanceV1);
+    const ajout = lireTableau(CLES_V1.historique).filter((s) => !connues.has(s.id) && !seanceSupprimee(s)).map(normaliserSeanceV1);
     ecrire(CLES.historique, historique().concat(ajout));
     toast(ajout.length + ' séance' + (ajout.length > 1 ? 's' : '') + ' ajoutée' + (ajout.length > 1 ? 's' : '') + '.');
     rendreReglages();

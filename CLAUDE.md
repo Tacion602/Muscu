@@ -376,6 +376,15 @@ codes.
   - Écarté absent de la surcharge progressive : pas un défaut, une seule
     séance d'écarté sur le téléphone, la courbe demande deux points.
   - Illustrations animées plus stylisées : non faites, à reprendre.
+  - **Séances d'essai du 26 août supprimées** (même jour, réponse à la
+    question du 9 novembre) : les trois séances sans type (deux J1, un J3,
+    `SEANCES_SUPPRIMEES`) quittent le téléphone une fois
+    (`supprimerEssaisAout()`, `muscu2.essaisAoutSupprimes`) et ne
+    reviennent ni par la reprise v1 ni par une restauration de fichier
+    (`seanceSupprimee()`). Lignes 7 à 9 de l'onglet `Séances` du classeur
+    à supprimer par l'utilisateur (navigateur intégré non connecté à
+    Google). Les deux cardios du même jour restent.
+  - Suppression d'une série d'un geste : abandonnée par l'utilisateur.
 - **Classeur restauré le 9 novembre 2026** : l'import du CSV du 8 au soir
   avait été fait avec « Remplacer la feuille de calcul » au lieu de
   « Remplacer la feuille actuelle » ; tous les onglets sauf Programme
