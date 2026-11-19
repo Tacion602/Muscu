@@ -381,9 +381,9 @@ codes.
     `SEANCES_SUPPRIMEES`) quittent le téléphone une fois
     (`supprimerEssaisAout()`, `muscu2.essaisAoutSupprimes`) et ne
     reviennent ni par la reprise v1 ni par une restauration de fichier
-    (`seanceSupprimee()`). Lignes 7 à 9 de l'onglet `Séances` du classeur
-    à supprimer par l'utilisateur (navigateur intégré non connecté à
-    Google). Les deux cardios du même jour restent.
+    (`seanceSupprimee()`). Dans le classeur, deux des trois lignes
+    supprimées par l'utilisateur ; reste `S1787776089163` (J1, ligne 7 de
+    `Séances` au 19 novembre). Les deux cardios du même jour restent.
   - Suppression d'une série d'un geste : abandonnée par l'utilisateur.
 - **Classeur restauré le 9 novembre 2026** : l'import du CSV du 8 au soir
   avait été fait avec « Remplacer la feuille de calcul » au lieu de
@@ -393,8 +393,14 @@ codes.
   l'historique des versions, puis l'onglet Programme réaligné cellule par
   cellule (une ligne insérée pour l'écarté du J1, 93 cellules, zéro écart
   à la relecture). **Après tout import fait par l'utilisateur, relire
-  aussi les autres onglets**, pas seulement le Programme, et préférer
-  l'option « Remplacer la feuille actuelle » dans les consignes données.
+  aussi les autres onglets**, pas seulement le Programme. **Le libellé
+  exact de l'option est « Remplacer la feuille active »**, onglet
+  Programme sélectionné avant l'import ; « Remplacer la feuille de
+  calcul » efface tous les autres onglets. Les consignes données ici ont
+  longtemps écrit « Remplacer la feuille actuelle », libellé qui n'existe
+  pas : même incident le 19 novembre 2026, réparé par l'utilisateur via
+  l'historique des versions puis un nouvel import (relu : 48 séances,
+  621 séries, Programme à zéro écart avec le CSV).
   Le même jour : « Renvoyer tout l'historique » n'écrivait plus rien, la
   mémoire d'idempotence du pont (`seances_v2`) croyant écrites des séances
   absentes du classeur. `dejaEcrite()` (`appsscript/Code_v2.gs`,
